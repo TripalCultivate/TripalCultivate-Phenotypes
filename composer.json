@@ -7,7 +7,7 @@
   "support": {
     "issues": "https://github.com/TripalCultivate/TripalCultivate-Phenotypes/issues"
   },
-  "license": "GPLv3",
+  "license": "GPL-3.0-or-later",
   "minimum-stability": "dev",
   "authors": [
         {
