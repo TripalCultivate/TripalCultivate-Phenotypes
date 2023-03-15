@@ -1,0 +1,29 @@
+{
+  "name": "tripalcultivate/phenotypes",
+  "type": "drupal-module",
+  "description": "A Tripal extension module that provides generic support for large-scale phenotypic data and traits with importers, content pages and visualizations.",
+  "keywords": ["tripal", "drupal", "biological-data", "phenotypic-data", "visualization", "data-import"],
+  "homepage": "https://github.com/TripalCultivate/TripalCultivate-Phenotypes",
+  "support": {
+    "issues": "https://github.com/TripalCultivate/TripalCultivate-Phenotypes/issues"
+  },
+  "license": "GPLv3",
+  "minimum-stability": "dev",
+  "authors": [
+        {
+            "name": "Lacey-Anne Sanderson",
+            "homepage": "https://github.com/laceysanderson/",
+            "role": "Lead Developer"
+        },
+        {
+            "name": "Reynold Tan",
+            "homepage": "https://github.com/reynoldtan",
+            "role": "Lead Developer"
+        }
+  ],
+  "require": {
+    "php": "^8.0",
+    "drupal/core": "^9.4",
+    "tripal/tripal": "^4.0-alpha1"
+  }
+}

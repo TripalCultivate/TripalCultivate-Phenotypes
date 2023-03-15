@@ -1,9 +1,9 @@
 FROM tripalproject/tripaldocker:latest
 MAINTAINER Lacey-Anne Sanderson <lacey.sanderson@usask.ca>
 
-COPY . /var/www/drupal9/web/modules/template
+COPY . /var/www/drupal9/web/modules/TripalCultivate-Phenotypes
 
-WORKDIR /var/www/drupal9/web/modules/template
+WORKDIR /var/www/drupal9/web/modules/TripalCultivate-Phenotypes
 
-## RUN service postgresql restart \
-##  && drush en trpgeno_genetics trpgeno_genotypes trpgeno_genomatrix trpgeno_qtl trpgeno_vcf --yes
+RUN service postgresql restart \
+  && drush en trpcultivate_phenotypes --yes

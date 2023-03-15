@@ -20,23 +20,23 @@ class InstallTest extends ChadoTestBrowserBase {
    *
    * @var array
    */
-  protected static $modules = ['help', 'modulename'];
+  protected static $modules = ['help', 'trpcultivate_phenotypes'];
 
   /**
    * The name of your module in the .info.yml
    */
-  protected static $module_name = 'Template Modulename';
+  protected static $module_name = 'Phenotypic Data API';
 
   /**
    * The machine name of this module.
    */
-  protected static $module_machinename = 'modulename';
+  protected static $module_machinename = 'trpcultivate_phenotypes';
 
   /**
    * A small excert from your help page.
    * Do not cross newlines.
    */
-  protected static $help_text_excerpt = 'This is a template module which should never be';
+  protected static $help_text_excerpt = 'pports collecting all data for a specific trait (e.g. Plant Height) into a single';
 
   /**
    * Tests that a specific set of pages load with a 200 response.
