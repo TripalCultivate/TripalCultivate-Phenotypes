@@ -1,0 +1,8 @@
+name: Phenotypic Data API
+type: module
+description: Provides services and plugins to support common functionality within this package.
+package: "TripalCultivate: Phenotypes"
+core_version_requirement: ^9 || ^10
+dependencies:
+  - tripal
+  - tripal_chado
