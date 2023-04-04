@@ -1,0 +1,28 @@
+<?php
+
+/**
+ * @file
+ * Contains all hook implementations for this module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function trpcultivate_phenocollect_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Provides the module overview in the help tab.
+    case 'help.page.trpcultivate_phenocollect':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+
+      $output .= '<ul>'
+        . '<li>' . t('Provides tools to backup and upload phenotypic data while it is being collected in a access controlled environment.') . '</li>'
+      . '</ul>';
+
+      return $output;
+
+    default:
+  }
+}
