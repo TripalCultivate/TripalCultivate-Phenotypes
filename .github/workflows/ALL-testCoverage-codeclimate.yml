@@ -4,7 +4,7 @@ on: [push]
 
 env:
   PKG_NAME: TripalCultivate-Phenotypes
-  MODULES: "trpcultivate_phenotypes"
+  MODULES: "trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare"
   IMAGE_TAG: drupal9.5.x-dev-php8.1-pgsql13
   SIMPLETEST_BASE_URL: "http://localhost"
   SIMPLETEST_DB: "pgsql://drupaladmin:drupal9developmentonlylocal@localhost/sitedb"
