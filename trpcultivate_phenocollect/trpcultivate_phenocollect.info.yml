@@ -1,0 +1,9 @@
+name: Phenotypic Data Collection
+type: module
+description: Provides tools to backup and upload phenotypic data while it is being collected in a access controlled environment.
+package: "TripalCultivate: Phenotypes"
+core_version_requirement: ^9 || ^10
+dependencies:
+  - tripal
+  - tripal_chado
+  - trpcultivate_phenotypes

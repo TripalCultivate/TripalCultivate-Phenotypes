@@ -15,6 +15,10 @@
     <include>
       <directory suffix=".php">trpcultivate_phenotypes/src</directory>
       <file>trpcultivate_phenotypes/trpcultivate_phenotypes.module</file>
+      <directory suffix=".php">trpcultivate_phenocollect/src</directory>
+      <file>trpcultivate_phenocollect/trpcultivate_phenocollect.module</file>
+      <directory suffix=".php">trpcultivate_phenoshare/src</directory>
+      <file>trpcultivate_phenoshare/trpcultivate_phenoshare.module</file>
     </include>
   </coverage>
   <php>
@@ -50,6 +54,8 @@
   <testsuites>
     <testsuite name="core">
       <directory>trpcultivate_phenotypes/tests</directory>
+      <directory>trpcultivate_phenocollect/tests</directory>
+      <directory>trpcultivate_phenoshare/tests</directory>
     </testsuite>
   </testsuites>
   <listeners>
