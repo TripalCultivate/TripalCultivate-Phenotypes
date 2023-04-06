@@ -7,8 +7,11 @@
 # - chars: special characters to find and remove.
 # - replace: search key = replace with (search and replace).
 trpcultivate:
+  langcode: 'en'
   phenotypes:
     r_config:
       words: 'of,to,have,on,at'
       chars: '(,),/,-,:,;,%'
       replace: '# = num,/ = div,? = unsure,- = to'
+  phenoshare:
+  phenocollect:

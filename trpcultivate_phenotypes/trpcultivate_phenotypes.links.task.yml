@@ -1,26 +1,20 @@
 # Tabs/task items - Configuring Tripal Cultivate Phenotypes.
 # Order as they appear.
 
-trpcultivate_phenotypes.tab0:
-  title: 'Configure'
-  route_name: trpcultivate_phenotypes.settings 
-  base_route: trpcultivate_phenotypes.settings
-  weight: 0
-
 trpcultivate_phenotypes.tab1:
   title: 'R Transformation Rules'
   route_name: trpcultivate_phenotypes.settings_r 
-  base_route: trpcultivate_phenotypes.settings
+  base_route: trpcultivate_phenotypes.settings_r
   weight: 1
 
 trpcultivate_phenotypes.tab2:
   title: 'Watermark Chart'
-  route_name: trpcultivate_phenotypes.settings
-  base_route: trpcultivate_phenotypes.settings
+  route_name: trpcultivate_phenotypes.settings_r
+  base_route: trpcultivate_phenotypes.settings_r
   weight: 2  
 
 trpcultivate_phenotypes.tab3:
   title: 'Ontology Terms'
-  route_name: trpcultivate_phenotypes.settings
-  base_route: trpcultivate_phenotypes.settings
+  route_name: trpcultivate_phenotypes.settings_r
+  base_route: trpcultivate_phenotypes.settings_r
   weight: 3    
