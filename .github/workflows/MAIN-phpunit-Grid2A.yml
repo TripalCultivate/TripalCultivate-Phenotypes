@@ -13,7 +13,7 @@ jobs:
       - name: Run Automated testing
         uses: tripal/test-tripal-action@v1.0
         with:
-          directory-name: 'TripalCultivate-Phenotypes'
+          directory-name: 'TripalCultivate-Phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           modules: 'trpcultivate_phenotypes'
           php-version: '8.1'
           pgsql-version: '13'

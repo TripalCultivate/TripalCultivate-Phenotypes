@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Contains all hook implementations for this module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function trpcultivate_phenoshare_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Provides the module overview in the help tab.
+    case 'help.page.trpcultivate_phenoshare':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+
+      $output .= '<ul>'
+        . '<li>' . t('Provides trait pages, downloads and visualization tools to facillitate sharing published phenotypic data with the public.')
+        . '</li>'
+      . '</ul>';
+
+      return $output;
+
+    default:
+  }
+}
