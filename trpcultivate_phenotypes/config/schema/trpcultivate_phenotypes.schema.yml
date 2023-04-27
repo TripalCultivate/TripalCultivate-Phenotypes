@@ -16,14 +16,23 @@ trpcultivate_phenotypes.settings:
               label: 'R Translation Rules'
               mapping:
                 words:
-                  type: string
+                  type: sequence
                   label: 'R Rules for words to remove'
+                  sequence:
+                    type: string
+                    label: 'Word to remove'
                 chars:
-                  type: string
+                  type: sequence
                   label: 'R Rules for characters to remove'
+                  sequence:
+                    type: string
+                    label: 'Character to remove'
                 replace:
-                  type: string
+                  type: sequence
                   label: 'R Rules for match and replace'
+                  sequence:
+                    type: string
+                    label: 'Match and replace'
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'

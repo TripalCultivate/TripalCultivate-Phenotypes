@@ -1,21 +1,36 @@
 # Tripal Cultivate Phenotypes Configuration/Settings.
 
-# trpcultivate.phenotypes.r_config:
-# Configurations relating to rules to apply when transforming trait names 
-# to R-compatible version. Separate each rule with comma character (CSV).
-# - words: words to find and remove.
-# - chars: special characters to find and remove.
-# - replace: search key = replace with (search and replace).
-
 # NOTE: reserved configuration for Phenotypes share and collect module
 # specific configuration variables.
 langcode: 'en'
 
 trpcultivate:
   phenotypes:
+    # trpcultivate.phenotypes.r_config:
+    # Configurations relating to rules to apply when transforming trait names 
+    # to R-compatible version. Separate each rule with comma character (CSV).
+    # - words: words to find and remove.
+    # - chars: special characters to find and remove.
+    # - replace: search key = replace with (search and replace).
     r_config:
-      words: 'of,to,have,on,at'
-      chars: '(,),/,-,:,;,%'
-      replace: '# = num,/ = div,? = unsure,- = to'
+      words: 
+        - 'of'
+        - 'to'
+        - 'have'
+        - 'on'
+        - 'at'
+      chars: 
+        - '('
+        - ')'
+        - '/'
+        - '-'
+        - ':'
+        - ';'
+        - '%'
+      replace: 
+        - '# = num'
+        - '/ = div'
+        - '? = unsure'
+        - '- = to'
   phenoshare: null
   phenocollect: null

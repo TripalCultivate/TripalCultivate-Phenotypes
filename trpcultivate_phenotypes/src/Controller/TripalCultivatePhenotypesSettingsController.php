@@ -82,12 +82,6 @@ class TripalCultivatePhenotypesSettingsController extends ControllerBase {
       '#open' => TRUE,
     ];
 
-    $page_elements = \Drupal::service('renderer')
-      ->render($element);
-
-
-    return [
-      '#markup' => $page_elements
-    ];
+    return $element;
   }
 }
