@@ -1,0 +1,12 @@
+# Menu - Configuring Tripal Cultivate Phenotypes.
+# Group in admin/tripal/extension
+
+trpcultivate_phenotypes.rrules:
+  route_name: trpcultivate_phenotypes.settings
+  title: 'Tripal Cultivate Phenotypes Configuration'
+  description: 'Core administration menu for Tripal Cultivate Phenotypes'
+  parent: tripal.extension
+
+# trpcultivate_phenotypes.watermark:  
+# trpcultivate_phenotypes.ontology:
+  
