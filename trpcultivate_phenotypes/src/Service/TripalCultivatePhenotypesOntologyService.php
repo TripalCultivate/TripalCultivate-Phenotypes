@@ -17,13 +17,15 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 class TripalCultivatePhenotypesOntologyService {
   
   /**
-   * Define cv and cvterm of terms used.
+   * Define cv and cvterm of terms used by term/otology configuration.
+   * Terms are created during install of TripcalCultivate Phenotypes.
    * 
-   * @return array
-   *   Term definitions organized by cv each term belongs to.
+   * @return boolean
+   *   True if all terms were inserted successfully and false otherwise.
    */  
-  public function defineTerms() {
+  public function loadTerms() {
     $ontology = [];
+    $error = 0;
 
     // genus
     $ontology['taxonomic_rank'] = [
@@ -147,7 +149,7 @@ class TripalCultivatePhenotypesOntologyService {
     ];
 
     // plot
-    $ontology['plot'] = [
+    $ontology['AGRO'] = [
       'name' => 'AGRO',
       'definition' => 'Agricultural experiment plot',
 
@@ -161,8 +163,50 @@ class TripalCultivatePhenotypesOntologyService {
 
       // Additional terms in this cv here.
     ];
+    
+    // Install terms.
+    foreach($ontology as $cv_name => $cv) {
+      // Each cv housing terms.
+      $cv_row = [
+        'name' => $cv_name,
+        'definition' => $cv['definition']
+      ];
+
+      foreach($cv['terms'] as $term) {
+        // Each term in a cv.
+        $cvterm_row = [
+          'name' => $term['name'],
+          'cv_id' => ['name' => $cv_name]
+        ];
+        
+        $cvterm_id = (function_exists('chado_get_cvterm')) 
+          ? chado_get_cv($cvterm_row) : tripal_get_cvterm($cvterm_row);
+        
+        if (!$cvterm_id) {
+          // No match of this term in the database, see if cv exists.
+          $cv_id = (function_exists('chado_get_cv')) 
+            ? chado_get_cv($cv_row) : tripal_get_cv($cv_row);
+
+          if (!$cv_id) {
+            $cv_id = (function_exists('chado_insert_cv')) 
+              ? chado_insert_cv($cv_row['name'], $cv_row['definition']) 
+              : tripal_insert_cv($cv_row['name'], $cv_row['definition']);
+
+            if (!$cv_id) {
+              // Error inserting cv.
+              $error = 1;
+              break; break;
+            }
+          }            
+        }
+        
+        // Insert the term.
+        $cvterm = function_exists('chado_insert_cvterm')
+          ? chado_insert_cvterm($term) : tripal_insert_cvterm($term);
+      }
+    }
 
 
-    return $ontology;
+    return ($error) ? FALSE: TRUE;
   }
 }

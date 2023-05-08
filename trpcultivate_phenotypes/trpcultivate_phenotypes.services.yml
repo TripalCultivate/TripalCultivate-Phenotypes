@@ -1,0 +1,7 @@
+# TripalCultivate Phenotypes Services.
+
+# Ontology/Term.
+services:
+  trpcultivate_phenotypes.ontologyterm:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesOntologyService'
+    
