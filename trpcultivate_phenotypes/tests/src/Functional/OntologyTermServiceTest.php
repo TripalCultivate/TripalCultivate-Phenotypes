@@ -22,7 +22,7 @@ class OntologyTermServiceTest extends BrowserTestBase {
    *
    * @var array
    */
-  protected static $modules = ['tripal', 'tripal_chado'];
+  protected static $modules = ['tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
 
   /**
    * Theme to enable.
@@ -44,71 +44,49 @@ class OntologyTermServiceTest extends BrowserTestBase {
    */  
   public function testOntologyService() {
     $ontologyService = new TripalCultivatePhenotypesOntologyService();
-    $result = $ontologyService->loadTerms();
+    $terms = $ontologyService->defineTerms();
+
+    // Test Load terms with custom cv-term set.
+    $id = uniqid();
+
+    $terms[ 'cv' . $id ] = [
+      'name' => 'cv' . $id,
+      'definition' => 'cv definition',
+
+      'terms' => [
+        [
+          'id' => 'cv' . $id . ':term' . $id,
+          'name' => 'term' . $id,
+          'definition' => 'term definition',
+        ]
+      ],
+
+    ];
+
+    $result = $ontologyService->loadTerms($terms);
     // cv insert error when false.
     $this->assertTrue($result);
 
     // Find the terms if each one was inserted correctly.
-    $terms = [  
-      [ 
-        'name' => 'genus',
-        'cv' => 'taxonomic_rank',
-      ],
-      [ 
-        'name' => 'unit',
-        'cv' => 'uo',
-      ],
-      [
-        'name' => 'related',
-        'cv' => 'synonym_type',
-      ],
-      [      
-        'name' => 'Year',
-        'cv' => 'tripal_pub',
-      ],
-      [
-        'name' => 'method',
-        'cv' => 'NCIT',
-      ],
-      [
-        'name' => 'location',
-        'cv' => 'NCIT',
-      ],
-      [
-        'name' => 'replicate',
-        'cv' => 'NCIT',
-      ],
-      [
-        'name' => 'Collected By',
-        'cv' => 'NCIT',
-      ],
-      [
-        'name' => 'Entry',
-        'cv' => 'NCIT',
-      ],
-      [
-        'name' => 'name',
-        'cv' => 'NCIT',
-      ],
-      [
-        'name' => 'plot',
-        'cv' => 'AGRO',
-      ]
-    ];    
-    
     \Drupal::state()->set('is_a_test_environment', TRUE);
     $chado = \Drupal::service('tripal_chado.database');
 
+    $query_term = "SELECT t2.cvterm_id 
+      FROM {1:cv} AS t1 LEFT JOIN {1:cvterm} AS t2 USING(cv_id)
+      WHERE t1.name = :cv AND t2.name = :term LIMIT 1";
+    
     foreach($terms as $term) {
-      list($cv_term, $cv) = array_values($term);
+      foreach($term['terms'] as $t)
+      list($id, $cv_term, $cv) = array_values($t);
 
-      $id = $chado->query("
-        SELECT t2.cvterm_id FROM {1:cv} AS t1 LEFT JOIN {1:cvterm} AS t2 USING(cv_id)
-        WHERE t1.name = :cv AND t2.name = :term LIMIT 1
-      ", [':cv' => $cv, ':term' => $cv_term])
+      $id = $chado->query($query_term, [':cv' => $cv, ':term' => $cv_term])
         ->fetchField();
 
       $this->assertNotNull($id);
     }
+    
+    // Test set trait - ontology.
+    $m = $ontologyService->setTraitOntology();
+    var_dump($m);
   } 
 }

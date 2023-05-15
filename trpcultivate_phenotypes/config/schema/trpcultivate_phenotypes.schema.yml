@@ -69,6 +69,74 @@ trpcultivate_phenotypes.settings:
                   sequence:
                     type: string
                     label: 'File extensions'
+            ontology:
+              type: mapping
+              label: 'CV Terms, Terms, and DB'
+              mapping:
+                terms:
+                  type: mapping
+                  label: 'Terms used in inserting data'
+                  mapping:
+                    collector:
+                      type: integer
+                      label: 'CV Term: Data collector'
+                    entry: 
+                      type: integer
+                      label: 'CV Term: Phenotype entry number'
+                    genus: 
+                      type: integer
+                      label: 'CV Term: Genus'
+                    location: 
+                      type: integer
+                      label: 'CV Term: Phenotyping experiment location'
+                    method: 
+                      type: integer
+                      label: 'CV Term: Phenotyping collection method'
+                    name:
+                      type: integer
+                      label: 'CV Term: Germplasm/line name'
+                    plot:
+                      type: integer
+                      label: 'CV Term: Phenotyping plot number'
+                    related:
+                      type: integer
+                      label: 'CV Term: Method - Trait - Unit relation'
+                    replicate:
+                      type: integer
+                      label: 'CV Term: Phenotyping replicate'
+                    unit:
+                      type: integer
+                      label: 'CV Term: Trait unit'
+                    year:
+                      type: integer
+                      label: 'CV Term: Phenotyping year'
+                cvdbon:
+                  type: sequence
+                  label: 'CV, DB and Ontology'
+                  nullable: True
+                  sequence: 
+                    type: mapping
+                    label: 'Genus-based CV, DB and Ontology'
+                    mapping: 
+                      genus:
+                        type: mapping
+                        label: 'Genus identifier'
+                        mapping: 
+                          cv:
+                            type: integer
+                            label: 'CV: traits'
+                          method:
+                            type: integer
+                            label: 'CV: methods'
+                          unit:
+                            type: integer
+                            label: 'CV: unit'
+                          db:
+                            type: integer
+                            label: 'Database'
+                          on:
+                            type: ineteger
+                            label: 'CV: ontology'  
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'

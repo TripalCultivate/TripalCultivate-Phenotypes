@@ -53,5 +53,24 @@ trpcultivate:
       file_ext:
         - 'png'
         - 'gif'
+        
+    # trpcultivate.phenotypes.ontology:
+    # Configure vocabulary term, databse and term used by many processes of phenotypes module.
+    # - terms: terms used when inserting phenotypic data.
+    # - cvdbon: CV, Database and Ontology used to house traits.
+    ontology:
+      terms:
+        collector: 0
+        entry: 0         
+        genus: 0                
+        location: 0
+        method: 0
+        name: 0
+        plot: 0
+        related: 0
+        replicate: 0          
+        unit: 0
+        year: 0
+      cvdbon:
   phenoshare: null
   phenocollect: null
