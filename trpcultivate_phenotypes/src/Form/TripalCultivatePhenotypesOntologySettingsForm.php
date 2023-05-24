@@ -10,13 +10,14 @@ namespace Drupal\trpcultivate_phenotypes\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class definition TripalCultivatePhenotypesOntologySettingsForm.
  */
 class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
-  
+
   /**
    * {@inheritdoc}
    */
@@ -37,6 +38,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $ontology_service = \Drupal::service('trpcultivate_phenotypes.ontology');
     $config = $this->config(static::SETTINGS);
     
     // This is a warning about the watermark being able to bypass with
@@ -160,6 +162,10 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
         of the germplasm or line.')
     ];
   
+
+
+
+
     
     // Context information window.
     $form['wrapper'] = [

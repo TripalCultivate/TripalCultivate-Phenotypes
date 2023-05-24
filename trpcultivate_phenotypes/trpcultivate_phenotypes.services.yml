@@ -2,7 +2,7 @@
 
 # Ontology/Term.
 services:
-  trpcultivate_phenotypes.ontologyterm:
+  trpcultivate_phenotypes.ontology:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesOntologyService'
     arguments: ['@config.factory']
     

@@ -26,4 +26,10 @@ function trpcultivate_phenotypes_install() {
   $file_system->prepareDirectory($dir_watermark, FileSystemInterface::CREATE_DIRECTORY);
 
   // Define other directories here:  
+
+  // Install default terms.
+  $ontology_service = \Drupal::service('trpcultivate_phenotypes.ontology');
+  $terms = $ontology_service->defineTerms();
+
+  $ontology_service->loadTerms($terms);
 }

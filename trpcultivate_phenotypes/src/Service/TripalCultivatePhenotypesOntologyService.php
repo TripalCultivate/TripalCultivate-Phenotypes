@@ -11,7 +11,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Service;
 
-use Drupal\Core\Config\ImmutableConfig;
+use \Drupal\Core\Config\ConfigFactoryInterface;
 
 /**
  * Class TripalCultivatePhenotypesOntologyService.
@@ -21,14 +21,41 @@ class TripalCultivatePhenotypesOntologyService {
   /**
    * Module configuration.
    */
-  protected $config;
+  protected $config_read;
+  protected $config_edit;
+
+  /**
+   * Holds terms.
+   */
+  private $terms;
+
+  /**
+   * Configuration heirarchy for terms.
+   */
+  private $sysvar_terms;
+
+  /**
+   * Tripal Logger Service.
+   */
+  private $logger;
 
   /**
    * Constructor.
    */
   public function __construct() {
+    $module_settings = 'trpcultivate_phenotypes.settings';
+
     // Read only configuration.
-    $this->config = \Drupal::config('trpcultivate_phenotypes.settings');
+    $this->config_read = \Drupal::config($module_settings);
+    // Editable configuration.
+    $this->config_edit = \Drupal::configFactory()->getEditable($module_settings);
+    // Load terms.
+    $this->terms = $this->defineTerms();
+    // Set configuration heirarchy for terms.
+    $this->sysvar_terms = 'trpcultivate.phenotypes.ontology.terms';
+
+    // Tripal Logger service.
+    $this->logger = \Drupal::service('tripal.logger');
   }
   
   /**
@@ -221,42 +248,43 @@ class TripalCultivatePhenotypesOntologyService {
     
     if ($terms) {
       // Install terms.
-      foreach($terms as $cv_name => $cv) {
+      foreach($terms as $cv) {
         // Each cv housing terms.
         $cv_row = [
-          'name' => $cv_name,
-          'definition' => $cv['definition']
+          'name' => $cv['name'],
         ];
 
         foreach($cv['terms'] as $term) {
           // Remove configuration mapping element.
           if (isset($term['#config'])) {
+            $config_name = $term['#config'];
             unset($term['#config']);
           }
 
           // Each term in a cv.
           $cvterm_row = [
             'name' => $term['name'],
-            'cv_id' => ['name' => $cv_name]
+            'cv_id' => ['name' => $cv['name']]
           ];
           
-          $cvterm_id = (function_exists('chado_get_cvterm')) 
-            ? chado_get_cv($cvterm_row) : tripal_get_cvterm($cvterm_row);
-          
-          if (!$cvterm_id) {
+          $cvterm = (function_exists('chado_get_cvterm')) 
+            ? chado_get_cvterm($cvterm_row) : tripal_get_cvterm($cvterm_row);
+
+          if (!$cvterm) {
             // No match of this term in the database, see if cv exists.
+
             $cv_id = (function_exists('chado_get_cv')) 
               ? chado_get_cv($cv_row) : tripal_get_cv($cv_row);
-
+             
             if (!$cv_id) {
               $cv_id = (function_exists('chado_insert_cv')) 
-                ? chado_insert_cv($cv_row['name'], $cv_row['definition']) 
-                : tripal_insert_cv($cv_row['name'], $cv_row['definition']);
+                ? chado_insert_cv($cv_row['name'], $cv['definition']) 
+                : tripal_insert_cv($cv_row['name'], $cv['definition']);
 
               if (!$cv_id) {
                 // Error inserting cv.
                 $error = 1;
-                break; break;
+                $this->logger->error('Error. Could not insert cv.');
               }
             }            
           
@@ -264,6 +292,11 @@ class TripalCultivatePhenotypesOntologyService {
             $cvterm = function_exists('chado_insert_cvterm')
               ? chado_insert_cvterm($term) : tripal_insert_cvterm($term);
           }
+          
+          // Set the term id as the configuration value of the
+          // term configuration variable.
+          $this->config_edit->set($this->sysvar_terms . '.' . $config_name, $cvterm->cvterm_id)
+            ->save();
         }
       }
     }
@@ -272,35 +305,29 @@ class TripalCultivatePhenotypesOntologyService {
     return ($error) ? FALSE: TRUE;
   }
 
+
   /**
-   * Set ontology of a trait/term.
+   * Map terms to configuration variable.
    * 
-   * @param integer $trait
-   *   Trait/term cvterm id number this trait will be added to an ontology.
-   * @param integer $ontology
-   *   Ontology cvterm id number a trait will be associated to.
-   * @param boolean $replace_default
-   *   True, attempt to replace trait-ontology relationhsip default.
+   * @return array
+   *   Keyed by term and value being the configuration variable name encoded 
+   *   in the term definition #config key it maps to.
    */
-  public function setTraitOntology($trait, $ontology, $replace_ontology = FALSE) {
-    $sysvar_related = $this->config->get('trpcultivate.phenotypes.ontology.terms.related');
+  public function mapDefaultTermToConfig() {
+    $terms_map = [];
 
-    if ($sysvar_related > 0 && $trait > 0 && $ontology > 0) {
-      $values = [
-        'type_id' => $sysvar_related,
-        'object_id' => $trait,
-        'subject_id' => $ontology
-      ];
-
-      // Check if there existed any ontology for this trait.
-      $umatch = array_slice($values, 0, 2);
-      $ontology_found = chado_generate_var('cvterm_relationship', $umatch);
-
-      if ($ontology_found && $replace_ontology) {
-        // When implied in replace ontology, replace previously set ontology.
-        // Alter the subject_id part to new ontology.
-        $uvalue = [$values, 2, 1];
+    // Fetch the mapping information of each term stored
+    // in #config element of each term definition.
+    foreach($this->terms as $terms) {
+      foreach($terms['terms'] as $term) {
+        
+        // Save term and term configuration variable it maps to.
+        // Read as term maps to term configuration variable.
+        $terms_map[ $term['name'] ] = $term['#config'];
       }
     }
+
+
+    return $terms_map;
   }
 }

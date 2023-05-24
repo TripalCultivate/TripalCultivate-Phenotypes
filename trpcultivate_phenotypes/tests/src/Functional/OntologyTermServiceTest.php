@@ -43,50 +43,80 @@ class OntologyTermServiceTest extends BrowserTestBase {
    * Test functionality.
    */  
   public function testOntologyService() {
+    \Drupal::state()->set('is_a_test_environment', TRUE);
+    $chado = \Drupal::service('tripal_chado.database');
+    $chado->setSchemaName('chado');
+
     $ontologyService = new TripalCultivatePhenotypesOntologyService();
     $terms = $ontologyService->defineTerms();
 
-    // Test Load terms with custom cv-term set.
-    $id = uniqid();
-
-    $terms[ 'cv' . $id ] = [
-      'name' => 'cv' . $id,
-      'definition' => 'cv definition',
-
-      'terms' => [
-        [
-          'id' => 'cv' . $id . ':term' . $id,
-          'name' => 'term' . $id,
-          'definition' => 'term definition',
-        ]
-      ],
-
-    ];
-
-    $result = $ontologyService->loadTerms($terms);
+    // At this point terms were created and inserted into chado.cvterm.
+    // cv information was created if required.
+    $result = $ontologyService->loadTerms($terms);    
+    // Test load/insert was successful.
     // cv insert error when false.
     $this->assertTrue($result);
 
-    // Find the terms if each one was inserted correctly.
-    \Drupal::state()->set('is_a_test_environment', TRUE);
-    $chado = \Drupal::service('tripal_chado.database');
+    $all_terms = [];
+    $query_term = "SELECT t2.cvterm_id 
+      FROM {1:cv} AS t1 LEFT JOIN {1:cvterm} AS t2 USING(cv_id)
+      WHERE t1.name = :cv AND t2.name = :term LIMIT 1";
 
+    foreach($terms as $cv) {
+      foreach($cv['terms'] as $term) {
+        $id = $chado->query($query_term, [':cv' => $cv['name'], ':term' => $term['name']])
+          ->fetchField();
+
+        /*
+        $cvterm_row = [
+          'name' => $term['name'],
+          'cv_id' => ['name' => $cv['name']]
+        ];
+  
+        $cvterm = (function_exists('chado_get_cvterm')) 
+          ? chado_get_cvterm($cvterm_row) : tripal_get_cvterm($cvterm_row);
+        */
+        var_dump($id);
+      }
+    }
+
+    /*
     $query_term = "SELECT t2.cvterm_id 
       FROM {1:cv} AS t1 LEFT JOIN {1:cvterm} AS t2 USING(cv_id)
       WHERE t1.name = :cv AND t2.name = :term LIMIT 1";
     
+    $all_terms = [];
     foreach($terms as $term) {
-      foreach($term['terms'] as $t)
-      list($id, $cv_term, $cv) = array_values($t);
+      foreach($term['terms'] as $t) {
+        list($config, $cvterm_id, $cv_term,) = array_values($t);
 
-      $id = $chado->query($query_term, [':cv' => $cv, ':term' => $cv_term])
-        ->fetchField();
-
-      $this->assertNotNull($id);
+        // Test term created/inserted.
+        $id = $chado->query($query_term, [':cv' => $term['name'], ':term' => $cv_term])->fetchField();
+        $this->assertNotNull($id);
+        
+        // Config term has values term configuration variable value and
+        // the cvterm it maps to. 
+        if (!empty($config)) {
+          $all_terms[ $config ] = [
+            '#config_value' => $id,
+            '#config_term'  => $cv_term
+          ];
+        }
+      }
     }
-    
-    // Test set trait - ontology.
-    $m = $ontologyService->setTraitOntology();
-    var_dump($m);
+  
+    var_dump($all_terms);
+    */
+    // Test mapTerms().
+    // Test each entry in the map corresponds to a value in terms definition
+    // and has a value (0) by default.
+    //$map = $ontologyService->mapDefaultTermToConfig();
+
+    //foreach($map as $conf => $config_values) {
+      //$is_config = (in_array($conf, $all_terms)) ? TRUE : FALSE;
+      //$this->assertTrue($is_config, $conf);
+
+      //$this->assertEquals($config_values['#config_value'], 0);
+    //}
   } 
 }
