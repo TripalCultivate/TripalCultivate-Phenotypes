@@ -2,11 +2,7 @@
 
 /**
  * @file
- * Manage property and operation pertaining to data ontology information.
- *
- * Contains Default Controlled Vocabulary terms.
- * Source: TRIPAL CORE - http://tripal.info
- *         ONTOBEE - http://www.ontobee.org
+ * Tripal Cultivate Phenotypes Terms service definition.
  */
 
 namespace Drupal\trpcultivate_phenotypes\Service;
@@ -14,15 +10,16 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 use \Drupal\Core\Config\ConfigFactoryInterface;
 
 /**
- * Class TripalCultivatePhenotypesOntologyService.
+ * Class TripalCultivatePhenotypesTermsService.
  */
-class TripalCultivatePhenotypesOntologyService {
+class TripalCultivatePhenotypesTermsService {
   
   /**
-   * Module configuration.
+   * Chado DB and Module configuration.
    */
   protected $config_read;
   protected $config_edit;
+  protected $chado;
 
   /**
    * Holds terms.
@@ -35,6 +32,11 @@ class TripalCultivatePhenotypesOntologyService {
   private $sysvar_terms;
 
   /**
+   * Term - configuration mapping details.
+   */
+  private $sysvar_map;
+
+  /**
    * Tripal Logger Service.
    */
   private $logger;
@@ -43,15 +45,20 @@ class TripalCultivatePhenotypesOntologyService {
    * Constructor.
    */
   public function __construct() {
-    $module_settings = 'trpcultivate_phenotypes.settings';
-
-    // Read only configuration.
-    $this->config_read = \Drupal::config($module_settings);
-    // Editable configuration.
-    $this->config_edit = \Drupal::configFactory()->getEditable($module_settings);
-    // Load terms.
+    // Define all default terms.
     $this->terms = $this->defineTerms();
-    // Set configuration heirarchy for terms.
+    // Prepare mapping array or terms to configuration pairing.
+    $this->sysvar_map = $this->mapDefaultTermToConfig();
+    
+    // Immutable and editable configuration.
+    $module_settings   = 'trpcultivate_phenotypes.settings';
+    $this->config_read = \Drupal::config($module_settings);
+    $this->config_edit = \Drupal::configFactory()->getEditable($module_settings);
+    
+    // Chado database.
+    $this->chado = \Drupal::service('tripal_chado.database');
+    
+    // Configuration heirarchy for terms.
     $this->sysvar_terms = 'trpcultivate.phenotypes.ontology.terms';
 
     // Tripal Logger service.
@@ -295,16 +302,18 @@ class TripalCultivatePhenotypesOntologyService {
           
           // Set the term id as the configuration value of the
           // term configuration variable.
-          $this->config_edit->set($this->sysvar_terms . '.' . $config_name, $cvterm->cvterm_id)
-            ->save();
+          $this->config_edit
+            ->set($this->sysvar_terms . '.' . $config_name, $cvterm->cvterm_id);
         }
       }
+      
+      $this->config_edit
+        ->save();
     }
 
 
     return ($error) ? FALSE: TRUE;
   }
-
 
   /**
    * Map terms to configuration variable.
@@ -320,7 +329,6 @@ class TripalCultivatePhenotypesOntologyService {
     // in #config element of each term definition.
     foreach($this->terms as $terms) {
       foreach($terms['terms'] as $term) {
-        
         // Save term and term configuration variable it maps to.
         // Read as term maps to term configuration variable.
         $terms_map[ $term['name'] ] = $term['#config'];
@@ -329,5 +337,83 @@ class TripalCultivatePhenotypesOntologyService {
 
 
     return $terms_map;
+  }
+
+  /**
+   * Get term configuration variable value.
+   * 
+   * @param $term
+   *   String, term.
+   * 
+   * @return
+   *   Value of the term configuration variable or null value
+   *   if configuration variable is not found.
+   */
+  public function getTermConfigValue($term) {
+    $value = null;
+
+    if ($term && in_array($term, array_keys($this->sysvar_map))) {
+      $config_name = $this->sysvar_map[ $term ];
+
+      $value = $this->config_read->get($this->sysvar_terms . '.' . $config_name);
+    }
+    
+    return $value;
+  }
+
+  /**
+   * Get full record of a term.
+   * 
+   * @param $id
+   *   Integer, term id corresponding to chado.cvterm: cvterm_id number.
+   * 
+   * @return array
+   *   Associative array with the following keys:
+   *   - id: cvterm id number
+   *   - name: name
+   *   - definition: definition
+   *   - cv: cv name
+   *   - cv id: cv id
+   *   - db: db: database name
+   *   - accession: dbxref: accession
+   */
+  public function getTerm($id) {
+    $term = null;
+    
+    if ($id > 0) {
+      $values = [
+        'cvterm_id' => $id
+      ];
+
+      $rec = (function_exists('chado_get_cvterm')) 
+        ? chado_get_cvterm($values) : tripal_get_cvterm($values);
+      
+      if ($rec) {
+        // Term and cv details.
+        $term = [
+          // term.
+          'id'   => $rec->cvterm_id,
+          'name'    => $rec->name,
+          'definition' => $rec->definition,
+          // cv.
+          'cv' => $rec->cv_id->name,
+          'cv id' => $rec->cv_id->cv_id,
+        ];
+
+        // Database and Dbxref details.
+        $db = (function_exists('chado_generate_var')) 
+          ? chado_generate_var('dbxref', ['dbxref_id' => $rec->dbxref_id])
+          : tripal_generate_var('dbxref', ['dbxref_id' => $rec->dbxref_id]);
+
+        $term['db'] = $db->db_id->name;
+        $term['accession'] = $db->accession;
+
+        // Special format Term Name (Db name:Dbxref accession).
+        $term['format'] = $term['name'] . ' (' . $term['db'] . ':' . $term['accession'] . ')';
+      }
+    }
+
+    
+    return $term;
   }
 }

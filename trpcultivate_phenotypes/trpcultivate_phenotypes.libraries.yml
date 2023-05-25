@@ -1,0 +1,10 @@
+# Tripal Cultivate Phenotypes Libraries.
+
+# Script to auto-select field content for quick alteration of value.
+autoselect-field:
+  version: v1.x
+  js:
+    js/autoselect-field.js: {}
+  dependencies:
+    - core/jquery
+    - core/jquery.once

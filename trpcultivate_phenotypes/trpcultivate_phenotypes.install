@@ -11,6 +11,9 @@ use \Drupal\Core\File\FileSystemInterface;
   * Implements hook_install().
   */
 function trpcultivate_phenotypes_install() {
+  // Make sure that it completes all install tasks.
+  set_time_limit(0);
+  
   // Prepare directory structure to store files required and generated
   // by Tripal Cultivate Phenotypes modules.
   // Base directory public://TripalCultivatePhenotypes/ from configuration.
@@ -28,7 +31,7 @@ function trpcultivate_phenotypes_install() {
   // Define other directories here:  
 
   // Install default terms.
-  $ontology_service = \Drupal::service('trpcultivate_phenotypes.ontology');
+  $ontology_service = \Drupal::service('trpcultivate_phenotypes.terms');
   $terms = $ontology_service->defineTerms();
 
   $ontology_service->loadTerms($terms);
