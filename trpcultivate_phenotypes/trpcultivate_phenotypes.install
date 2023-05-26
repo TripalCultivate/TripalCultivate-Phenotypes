@@ -30,9 +30,12 @@ function trpcultivate_phenotypes_install() {
 
   // Define other directories here:  
 
-  // Install default terms.
-  $ontology_service = \Drupal::service('trpcultivate_phenotypes.terms');
-  $terms = $ontology_service->defineTerms();
+  // Install default terms and set term configuration variable.
+  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+  $term_service->loadTerms();
 
-  $ontology_service->loadTerms($terms);
+  // Prepare ontology configuration variable.
+  // Set to not set value - 0.
+  $ontology_service = \Drupal::service('trpcultivate_phenotypes.ontology');
+  $ontology_service->loadGenusOntology();
 }

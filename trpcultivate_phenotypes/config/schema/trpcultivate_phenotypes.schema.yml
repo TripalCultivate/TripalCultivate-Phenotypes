@@ -122,7 +122,7 @@ trpcultivate_phenotypes.settings:
                         type: mapping
                         label: 'Genus identifier'
                         mapping: 
-                          cv:
+                          trait:
                             type: integer
                             label: 'CV: traits'
                           method:
@@ -131,10 +131,10 @@ trpcultivate_phenotypes.settings:
                           unit:
                             type: integer
                             label: 'CV: unit'
-                          db:
+                          database:
                             type: integer
                             label: 'Database'
-                          on:
+                          crop_ontology:
                             type: ineteger
                             label: 'CV: ontology'  
         phenoshare:

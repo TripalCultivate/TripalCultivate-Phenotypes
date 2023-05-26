@@ -14,12 +14,48 @@ use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesVocabularyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesDatabaseService;
+
 
 /**
  * Class definition TripalCultivatePhenotypesOntologySettingsForm.
  */
 class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
+  
+  /**
+   * Services.
+   */
+  protected $srv_terms;
+  protected $srv_ontology;
+  protected $srv_vocabulary;
+  protected $srv_database;
+
+  /**
+   * Constructor.
+   */
+  public function __construct(TripalCultivatePhenotypesTermsService $terms, 
+    TripalCultivatePhenotypesOntologyService $ontology, 
+    TripalCultivatePhenotypesVocabularyService $vocabulary,
+    TripalCultivatePhenotypesDatabaseService $database) {
+
+    $this->srv_terms = $terms;
+    $this->srv_ontology = $ontology;
+    $this->srv_vocabulary = $vocabulary;
+    $this->srv_database = $database;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('trpcultivate_phenotypes.terms'),
+      $container->get('trpcultivate_phenotypes.ontology'),
+      $container->get('trpcultivate_phenotypes.vocabulary'),
+      $container->get('trpcultivate_phenotypes.database'),
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -51,11 +87,9 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     // ontology instructions/guide.
 
   
-
     // Attach library.
     $form['#attached']['library'][] = 'trpcultivate_phenotypes/autoselect-field';
-    // Term service.
-    $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+
     $config = $this->config(static::SETTINGS);
     
     // This is a warning about the watermark being able to bypass with
@@ -99,7 +133,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     ];
     
     // Get term - term configuration variable mapping details.
-    $terms = $term_service->mapDefaultTermToConfig();
+    $terms = $this->srv_terms->mapDefaultTermToConfig();
 
     // Render each term as autocomplete field element.
     foreach($terms as $term => $config) {
@@ -108,8 +142,8 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
       // Field placeholder and title text.
       $placeholder = $title = $this->t(ucfirst($term));
       // Field default value.
-      $config_value = $term_service->getTermConfigValue($term);
-      $term_rec = $term_service->getTerm($config_value);
+      $config_value = $this->srv_terms->getTermConfigValue($term);
+      $term_rec = $this->srv_terms->getTerm($config_value);
       $default_value = $term_rec['format'];
       
       // Field render array.
@@ -128,7 +162,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
 
     // DB, CV and ONTOLOGY:
     
-
+    
     $form['ontology_fieldset'] = [
       '#type' => 'details',
       '#title' => $this->t('Trait Ontologies - Trait Vocabulary, Associated Database and Crop Ontology'),
@@ -153,21 +187,66 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
         'style' => 'height: 300px; overflow-y: scroll;'
       ]
     ];
-    
-    $form['ontology_fieldset']['wrapper']['fields'] = [
+
+    $form['ontology_fieldset']['wrapper']['table_fields'] = [
       '#type' => 'table',
       '#header' => [
-        $this->t('<b>Genus</b>'), 
+        $this->t('<strong><u>GENUS</u></strong>'), 
         $this->t('Trait Vocabularies'), 
         $this->t('Associated Database'), 
         $this->t('Crop Ontology')
       ],
     ];
 
-    for($i = 0; $i < 5; $i++) {
-      $form['ontology_fieldset']['wrapper']['fields'][$i]['name'] = [
-        '#type' => 'select'
+    // Get genus ontology configuration variables.
+    $genus_ontology = $this->srv_ontology->defineGenusOntology();
+    
+    // Each genus, create table fields for cv, method, unit, db and crop ontology.
+    // Prepare vocabulary options.
+    $vocabulary_options = $this->srv_vocabulary->getVocabularies();
+    $database_options = $this->srv_database->getDatabase();
+
+    $i = 0;
+    foreach($genus_ontology as $genus => $vars) {
+      // Label - Genus.
+      $form['ontology_fieldset']['wrapper']['table_fields'][ $i ][ $genus . '_label' ] = [
+        '#type' => 'item',
+        '#title' => strtoupper($genus)
       ];
+
+      $config_token = array_values($vars);
+      
+      $j = 0;
+      $config_i = 0;
+  
+      // Loop - Trait, DB and Crop Ontology.
+      while($j < 3) {
+        // Each genus, has 3 columns for CV, DB and Crop Ontology.
+        // CV requires 3 select field whereas the other two require only one each.
+        $fld_count = ($j == 0) ? 3 : 1;
+        
+        // Render x number of fields determined by field count.
+        $k = 1;
+        while($k <=  $fld_count) {
+          $options = ($j == 1) ? $database_options : $vocabulary_options;
+          $fld_options = [0 => 'Select: ' . str_replace('_', ' ', $config_token[ $config_i ])] + $options;
+
+          // Select field.
+          $form['ontology_fieldset']['wrapper']['table_fields'][ $i ][ $j ][ $k ][ $genus . '_' . $config_token[ $config_i ] ] = [
+            '#type' => 'select',
+            '#options' => $fld_options,
+            '#attributes' => ['style' => 'width: 150px'],
+            '#tree' => FALSE,
+          ];
+
+          $k++;
+          $config_i++;
+        }
+
+        $j++;
+      }
+
+      $i++;
     }
 
     return parent::buildForm($form, $form_state);
@@ -179,11 +258,8 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {    
     // Validate each term exits and field is not empty.
     
-    // Term service.
-    $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
-    
     // Get term - term configuration variable mapping details.
-    $terms = $term_service->mapDefaultTermToConfig();
+    $terms = $this->srv_terms->mapDefaultTermToConfig();
     
     foreach($terms as $term => $config) {
       if ($fld = $form_state->getValue($config)) {
@@ -201,17 +277,43 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
           @fld is empty.', ['@fld' => ucfirst($config)]));
       }
     }
+
+    // Validate each genus ontology configuration.
+    // For a give genus, if one field was altered then user is trying
+    // to set a value and this validate should ensure that other
+    // configuration variables are set.
+    $genus_ontology = $this->srv_ontology->defineGenusOntology();
+    foreach($genus_ontology as $genus => $vars) {
+      $var_set_ctr = 0;
+      $fld_names = [];
+      
+      foreach($vars as $i => $config) {
+        $fld_names[ $i ] = $genus . '_' . $config;
+        if ((int) $form_state->getValue($fld_names[$i]) > 0) {
+          $var_set_ctr++;
+        }
+      }
+dpm($form_state);
+      if ($var_set_ctr > 0) {
+        // A field/s have been set, make sure all were set.
+        unset($config);
+        foreach($fld_names as $field) {
+          if ($form_state->getValue($field) <= 0) {
+            // Field is empty.
+            $form_state->setErrorByName($field, $this->t('Error: could not save form. Required field
+              (GENUS: FIELD) @fld is empty.', ['@fld' => $field]));  
+          }
+        }
+      }
+    }
   }
   
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Term service.
-    $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
-    
+  public function submitForm(array &$form, FormStateInterface $form_state) {    
     // Get term - term configuration variable mapping details.
-    $terms = $term_service->mapDefaultTermToConfig();
+    $terms = $this->srv_terms->mapDefaultTermToConfig();
     
     // Configuration.
     $sysvar_terms = 'trpcultivate.phenotypes.ontology.terms.';

@@ -233,7 +233,7 @@ class TripalCultivatePhenotypesTermsService {
   }
 
   /**
-   * Insert terms.
+   * Insert and create term configuration variable.
    * 
    * @param array $terms.
    *   Associative array of two levels, where the top level is the cv
@@ -247,12 +247,15 @@ class TripalCultivatePhenotypesTermsService {
    *     'terms' => array(...)
    *   )
    * 
+   *   default to null, load terms defined in this class.
+   * 
    * @return boolean
    *   True if all terms were inserted successfully and false otherwise.
    */  
-  public function loadTerms($terms) {
+  public function loadTerms($terms = null) {
     $error = 0;
-    
+    $terms = ($terms) ? $terms : $this->terms;
+
     if ($terms) {
       // Install terms.
       foreach($terms as $cv) {
