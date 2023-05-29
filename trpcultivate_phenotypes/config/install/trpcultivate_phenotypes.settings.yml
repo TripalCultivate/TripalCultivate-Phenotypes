@@ -72,5 +72,6 @@ trpcultivate:
         unit: 0
         year: 0
       cvdbon:
+      allownew: true
   phenoshare: null
   phenocollect: null

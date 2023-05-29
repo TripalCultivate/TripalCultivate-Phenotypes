@@ -76,7 +76,7 @@ class TripalCultivatePhenotypesOntologyService {
     if ($result) {
       foreach($result as $genus) {
         // genus-ontology configuration.
-        $config_genus = $this->noFormatGenus($genus->genus);
+        $config_genus = $this->formatGenus($genus->genus);
 
         $genus_ontology[ $config_genus ] = [
           'trait',
@@ -136,7 +136,7 @@ class TripalCultivatePhenotypesOntologyService {
    */
   public function getGenusOntologyConfigValue($genus) {
     $value = null;
-    $genus = $this->noFormatGenus($genus);
+    $genus = $this->formatGenus($genus);
 
     if ($genus && in_array($genus, array_keys($this->genus_ontology))) {
       $config_name = $genus;
@@ -150,7 +150,7 @@ class TripalCultivatePhenotypesOntologyService {
   /**
    * Remove any formatting from a string and convert space to underscore
    */
-  public function noFormatGenus($genus) {
+  public function formatGenus($genus) {
     return str_replace(' ', '_', strtolower(trim($genus)));
   }
 }

@@ -135,8 +135,11 @@ trpcultivate_phenotypes.settings:
                             type: integer
                             label: 'Database'
                           crop_ontology:
-                            type: ineteger
-                            label: 'CV: ontology'  
+                            type: integer
+                            label: 'CV: ontology'
+                allownew:
+                  type: boolean
+                  label: 'Allow new traits added during upload'              
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'
