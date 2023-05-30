@@ -118,25 +118,21 @@ trpcultivate_phenotypes.settings:
                     type: mapping
                     label: 'Genus-based CV, DB and Ontology'
                     mapping: 
-                      genus:
-                        type: mapping
-                        label: 'Genus identifier'
-                        mapping: 
-                          trait:
-                            type: integer
-                            label: 'CV: traits'
-                          method:
-                            type: integer
-                            label: 'CV: methods'
-                          unit:
-                            type: integer
-                            label: 'CV: unit'
-                          database:
-                            type: integer
-                            label: 'Database'
-                          crop_ontology:
-                            type: integer
-                            label: 'CV: ontology'
+                      trait:
+                        type: integer
+                        label: 'CV: traits'
+                      method:
+                        type: integer
+                        label: 'CV: methods'
+                      unit:
+                        type: integer
+                        label: 'CV: unit'
+                      database:
+                        type: integer
+                        label: 'Database'
+                      crop_ontology:
+                        type: integer
+                        label: 'CV: ontology'
                 allownew:
                   type: boolean
                   label: 'Allow new traits added during upload'              
