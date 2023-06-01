@@ -13,4 +13,3 @@ services:
   trpcultivate_phenotypes.database:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesDatabaseService'
     
-    

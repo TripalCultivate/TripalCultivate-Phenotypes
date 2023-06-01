@@ -8,6 +8,7 @@
 namespace Drupal\trpcultivate_phenotypes\Service;
 
 use \Drupal\Core\Config\ConfigFactoryInterface;
+use \Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
  * Class TripalCultivatePhenotypesOntologyService.
@@ -17,8 +18,7 @@ class TripalCultivatePhenotypesOntologyService {
   /**
    * Chado DB and Module configuration.
    */
-  protected $config_read;
-  protected $config_edit;
+  protected $config;
   protected $chado;
 
   /**
@@ -32,30 +32,19 @@ class TripalCultivatePhenotypesOntologyService {
   private $sysvar_ontology;
 
   /**
-   * Tripal Logger Service.
-   */
-  private $logger;
-
-  /**
    * Constructor.
    */
-  public function __construct() {
-    // Immutable and editable configuration.
-    $module_settings   = 'trpcultivate_phenotypes.settings';
-    $this->config_read = \Drupal::config($module_settings);
-    $this->config_edit = \Drupal::configFactory()->getEditable($module_settings);
+  public function __construct(ConfigFactoryInterface $config_factory) {
+    // Configuration.
+    $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology.cvdbon';
+    $module_settings = 'trpcultivate_phenotypes.settings';
+    $this->config = $config_factory->getEditable($module_settings);
     
     // Chado database.
     $this->chado = \Drupal::service('tripal_chado.database');
     
     // Define all default terms.
     $this->genus_ontology = $this->defineGenusOntology();
-
-    // Configuration hierarchy for terms.
-    $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology.cvdbon';
-
-    // Tripal Logger service.
-    $this->logger = \Drupal::service('tripal.logger');
   }
 
   /**
@@ -113,12 +102,11 @@ class TripalCultivatePhenotypesOntologyService {
       }
 
       // Set a value to each genus ontology configuration.
-      $this->config_edit
+      $this->config
         ->set($this->sysvar_ontology . '.' . $genus, $config_genus_ontology[ $genus ]);
     }
 
-    $this->config_edit
-      ->save();
+    $this->config->save();
 
  
     return TRUE;
@@ -141,14 +129,23 @@ class TripalCultivatePhenotypesOntologyService {
     if ($genus && in_array($genus, array_keys($this->genus_ontology))) {
       $config_name = $genus;
 
-      $value = $this->config_read->get($this->sysvar_ontology . '.' . $config_name);
+      $value = $this->config
+        ->get($this->sysvar_ontology . '.' . $config_name);
     }
+
 
     return $value;
   }
 
   /**
    * Remove any formatting from a string and convert space to underscore
+   * 
+   * @param $genus
+   *   String, genus.
+   * 
+   * @return string
+   *   Genus name where all leading and trailing spaces removed and
+   *   in word (multi-word genus) spaces replaced by an underscore.
    */
   public function formatGenus($genus) {
     return str_replace(' ', '_', strtolower(trim($genus)));

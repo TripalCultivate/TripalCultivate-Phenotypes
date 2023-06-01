@@ -15,11 +15,9 @@ use \Drupal\Core\Config\ConfigFactoryInterface;
 class TripalCultivatePhenotypesTermsService {
   
   /**
-   * Chado DB and Module configuration.
+   * Module configuration.
    */
-  protected $config_read;
-  protected $config_edit;
-  protected $chado;
+  protected $config;
 
   /**
    * Holds terms.
@@ -37,32 +35,18 @@ class TripalCultivatePhenotypesTermsService {
   private $sysvar_map;
 
   /**
-   * Tripal Logger Service.
-   */
-  private $logger;
-
-  /**
    * Constructor.
    */
-  public function __construct() {
+  public function __construct(ConfigFactoryInterface $config_factory) {
     // Define all default terms.
     $this->terms = $this->defineTerms();
     // Prepare mapping array or terms to configuration pairing.
     $this->sysvar_map = $this->mapDefaultTermToConfig();
     
-    // Immutable and editable configuration.
-    $module_settings   = 'trpcultivate_phenotypes.settings';
-    $this->config_read = \Drupal::config($module_settings);
-    $this->config_edit = \Drupal::configFactory()->getEditable($module_settings);
-    
-    // Chado database.
-    $this->chado = \Drupal::service('tripal_chado.database');
-    
-    // Configuration heirarchy for terms.
+    // Configuration.
     $this->sysvar_terms = 'trpcultivate.phenotypes.ontology.terms';
-
-    // Tripal Logger service.
-    $this->logger = \Drupal::service('tripal.logger');
+    $module_settings = 'trpcultivate_phenotypes.settings';
+    $this->config = $config_factory->getEditable($module_settings);
   }
   
   /**
@@ -305,13 +289,12 @@ class TripalCultivatePhenotypesTermsService {
           
           // Set the term id as the configuration value of the
           // term configuration variable.
-          $this->config_edit
+          $this->config
             ->set($this->sysvar_terms . '.' . $config_name, $cvterm->cvterm_id);
         }
       }
       
-      $this->config_edit
-        ->save();
+      $this->config->save();
     }
 
 
@@ -358,8 +341,9 @@ class TripalCultivatePhenotypesTermsService {
     if ($term && in_array($term, array_keys($this->sysvar_map))) {
       $config_name = $this->sysvar_map[ $term ];
 
-      $value = $this->config_read->get($this->sysvar_terms . '.' . $config_name);
+      $value = $this->config->get($this->sysvar_terms . '.' . $config_name);
     }
+
     
     return $value;
   }

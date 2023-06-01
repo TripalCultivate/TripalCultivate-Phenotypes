@@ -18,19 +18,11 @@ class TripalCultivatePhenotypesVocabularyService {
   protected $chado;
 
   /**
-   * Tripal Logger Service.
-   */
-  private $logger;
-
-  /**
    * Constructor.
    */
   public function __construct() {
     // Chado database.
     $this->chado = \Drupal::service('tripal_chado.database');
-
-    // Tripal Logger service.
-    $this->logger = \Drupal::service('tripal.logger');
   }
   
   /**

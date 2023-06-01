@@ -11,13 +11,14 @@ use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesOntologyService;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesVocabularyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesDatabaseService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesVocabularyService;
 
 
 /**
@@ -29,31 +30,45 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
   /**
    * Services.
    */
-  protected $srv_terms;
-  protected $srv_ontology;
-  protected $srv_vocabulary;
   protected $srv_database;
+  protected $srv_ontology;
+  protected $srv_terms;
+  protected $srv_vocabulary;
 
   /**
-   * Constructor.
+   * Configuration variable cvdbon (ontology).
    */
-  public function __construct(TripalCultivatePhenotypesTermsService $terms, 
-    TripalCultivatePhenotypesOntologyService $ontology, 
-    TripalCultivatePhenotypesVocabularyService $vocabulary,
-    TripalCultivatePhenotypesDatabaseService $database) {
-
-    $this->srv_terms = $terms;
-    $this->srv_ontology = $ontology;
-    $this->srv_vocabulary = $vocabulary;
+  private $sysvar_ontology;
+  
+  /**
+   * Class constuctor.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory,
+    TripalCultivatePhenotypesDatabaseService $database,
+    TripalCultivatePhenotypesOntologyService $ontology,
+    TripalCultivatePhenotypesTermsService $terms, 
+    TripalCultivatePhenotypesVocabularyService $vocabulary) {
+    
+    parent::__construct($config_factory);
+  
     $this->srv_database = $database;
+    $this->srv_ontology = $ontology;
+    $this->srv_terms = $terms;
+    $this->srv_vocabulary = $vocabulary;
+
+    $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology';
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('trpcultivate_phenotypes.terms'),
-      $container->get('trpcultivate_phenotypes.ontology'),
-      $container->get('trpcultivate_phenotypes.vocabulary'),
+      $container->get('config.factory'),
       $container->get('trpcultivate_phenotypes.database'),
+      $container->get('trpcultivate_phenotypes.ontology'),
+      $container->get('trpcultivate_phenotypes.terms'),
+      $container->get('trpcultivate_phenotypes.vocabulary'),
     );
   }
 
@@ -197,7 +212,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
       $i++;
     }
     
-    $allow_new = $configuration->get('trpcultivate.phenotypes.ontology.allownew');
+    $allow_new = $configuration->get($this->sysvar_ontology . '.allownew');
     $form['ontology_fieldset']['allow_new'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Allow new traits to be added to the Controlled Vocabulary during upload.'),
@@ -327,7 +342,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {    
-    $configuration = $this->configFactory->getEditable(static::SETTINGS);
+    $configuration = $this->config(static::SETTINGS);
 
     // Get term - term configuration variable mapping details.
     $terms = $this->srv_terms->mapDefaultTermToConfig();    
@@ -345,7 +360,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     // Get genus ontology.
     $genus_ontology = $this->srv_ontology->defineGenusOntology();
     // Configuration.
-    $sysvar_ontology = 'trpcultivate.phenotypes.ontology.cvdbon.';
+    $var_ontology = $this->sysvar_ontology . '.cvdbon.';
 
     foreach($genus_ontology as $genus => $vars) {
       // Trait, method, unit, database and crop ontology.
@@ -354,14 +369,14 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
         $fld_value = $form_state->getValue($fld_name);
         
         $configuration
-          ->set($sysvar_ontology . $genus . '.' . $config, $fld_value);
+          ->set($var_ontology . $genus . '.' . $config, $fld_value);
       }
     }
 
     // Allow new traits to be added during upload.
     $allow_new = $form_state->getValue('allow_new');
     $configuration
-      ->set('trpcultivate.phenotypes.ontology.allownew', $allow_new);
+      ->set($this->sysvar_ontology . '.allownew', $allow_new);
 
 
     $configuration
