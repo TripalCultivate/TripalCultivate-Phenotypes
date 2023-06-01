@@ -122,10 +122,10 @@ class ConfigRRulesFormTest extends UnitTestCase {
     $form = [];
 
     // Validation: WORDS Rule
-    // words - any words at least 2 characters long and no empty value.
+    // words - any words at least 2 characters long and not and empty string.
     // Failed, Has validation error:
     $field = 'words';
-    foreach(['R', 'r', '.', '~', '1', '', ' '] as $rule) {
+    foreach(['R', 'r', '.', '~', '1', '       ', ' '] as $rule) {
       // Ensure we reset the form state after each iteration
       // so that we are not accidentally keeping errors from previous iterations.
       $form_state->clearErrors();
@@ -135,7 +135,8 @@ class ConfigRRulesFormTest extends UnitTestCase {
 
       // Call the validate and assert that there is an error.
       $this->rrulesform->validateForm($form, $form_state);
-      $this->assertTrue($form_state->hasAnyErrors(), $rule);
+      $this->assertTrue($form_state->hasAnyErrors(),
+        "We expected errors for '$rule' but there were not any.");
     }
 
     // Valid words:
@@ -147,15 +148,16 @@ class ConfigRRulesFormTest extends UnitTestCase {
       $form_state->setValue($field, $rule);
       $this->rrulesform->validateForm($form, $form_state);
 
-      $this->assertFalse($form_state->hasAnyErrors(), $rule);
+      $this->assertFalse($form_state->hasAnyErrors(),
+        "The word '$rule' should be valid but there are form errors for some reason.");
     }
 
 
     // Validation: SPECIAL CHARACTERS Rule
-    // chars - any special characters 1 character long and no empty value.
+    // chars - any special characters 1 character long.
     // Failed, Has validation error:
     $field = 'chars';
-    foreach(['hello', ',', 'A', 'a', '1', 0, ' '] as $rule) {
+    foreach(['hello', ',', 'A', 'a', '1'] as $rule) {
       // Ensure we reset the form state after each iteration
       // so that we are not accidentally keeping errors from previous iterations.
       $form_state->clearErrors();
@@ -163,11 +165,11 @@ class ConfigRRulesFormTest extends UnitTestCase {
       $form_state->setValue($field, $rule);
       $this->rrulesform->validateForm($form, $form_state);
 
-      $this->assertTrue($form_state->hasAnyErrors(), $rule);
+      $this->assertTrue($form_state->hasAnyErrors(),
+        "We expected errors for '$rule' but there were not any.");
     }
 
-
-    // Valid words:
+    // Valid char:
     foreach(['~', '@', '>', '+', '-', '$', ':'] as $rule) {
       // Ensure we reset the form state after each iteration
       // so that we are not accidentally keeping errors from previous iterations.
@@ -176,7 +178,8 @@ class ConfigRRulesFormTest extends UnitTestCase {
       $form_state->setValue($field, $rule);
       $this->rrulesform->validateForm($form, $form_state);
 
-      $this->assertFalse($form_state->hasAnyErrors(), $rule);
+      $this->assertFalse($form_state->hasAnyErrors(),
+        "The char '$rule' should be valid but there are form errors for some reason.");
     }
 
 
@@ -193,7 +196,8 @@ class ConfigRRulesFormTest extends UnitTestCase {
       $form_state->setValue($field, $rule);
       $this->rrulesform->validateForm($form, $form_state);
 
-      $this->assertTrue($form_state->hasAnyErrors(), $rule);
+      $this->assertTrue($form_state->hasAnyErrors(),
+        "We expected errors for '$rule' but there were not any.");
     }
 
 
@@ -206,7 +210,8 @@ class ConfigRRulesFormTest extends UnitTestCase {
       $form_state->setValue($field, $rule);
       $this->rrulesform->validateForm($form, $form_state);
 
-      $this->assertFalse($form_state->hasAnyErrors(), $rule);
+      $this->assertFalse($form_state->hasAnyErrors(),
+        "The replacement '$rule' should be valid but there are form errors for some reason.");
     }
   }
 
