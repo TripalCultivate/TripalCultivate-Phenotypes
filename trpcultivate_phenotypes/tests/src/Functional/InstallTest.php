@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\trpgeno_genetics\Functional;
+namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
 use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
@@ -8,12 +8,12 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 /**
  * Simple test to ensure that main page loads with module enabled.
  *
- * @group TripGeno Genetics
+ * @group TripPheno Phenotypes
  * @group Installation
  */
 class InstallTest extends ChadoTestBrowserBase {
 
-  protected $defaultTheme = 'stable';
+  protected $defaultTheme = 'stark';
 
   /**
    * Modules to enable.
@@ -36,7 +36,7 @@ class InstallTest extends ChadoTestBrowserBase {
    * A small excert from your help page.
    * Do not cross newlines.
    */
-  protected static $help_text_excerpt = 'pports collecting all data for a specific trait (e.g. Plant Height) into a single';
+  protected static $help_text_excerpt = 'pports collecting all data for a specific trait (e.g. Plant Height) into a single page while still fully describing methodology and units for accurate analysis.';
 
   /**
    * Tests that a specific set of pages load with a 200 response.
@@ -45,7 +45,7 @@ class InstallTest extends ChadoTestBrowserBase {
     $session = $this->getSession();
 
     // Ensure we have an admin user.
-    $user = $this->drupalCreateUser(['access administration pages', 'administer modules']);
+    $user = $this->drupalCreateUser(['access administration pages', 'administer modules', 'administer tripal']);
     $this->drupalLogin($user);
 
     $context = '(modules installed: ' . implode(',', self::$modules) . ')';
@@ -60,7 +60,6 @@ class InstallTest extends ChadoTestBrowserBase {
     $status_code = $session->getStatusCode();
     $this->assertEquals(200, $status_code, "The module install page should be able to load $context.");
     $this->assertSession()->pageTextContains( self::$module_name );
-
   }
 
   /**
@@ -95,5 +94,4 @@ class InstallTest extends ChadoTestBrowserBase {
     $this->assertEquals(200, $status_code, "The module help page should be able to load $context.");
     $this->assertSession()->pageTextContains($some_extected_text);
   }
-
 }

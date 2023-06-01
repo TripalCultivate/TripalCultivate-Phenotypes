@@ -1,0 +1,41 @@
+# Tripal Cultivate Phenotypes Configuration/Settings Schema.
+
+trpcultivate_phenotypes.settings:
+  type: config_object
+  mapping:
+    trpcultivate:
+      type: mapping
+      label: 'Tripal Cultivate Phenotypes Configuration'
+      mapping:
+        phenotypes:
+          type: mapping
+          label: 'Phenotypes Global Configuration'
+          mapping:
+            r_config:
+              type: mapping
+              label: 'R Translation Rules'
+              mapping:
+                words:
+                  type: sequence
+                  label: 'R Rules for words to remove'
+                  sequence:
+                    type: string
+                    label: 'Word to remove'
+                chars:
+                  type: sequence
+                  label: 'R Rules for characters to remove'
+                  sequence:
+                    type: string
+                    label: 'Character to remove'
+                replace:
+                  type: sequence
+                  label: 'R Rules for match and replace'
+                  sequence:
+                    type: string
+                    label: 'Match and replace'
+        phenoshare:
+          type: string
+          label: 'Phenotypes Share (Analyzed) Configuration'
+        phenocollect:
+          type: string
+          label: 'Phenotypes Collect (Raw) Configuration'
