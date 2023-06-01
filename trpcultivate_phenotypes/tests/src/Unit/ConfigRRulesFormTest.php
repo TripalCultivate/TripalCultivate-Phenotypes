@@ -125,7 +125,7 @@ class ConfigRRulesFormTest extends UnitTestCase {
     // words - any words at least 2 characters long and no empty value.
     // Failed, Has validation error:
     $field = 'words';
-    foreach(['R', 'r', '.', '~', '1', '123', ' '] as $rule) {
+    foreach(['R', 'r', '.', '~', '1', '', ' '] as $rule) {
       // Ensure we reset the form state after each iteration
       // so that we are not accidentally keeping errors from previous iterations.
       $form_state->clearErrors();
