@@ -13,7 +13,7 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
  */
 class InstallTest extends ChadoTestBrowserBase {
 
-  # protected $defaultTheme = 'stable';
+  protected $defaultTheme = 'stark';
 
   /**
    * Modules to enable.
@@ -92,6 +92,6 @@ class InstallTest extends ChadoTestBrowserBase {
     $this->drupalGet('admin/help/' . self::$module_machinename);
     $status_code = $session->getStatusCode();
     $this->assertEquals(200, $status_code, "The module help page should be able to load $context.");
-    $this->assertSession()->pageTextContains($some_extected_text); 
+    $this->assertSession()->pageTextContains($some_extected_text);
   }
 }

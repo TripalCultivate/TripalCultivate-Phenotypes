@@ -16,9 +16,11 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 class ConfigRRulesTest extends ChadoTestBrowserBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
 
+  protected $defaultTheme = 'stark';
+
   /**
    * Modules to enabled
-   * 
+   *
    * @var array
    */
   protected static $modules = ['trpcultivate_phenotypes'];
@@ -39,10 +41,10 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
       'administer site configuration',
       'administer tripal'
     ]);
-    
+
     // Login admin user.
     $this->drupalLogin($this->admin_user);
-    
+
     // Ensure we see all logging in tests.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
@@ -61,7 +63,7 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
     $update_r_rules = [
       'words' => implode(',', $r_rules[ $config_r . 'words' ]) . ',ok',
       'chars'  => implode(',', $r_rules[ $config_r . 'chars' ]) . ',#',
-      'replace' => implode(',', $r_rules[ $config_r . 'replace' ]) . ',ok = okay', 
+      'replace' => implode(',', $r_rules[ $config_r . 'replace' ]) . ',ok = okay',
     ];
 
     // Access R rules configuration page.
@@ -70,7 +72,7 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
 
     $session->statusCodeEquals(200);
     $session->pageTextContains('Configure Tripal Cultivate Phenotypes: R Transformation Rules');
-    
+
     // Fields and default value.
     $session->fieldExists('words');
     $session->fieldValueEquals('words', implode(',', $r_rules[ $config_r. 'words' ]));
@@ -81,7 +83,7 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
 
     // Update default values.
     $this->submitForm($update_r_rules, 'Save configuration');
-    
+
     // Saved.
     $session->pageTextContains('The configuration options have been saved.');
     // Values reflect the updated configuration
