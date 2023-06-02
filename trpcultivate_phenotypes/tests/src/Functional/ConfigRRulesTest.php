@@ -18,7 +18,7 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
 
   /**
    * Modules to enabled
-   * 
+   *
    * @var array
    */
   protected static $modules = ['trpcultivate_phenotypes'];
@@ -35,14 +35,17 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
    */
   public function testForm() {
     // Setup admin user account.
-    $admin_user = $this->drupalCreateUser([
+    $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
       'administer tripal'
     ]);
-    
+
     // Login admin user.
-    $this->drupalLogin($admin_user);
-    
+    $this->drupalLogin($this->admin_user);
+
+    // Ensure we see all logging in tests.
+    \Drupal::state()->set('is_a_test_environment', TRUE);
+
     // Get default configuration for R rules set in config/install.
     $config = $this->config(static::SETTINGS);
     $config_r = 'trpcultivate.phenotypes.r_config.';
@@ -56,24 +59,34 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
     // Updating R rules by appending ok to words rule, # sign to characters rule
     // and ok = okay match and replace rule
     $update_r_rules = [
-      'words' => $r_rules[ $config_r . 'words' ] . ',ok',
-      'chars'  => $r_rules[ $config_r . 'chars' ] . ',#',
-      'replace' => $r_rules[ $config_r . 'replace' ] . ',ok = okay', 
+      'words' => implode(',', $r_rules[ $config_r . 'words' ]) . ',ok',
+      'chars'  => implode(',', $r_rules[ $config_r . 'chars' ]) . ',#',
+      'replace' => implode(',', $r_rules[ $config_r . 'replace' ]) . ',ok = okay',
     ];
 
     // Access R rules configuration page.
     $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/r-rules');
-    $this->assertSession()->statusCodeEquals(200);
-    
-    // Submit form.
+    $session = $this->assertSession();
+
+    $session->statusCodeEquals(200);
+    $session->pageTextContains('Configure Tripal Cultivate Phenotypes: R Transformation Rules');
+
+    // Fields and default value.
+    $session->fieldExists('words');
+    $session->fieldValueEquals('words', implode(',', $r_rules[ $config_r. 'words' ]));
+    $session->fieldExists('chars');
+    $session->fieldValueEquals('chars', implode(',', $r_rules[ $config_r . 'chars' ]));
+    $session->fieldExists('replace');
+    $session->fieldValueEquals('replace', implode(',', $r_rules[ $config_r . 'replace' ]));
+
+    // Update default values.
     $this->submitForm($update_r_rules, 'Save configuration');
 
-    // Assert configuration saved.
-    $this->assertRaw('The configuration options have been saved.');
-
-    // Assert Fields reflect the updated configuration.
-    $this->assertSession()->fieldValueEquals('words', $update_r_rules['words']);
-    $this->assertSession()->fieldValueEquals('chars', $update_r_rules['chars']);
-    $this->assertSession()->fieldValueEquals('replace', $update_r_rules['replace']);
+    // Saved.
+    $session->pageTextContains('The configuration options have been saved.');
+    // Values reflect the updated configuration
+    $session->fieldValueEquals('words', $update_r_rules['words']);
+    $session->fieldValueEquals('chars', $update_r_rules['chars']);
+    $session->fieldValueEquals('replace', $update_r_rules['replace']);
   }
 }
