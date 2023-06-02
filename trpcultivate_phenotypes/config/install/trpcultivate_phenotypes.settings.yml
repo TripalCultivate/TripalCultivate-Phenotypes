@@ -32,6 +32,18 @@ trpcultivate:
         - '/ = div'
         - '? = unsure'
         - '- = to'
+    
+    # trpcultivate.phenotypes.watermark:
+    # Configurations relating to the watermarking of charts.
+    # - charts: True, all charts will be watermarked and False, otherwise.
+    # - image: File path to watermark image. See directories for base path.
+    watermark:
+      charts: false
+      image: ''
+      file_ext:
+        - 'png'
+        - 'gif'
+
     # trpcultivate.phenotypes.ontology:
     # Configure vocabulary term, databse and term used by many processes of phenotypes module.
     # - terms: terms used when inserting phenotypic data.
@@ -50,6 +62,7 @@ trpcultivate:
         unit: 0
         year: 0
       cvdbon:
-      allownew: true    
+      allownew: true
+         
   phenoshare: null
   phenocollect: null

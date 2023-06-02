@@ -33,6 +33,23 @@ trpcultivate_phenotypes.settings:
                   sequence:
                     type: string
                     label: 'Match and replace'
+            watermark:
+              type: mapping
+              label: 'Watermark Charts'
+              mapping:
+                charts:
+                  type: boolean
+                  label: 'Watermark all charts'
+                image:
+                  type: uri
+                  label: 'Watermark image file'
+                  nullable: true
+                file_ext:
+                  type: sequence
+                  label: 'Watermark image valid file extensions'
+                  sequence:
+                    type: string
+                    label: 'File extensions'
             ontology:
               type: mapping
               label: 'CV Terms, Terms, and DB'

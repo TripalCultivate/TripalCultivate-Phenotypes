@@ -5,11 +5,28 @@
  * Defines hooks required during install of Tripal Cultivate Phenotypes.
  */
 
- 
+use \Drupal\Core\File\FileSystemInterface;
+
  /**
   * Implements hook_install().
   */
 function trpcultivate_phenotypes_install() {
+  // Prepare directory structure to store files required and generated
+  // by Tripal Cultivate Phenotypes modules.
+  // Base directory public://TripalCultivatePhenotypes/ from configuration.
+  $base_dir = \Drupal::config('trpcultivate_phenotypes.settings')
+    ->get('trpcultivate.phenotypes.file_dir');
+  
+  $file_system = \Drupal::service('file_system');
+  // Create base directory.
+  $file_system->prepareDirectory($base_dir, FileSystemInterface::CREATE_DIRECTORY);
+
+  // Watermark image directory.
+  $dir_watermark = $base_dir . '/watermark/';
+  $file_system->prepareDirectory($dir_watermark, FileSystemInterface::CREATE_DIRECTORY);
+
+  // Define other directories here: 
+  
   // Install default terms and set term configuration variable.
   $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
   $term_service->loadTerms();
