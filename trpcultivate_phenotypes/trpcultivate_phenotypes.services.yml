@@ -1,0 +1,14 @@
+# TripalCultivate Phenotypes Services.
+
+services:
+  trpcultivate_phenotypes.terms:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService'
+    arguments: ['@config.factory']
+  trpcultivate_phenotypes.ontology:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesOntologyService'
+    arguments: ['@config.factory']
+  trpcultivate_phenotypes.vocabulary:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesVocabularyService'
+  trpcultivate_phenotypes.database:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesDatabaseService'
+    

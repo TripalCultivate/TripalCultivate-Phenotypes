@@ -1,0 +1,37 @@
+{#
+/**
+ * Theme ontology configuration instructions.
+ */
+#}
+
+<div>
+  <ul>
+    <li>
+      <u>Trait Vocabulary:</u>
+      <p>
+        A container of terms where each term is a phenotypic trait that can be measured in your species of interest. 
+        This controlled vocabulary should be specific to a given genus and each term will become a trait page on your Tripal site. 
+        If you do not already have a trait vocabulary, you can create it using vocabulary loader {{link.addvocab}} upfront and/or automatically on 
+        upload of phenotypic data.
+      </p>
+    </li>
+
+    <li>
+      <u>Associated Database:</u>
+      <p>
+        Chado requires a "database" container to be associated with all controlled vocabularies. 
+        Please select the "database" container you would like to be associated with your trait vocabulary. 
+        If needed, create one using vocabulary loader {{link.addvocab}}.
+      </p>
+    </li>
+
+    <li>
+      <u>Crop Ontology:</u>
+      <p>
+        Our experience with breeders has led us to recommend using the trait names your breeder(s) already use in the Trait Vocabulary 
+        and then linking them to a more generic crop ontology such as those provided by {{link.cropontology}} to facilitate sharing. If you decide to go this 
+        route, you can set the species specific crop ontology here and on upload suitable terms will be suggested based on pattern matching.
+      </p>
+    </li>
+  </ul>
+</div>

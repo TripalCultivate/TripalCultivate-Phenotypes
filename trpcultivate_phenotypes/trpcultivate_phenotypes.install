@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Defines hooks required during install of Tripal Cultivate Phenotypes.
+ */
+
+ 
+ /**
+  * Implements hook_install().
+  */
+function trpcultivate_phenotypes_install() {
+  // Install default terms and set term configuration variable.
+  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+  $term_service->loadTerms();
+
+  // Prepare ontology configuration variable.
+  // Set to not set value - 0.
+  $ontology_service = \Drupal::service('trpcultivate_phenotypes.ontology');
+  $ontology_service->loadGenusOntology();
+}
