@@ -15,7 +15,6 @@ trpcultivate:
       data_backup: 'public://TripalCultivatePhenotypes/data_backup/'
       data_env: 'public://TripalCultivatePhenotypes/data_env/'
       trait_photo: ''
-
     # trpcultivate.phenotypes.r_config:
     # Configurations relating to rules to apply when transforming trait names 
     # to R-compatible version. Separate each rule with comma character (CSV).
@@ -42,7 +41,6 @@ trpcultivate:
         - '/ = div'
         - '? = unsure'
         - '- = to'
-    
     # trpcultivate.phenotypes.watermark:
     # Configurations relating to the watermarking of charts.
     # - charts: True, all charts will be watermarked and False, otherwise.
@@ -53,7 +51,6 @@ trpcultivate:
       file_ext:
         - 'png'
         - 'gif'
-        
     # trpcultivate.phenotypes.ontology:
     # Configure vocabulary term, databse and term used by many processes of phenotypes module.
     # - terms: terms used when inserting phenotypic data.

@@ -117,11 +117,13 @@ class TripalCultivatePhenotypesRSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    $config = $this->config(static::SETTINGS);
     $config_r = 'trpcultivate.phenotypes.r_config.';
     
     // Configuration in field are string, convert to array to match 
     // configuration schema data type.
     $this->configFactory->getEditable(static::SETTINGS)
+    $config
       ->set($config_r . 'words', explode(',', $form_state->getValue('words')))
       ->set($config_r . 'chars', explode(',', $form_state->getValue('chars')))
       ->set($config_r . 'replace', explode(',', $form_state->getValue('replace')))

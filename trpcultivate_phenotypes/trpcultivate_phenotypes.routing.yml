@@ -17,7 +17,6 @@ trpcultivate_phenotypes.settings_r:
   requirements:
     _permission: 'administer tripal'
 
-# Add to commit - REMOVE MESSAGE.
 # Configuration: Watermark Charts.
 trpcultivate_phenotypes.settings_watermark:
   path: 'admin/tripal/extension/tripal-cultivate/phenotypes/watermark'
@@ -27,7 +26,6 @@ trpcultivate_phenotypes.settings_watermark:
   requirements:
     _permission: 'administer tripal'
 
-# Add to commit - REMOVE MESSAGE.
 # Configuration: Vocabulary, DB and Terms.
 trpcultivate_phenotypes.settings_ontology:
   path: 'admin/tripal/extension/tripal-cultivate/phenotypes/ontology'
