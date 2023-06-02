@@ -16,6 +16,8 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 class ConfigRRulesTest extends ChadoTestBrowserBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
 
+  protected $defaultTheme = 'stark';
+
   /**
    * Modules to enabled
    *
