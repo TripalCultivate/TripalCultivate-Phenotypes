@@ -22,6 +22,7 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
   * @group trpcultivate_phenotypes
   */
 class ConfigRRulesFormTest extends UnitTestCase {
+
   private $rrulesform;
 
   /**
@@ -65,7 +66,6 @@ class ConfigRRulesFormTest extends UnitTestCase {
     $translation = $translation_mock->reveal();
 
     // Class RRulesForm class instance.
-
     $rrules_form = new TripalCultivatePhenotypesRSettingsForm($r_config);
     $rrules_form->setStringTranslation($translation);
 

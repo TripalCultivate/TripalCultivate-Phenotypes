@@ -9,7 +9,7 @@ trpcultivate_phenotypes.tab1:
 
 trpcultivate_phenotypes.tab2:
   title: 'Watermark Chart'
-  route_name: trpcultivate_phenotypes.settings_r
+  route_name: trpcultivate_phenotypes.settings_watermark
   base_route: trpcultivate_phenotypes.settings_r
   weight: 2  
 
