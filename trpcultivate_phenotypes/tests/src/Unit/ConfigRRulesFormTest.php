@@ -13,6 +13,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Tests\UnitTestCase;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 
  /**
@@ -40,17 +41,18 @@ class ConfigRRulesFormTest extends UnitTestCase {
     // a configuration settings.
     $r_config_mock = $this->prophesize(Config::class);
 
+    // Expected Gets
     $r_config_mock->get('trpcultivate.phenotypes.r_config.chars')->willReturn([
-      '(', ')', '/', '-', ':', ';', '%'
+      '/', '-', '%'
     ]);
-
     $r_config_mock->get('trpcultivate.phenotypes.r_config.words')->willReturn([
-      'of', 'to', 'have', 'on', 'at'
+      'to', 'have', 'one', 'check'
     ]);
-
     $r_config_mock->get('trpcultivate.phenotypes.r_config.replace')->willReturn([
-      '# = num', '/ = div', '? = unsure', '- = to'
+      '# = num', '/ = div'
     ]);
+    // Expected sets
+    $r_config_mock->set('trpcultivate.phenotypes.r_config.words');
 
     // When RRules form rebuilds calling the module settings, return
     // only the R configuration settings above exclude other config.
@@ -61,13 +63,18 @@ class ConfigRRulesFormTest extends UnitTestCase {
     // Isolated configuration for R Rules.
     $r_config = $all_config_mock->reveal();
 
-    // Translation requirement of the container
-    $translation_mock = $this->prophesize(TranslationInterface::class);
-    $translation = $translation_mock->reveal();
-
     // Class RRulesForm class instance.
     $rrules_form = new TripalCultivatePhenotypesRSettingsForm($r_config);
+
+    // Requirement of the container
+    //  -- Translation
+    $mock = $this->prophesize(TranslationInterface::class);
+    $translation = $mock->reveal();
     $rrules_form->setStringTranslation($translation);
+    //  -- Messenger.
+    $mock = $this->prophesize(MessengerInterface::class);
+    $messenger = $mock->reveal();
+    $rrules_form->setMessenger($messenger);
 
     $container->set('rrules.config', $rrules_form);
     $this->rrulesform = \Drupal::service('rrules.config');
@@ -75,15 +82,14 @@ class ConfigRRulesFormTest extends UnitTestCase {
 
   /**
    * Test submit form functionality of RRulesForm class.
-   */
-  /*
+   *
    public function testSubmitForm() {
     $form = [];
     $form_state = new FormState();
 
     $form_state->setValue('words', 'num,log');
     $form_state->setValue('chars', '#,*');
-    $form_state->setValue('words', 'num,log');
+    $form_state->setValue('replace', 'fred = sarah');
 
     $this->rrulesform->submitForm($form, $form_state);
   }*/
@@ -108,8 +114,11 @@ class ConfigRRulesFormTest extends UnitTestCase {
     $this->assertEquals('system_config_form', $config_form['#theme']);
     // Field types.
     $this->assertEquals('textarea', $config_form['words']['#type']);
+    $this->assertEquals('to,have,one,check', $config_form['words']['#default_value']);
     $this->assertEquals('textarea', $config_form['chars']['#type']);
+    $this->assertEquals('/,-,%', $config_form['chars']['#default_value']);
     $this->assertEquals('textarea', $config_form['replace']['#type']);
+    $this->assertEquals('# = num,/ = div', $config_form['replace']['#default_value']);
   }
 
 
