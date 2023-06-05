@@ -1,0 +1,8 @@
+# Routes for configuring importing phenotypes.
+trpcultivate_phenoshare.import:
+  path: 'admin/tripal/extension/tripal-cultivate/phenotypes-share/import'
+  defaults:
+    _title: 'Tripal Cultivate Phenotypes Share - Import Phenotypes'
+    _controller: '\Drupal\trpcultivate_phenoshare\Form\TripalCultivatePhenoshareImportForm'
+  requirements:
+    _permission: 'administer tripal'
