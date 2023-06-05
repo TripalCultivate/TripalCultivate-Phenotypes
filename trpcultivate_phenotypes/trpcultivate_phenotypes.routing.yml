@@ -25,7 +25,7 @@ trpcultivate_phenotypes.settings_watermark:
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm'
   requirements:
     _permission: 'administer tripal'
-
+    
 # Configuration: Vocabulary, DB and Terms.
 trpcultivate_phenotypes.settings_ontology:
   path: 'admin/tripal/extension/tripal-cultivate/phenotypes/ontology'

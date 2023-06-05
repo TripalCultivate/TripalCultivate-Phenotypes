@@ -11,6 +11,25 @@ trpcultivate_phenotypes.settings:
           type: mapping
           label: 'Phenotypes Global Configuration'
           mapping:
+            directory:
+              type: mapping
+              label: 'Directory structure'
+              mapping:
+                watermark:
+                  type: path
+                  label: 'Directory: watermark image'
+                data_file:
+                  type: path
+                  label: 'Directory: data collection file'
+                data_backup:
+                  type: path
+                  label: 'Directory: user data collection file backup'
+                data_env:
+                  type: path
+                  label: 'Directory: environment data file'
+                trait_photo:
+                  type: path
+                  label: 'Trait images'
             r_config:
               type: mapping
               label: 'R Translation Rules'
