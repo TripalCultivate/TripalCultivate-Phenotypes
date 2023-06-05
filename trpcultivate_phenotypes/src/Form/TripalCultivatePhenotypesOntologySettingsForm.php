@@ -263,8 +263,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
       $placeholder = $title = $this->t(ucfirst($term));
       // Field default value.
       $config_value = $this->srv_terms->getTermConfigValue($term);
-      $term_rec = $this->srv_terms->getTerm($config_value);
-      $default_value = $term_rec['format'];
+      $default_value = ChadoCVTermAutocompleteController::formatCVterm($config_value);
       
       // Field render array.
       $form['term_fieldset'][ $config ] = [
