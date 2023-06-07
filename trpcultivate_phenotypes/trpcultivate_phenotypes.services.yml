@@ -1,0 +1,5 @@
+# TripalCultivate Phenotypes Services.
+
+services:
+  trpcultivate_phenotypes.experiment:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesExperimentService'

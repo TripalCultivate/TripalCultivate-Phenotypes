@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * @file
+ * Provides Autocomplete Experiment.
+ */
+
+namespace Drupal\trpcultivate_phenotypes\Controller;
+
+use Drupal\Core\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
+/**
+ * Controller routines for the Experiment autocomplete.
+ */
+class TripalCultivatePhenotypesExperimentAutocompletController extends ControllerBase {
+  /**
+   * Contoller method, autocomplete experiments.
+   * 
+   * @param Request request
+   * @param int $count
+   *   Desired number of matching names to suggest.
+   *   Default to 5 items.
+   * 
+   * @return Json Object
+   *   Matching experiment rows where project id and project name
+   *   as the row key and value, respectively.
+   */
+  public function handleAutocomplete(Request $request, int $count = 5) {
+    // Array to hold matching experiment records.
+    $response = null;
+    
+    if ($request->query->get('q')) {
+      // Get typed in string input from the URL.
+      $string = trim($request->query->get('q'));
+      
+      if (strlen($string) > 1 && $count > 0) {
+        // Proceed to autocomplete when string is at least 2 characters
+        // long and result count is set to a value greater than 0.
+
+        // Transform string as a search keyword pattern.
+        $keyword = '%' . strtolower($string) . '%';
+
+        // Query chado.project for partial match of project name.
+        $sql = sprintf("
+          SELECT project_id AS id, name FROM {1:project} AS p
+          WHERE p.name LIKE :keyword ORDER BY p.name ASC LIMIT %d
+        ", $count);
+
+        // Prepare Chado database connection and execute sql query by providing value 
+        // for :keyword placeholder text.
+        $connection = \Drupal::service('tripal_chado.database');
+        $results = $connection->query($sql, [':keyword' => $keyword]);  
+        
+        // Compose response result.
+        if ($results) {
+          foreach ($results as $record) {
+            $term = $record->term . ' (' . $record->dbname . ':' . $record->accession . ')';
+            $response[] = [
+              'value' => $record->id,   // Value returned and value displayed by textfield.
+              'label' => $record->name // Value shown in the list of options.
+            ];
+          }
+        }
+      }
+    }
+    
+    return new JsonResponse($response);
+  }
+}
