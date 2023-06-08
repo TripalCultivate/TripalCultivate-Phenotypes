@@ -34,3 +34,23 @@ function trpcultivate_phenotypes_help($route_name, RouteMatchInterface $route_ma
     default:
   }
 }
+
+/**
+ * Implements hook_theme().
+ * 
+ * @see templates in /templates.
+ */
+function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
+  $items = [];
+
+  $items = [
+    'upload_stages' => [
+      'variables' => [
+        'stage' => 1
+      ],
+      'template' => 'trpcultivate-phenotypes-template-upload-stages'
+    ],
+  ];
+
+  return $items;
+}

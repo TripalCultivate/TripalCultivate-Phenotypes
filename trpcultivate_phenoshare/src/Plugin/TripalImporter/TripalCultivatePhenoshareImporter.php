@@ -82,17 +82,32 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $chado = \Drupal::service('tripal_chado.database');
     // Always call the parent form to ensure Chado is handled properly.
     $form = parent::form($form, $form_state);
+    // Attach libraries.
+    $form['#attached']['library'] = [
+      'trpcultivate_phenotypes/script-autoselect-field', 
+      'trpcultivate_phenotypes/script-pull-window'
+    ];
+
+    // Stage indicators.
+    $form['stage_indicator'] = [
+      '#type' => 'inline_template',
+      '#theme' => 'upload_stages',
+      '#weight' => -100
+    ];
 
     // Select experiment, Genus field will reflect the genus project 
     // is set to.
     $form['experiment'] = [
       '#title' => t('Experiment'),
       '#type' => 'textfield',
-      '#autocomplete_route_name' => 'trpcultivate_phenotypes.autocomplete_experiment',
-      '#autocomplete_route_parameters' => ['count' => 5],
+      '#description' => t('Type in the experiment or project title your data is specific to.'),
+
       '#weight' => -1,
       '#required' => TRUE,
-      '#attributes' => ['placeholder' => 'Experiment/Project Name']
+      
+      '#attributes' => ['placeholder' => 'Experiment/Project Name', 'class' => ['tcp-autocomplete']],
+      '#autocomplete_route_name' => 'trpcultivate_phenotypes.autocomplete_experiment',
+      '#autocomplete_route_parameters' => ['count' => 5],
     ];
 
     
@@ -102,11 +117,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form['organism_id'] = [
       '#title' => t('Genus'),
       '#type' => 'select',
-      '#description' => t('Select a Genus. When an experiment or project has genus set, a value will be selected.'),
-      '#required' => TRUE,
       '#options' => $organisms,
-      '#empty_option' => t('- Select -'),
+      
       '#weight' => 0,
+      '#required' => TRUE,
+      
+      '#empty_option' => t('- Select -'),
+      '#description' => t('Select a Genus. When an experiment or project has genus set, a value will be selected.'),
     ];
 
     // This will ensure that file importer + submit button are rendered past

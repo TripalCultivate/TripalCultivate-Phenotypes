@@ -1,0 +1,56 @@
+#tcp-upload-stages {
+  width: 100%;
+}
+
+#tcp-upload-stages div {
+  font-size: 1em;
+  margin: 0;
+  padding: 0;
+}
+
+/* Title text of stage */
+#tcp-upload-stages div:first-child {
+  font-size: 1.2em;
+  font-weight: 300;
+}
+
+#tcp-upload-stages div:first-child a {
+  font-size: 0.8em;
+  text-decoration: none;
+}
+
+/* Stages */
+#tcp-upload-stages div:last-child {
+  height: 10px;  
+  display: flex;
+  width: inherit;
+}
+
+#tcp-upload-stages div:last-child div {
+  flex: 1;
+}
+
+.stage-current {
+  background-color: #000000;
+  border-bottom: 2px solid green;
+}
+
+.stage-upcoming {
+  background-color: #EAEAEA;
+}
+
+/* Describe stages */
+#tcp-upload-stages-describe {
+  border-bottom: 1px solid #CCCCCC;
+  clear: both;
+  cursor: pointer;
+  display: block;
+  margin: 20px 0;
+  position: relative;
+  padding: 10px 0 20px 0;
+  text-align: left;
+  
+  -moz-box-shadow:    0 5px 7px -9px #333333;
+  -webkit-box-shadow: 0 5px 7px -9px #333333;
+  box-shadow:         0 5px 7px -9px #333333;
+}
