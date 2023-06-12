@@ -137,16 +137,18 @@ trpcultivate_phenotypes.settings:
                     label: 'Definition'
                   terms:
                     type: sequence
-                    mapping:
-                      config_map:
-                        type: string
-                        label: 'This term maps to which configuration variable name'
-                      id:
-                        type: string
-                        label: 'Term id'
-                      name:
-                        type: string
-                        label: 'Term name'
-                      definition:
-                        type: string
-                        label: 'Term definition'
+                    sequence:
+                      type: mapping
+                      mapping:
+                        config_map:
+                          type: string
+                          label: 'This term maps to which configuration variable name'
+                        id:
+                          type: string
+                          label: 'Term id'
+                        name:
+                          type: string
+                          label: 'Term name'
+                        definition:
+                          type: string
+                          label: 'Term definition'
