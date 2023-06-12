@@ -106,7 +106,7 @@ trpcultivate:
   # Default terms used to create relationship and metadata.
   # Values are configurable via the ontology configuration page and values
   # set below are default upon installation.
-  default_term:
+  default_terms:
     term_set:
       - 
         name: taxonomic_rank

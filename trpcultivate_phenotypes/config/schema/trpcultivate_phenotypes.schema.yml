@@ -68,7 +68,49 @@ trpcultivate_phenotypes.settings:
                   label: 'Watermark image valid file extensions'
                   sequence:
                     type: string
-                    label: 'File extensions'           
+                    label: 'File extensions'
+            ontology:
+              type: mapping
+              label: 'CV Terms, Terms, and DB'
+              mapping:
+                terms:
+                  type: mapping
+                  label: 'Terms used in inserting data'
+                  mapping:
+                    data_collector:
+                      type: integer
+                      label: 'CV Term: Data collector'
+                    entry: 
+                      type: integer
+                      label: 'CV Term: Phenotype entry number'
+                    genus: 
+                      type: integer
+                      label: 'CV Term: Genus'
+                    location: 
+                      type: integer
+                      label: 'CV Term: Phenotyping experiment location'
+                    method: 
+                      type: integer
+                      label: 'CV Term: Phenotyping collection method'
+                    name:
+                      type: integer
+                      label: 'CV Term: Germplasm/line name'
+                    experiment_container:
+                      type: integer
+                      label: 'CV Term: Phenotyping plot number'
+                    related:
+                      type: integer
+                      label: 'CV Term: Method - Trait - Unit relation'
+                    experiment_replicate:
+                      type: integer
+                      label: 'CV Term: Phenotyping replicate'
+                    unit:
+                      type: integer
+                      label: 'CV Term: Trait unit'
+                    experiment_year:
+                      type: integer
+                      label: 'CV Term: Phenotyping year'
+
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'
