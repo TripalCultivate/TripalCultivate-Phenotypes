@@ -129,7 +129,7 @@ trpcultivate:
             config_map: location
             id: NCIT:C25341
             name: Location
-            definition': 'A position, site, or point in space where something can be found.'
+            definition: 'A position, site, or point in space where something can be found.'
           -
             config_map: experiment_replicate
             id: NCIT:C28038
