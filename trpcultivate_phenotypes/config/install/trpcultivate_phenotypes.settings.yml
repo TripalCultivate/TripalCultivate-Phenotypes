@@ -53,6 +53,137 @@ trpcultivate:
       file_ext:
         - 'png'
         - 'gif'
+    
+    # trpcultivate.phenotypes.ontology
+    # Configuration relating to terms used.
+    # - terms: Terms used to create relationships and metadata.
+    # - cvdbon: Genus-based vocabulary configuration.
+    ontology:
+      type: mapping
+      label: 'CV Terms, Terms, and DB'
+      mapping:
+        terms:
+          type: mapping
+          label: 'Terms used in inserting data'
+          mapping:
+            data_collector:
+              type: integer
+              label: 'CV Term: Data collector'
+            entry: 
+              type: integer
+              label: 'CV Term: Phenotype entry number'
+            genus: 
+              type: integer
+              label: 'CV Term: Genus'
+            location: 
+              type: integer
+              label: 'CV Term: Phenotyping experiment location'
+            method: 
+              type: integer
+              label: 'CV Term: Phenotyping collection method'
+            name:
+              type: integer
+              label: 'CV Term: Germplasm/line name'
+            experiment_container:
+              type: integer
+              label: 'CV Term: Phenotyping plot number'
+            related:
+              type: integer
+              label: 'CV Term: Method - Trait - Unit relation'
+            experiment_replicate:
+              type: integer
+              label: 'CV Term: Phenotyping replicate'
+            unit:
+              type: integer
+              label: 'CV Term: Trait unit'
+            experiment_year:
+              type: integer
+              label: 'CV Term: Phenotyping year'
 
   phenoshare: null
   phenocollect: null
+  
+  # Default terms used to create relationship and metadata.
+  # Values are configurable via the ontology configuration page and values
+  # set below are default upon installation.
+  default_term:
+    term_set:
+      - 
+        name: taxonomic_rank
+        definition: 'A vocabulary of taxonomic ranks (species, family, phylum, etc).'
+        terms:
+          -
+            config_map: genus
+            id: TAXRANK:0000005
+            name: genus
+            definition: 'The genus'
+      -
+        name: uo
+        definition: 'Units of Measurement Ontology.'
+        terms:
+          -
+            config_map: unit
+            id: UO:0000000
+            name: unit
+            definition: 'Unit of measurement'
+      -
+        name: synonym_type
+        definition: 'A local vocabulary added for synonynm types.'
+        terms:
+          -
+            config_map: related
+            id: internal:related
+            name: related
+            definition: 'Is related to.'
+      -
+        name: tripal_pub
+        definition: 'Tripal Publication Ontology. A temporary ontology until a more formal appropriate ontology to be identified.'
+        terms:
+          -
+            config_map: experiment_year
+            id: TPUB:0000059
+            name: Year
+            definition: 'The year the work was published. This should be a 4 digit year.'
+      -
+        name: NCIT
+        definition: 'The NCIT OBO Edition project aims to increase integration of the NCIt with OBO Library ontologies NCIt is a reference terminology that includes broad coverage of the cancer domain, including cancer related diseases, findings and abnormalities. NCIt OBO Edition releases should be considered experimental.'
+        terms:
+          - 
+            config_map: method
+            id: NCIT:C71460
+            name: method
+            definition: 'A means, manner of procedure, or systematic course of action that have to be performed in order to accomplish a particular goal.'
+          -
+            config_map: location
+            id: NCIT:C25341
+            name: Location
+            definition': 'A position, site, or point in space where something can be found.'
+          -
+            config_map: experiment_replicate
+            id: NCIT:C28038
+            name: replicate
+            definition: 'A role played by a biological sample in the context of an experiment where the intent is that biological or technical variation is measured.'
+          -
+            config_map: data_collector
+            id: NCIT:C45262
+            name: 'Collected By'
+            definition: 'Indicates the person, group, or institution who performed the collection act.'
+          -
+            config_map: entry
+            id: NCIT:C43381
+            name: Entry
+            definition: 'An item inserted in a written or electronic record.'
+          -   
+            config_map: name
+            id: NCIT:C42614
+            name: name
+            definition: 'The words or language unit by which a thing is known.'
+      -
+        name: AGRO
+        definition: 'Agricultural experiment plot'
+        terms:
+          -
+            config_map: experiment_container
+            id: AGRO:00000301
+            name: plot
+            definition: 'A site within which an agricultural experimental process is conducted'

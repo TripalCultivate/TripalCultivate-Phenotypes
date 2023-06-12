@@ -26,4 +26,8 @@ function trpcultivate_phenotypes_install() {
   $file_system->prepareDirectory($dir_watermark, FileSystemInterface::CREATE_DIRECTORY);
 
   // Define other directories here:  
+
+  // Install default terms and set term configuration variable.
+  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+  $term_service->loadTerms();
 }
