@@ -1,0 +1,4 @@
+services:
+  trpcultivate_phenotypes.genus_ontology:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService'
+    arguments: ['@config.factory']

@@ -43,6 +43,10 @@ trpcultivate:
         - '? = unsure'
         - '- = to'
     
+    ontology:
+      cvdbon:
+      allownew: true
+
     # trpcultivate.phenotypes.watermark:
     # Configurations relating to the watermarking of charts.
     # - charts: True, all charts will be watermarked and False, otherwise.
@@ -53,6 +57,7 @@ trpcultivate:
       file_ext:
         - 'png'
         - 'gif'
+    
 
   phenoshare: null
   phenocollect: null
