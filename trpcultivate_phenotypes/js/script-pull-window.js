@@ -18,8 +18,10 @@
       var pullWindow = $(fldClass);
       var buttonToggle = $(fldControl);
       
-      buttonToggle.click(function(e) {
-        alert();
+      buttonToggle.once(fldControl).click(function(e) {
+        e.preventDefault();
+        
+        $(this).closest(fldClass).slideDown();
       });
 
       ///
