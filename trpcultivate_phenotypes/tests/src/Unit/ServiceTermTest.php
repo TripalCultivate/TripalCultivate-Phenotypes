@@ -33,7 +33,8 @@ class ServiceTermTest extends UnitTestCase {
       'method' => 0,
       'name' => 100, // Test this value below.
       'experiment_container' => 0,
-      'related' => 0,
+      'unit_to_method_relationship_type' => 0,
+      'method_to_trait_relationship_type' => 0,
       'experiment_replicate' => 0,
       'unit' => 0,
       'experiment_year' => 0,
@@ -78,7 +79,13 @@ class ServiceTermTest extends UnitTestCase {
                 'definition' => 'A local vocabulary added for synonynm types.',
                 'terms' => [
                   0 => [
-                    'config_map' => 'related',
+                    'config_map' => 'unit_to_method_relationship_type',
+                    'id' => 'internal:related',
+                    'name' => 'related',
+                    'definition' => 'Is related to.'
+                  ],
+                  1 => [
+                    'config_map' => 'method_to_trait_relationship_type',
                     'id' => 'internal:related',
                     'name' => 'related',
                     'definition' => 'Is related to.'
@@ -196,12 +203,24 @@ class ServiceTermTest extends UnitTestCase {
     unset($config_name);
     foreach($config_map_values as $config_name) {
       $has_value = $service->getTermId($config_name);
-      $this->assertNotNull($has_value);
+      $this->assertNotNull($has_value, $config_name);
 
       if ($config_name == 'name') {
         // Is 100.
         $this->assertEquals($has_value, 100);
       }
     }
+
+    // Test save configuration values. Set to null (id 1) term.
+    $config_values = [      
+      'name' => 1,
+      'genus' => 1,
+      'experiment_container' => 1,
+      'unit_to_method_relationship_type' => 1,
+      'method_to_trait_relationship_type' => 1
+    ];
+
+    $is_saved = $service->saveTermConfigValues($config_values);
+    $this->assertTrue($is_saved);
   } 
 }

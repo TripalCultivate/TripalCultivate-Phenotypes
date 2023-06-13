@@ -67,7 +67,8 @@ trpcultivate:
         method: 0
         name: 0
         experiment_container: 0
-        related: 0
+        unit_to_method_relationship_type: 0
+        method_to_trait_relationship_type: 0
         experiment_replicate: 0          
         unit: 0
         experiment_year: 0
@@ -103,7 +104,12 @@ trpcultivate:
         definition: 'A local vocabulary added for synonynm types.'
         terms:
           -
-            config_map: related
+            config_map: unit_to_method_relationship_type
+            id: internal:related
+            name: related
+            definition: 'Is related to.'
+          -
+            config_map: method_to_trait_relationship_type
             id: internal:related
             name: related
             definition: 'Is related to.'

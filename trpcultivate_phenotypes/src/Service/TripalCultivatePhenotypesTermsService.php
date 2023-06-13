@@ -96,6 +96,7 @@ class TripalCultivatePhenotypesTermsService {
    *   True if all terms were inserted successfully and false otherwise.
    */  
   public function loadTerms() {
+    // Error flag is 0 - no error, all passes prove otherwise.
     $error = 0;
     $terms = $this->terms;
 
@@ -143,10 +144,13 @@ class TripalCultivatePhenotypesTermsService {
         // term configuration variable.
         $this->config
           ->set($this->sysvar_terms . '.' . $config_map, $cvterm->cvterm_id);
-      }  
+      }
+      
+      // Save all configuration values.
+      $this->config->save();
     }    
-
-    return ($error) ? FALSE: TRUE;
+    
+    return ($error) ? FALSE : TRUE;
   }
 
   /**
@@ -165,7 +169,8 @@ class TripalCultivatePhenotypesTermsService {
    *   method: Collection Method.
    *   name: Name/Germplasm line.
    *   experiment_container: Plot.
-   *   related: Related - create relationships (unit-type, method-type).
+   *   unit_to_method_relationship_type: Related - create relationships (unit - method).
+   *   method_to_trait_relationship_type: Related - create relationships (method - trait).
    *   experiment_replicate: Planting replicate.
    *   unit: Unit of measurement.
    *   experiment_year: Year.
@@ -185,5 +190,47 @@ class TripalCultivatePhenotypesTermsService {
     }
 
     return $id;
+  }
+
+  /**
+   * Save term configuration values.
+   * 
+   * @param array $config_values
+   *   Configuration values submitted from a form implementation.
+   *   Each element is keyed by the field name which is the configuration
+   *   variable name and the value being the value as set in 
+   *   corresponding form field resolved to id number.
+   *   
+   *   ie: $config_values[name] = 1; // Null term, Already resolved to id number.
+   *   // name configuration variable name is set to Null term.
+   * 
+   * @return boolean
+   *   True, configuration saved successfully and False on error.
+   */
+  public function saveTermConfigValues($config_values) {
+    // Error flag is 0 - no error, all passes prove otherwise.
+    $error = 0;
+
+    if ($config_values && is_array($config_values)) {
+      $term_keys = array_keys($this->terms);
+      
+      foreach($config_values as $config => $value) {
+        // Make sure config name exists before saving a value.
+        if (in_array($config, $term_keys)) {
+          $this->config
+            ->set($this->sysvar_terms . '.' . $config, $value);     
+        }
+        else {
+          $error = 1;
+          $this->logger->error('Error. Failed to save configuration: ' . $config . '=' . $value);
+          break;
+        }
+      }
+
+      // Save all configuration values.
+      $this->config->save();      
+    }
+    
+    return ($error) ? FALSE : TRUE;
   }
 }
