@@ -98,9 +98,12 @@ trpcultivate_phenotypes.settings:
                     experiment_container:
                       type: integer
                       label: 'CV Term: Phenotyping plot number'
-                    related:
+                    unit_to_method_relationship_type:
                       type: integer
-                      label: 'CV Term: Method - Trait - Unit relation'
+                      label: 'CV Term: Unit - Method relationship'
+                    method_to_trait_relationship_type:
+                      type: integer
+                      label: 'CV Term: Method - Trait relationship'  
                     experiment_replicate:
                       type: integer
                       label: 'CV Term: Phenotyping replicate'
