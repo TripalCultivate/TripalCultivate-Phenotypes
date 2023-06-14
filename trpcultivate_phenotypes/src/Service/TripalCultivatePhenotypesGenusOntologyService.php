@@ -9,17 +9,19 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use \Drupal\Core\Config\ConfigFactoryInterface;
 use \Drupal\tripal_chado\Database\ChadoConnection;
+use \Drupal\tripal\Services\TripalLogger;
 
 /**
  * Class TripalCultivatePhenotypesOntologyService.
  */
-class TripalCultivatePhenotypesOntologyService {
+class TripalCultivatePhenotypesGenusOntologyService {
   
   /**
-   * Chado DB and Module configuration.
+   * Chado DB, module configuration and logger.
    */
   protected $config;
   protected $chado;
+  protected $logger;
 
   /**
    * Holds genus - ontology configuration variable.
@@ -34,15 +36,18 @@ class TripalCultivatePhenotypesOntologyService {
   /**
    * Constructor.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, ChadoConnection $chado) {
+  public function __construct(ConfigFactoryInterface $config_factory, ChadoConnection $chado, TripalLogger $logger) {
     // Configuration.
     $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology.cvdbon';
     $module_settings = 'trpcultivate_phenotypes.settings';
     $this->config = $config_factory->getEditable($module_settings);
     
     // Chado database.
-    $this->chado = $chado
+    $this->chado = $chado;
     
+    // Tripal Logger service.
+    $this->logger = $logger;
+
     // Define all default terms.
     $this->genus_ontology = $this->defineGenusOntology();
   }
@@ -87,5 +92,60 @@ class TripalCultivatePhenotypesOntologyService {
     }
 
     return $genus_ontology;
+  }
+
+  /**
+   * Register a configuration entry and set each genus ontology configuration values to
+   * a default value of 0 (not set).
+   *
+   * @return boolean
+   *   True all genus ontology configuration created and set a default value, False on error.
+   */
+  public function loadGenusOntology() {
+    $error = 1;
+
+    if (!empty($this->genus_ontology)) {
+      $genus_ontology_configvars = [];
+      // Default value of all configuration variable.
+      // Not set.
+      $default_value = 0;  
+
+      foreach($this->genus_ontology as $genus => $vars) {
+        // Create an array keyed by the genus.
+        // Genus from genus_ontology property has been sanitized
+        // upon definition in the constructor.
+        $genus_ontology_configvars[ $genus ] = [];
+        
+        // Create configuration vars traits, unit, method, database and crop ontology.
+        foreach($vars as $var) {
+          $genus_ontology_configvars[ $genus ][ $var ] = $default_value;
+        }
+
+        // At this point each genus now has configuration vars and
+        // ready to register a configuration entry.
+        // configuration ...cvdbon.genus.genus [trait, unit, methid, database, crop_ontology]
+        $this->config
+          ->set($this->sysvar_ontology  . '.' . $genus, $genus_ontology_configvars[ $genus ]);
+      }
+
+      $this->config->save();
+      $error = 0;
+    }
+
+    return ($error) ? FALSE : TRUE;
+  }
+
+  /**
+   * Remove any formatting from a string and convert space to underscore
+   * 
+   * @param $genus
+   *   String, genus.
+   * 
+   * @return string
+   *   Genus name where all leading and trailing spaces removed and
+   *   in word (multi-word genus) spaces replaced by an underscore.
+   */
+  public function formatGenus($genus) {
+    return (empty($genus)) ? null : str_replace(' ', '_', strtolower(trim($genus)));
   }
 }

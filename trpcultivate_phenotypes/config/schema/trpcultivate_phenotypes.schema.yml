@@ -69,36 +69,36 @@ trpcultivate_phenotypes.settings:
                   sequence:
                     type: string
                     label: 'File extensions'
-              ontology:
-                type: mapping
-                label: 'CV Terms, Terms, and DB'
-                mapping:
-                  cvdbon:
-                    type: sequence
-                    label: 'CV, DB and Ontology'
-                    nullable: True
-                    sequence: 
-                      type: mapping
-                      label: 'Genus-based CV, DB and Ontology'
-                      mapping: 
-                        trait:
-                          type: integer
-                          label: 'CV: traits'
-                        method:
-                          type: integer
-                          label: 'CV: methods'
-                        unit:
-                          type: integer
-                          label: 'CV: unit'
-                        database:
-                          type: integer
-                          label: 'Database'
-                        crop_ontology:
-                          type: integer
-                          label: 'CV: ontology'
-                  allownew:
-                    type: boolean
-                    label: 'Allow new traits added during upload'
+            ontology:
+              type: mapping
+              label: 'CV Terms, Terms, and DB'
+              mapping:
+                cvdbon:
+                  type: sequence
+                  label: 'CV, DB and Ontology'
+                  nullable: True
+                  sequence: 
+                    type: mapping
+                    label: 'Genus-based CV, DB and Ontology'
+                    mapping: 
+                      trait:
+                        type: integer
+                        label: 'CV: traits'
+                      method:
+                        type: integer
+                        label: 'CV: methods'
+                      unit:
+                        type: integer
+                        label: 'CV: unit'
+                      database:
+                        type: integer
+                        label: 'Database'
+                      crop_ontology:
+                        type: integer
+                        label: 'CV: ontology'
+                allownew:
+                  type: boolean
+                  label: 'Allow new traits added during upload'
                     
         phenoshare:
           type: string
