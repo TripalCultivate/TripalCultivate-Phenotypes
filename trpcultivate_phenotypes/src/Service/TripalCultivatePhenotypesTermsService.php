@@ -8,6 +8,8 @@
 namespace Drupal\trpcultivate_phenotypes\Service;
 
 use \Drupal\Core\Config\ConfigFactoryInterface;
+use \Drupal\tripal\Services\TripalLogger;
+
 
 /**
  * Class TripalCultivatePhenotypesTermsService.
@@ -29,17 +31,25 @@ class TripalCultivatePhenotypesTermsService {
    */
   private $sysvar_terms;
 
+  /**
+   * Tripal logger.
+   */
+  protected $logger;
+
 
   /**
    * Constructor.
    */
-  public function __construct(ConfigFactoryInterface $config_factory) {
+  public function __construct(ConfigFactoryInterface $config_factory, TripalLogger $logger) {
     // Configuration terms.
     $this->sysvar_terms = 'trpcultivate.phenotypes.ontology.terms';
     
     // Module Configuration variables.
     $module_settings = 'trpcultivate_phenotypes.settings';
     $this->config = $config_factory->getEditable($module_settings);
+    
+    // Tripal Logger service.
+    $this->logger = $logger;
 
     // Prepare array of default terms from configuration definition.
     $this->terms = $this->defineTerms();
@@ -179,6 +189,7 @@ class TripalCultivatePhenotypesTermsService {
    * 
    * @return integer
    *   The chado cvterm_id for the term associated with that key.
+   *   0 if non-existent configuration name/key.
    */
   public function getTermId(string $term_key) {
     $id = 0;
@@ -208,10 +219,9 @@ class TripalCultivatePhenotypesTermsService {
    *   True, configuration saved successfully and False on error.
    */
   public function saveTermConfigValues($config_values) {
-    // Error flag is 0 - no error, all passes prove otherwise.
     $error = 0;
 
-    if ($config_values && is_array($config_values)) {
+    if (!empty($config_values) && is_array($config_values)) {
       $term_keys = array_keys($this->terms);
       
       foreach($config_values as $config => $value) {
@@ -220,17 +230,22 @@ class TripalCultivatePhenotypesTermsService {
           $this->config
             ->set($this->sysvar_terms . '.' . $config, $value);     
         }
-        else {
-          $error = 1;
+        else {          
           $this->logger->error('Error. Failed to save configuration: ' . $config . '=' . $value);
+          $error = 1;
           break;
         }
       }
 
       // Save all configuration values.
-      $this->config->save();      
+      if ($error == 0) {      
+        $this->config->save();      
+      }
+    }
+    else {
+      $error = 1;
     }
     
-    return ($error) ? FALSE : TRUE;
+    return ($error > 0) ? FALSE : TRUE;
   }
 }
