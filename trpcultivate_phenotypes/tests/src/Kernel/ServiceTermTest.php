@@ -46,6 +46,16 @@ class ServiceTermTest extends KernelTestBase {
     $is_array = (is_array($define_terms)) ? TRUE : FALSE;
     $this->assertTrue($is_array);
 
+    // Compare what was defined and the pre-defined terms in the
+    // config settings file.
+    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+    $term_set = $config->get('trpcultivate.default_terms.term_set');
+    foreach($term_set as $id => $terms) {
+      foreach($terms['terms'] as $term) {
+        $this->assertNotNull($term['config_map']);
+      }
+    }
+
     // #Test loadTerms().
     // Load Tripal legacy functions in tripal_chado/api directory.
     $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
