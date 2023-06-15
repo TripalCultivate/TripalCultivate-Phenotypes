@@ -20,8 +20,16 @@
       
       buttonToggle.once(fldControl).click(function(e) {
         e.preventDefault();
+        var linkControl = $(this);
         
-        $(this).closest(fldClass).slideDown();
+        if (linkControl.text() == 'Need help?') {
+          linkControl.text('Okay, got it!');
+          $(fldClass).slideDown();
+        }
+        else {
+          linkControl.text('Need help?');
+          $(fldClass).slideUp();
+        }
       });
 
       ///

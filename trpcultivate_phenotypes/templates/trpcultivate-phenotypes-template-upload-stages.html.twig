@@ -1,13 +1,25 @@
+{#
+/**
+ * @file
+ * Theme implementation of importer upload stages.
+ *
+ * Available variables:
+ * - cur_stage: current stage displayed to user.
+ * - stages: array showing number of stages and title for each stage.
+ * - help_text: information about each stage as help or guide.
+ */
+#}
+
 {{ attach_library('trpcultivate_phenotypes/style-upload-stages') }}
 <div id="tcp-upload-stages">
-  <div>Upload Stage 1 of 3 : Upload Data File (<a href="#" class="tcp-toggle-pull-window">Need help?</a>)</div>
+  <div>Upload Stage {{data.cur_stage}} of {{data.stages|length}} : {{data.stages[ data.cur_stage ]}} (<a href="#" class="tcp-toggle-pull-window">Need help?</a>)</div>
   <div> 
-    <div class="stage-current">&nbsp;</div>
-    <div class="stage-upcoming">&nbsp;</div>
-    <div class="stage-upcoming">&nbsp;</div>
+    {% for stage_no,stage_title in data.stages %}
+    <div class="{{(stage_no <= data.cur_stage) ? 'stage-current' : 'stage-upcoming'}}" title="{{stage_title}}">&nbsp;</div>
+    {% endfor %}
   </div>
 </div>
 
 <div id="tcp-upload-stages-describe" class="tcp-pull-window">
-  Lorem Ipsum
+  {{data.help_text}}
 </div>

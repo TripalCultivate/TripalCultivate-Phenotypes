@@ -79,7 +79,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * {@inheritDoc}
    */
   public function form($form, &$form_state) {
-    $chado = \Drupal::service('tripal_chado.database');
     // Always call the parent form to ensure Chado is handled properly.
     $form = parent::form($form, $form_state);
     // Attach libraries.
@@ -88,11 +87,33 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       'trpcultivate_phenotypes/script-pull-window'
     ];
 
+    // Page cached values to keep track of stages.
+    if ($form_state->getUserInput()) {
+      if ($form_state->getTriggeringElement() == 'button') {
+        dpm(2);
+      }
+    }
+
+
+    // Describe the stages and help text/guide for this importer.
     // Stage indicators.
+    $help_text = t('Lorem ipsum');
+    $stages = [
+      1 => 'Upload Data File',
+      2 => 'Describe Traits',
+      3 => 'Save'
+    ];
+    
+    // Render the stage details in the header section of the form.  
     $form['stage_indicator'] = [
       '#type' => 'inline_template',
-      '#theme' => 'upload_stages',
-      '#weight' => -100
+      '#theme' => 'theme-upload_stages',
+      '#weight' => -100,
+      '#data' => [
+        'cur_stage' => 1,
+        'stages' => $stages,
+        'help_text' => $help_text
+      ],
     ];
 
     // Select experiment, Genus field will reflect the genus project 
