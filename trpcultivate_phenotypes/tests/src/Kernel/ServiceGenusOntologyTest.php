@@ -26,6 +26,17 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     parent::setUp();
     $this->installConfig(['trpcultivate_phenotypes']);
 
+    $test_insert_genus = ['Lens', 'Cicer'];
+    $chado = \Drupal::service('tripal_chado.database');
+    $ins_genus = "
+      INSERT INTO {1:organism} (genus, species, type_id)
+      VALUES 
+        ('$test_insert_genus[0]', 'culinaris', 1), 
+        ('$test_insert_genus[1]', 'arientinum', 1)
+    ";
+
+    $chado->query($ins_genus);
+    
     $this->service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
   }
 
@@ -44,15 +55,6 @@ class ServiceGenusOntologyTest extends KernelTestBase {
 
     // Created genus of type null (id: 1).
     $test_insert_genus = ['Lens', 'Cicer'];
-    $chado = \Drupal::service('tripal_chado.database');
-    $ins_genus = "
-      INSERT INTO {1:organism} (genus, species, type_id)
-      VALUES 
-        ('$test_insert_genus[0]', 'culinaris', 1), 
-        ('$test_insert_genus[1]', 'arientinum', 1)
-    ";
-
-    $chado->query($ins_genus);
 
     // #Test defineGenusOntology().
     $define_genusontology = $this->service->defineGenusOntology();
