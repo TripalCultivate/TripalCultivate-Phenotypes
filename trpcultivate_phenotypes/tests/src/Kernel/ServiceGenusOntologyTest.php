@@ -30,7 +30,6 @@ class ServiceGenusOntologyTest extends KernelTestBase {
   }
 
   public function testGenusOntologyService() {
-    $chado = \Drupal::service('tripal_chado.database');
     \Drupal::state()->set('is_a_test_environment', TRUE);
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
@@ -45,6 +44,7 @@ class ServiceGenusOntologyTest extends KernelTestBase {
 
     // Created genus of type null (id: 1).
     $test_insert_genus = ['Lens', 'Cicer'];
+    $chado = \Drupal::service('tripal_chado.database');
     $ins_genus = "
       INSERT INTO {1:organism} (genus, species, type_id)
       VALUES 
