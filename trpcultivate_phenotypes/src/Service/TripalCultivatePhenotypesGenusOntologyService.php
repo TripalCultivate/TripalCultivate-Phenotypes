@@ -31,14 +31,14 @@ class TripalCultivatePhenotypesGenusOntologyService {
   /**
    * Configuration hierarchy for configuration: cvdbon.
    */
-  private $sysvar_ontology;
+  private $sysvar_genus_ontology;
 
   /**
    * Constructor.
    */
   public function __construct(ConfigFactoryInterface $config_factory, ChadoConnection $chado, TripalLogger $logger) {
     // Configuration.
-    $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology.cvdbon';
+    $this->sysvar_genus_ontology = 'trpcultivate.phenotypes.ontology.cvdbon';
     $module_settings = 'trpcultivate_phenotypes.settings';
     $this->config = $config_factory->getEditable($module_settings);
     
@@ -123,9 +123,9 @@ class TripalCultivatePhenotypesGenusOntologyService {
 
         // At this point each genus now has configuration vars and
         // ready to register a configuration entry.
-        // configuration ...cvdbon.genus.genus [trait, unit, methid, database, crop_ontology]
+        // configuration ...cvdbon.genus.genus [trait, unit, method, database, crop_ontology]
         $this->config
-          ->set($this->sysvar_ontology  . '.' . $genus, $genus_ontology_configvars[ $genus ]);
+          ->set($this->sysvar_genus_ontology  . '.' . $genus, $genus_ontology_configvars[ $genus ]);
       }
 
       $this->config->save();
@@ -147,5 +147,104 @@ class TripalCultivatePhenotypesGenusOntologyService {
    */
   public function formatGenus($genus) {
     return (empty($genus)) ? null : str_replace(' ', '_', strtolower(trim($genus)));
+  }
+
+  /**
+   * Save genus ontology configuration values.
+   * 
+   * @param array $config_values
+   *   Configuration values submitted from a form implementation.
+   *   Each element is keyed by the genus. A value of an associative array 
+   *   for each genus key contains the following configuration variables:
+   *
+   *   trait, unit, method, database and crop_ontology
+   * 
+   *   ie: $config_values[ genus ] = [
+   *     'trait' => form field for trait value,
+   *     'unit'    => form field for unit value,
+   *     'method'    => form field for method value,
+   *     'database'    => form field for database value,
+   *     'crop_ontology' => form field for crop_ontology value
+   *   ],
+   *   ...
+   *
+   * @return boolean
+   *   True, configuration saved successfully and False on error. 
+   */
+  public function saveGenusOntologyConfigValues($config_values) {
+    $error = 0;
+
+    if (!empty($config_values) && is_array($config_values)) {
+      // Make sure genus key exists.
+      $genus_keys = array_keys($this->genus_ontology);
+
+      foreach($config_values as $genus => $values) {
+        $genus_key = $this->formatGenus($genus);
+        
+        if (in_array($genus_key, $genus_keys)) {
+          // A valid genus key. Test each configuration variables
+          // and allow only configuration name that matches genus ontology 
+          // configuration schema definition.
+          $genus_ontology_values = [];
+          
+          foreach($values as $config_name => $config_value) {
+            if (in_array($config_name, $this->genus_ontology[ $genus_key ])) {
+              // Save.
+              $genus_ontology_values[ $config_name ] = $config_value;
+            }
+            else {
+              // Not expecting this configuration name.
+              $this->logger->error('Error. Failed to save configuration. Unexpected configuration name: ' . $config_name);
+              $error = 1;
+              break; break;
+            }
+          }
+          
+          // Stage a genus ontology configuration - ready for saving.
+          $this->config
+            ->set($this->sysvar_genus_ontology . '.' . $genus_key, $genus_ontology_values);
+        }
+        else {
+          // Genus key not found.
+          $this->logger->error('Error. Failed to save configuration. Unexpected genus: ' . $genus);
+          $error = 1;
+          break;
+        }
+      }
+
+      if ($error == 0) {
+        $this->config->save();
+      }
+    }
+    else {
+      $error = 1;
+    }
+
+    return ($error) ? FALSE : TRUE;
+  }
+
+  /**
+   * Get genus ontology configuration values.
+   *
+   * @param string $genus
+   *   Genus
+   *
+   * @return array
+   *   Associated genus configuration values trait, unit, method, database and crop ontology.
+   */
+  public function getGenusOntologyConfigValues($genus) {
+    $config_values = 0;
+    
+    if ($genus) {
+      $genus_keys = array_keys($this->genus_ontology);
+      $genus_key = $this->formatGenus($genus);
+
+      if (in_array($genus_key, $genus_keys)) {
+        $config_values = $this->config
+          ->get($this->sysvar_genus_ontology . '.' . $genus_key);
+      }
+    }
+
+    return $config_values;
   }
 }

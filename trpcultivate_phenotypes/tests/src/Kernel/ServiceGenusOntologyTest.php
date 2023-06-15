@@ -30,6 +30,7 @@ class ServiceGenusOntologyTest extends KernelTestBase {
   }
 
   public function testGenusOntologyService() {
+    $chado = \Drupal::service('tripal_chado.database');
     \Drupal::state()->set('is_a_test_environment', TRUE);
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
@@ -37,27 +38,18 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     // Class created.
     $this->assertNotNull($this->service);
 
-    // Test when no genus in host Tripal site.
-    $no_genus = $this->service->defineGenus();
-    $is_empty = (empty($define_genusontology)) ? TRUE : FALSE;
-
-
-    
-
-
-
+    // TEST WHEN THERE IS A GENUS RECORD.
     // Create genus records since a clean Tripal site has 
     // no organism/genus records and re-run routines carried out
     // during install process. 
 
     // Created genus of type null (id: 1).
-    $test_genus = ['Lens', 'Cicer'];
-    $chado = \Drupal::service('tripal_chado.database');
+    $test_insert_genus = ['Lens', 'Cicer'];
     $ins_genus = "
       INSERT INTO {1:organism} (genus, species, type_id)
       VALUES 
-        ('$test_genus[0]', 'culinaris', 1), 
-        ('$test_genus[1]', 'arientinum', 1)
+        ('$test_insert_genus[0]', 'culinaris', 1), 
+        ('$test_insert_genus[1]', 'arientinum', 1)
     ";
 
     $chado->query($ins_genus);
@@ -69,7 +61,7 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     $is_array = (is_array($define_genusontology)) ? TRUE : FALSE;
     $this->assertTrue($is_array);
 
-    foreach($test_genus as $g) {
+    foreach($test_insert_genus as $g) {
       $key = $this->service->formatGenus($g);
       $this->assertNotNull($define_genusontology[ $key ]);
     }
@@ -93,7 +85,60 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     }
 
     // #Test loadGenusOntology().
+    $is_saved = $this->service->loadGenusOntology();
+    $this->assertTrue($is_saved);
 
+    // Compare what was registered in the config settings.
+    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+    $config_genus_ontology = $config->get('trpcultivate.phenotypes.ontology.cvdbon');
+    foreach($test_insert_genus as $genus) {
+      $g = $this->service->formatGenus($genus);
+      // Genus configuration found.
+      $this->assertNotNull($config_genus_ontology[ $g ]);
 
+      // Genus configuration properties/variables are set to 0.
+      foreach($config_genus_ontology[ $g ] as $prop => $val) {
+        $is_config = (in_array($prop, ['trait', 'unit', 'method', 'database', 'crop_ontology'])) ? TRUE : FALSE;
+        $this->assertTrue($is_config);
+        $this->assertEquals($val, 0);
+      }
+    }
+
+    // #Test getGenusOntologyConfigValues().
+    foreach($test_insert_genus as $genus) {
+      $genus_config = $this->service->getGenusOntologyConfigValues($genus);
+      $this->assertNotNull($genus_config);
+    }
+
+    $not_valid_keys = [':p', -1, 0, 'abc', 999999, '', 'lorem_ipsum', '.', 'G', 'lenz', '@'];
+    foreach($not_valid_keys as $key) {
+      $not_found = $this->service->getGenusOntologyConfigValues($key);
+      $this->assertEquals($not_found, 0);
+    }
+
+    // #Test saveGenusOntologyConfigValues().
+    // loadGenusOntology() sets all configuration values for all genus to a default value
+    // 0. This test will set every configuration to null cv (id: 1) and null db (id: 1).
+    
+    // This would have came from a form submit method.
+    $null_id = 1;
+    $genus_ontology_values = [];
+
+    foreach($define_genusontology as $genus_key => $config_values) {      
+      foreach($config_values as $config_name) {
+        $genus_ontology_values[ $genus_key ][ $config_name ] = $null_id;
+      }
+    }
+
+    $is_saved = $this->service->saveGenusOntologyConfigValues($genus_ontology_values);
+    $this->assertTrue($is_saved);
+
+    // Test if all genus ontology config got nulled.
+    foreach($test_insert_genus as $genus) {
+      $genus_config = $this->service->getGenusOntologyConfigValues($genus);
+      foreach($genus_config as $config_name => $config_value) {
+        $this->assertEquals($config_value, $null_id);
+      }
+    }
   }
 }
