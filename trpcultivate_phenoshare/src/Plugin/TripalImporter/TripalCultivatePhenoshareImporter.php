@@ -1,14 +1,14 @@
 <?php
 
+/**
+ * @file
+ * Tripal Importer Plugin implementation for Tripal Cultivate Phenotypes - Share
+ * data file uploader/importer.
+ */
+
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
-use Drupal\tripal\TripalVocabTerms\TripalTerm;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\InvokeCommand;
-use Drupal\Core\Ajax\ReplaceCommand;
-
-use Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesExperimentAutocompletController;
 
 /**
  * GFF3 Importer implementation of the TripalImporterBase.
@@ -21,12 +21,13 @@ use Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesExperimen
  *   upload_description = @Translation("Please provide a txt or tsv data file."),
  *   upload_title = @Translation("Phenotypes Data File*"),
  *   use_analysis = False,
+ *   use_button = False,
  *   require_analysis = False,
  *   button_text = @Translation("Next Step"),
- *   file_upload = True,
+ *   file_upload = False,
  *   file_load = False,
  *   file_remote = False,
- *   file_required = True,
+ *   file_required = False,
  *   cardinality = 1,
  *   menu_path = "",
  *   callback = "",
@@ -83,87 +84,134 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form = parent::form($form, $form_state);
     // Attach libraries.
     $form['#attached']['library'] = [
-      'trpcultivate_phenotypes/script-autoselect-field', 
       'trpcultivate_phenotypes/script-pull-window'
     ];
 
-    // Page cached values to keep track of stages.
-    if ($form_state->getUserInput()) {
-      if ($form_state->getTriggeringElement() == 'button') {
-        dpm(2);
-      }
-    }
-
+    // Reminder to user about expected phenotypes.
+    $phenotypes_minder = 'Phenotypic data should be filtered for outliers and mis-entries before
+      being uploaded here. Do not upload data that should not be used in the final analysis for a
+      scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.';
+    \Drupal::messenger()->addWarning($phenotypes_minder);
 
     // Describe the stages and help text/guide for this importer.
     // Stage indicators.
-    $help_text = t('Lorem ipsum');
+    $help_text = t('This is a test help text.');
     $stages = [
       1 => 'Upload Data File',
       2 => 'Describe Traits',
       3 => 'Save'
     ];
-    
-    // Render the stage details in the header section of the form.  
+
+    // Determine the stage.
+    $current_stage = 'current_page';
+
+    // If form is submitted, update the current stage and load
+    // corresponding form field and controls for the stage.
+    if ($form_state->getUserInput()) {
+      // Retrieve the the last stage saved in the form_state and
+      // increment by 1 to load the next stage.
+      $cache_stage = $form_state->get($current_stage);
+      $stage = (int) $cache_stage + 1;
+
+      // Return to stage 1 after final step.
+      $stage = ($stage > count($stages)) ? 1 : $stage;
+    }
+    else {
+      // On initial load of the importer set the stage to 
+      // stage 1 of the upload/import process.
+      $stage = 1;      
+    }
+
+    // Save the current stage in a $form_state variable.
+    $form_state->set($current_stage, $stage);
+
+    // Render the stage details in the header section of the form.
+    // Set with the lowest weight to embed in the header of the form.  
     $form['stage_indicator'] = [
       '#type' => 'inline_template',
       '#theme' => 'theme-upload_stages',
       '#weight' => -100,
       '#data' => [
-        'cur_stage' => 1,
-        'stages' => $stages,
-        'help_text' => $help_text
+        'stages'  => $stages,
+        'cur_stage' => $stage,
+        'help_text'  => $help_text
       ],
     ];
 
-    // Select experiment, Genus field will reflect the genus project 
-    // is set to.
-    $form['experiment'] = [
-      '#title' => t('Experiment'),
-      '#type' => 'textfield',
-      '#description' => t('Type in the experiment or project title your data is specific to.'),
-
-      '#weight' => -1,
-      '#required' => TRUE,
+    // With the determined stage, load form.
+    switch($stage) {
+      case 1:
+        // Upload file stage.
+        $form = $this->formStage01($form, $form_state);
+        break;
       
-      '#attributes' => ['placeholder' => 'Experiment/Project Name', 'class' => ['tcp-autocomplete']],
-      '#autocomplete_route_name' => 'trpcultivate_phenotypes.autocomplete_experiment',
-      '#autocomplete_route_parameters' => ['count' => 5],
+      case 2:
+        // Describe traits stage.
+        $form = $this->formStage02($form, $form_state);
+        break;
+
+      case 3:
+        // Save data stage.
+        $form = $this->formStage03($form, $form_state);
+        break;
+    }
+
+    // Submit, next stage or save.
+    $btn_text = ($stage < count($stages)) ? 'Next Stage' : 'Save';
+    $form['submit'] = [
+      '#type' => 'submit',
+      '#value' => t($btn_text),
+      '#weight' => 100,
+      '#id' => 'tcps-submit-button'
     ];
+  
+    return $form;
+  }
 
-    
-    // get the list of organisms.
-    $organisms = chado_get_organism_select_options(FALSE, TRUE);
 
-    $form['organism_id'] = [
-      '#title' => t('Genus'),
-      '#type' => 'select',
-      '#options' => $organisms,
-      
-      '#weight' => 0,
-      '#required' => TRUE,
-      
-      '#empty_option' => t('- Select -'),
-      '#description' => t('Select a Genus. When an experiment or project has genus set, a value will be selected.'),
-    ];
-
-    // This will ensure that file importer + submit button are rendered past
-    // other form field elements. Button is set to weight #10.
-    $form['file']['#weight'] = 9;
-    $form['button']['#weight'] = 10;
-
-    // Exclude the database option (advanced options) since phenotypes
-    // schema is always installed in chado database (default schema).
-    $form['advanced']['#access'] = FALSE;
+  ///// Stages - form callback.
+  
+  /**
+   * Form STAGE 01 - Upload file.
+   */
+  public function formStage01($form, &$form_state) {
+    $form['stage1']['#markup'] = '<h3>Stage 1</h3>';
 
     return $form;
   }
 
   /**
-   * {@inheritDoc}
+   * Form STAGE 02 - Describe traits.
+   */
+  public function formStage02($form, &$form_state) {
+    $form['stage2']['#markup'] = '<h3>Stage 2</h3>';
+
+    return $form;
+  }
+
+  /**
+   * Form STAGE 03 - Save.
+   */
+  public function formStage03($form, &$form_state) {
+    $form['stage3']['#markup'] = '<h3>Stage 3</h3>';
+
+    return $form;
+  }
+
+  /////
+
+
+  /**
+   * {@inheritdoc}
+   */
+  public function formSubmit($form, &$form_state) {
+    $form_state->setRebuild(TRUE);
+  }
+
+  /**
+   * {@inheritdoc}
    */
   public function formValidate($form, &$form_state) {
-
     $form_state_values = $form_state->getValues();
   }
 
@@ -178,13 +226,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * {@inheritdoc}
    */
   public function postRun() {
-
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function formSubmit($form, &$form_state) {
 
   }
 }

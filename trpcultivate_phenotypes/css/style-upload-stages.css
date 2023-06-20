@@ -24,13 +24,13 @@
 
 /* Stages */
 #tcp-upload-stages div:last-child {
-  height: 10px;  
   display: flex;
   width: inherit;
 }
 
-#tcp-upload-stages div:last-child div {
+.stage-current, .stage-upcoming {
   flex: 1;
+  height: 10px;
 }
 
 .stage-current {
