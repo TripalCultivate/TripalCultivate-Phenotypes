@@ -7,7 +7,6 @@ script-autoselect-field:
     js/script-autoselect-field.js: {}
   dependencies:
     - core/jquery
-    - core/jquery.once
 
 # Script collapse/expand information window.
 script-pull-window:
@@ -16,7 +15,6 @@ script-pull-window:
     js/script-pull-window.js: {}
   dependencies:
     - core/jquery
-    - core/jquery.once
 
 # Style upload stages.
 style-upload-stages:

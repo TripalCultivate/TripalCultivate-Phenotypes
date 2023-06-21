@@ -98,8 +98,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $help_text = t('This is a test help text.');
     $stages = [
       1 => 'Upload Data File',
-      2 => 'Describe Traits',
-      3 => 'Save'
+      2 => 'Validate Data',
+      3 => 'Describe and Save Data'
     ];
 
     // Determine the stage.
