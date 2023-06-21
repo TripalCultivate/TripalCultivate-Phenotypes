@@ -175,7 +175,20 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * Form STAGE 01 - Upload file.
    */
   public function formStage01($form, &$form_state) {
-    $form['stage1']['#markup'] = '<h3>Stage 1</h3>';
+    // Select experiment, Genus field will reflect the genus project 
+    // is set to.
+    $form['experiment'] = [
+      '#title' => t('Experiment'),
+      '#type' => 'textfield',
+      '#description' => t('Type in the experiment or project title your data is specific to.'),
+
+      '#weight' => -1,
+      '#required' => TRUE,
+      
+      '#attributes' => ['placeholder' => 'Experiment/Project Name', 'class' => ['tcp-autocomplete']],
+      '#autocomplete_route_name' => 'trpcultivate_phenotypes.autocomplete_project',
+      '#autocomplete_route_parameters' => ['type_id' => 1, 'count' => 5],
+    ];
 
     return $form;
   }

@@ -25,3 +25,15 @@ trpcultivate_phenotypes.settings_watermark:
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm'
   requirements:
     _permission: 'administer tripal'
+
+# Autocomplete Routes.
+
+# Experiments.
+trpcultivate_phenotypes.autocomplete_project:
+  path: 'tripal-cultivate/autocomplete/project/{type_id}/{count}'
+  defaults:
+    _title: 'Autocomplete Projects'
+    _controller: '\Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesProjectAutocompleteController::handleAutocomplete'
+    _format: json
+  requirements:
+    _permission: 'access content'
