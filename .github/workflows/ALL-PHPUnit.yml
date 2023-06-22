@@ -1,5 +1,5 @@
 
-name: PHPUnit
+name: PHPUnit Full Test Suite
 on: [push]
 
 env:

@@ -5,7 +5,7 @@ on:
       - 4.x
       - g5.18-workflows
 jobs:
-  run-tests:
+  grid-1A:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
