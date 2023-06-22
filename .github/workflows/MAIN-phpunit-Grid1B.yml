@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 4.x
-      - customize-template
+      - g5.18-workflows
 jobs:
   run-tests:
     runs-on: ubuntu-latest
@@ -17,4 +17,4 @@ jobs:
           modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           php-version: '8.0'
           pgsql-version: '13'
-          drupal-version: '9.4.x-dev'
+          drupal-version: '9.5.x-dev'
