@@ -5,7 +5,7 @@ on:
       - 4.x
       - g5.18-workflows
 jobs:
-  grid-2B:
+  grid-2D:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -17,4 +17,4 @@ jobs:
           modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           php-version: '8.1'
           pgsql-version: '13'
-          drupal-version: '9.5.x-dev'
+          drupal-version: '10.1.x-dev'
