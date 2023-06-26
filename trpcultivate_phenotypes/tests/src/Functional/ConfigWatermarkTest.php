@@ -19,7 +19,7 @@ use Drupal\file\Entity\File;
 class ConfigWatermarkTest extends BrowserTestBase {
   /**
    * Modules to enabled
-   * 
+   *
    * @var array
    */
   protected static $modules = ['trpcultivate_phenotypes'];
@@ -40,10 +40,10 @@ class ConfigWatermarkTest extends BrowserTestBase {
 
   /**
    * Test watermark configuration page.
-   * 
+   *
    * NOTE: unable to test file upload field, This test only when
    * choosing not to watermark any charts.
-   * 
+   *
    * @see unit test and kernel test of this form where file field
    * and upload are tested.
    */
@@ -56,7 +56,7 @@ class ConfigWatermarkTest extends BrowserTestBase {
       'administer site configuration',
       'administer tripal'
     ]);
-    
+
     // Login admin user.
     $this->drupalLogin($admin_user);
 
@@ -86,11 +86,11 @@ class ConfigWatermarkTest extends BrowserTestBase {
     $this->submitForm($update_watermark, 'Save configuration');
 
     // Assert configuration saved.
-    $this->assertRaw('The configuration options have been saved.');
+    $this->assertSession()->responseContains('The configuration options have been saved.');
 
     // Assert Fields reflect the updated configuration.
     $session->fieldValueEquals('charts', $update_watermark['charts']);
-    
+
     $this->drupalLogout();
   }
 }

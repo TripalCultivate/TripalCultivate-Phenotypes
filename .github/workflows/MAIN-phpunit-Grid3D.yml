@@ -3,9 +3,9 @@ on:
   push:
     branches:
       - 4.x
-      - customize-template
+      - g5.18-workflows
 jobs:
-  run-tests:
+  grid-3D:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -15,6 +15,6 @@ jobs:
         with:
           directory-name: 'TripalCultivate-Phenotypes'
           modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
-          php-version: '8.0'
+          php-version: '8.2'
           pgsql-version: '13'
-          drupal-version: '9.5.x-dev'
+          drupal-version: '10.1.x-dev'
