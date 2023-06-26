@@ -3,4 +3,4 @@
 services:
   trpcultivate_phenotypes.genus_project:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
-    arguments: ['@config.factory', '@tripal.logger']
+    arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']

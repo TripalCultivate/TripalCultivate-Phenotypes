@@ -8,6 +8,7 @@
  namespace Drupal\trpcultivate_phenotypes\Service;
 
  use \Drupal\Core\Config\ConfigFactoryInterface;
+ use \Drupal\tripal_chado\Database\ChadoConnection;
  use \Drupal\tripal\Services\TripalLogger;
  
  /**
@@ -20,21 +21,32 @@ class TripalCultivatePhenotypesGenusProjectService {
   private $sysvar_genus;
 
   /**
-   * Tripal logger.
+   * Configuration genus.ontology.
    */
+  private $sysvar_genusontology;
+
+  /**
+   * Chado database and Tripal logger.
+   */
+  protected $chado;
   protected $logger;
 
   /**
    * Constructor.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, TripalLogger $logger) {
+  public function __construct(ConfigFactoryInterface $config_factory, ChadoConnection $chado, TripalLogger $logger) {
     // Module Configuration variables.
     $module_settings = 'trpcultivate_phenotypes.settings';
     $config = $config_factory->getEditable($module_settings);
 
     // Configuration terms.genus.
     $this->sysvar_genus = $config->get('trpcultivate.phenotypes.ontology.terms.genus');
-    
+    // Configuration genus.ontology.
+    $this->sysvar_genusontology = $config->get('trpcultivate.phenotypes.ontology.cvdbon');
+
+    // Chado database.
+    $this->chado = $chado;
+
     // Tripal Logger service.
     $this->logger = $logger;
   }
@@ -64,11 +76,25 @@ class TripalCultivatePhenotypesGenusProjectService {
    *   Project (project_id number) to search.
    *
    * @return array
-   *   Keys is genus/organism id number and value is the genus name/title.
-   *    
+   *   Keys is genus/organism id number and value is the genus name/title.    
    */
   public function getGenusOfProject($project) {
-    return 0;
+    $genus_project = 0;
+
+    if ($project > 0) {
+      $result = $this->chado->select('1:projectprop', 'prop')
+        ->condition('prop.project_id', $project, '=')
+        ->condition('prop.type_id', $this->sysvar_genus, '=')
+        ->fields('prop', ['value'])
+        ->rane(0, 1)
+        ->execute()
+        ->fetchField();
+      
+      // Resolve genus/organism_id.
+      
+    }
+
+    return $genus_project;
   }
 
   /**
@@ -78,6 +104,19 @@ class TripalCultivatePhenotypesGenusProjectService {
    *   An array of genus names, sorted alphabetically.
    */
   public function getActiveGenus() {
-    return 0;
+    $genus = [];
+
+    if ($this->sysvar_genusontology) {
+      $genus_keys = array_keys($this->sysvar_genusontology);
+
+      foreach($genus_keys as $active_genus) {
+        // Each genus-ontology configuration variable name was
+        // formatted where all spaces were replaced by underscore.
+        // Reconstruct original value.
+        $genus[] = ucfirst(str_replace('_', ' ', $active_genus));
+      }
+    }
+
+    return sort($genus);
   }
 }

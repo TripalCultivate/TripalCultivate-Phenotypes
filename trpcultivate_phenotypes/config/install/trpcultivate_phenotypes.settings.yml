@@ -72,6 +72,12 @@ trpcultivate:
         unit: 0
         year: 0
       cvdbon:
+        lensculinaris:
+          trait: 1
+          unit: 1
+          method: 1
+          database: 1
+          crop_ontology: 1
       allownew: true
 
   phenoshare: null
