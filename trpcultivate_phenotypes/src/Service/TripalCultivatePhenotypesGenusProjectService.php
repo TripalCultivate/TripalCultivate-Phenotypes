@@ -82,7 +82,7 @@ class TripalCultivatePhenotypesGenusProjectService {
     $genus_project = 0;
 
     if ($project > 0) {
-      $result = $this->chado->select('1:projectprop', 'prop')
+      $result_prop = $this->chado->select('1:projectprop', 'prop')
         ->condition('prop.project_id', $project, '=')
         ->condition('prop.type_id', $this->sysvar_genus, '=')
         ->fields('prop', ['value'])
@@ -91,7 +91,18 @@ class TripalCultivatePhenotypesGenusProjectService {
         ->fetchField();
       
       // Resolve genus/organism_id.
-      
+      if ($result_prop > 0) {
+        $result_organism = $this->chado->select('1:organism', 'org')
+          ->condition('org.organism_id', $result_prop, '=')
+          ->fields('org', ['organism_id', 'genus'])
+          ->range(0, 1)
+          ->execute()
+          ->fetchField();
+
+        if ($result_organism) {
+          $genus_project = $result_organism;
+        }
+      }
     }
 
     return $genus_project;
@@ -117,6 +128,6 @@ class TripalCultivatePhenotypesGenusProjectService {
       }
     }
 
-    return sort($genus);
+    return $genus;
   }
 }
