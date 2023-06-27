@@ -27,7 +27,16 @@ function trpcultivate_phenotypes_install() {
 
   // Define other directories here:  
 
-  // Install default terms and set term configuration variable.
-  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
-  $term_service->loadTerms();
+  // Register a Tripal Job instance to install default terms and 
+  // set term configuration variable.
+  // @see module file for the callback function.
+  $user = \Drupal::currentUser();
+  $uid = $user->id();
+  
+  try {
+    tripal_add_job('Tripal Cultivate Phenotypes: Install Terms', 'tripal', 'trpcultivate_phenotypes_install_terms', [], $uid, 10, []);
+  }
+  catch (\Exception $e) {
+    throw new \Exception('Cannot create a job to install terms:' . $e->getMessage);
+  }
 }
