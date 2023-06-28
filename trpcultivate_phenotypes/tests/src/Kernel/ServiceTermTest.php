@@ -77,10 +77,17 @@ class ServiceTermTest extends KernelTestBase {
     
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
+    $chado = \Drupal::service('tripal_chado.database');
 
+    $m = $chado->query("select cv_id from {1:cv} where name = 'AGRO'")
+      ->fetchField();
+
+    var_dump($m);
+    
+    // Calling this method since install does not create a Tripal Job to create terms.
     $is_loaded = $this->service->loadTerms();
     $this->assertTrue($is_loaded);
-
+  
     // #Test getTermId().
     foreach($keys as $key) {
       $id = $this->service->getTermId($key);
@@ -89,7 +96,7 @@ class ServiceTermTest extends KernelTestBase {
       
       $id_to_name[ $id ] = [
         'key' => $key, // config name key.
-        'id' => $id, // cvterm id.
+        'id' => $id,   // cvterm id.
         'name' => $define_terms[ $key ]['name'] // cvterm name.
       ];
     }
@@ -102,7 +109,6 @@ class ServiceTermTest extends KernelTestBase {
     }
     
     // Test values matched to what was loaded into the table.
-    $chado = \Drupal::service('tripal_chado.database');
     $all_ids = array_keys($id_to_name);
     $rec = $chado->query(
       'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])', 
@@ -145,4 +151,3 @@ class ServiceTermTest extends KernelTestBase {
     // $this->assertFalse($not_saved);
   }
 }
-
