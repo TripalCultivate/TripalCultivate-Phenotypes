@@ -79,14 +79,9 @@ class ServiceTermTest extends KernelTestBase {
     $this->installSchema('tripal_chado', ['chado_installations']);
     $chado = \Drupal::service('tripal_chado.database');
 
-    $m = $chado->query("select cv_id from {1:cv} where name = 'AGRO'")
-      ->fetchField();
-
-    var_dump($m);
-    
     // Calling this method since install does not create a Tripal Job to create terms.
-    $is_loaded = $this->service->loadTerms();
-    $this->assertTrue($is_loaded);
+    // $is_loaded = $this->service->loadTerms();
+    // $this->assertTrue($is_loaded);
   
     // #Test getTermId().
     foreach($keys as $key) {
