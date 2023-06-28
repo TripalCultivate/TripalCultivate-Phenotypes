@@ -78,9 +78,8 @@ class ServiceTermTest extends KernelTestBase {
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
     $chado = \Drupal::service('tripal_chado.database');
-    $chado->setSchemaName('chado');
     
-    $is_loaded = $this->service->loadTerms();
+    $is_loaded = $this->service->loadTerms(null);
     $this->assertTrue($is_loaded);
   
     // #Test getTermId().

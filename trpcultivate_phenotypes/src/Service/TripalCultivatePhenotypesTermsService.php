@@ -105,7 +105,7 @@ class TripalCultivatePhenotypesTermsService {
    * @return boolean
    *   True if all terms were inserted successfully and false otherwise.
    */
-  public function loadTerms() {
+  public function loadTerms($schema = 'chado') {
     // Error flag is 0 - no error, all passes prove otherwise.
     $error = 0;
     $terms = $this->terms;
@@ -119,7 +119,7 @@ class TripalCultivatePhenotypesTermsService {
         ];
 
         // Check if the term exists.
-        $cvterm = chado_get_cvterm($cvterm_row, [], 'chado');
+        $cvterm = chado_get_cvterm($cvterm_row, [], $schema);
 
         if (!$cvterm) {
           // No match of this term in the database, see if cv exists.
@@ -127,11 +127,11 @@ class TripalCultivatePhenotypesTermsService {
             'name' => $config_prop['cv']['name']
           ];
 
-          $cv_id = chado_get_cv($cv_row, [], 'chado');
+          $cv_id = chado_get_cv($cv_row, [], $schema);
 
           if (!$cv_id) {
             // No match of this cv in the database. Create record.
-            $cv_id = chado_insert_cv($cv_row['name'], $config_prop['cv']['definition'], [], 'chado');
+            $cv_id = chado_insert_cv($cv_row['name'], $config_prop['cv']['definition'], [], $schema);
 
             if (!$cv_id) {
               // Error inserting cv.
@@ -142,7 +142,7 @@ class TripalCultivatePhenotypesTermsService {
 
           // Insert the term.
           unset($config_prop['cv']);
-          $cvterm = chado_insert_cvterm($config_prop, [], 'chado');
+          $cvterm = chado_insert_cvterm($config_prop, [], $schema);
         }
 
         // Set the term id as the configuration value of the
