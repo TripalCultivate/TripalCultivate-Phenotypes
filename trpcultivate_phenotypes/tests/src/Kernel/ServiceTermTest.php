@@ -27,12 +27,7 @@ class ServiceTermTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installConfig(['trpcultivate_phenotypes']);
-    
-    // Run the module's install hook;
-    $this->container->get('module_installer')
-      ->install(['trpcultivate_phenotypes']);
-
-
+  
     $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
   }
 
@@ -83,14 +78,8 @@ class ServiceTermTest extends KernelTestBase {
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
     $chado = \Drupal::service('tripal_chado.database');
-
-    $chado->query("
-      INSERT INTO {1:cv} (name, definition) 
-      VALUES
-        ('AGRO', 'Agricultural experiment plot'),
-        ('NCIT', 'The NCIT OBO Edition project aims to increase integration of the NCIt with OBO Library ontologies NCIt is a reference terminology that includes broad coverage of the cancer domain, including cancer related diseases, findings and abnormalities. NCIt OBO Edition releases should be considered experimental.')
-    ");
-
+    $chado->setSchemaName('chado');
+    
     $is_loaded = $this->service->loadTerms();
     $this->assertTrue($is_loaded);
   
