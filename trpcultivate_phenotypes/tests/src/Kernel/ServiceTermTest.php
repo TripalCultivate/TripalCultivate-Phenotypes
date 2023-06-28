@@ -82,7 +82,15 @@ class ServiceTermTest extends KernelTestBase {
     
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
-  
+    $chado = \Drupal::service('tripal_chado.database');
+
+    $chado->query("
+      INSERT INTO {1:cv} (name, definition) 
+      VALUES
+        ('AGRO', 'Agricultural experiment plot'),
+        ('NCIT', 'The NCIT OBO Edition project aims to increase integration of the NCIt with OBO Library ontologies NCIt is a reference terminology that includes broad coverage of the cancer domain, including cancer related diseases, findings and abnormalities. NCIt OBO Edition releases should be considered experimental.')
+    ");
+
     $is_loaded = $this->service->loadTerms();
     $this->assertTrue($is_loaded);
   
@@ -107,8 +115,6 @@ class ServiceTermTest extends KernelTestBase {
     }
     
     // Test values matched to what was loaded into the table.
-    $chado = \Drupal::service('tripal_chado.database');
-
     $all_ids = array_keys($id_to_name);
     $rec = $chado->query(
       'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])', 
