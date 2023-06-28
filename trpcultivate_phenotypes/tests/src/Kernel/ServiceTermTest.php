@@ -28,6 +28,11 @@ class ServiceTermTest extends KernelTestBase {
     parent::setUp();
     $this->installConfig(['trpcultivate_phenotypes']);
     
+    // Run the module's install hook;
+    $this->container->get('module_installer')
+      ->install(['trpcultivate_phenotypes']);
+
+
     $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
   }
 
@@ -77,11 +82,9 @@ class ServiceTermTest extends KernelTestBase {
     
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
-    $chado = \Drupal::service('tripal_chado.database');
-
-    // Calling this method since install does not create a Tripal Job to create terms.
-    // $is_loaded = $this->service->loadTerms();
-    // $this->assertTrue($is_loaded);
+  
+    $is_loaded = $this->service->loadTerms();
+    $this->assertTrue($is_loaded);
   
     // #Test getTermId().
     foreach($keys as $key) {
@@ -104,6 +107,8 @@ class ServiceTermTest extends KernelTestBase {
     }
     
     // Test values matched to what was loaded into the table.
+    $chado = \Drupal::service('tripal_chado.database');
+
     $all_ids = array_keys($id_to_name);
     $rec = $chado->query(
       'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])', 
