@@ -80,7 +80,15 @@ class ServiceTermTest extends KernelTestBase {
   public function testTermService() {
     // Class was created.
     $this->assertNotNull($this->service);
-    
+
+    // Install all cv's required.
+    // loadTerms() method will double check presence of a cv
+    // before adding a term.
+    $define_terms = $this->service->defineTerms();
+    foreach($define_terms as $term => $prop) {
+      chado_insert_cv($prop['cv']['name'], $prop['cv']['definition'], [], 'chado');
+    }
+
     // Test defineTerms().
     $define_terms = $this->service->defineTerms();
     $keys = array_keys($define_terms);
