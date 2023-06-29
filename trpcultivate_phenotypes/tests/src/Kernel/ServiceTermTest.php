@@ -29,7 +29,8 @@ class ServiceTermTest extends KernelTestBase {
   protected static $modules = [
     'tripal',
     'tripal_chado',
-    'trpcultivate_phenotypes'
+    'node',
+    'user'
   ];
 
   /**
@@ -51,10 +52,6 @@ class ServiceTermTest extends KernelTestBase {
     // This line will create chado install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
 
-    // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-  
     // Install required dependencies.
     $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
     $tripal_chado_api = [
@@ -72,12 +69,18 @@ class ServiceTermTest extends KernelTestBase {
 
       closedir($handle);
     }
-    
-    // Term service.
-    $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
   }
 
   public function testTermService() {
+    // Enable module.
+    $this->container->get('module_installer')->install(['trpcultivate_phenotypes']);
+
+    // Install module configuration.
+    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+    // Term service.
+    $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
+
     // Class was created.
     $this->assertNotNull($this->service);
     
