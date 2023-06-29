@@ -1,5 +1,5 @@
 name: Development Task
-description: Module Developers Only: These issues describe development tasks for the module.
+description: "Module Developers Only: These issues describe development tasks for the module."
 title: "[Task] "
   - type: textarea
     id: branch
