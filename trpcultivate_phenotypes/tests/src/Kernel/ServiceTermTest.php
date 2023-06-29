@@ -48,6 +48,9 @@ class ServiceTermTest extends KernelTestBase {
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
     
+    // This line will create chado install schema.
+    $this->installSchema('tripal_chado', ['chado_installations']);
+
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
@@ -70,9 +73,6 @@ class ServiceTermTest extends KernelTestBase {
       closedir($handle);
     }
     
-    // This line will create chado install schema.
-    $this->installSchema('tripal_chado', ['chado_installations']);
- 
     // Term service.
     $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
   }

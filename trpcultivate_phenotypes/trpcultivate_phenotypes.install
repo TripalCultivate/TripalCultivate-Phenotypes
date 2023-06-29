@@ -26,7 +26,12 @@ function trpcultivate_phenotypes_install() {
   $file_system->prepareDirectory($dir_watermark, FileSystemInterface::CREATE_DIRECTORY);
 
   // Define other directories here:  
+}
 
+/**
+ * Implements hook_enable().
+ */
+function trpcultivate_phenotypes_enable() {
   // Register a Tripal Job instance to install default terms and 
   // set term configuration variable.
   // @see module file for the callback function.
