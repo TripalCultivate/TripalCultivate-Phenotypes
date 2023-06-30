@@ -5,20 +5,21 @@
  * Kernel test of Terms service.
  */
 
- namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
- use Drupal\KernelTests\KernelTestBase;
- use Drupal\tripal\Services\TripalLogger;
+use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\tripal\Services\TripalLogger;
 
  /**
   * Test Tripal Cultivate Phenotypes Terms service.
   *
   * @group trpcultivate_phenotypes
   */
-class ServiceTermTest extends KernelTestBase {
+class ServiceTermTest extends ChadoTestKernelBase {
+
   /**
    * Term service.
-   * 
+   *
    * @var object
    */
   protected $service;
@@ -34,7 +35,7 @@ class ServiceTermTest extends KernelTestBase {
 
   /**
    * Configuration
-   * 
+   *
    * @var config_entity
    */
   private $config;
@@ -44,22 +45,19 @@ class ServiceTermTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    
+
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
-    
-    // This line will create chado install schema.
-    $this->installSchema('tripal_chado', ['chado_installations']);
 
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-  
+
     // Install required dependencies.
     $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
     $tripal_chado_api = [
-      'tripal_chado.cv.api.php', 
-      'tripal_chado.variables.api.php', 
+      'tripal_chado.cv.api.php',
+      'tripal_chado.variables.api.php',
       'tripal_chado.schema.api.php'
     ];
 
@@ -72,7 +70,7 @@ class ServiceTermTest extends KernelTestBase {
 
       closedir($handle);
     }
-    
+
     // Term service.
     $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
   }
@@ -110,7 +108,7 @@ class ServiceTermTest extends KernelTestBase {
       $id = $this->service->getTermId($key);
       $this->assertNotNull($id);
       $this->assertGreaterThan(0, $id);
-      
+
       $id_to_name[ $id ] = [
         'key' => $key, // config name key.
         'id' => $id,   // cvterm id.
@@ -124,12 +122,12 @@ class ServiceTermTest extends KernelTestBase {
       $v = $this->service->getTermId($n);
       $this->assertEquals($v, 0);
     }
-    
+
     // Test values matched to what was loaded into the table.
     $chado = \Drupal::service('tripal_chado.database');
     $all_ids = array_keys($id_to_name);
     $rec = $chado->query(
-      'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])', 
+      'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])',
       [':id[]' => $all_ids]
     );
 
@@ -138,12 +136,12 @@ class ServiceTermTest extends KernelTestBase {
       $this->assertEquals($id_to_name[ $r->cvterm_id ]['id'], $r->cvterm_id);
       $this->assertEquals($id_to_name[ $r->cvterm_id ]['name'], $r->name);
     }
-    
+
     // #Test saveTermConfigValues().
     // With the loadTerms above, each term configuration was set with
     // a term id number that matches a term in chado.cvterm. This test
     // will set all terms configuration to null (id: 1).
-    
+
     // This would have came from form submit method.
     $config_values = [];
     foreach($keys as $key) {
@@ -161,6 +159,6 @@ class ServiceTermTest extends KernelTestBase {
 
     // Nothing to save.
     $not_saved = $this->service->saveTermConfigValues([]);
-    $this->assertFalse($not_saved);    
+    $this->assertFalse($not_saved);
   }
 }
