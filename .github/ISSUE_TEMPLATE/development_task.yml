@@ -8,7 +8,6 @@ body:
       label: Branch
       description: This is the name of the branch that development will occur in. You will need to edit this issue to add in the issue number.
       value: g[groupNo].[issueNo]-[shortDescriptor]
-      render: shell
   - type: dropdown
     id: group
     attributes:
