@@ -7,19 +7,22 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
-use Drupal\KernelTests\KernelTestBase;
+use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
 
 /**
-  *  Class definition ServiceGenusOntologyTest.
-  */
-class ServiceGenusOntologyTest extends KernelTestBase {
+ * Tests associated with the Genus Ontology Service.
+ *
+ * Service: trpcultivate_phenotypes.genus_ontology
+ * Class: TripalCultivatePhenotypesGenusOntologyService
+ */
+class ServiceGenusOntologyTest extends ChadoTestKernelBase {
   protected $service;
-  
+
   protected static $modules = [
-   'tripal', 
+   'tripal',
    'tripal_chado',
-   'trpcultivate_phenotypes'  
+   'trpcultivate_phenotypes'
   ];
 
   protected function setUp() {
@@ -30,13 +33,13 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     $chado = \Drupal::service('tripal_chado.database');
     $ins_genus = "
       INSERT INTO {1:organism} (genus, species, type_id)
-      VALUES 
-        ('$test_insert_genus[0]', 'culinaris', 1), 
+      VALUES
+        ('$test_insert_genus[0]', 'culinaris', 1),
         ('$test_insert_genus[1]', 'arientinum', 1)
     ";
 
     $chado->query($ins_genus);
-    
+
     $this->service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
   }
 
@@ -44,14 +47,14 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
     // This line will create install schema.
     $this->installSchema('tripal_chado', ['chado_installations']);
-   
+
     // Class created.
     $this->assertNotNull($this->service);
 
     // TEST WHEN THERE IS A GENUS RECORD.
-    // Create genus records since a clean Tripal site has 
+    // Create genus records since a clean Tripal site has
     // no organism/genus records and re-run routines carried out
-    // during install process. 
+    // during install process.
 
     // Created genus of type null (id: 1).
     $test_insert_genus = ['Lens', 'Cicer'];
@@ -67,7 +70,7 @@ class ServiceGenusOntologyTest extends KernelTestBase {
       $key = $this->service->formatGenus($g);
       $this->assertNotNull($define_genusontology[ $key ]);
     }
-    
+
     // #Test formatGenus().
     // Genus = formatting applied by formatGenus().
     $test_genus = [
@@ -121,12 +124,12 @@ class ServiceGenusOntologyTest extends KernelTestBase {
     // #Test saveGenusOntologyConfigValues().
     // loadGenusOntology() sets all configuration values for all genus to a default value
     // 0. This test will set every configuration to null cv (id: 1) and null db (id: 1).
-    
+
     // This would have came from a form submit method.
     $null_id = 1;
     $genus_ontology_values = [];
 
-    foreach($define_genusontology as $genus_key => $config_values) {      
+    foreach($define_genusontology as $genus_key => $config_values) {
       foreach($config_values as $config_name) {
         $genus_ontology_values[ $genus_key ][ $config_name ] = $null_id;
       }
