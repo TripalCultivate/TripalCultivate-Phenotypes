@@ -49,8 +49,6 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
 
   public function testGenusOntologyService() {
     \Drupal::state()->set('is_a_test_environment', TRUE);
-    // This line will create install schema.
-    $this->installSchema('tripal_chado', ['chado_installations']);
 
     // Class created.
     $this->assertNotNull($this->service);
