@@ -41,6 +41,13 @@ class ServiceTermTest extends ChadoTestKernelBase {
   private $config;
 
   /**
+   * Tripal DBX Chado Connection object
+   *
+   * @var ChadoConnection
+   */
+  protected $chado_connection;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -70,6 +77,10 @@ class ServiceTermTest extends ChadoTestKernelBase {
 
       closedir($handle);
     }
+
+    // Create a test chado instance and then set it in the container for use by our service.
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Term service.
     $this->service = \Drupal::service('trpcultivate_phenotypes.terms');
@@ -124,7 +135,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     }
 
     // Test values matched to what was loaded into the table.
-    $chado = \Drupal::service('tripal_chado.database');
+    $chado = $this->chado_connection;
     $all_ids = array_keys($id_to_name);
     $rec = $chado->query(
       'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])',
