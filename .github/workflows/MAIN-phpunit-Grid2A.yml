@@ -3,9 +3,9 @@ on:
   push:
     branches:
       - 4.x
-      - customize-template
+      - g5.18-workflows
 jobs:
-  run-tests:
+  grid-2A:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -13,8 +13,8 @@ jobs:
       - name: Run Automated testing
         uses: tripal/test-tripal-action@v1.0
         with:
-          directory-name: 'TripalCultivate-Phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
-          modules: 'trpcultivate_phenotypes'
+          directory-name: 'TripalCultivate-Phenotypes'
+          modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           php-version: '8.1'
           pgsql-version: '13'
-          drupal-version: '9.3.x-dev'
+          drupal-version: '9.4.x-dev'
