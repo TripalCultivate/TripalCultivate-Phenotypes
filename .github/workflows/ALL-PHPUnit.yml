@@ -48,6 +48,8 @@ jobs:
         with:
           directory-name: $PKG_NAME
           modules: $MODULES
+          build-image: TRUE
+          dockerfile: 'Dockerfile'
           php-version: ${{ matrix.php-version }}
           pgsql-version: ${{ matrix.pgsql-version }}
           drupal-version: ${{ matrix.drupal-version }}
