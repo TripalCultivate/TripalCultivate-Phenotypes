@@ -30,7 +30,6 @@ body:
           - description of the task to be carried out including goal/purpose
           - link to Tripal 3 code
           - if developing a service or plugin then describe what code will call it
-      render: markdown
     validations:
       required: true
   - type: textarea
@@ -38,6 +37,5 @@ body:
     attributes:
       label: Design
       placeholder: Describe the class name and methods in detail here if applicable. For methods, think of writing the docblock now before writing any code.
-      render: markdown
     validations:
       required: true
