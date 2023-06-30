@@ -25,5 +25,14 @@ function trpcultivate_phenotypes_install() {
   $dir_watermark = $base_dir . '/watermark/';
   $file_system->prepareDirectory($dir_watermark, FileSystemInterface::CREATE_DIRECTORY);
 
-  // Define other directories here:  
+  // Define other directories here: 
+  
+  // Install default terms and set term configuration variable.
+  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+  $term_service->loadTerms();
+
+  // Prepare ontology configuration variable.
+  // Set to not set value - 0.
+  $ontology_service = \Drupal::service('trpcultivate_phenotypes.ontology');
+  $ontology_service->loadGenusOntology();
 }
