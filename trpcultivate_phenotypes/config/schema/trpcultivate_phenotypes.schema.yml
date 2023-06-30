@@ -76,11 +76,12 @@ trpcultivate_phenotypes.settings:
                 cvdbon:
                   type: sequence
                   label: 'CV, DB and Ontology'
+                  description: 'The key of this sequence is the sanitized genus and the value mapping indicates the values for this genus.'
                   nullable: True
-                  sequence: 
+                  sequence:
                     type: mapping
                     label: 'Genus-based CV, DB and Ontology'
-                    mapping: 
+                    mapping:
                       trait:
                         type: integer
                         label: 'CV: traits'
@@ -99,7 +100,7 @@ trpcultivate_phenotypes.settings:
                 allownew:
                   type: boolean
                   label: 'Allow new traits added during upload'
-                    
+
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'
