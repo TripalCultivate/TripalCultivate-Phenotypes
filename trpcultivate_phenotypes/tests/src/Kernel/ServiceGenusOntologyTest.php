@@ -25,8 +25,12 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    'trpcultivate_phenotypes'
   ];
 
-  protected function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() :void {
     parent::setUp();
+
     $this->installConfig(['trpcultivate_phenotypes']);
 
     $test_insert_genus = ['Lens', 'Cicer'];
