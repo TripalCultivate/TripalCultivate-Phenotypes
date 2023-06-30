@@ -95,7 +95,18 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Describe the stages and help text/guide for this importer.
     // Stage indicators.
-    $help_text = t('This is a test help text.');
+    $help_text = t('
+      Stage 1 - Upload Data File: This Form will guide you through uploading your phenotypic data.
+      Your data file should be a Tab Separated Values.
+
+      State 2 - Validate Data: In this second stage, each line in your data file will be validated
+      to meet column data type expected values.
+
+      Stage 3 - Describe and Save Data: In this final stage, we ask that you describe the traits
+      discovered in your data file. Areas that require information include: Unit and Method of Collection.
+      Your data file will be saved in the server.
+    
+    ');
     $stages = [
       1 => 'Upload Data File',
       2 => 'Validate Data',
@@ -175,8 +186,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * Form STAGE 01 - Upload file.
    */
   public function formStage01($form, &$form_state) {
-    // Select experiment, Genus field will reflect the genus project 
-    // is set to.
+    // Select experiment, Genus field will reflect the genus project is set to.
     $form['experiment'] = [
       '#title' => t('Experiment'),
       '#type' => 'textfield',
@@ -186,9 +196,16 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       '#required' => TRUE,
       
       '#attributes' => ['placeholder' => 'Experiment/Project Name', 'class' => ['tcp-autocomplete']],
-      '#autocomplete_route_name' => 'trpcultivate_phenotypes.autocomplete_project',
-      '#autocomplete_route_parameters' => ['type_id' => 1, 'count' => 5],
+      // '#autocomplete_route_name' => 'tripal_chado.autocomplete_project',
+      // '#autocomplete_route_parameters' => ['type_id' => 0, 'count' => 5],
     ];
+
+    $form['genus'] = [
+      '#title' => t('Genus'),
+      '#type' => 'select',
+    ];
+
+
 
     return $form;
   }
