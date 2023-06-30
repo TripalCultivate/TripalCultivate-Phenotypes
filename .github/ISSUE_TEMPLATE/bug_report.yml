@@ -1,6 +1,6 @@
 name: Bug Report
 description: Report any unexpected behaviour so we can improve this module.
-title: "[Bug]: "
+title: "[Bug] "
 labels: ["bug - potential"]
 body:
   - type: dropdown
