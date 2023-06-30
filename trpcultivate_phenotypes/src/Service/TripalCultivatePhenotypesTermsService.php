@@ -106,51 +106,30 @@ class TripalCultivatePhenotypesTermsService {
    *   True if all terms were inserted successfully and false otherwise.
    */
   public function loadTerms($schema = 'chado') {
-    // Error flag is 0 - no error, all passes prove otherwise.
     $error = 0;
     $terms = $this->terms;
 
     if ($terms) {
       // Install terms.
       foreach($terms as $config_map => $config_prop) {
-        $cvterm_row = [
-          'name' => $config_prop['name'],
-          'cv_id' => ['name' => $config_prop['cv']['name']]
-        ];
-
-        // Check if the term exists.
-        $cvterm = chado_get_cvterm($cvterm_row, [], $schema);
-
-        if (!$cvterm) {
-          // No match of this term in the database, see if cv exists.
-          $cv_row = [
-            'name' => $config_prop['cv']['name']
-          ];
-
-          $cv_id = chado_get_cv($cv_row, [], $schema);
-
-          if (!$cv_id) {
-            // No match of this cv in the database. Create record.
-            $cv_id = chado_insert_cv($cv_row['name'], $config_prop['cv']['definition'], [], $schema);
-
-            if (!$cv_id) {
-              // Error inserting cv.
-              $error = 1;
-              $this->logger->error('Error. Could not insert cv.');
-            }
-          }
-
-          // Insert the term.
-          unset($config_prop['cv']);
-          $cvterm = chado_insert_cvterm($config_prop, [], $schema);
-        }
-
+        unset($config_prop['cv']);
+        $cvterm = chado_insert_cvterm($config_prop, [], $schema);
+        
         // Set the term id as the configuration value of the
         // term configuration variable.
-        $this->config
-          ->set($this->sysvar_terms . '.' . $config_map, $cvterm->cvterm_id);
+        if ($cvterm) {
+          $this->config
+            ->set($this->sysvar_terms . '.' . $config_map, $cvterm->cvterm_id);
+        }
+        else {
+          // Error inserting term.
+          $error = 1;
+          $this->logger->error('Error. Could not insert term.');
+        }
       }
+    }
 
+    if (!$error) {
       // Save all configuration values.
       $this->config->save();
     }
