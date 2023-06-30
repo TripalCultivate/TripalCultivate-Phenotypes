@@ -105,7 +105,7 @@ class TripalCultivatePhenotypesTermsService {
    * @return boolean
    *   True if all terms were inserted successfully and false otherwise.
    */
-  public function loadTerms($schema = 'chado') {
+  public function loadTerms($schema = NULL) {
     $error = 0;
     $terms = $this->terms;
 
@@ -114,7 +114,7 @@ class TripalCultivatePhenotypesTermsService {
       foreach($terms as $config_map => $config_prop) {
         unset($config_prop['cv']);
         $cvterm = chado_insert_cvterm($config_prop, [], $schema);
-        
+
         // Set the term id as the configuration value of the
         // term configuration variable.
         if ($cvterm) {
