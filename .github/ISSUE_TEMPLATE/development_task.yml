@@ -1,8 +1,8 @@
 name: Development Task
 description: MODULE DEVELOPERS ONLY These issues describe development tasks for the module.
-title: "TASK: "
+title: "G[groupNo].[issueNo] "
 body:
-  - type: textarea
+  - type: textfield
     id: branch
     attributes:
       label: Branch
