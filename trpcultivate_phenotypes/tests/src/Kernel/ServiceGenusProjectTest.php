@@ -5,17 +5,17 @@
  * Kernel test of Genus Project service.
  */
 
- namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
- use Drupal\KernelTests\KernelTestBase;
- use Drupal\tripal\Services\TripalLogger;
+use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\tripal\Services\TripalLogger;
 
- /**
-  * Test Tripal Cultivate Phenotypes Genus Project service.
-  *
-  * @group trpcultivate_phenotypes
-  */
-class ServiceGenusProjectTest extends KernelTestBase {
+/**
+ * Test Tripal Cultivate Phenotypes Genus Project service.
+ *
+ * @group trpcultivate_phenotypes
+ */
+class ServiceGenusProjectTest extends ChadoTestKernelBase {
   /**
    * Term service.
    * 
@@ -24,9 +24,9 @@ class ServiceGenusProjectTest extends KernelTestBase {
   protected $service;
 
   /**
-   * Term service.
-   * 
-   * @var object
+   * Tripal DBX Chado Connection object
+   *
+   * @var ChadoConnection
    */
   protected $chado;
 
@@ -75,8 +75,10 @@ class ServiceGenusProjectTest extends KernelTestBase {
     // Set ontology.term: genus to null (id: 1).
     $this->config->set('trpcultivate.phenotypes.ontology.terms.genus', 1);
 
-    // Chado database.
-    $this->chado = \Drupal::service('tripal_chado.database');
+    // Test Chado database.
+    // Create a test chado instance and then set it in the container for use by our service.
+    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado);
 
     // Prepare by adding test records to genus, project and projectproperty
     // to relate a genus to a project.
@@ -143,25 +145,25 @@ class ServiceGenusProjectTest extends KernelTestBase {
 
   public function testGenusProjectService() {
     // Class created.
-    $this->assertNotNull($this->service);
+    $this->assertNotNull($this->service, 'Term service not created.');
 
     // Assert all relevant records were created in setup.
     foreach($this->ins as $key => $value) {
-      $this->assertNotNull($value);
+      $this->assertNotNull($value, $key . ' Test record not created.');
     }
 
     // Test get activeGenus().
     $active_genus = $this->service->getActiveGenus();
-    $this->assertNotNull($active_genus);
+    $this->assertNotNull($active_genus, 'Fetch lists of active genus method returned empty result.');
     
     foreach($active_genus as $g) {
-      $this->assertEquals($g, $this->ins['genus']);
+      $this->assertEquals($g, $this->ins['genus'], 'Active genus does not match expected: ' . $g);
     }
 
     // Test getGenusOfProject().
     $genus_project = $this->service->getGenusOfProject($this->ins['project_id']);
-    $this->assertNotNull($genus_project);
-    $this->assertEquals($genus_project['genus'], $this->ins['genus']);
+    $this->assertNotNull($genus_project, 'Genus of a project returned null: project_id - ' . $this->ins['project_id']);
+    $this->assertEquals($genus_project['genus'], $this->ins['genus'], 'Genus does not match expected genus: ' . $genus_project['genus']);
 
     // Test setGenusToProject().
     // Insert another genus
@@ -177,13 +179,13 @@ class ServiceGenusProjectTest extends KernelTestBase {
 
     // From Wild genus to cultivated genus.
     $set = $this->service->setGenusToProject($this->ins['project_id'], $genus, TRUE);
-    $this->assertTrue($set);
+    $this->assertTrue($set, 'Change of genus failed: project_id - ' . $this->ins['project_id'] . ' to ' . $genus);
     $new_genus = $this->service->getGenusOfProject($this->ins['project_id']);
-    $this->assertEquals($new_genus['genus'], $genus);
+    $this->assertEquals($new_genus['genus'], $genus, 'Genus does not match expected genus: ' . $genus);
 
     // Does nothing. replace option is default to false.
     $set = $this->service->setGenusToProject($this->ins['project_id'], 'REPLACEMENT GENUS');
-    $this->assertTrue($set);
+    $this->assertTrue($set, 'Change of genus failed: project_id - ' . $this->ins['project_id'] . ' to ' . $genus);
 
     // No relationship yet. Create a relationship in projectprop table.
     // Create a new project.
@@ -198,9 +200,9 @@ class ServiceGenusProjectTest extends KernelTestBase {
       ->fetchField();
 
     $set = $this->service->setGenusToProject($project_id, $genus);
-    $this->assertTrue($set);
+    $this->assertTrue($set, 'Change of genus failed: project_id - ' . $project_id . ' to ' . $genus);
 
     $new_project_genus = $this->service->getGenusOfProject($project_id);
-    $this->assertEquals($new_project_genus['genus'], $genus);
+    $this->assertEquals($new_project_genus['genus'], $genus, 'Genus does not match expected genus: ' . $genus);
   }
 }
