@@ -13,12 +13,19 @@ use Drupal\tripal\Services\TripalLogger;
 /**
  * Tests associated with the Genus Ontology Service.
  *
- * Service: trpcultivate_phenotypes.genus_ontology
- * Class: TripalCultivatePhenotypesGenusOntologyService
+ * @group trpcultivate_phenotypes
  */
 class ServiceGenusOntologyTest extends ChadoTestKernelBase {
+  /**
+   * Term service.
+   *
+   * @var object
+   */
   protected $service;
 
+  /**
+   * Modules to enable.
+   */
   protected static $modules = [
    'tripal',
    'tripal_chado',
@@ -26,15 +33,47 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
   ];
 
   /**
+   * Tripal DBX Chado Connection object
+   *
+   * @var ChadoConnection
+   */
+  protected $chado;
+
+  /**
+   * Configuration
+   *
+   * @var config_entity
+   */
+  private $config;
+
+  /**
+   * Test genus.
+   * 
+   * @var array
+   */
+  private $test_genus = [
+    'Lens',
+    'Cicer'
+  ];
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() :void {
     parent::setUp();
+    
+    // Set test environment.
+    \Drupal::state()->set('is_a_test_environment', TRUE);
 
     $this->installConfig(['trpcultivate_phenotypes']);
+    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
-    $test_insert_genus = ['Lens', 'Cicer'];
-    $chado = \Drupal::service('tripal_chado.database');
+    // Create a test chado instance and then set it in the container for use by our service.
+    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado);
+
+    // Create organism of type null (id: 1).
+    $test_insert_genus = $this->test_genus;
     $ins_genus = "
       INSERT INTO {1:organism} (genus, species, type_id)
       VALUES
@@ -42,14 +81,12 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
         ('$test_insert_genus[1]', 'arientinum', 1)
     ";
 
-    $chado->query($ins_genus);
+    $this->chado->query($ins_genus);
 
     $this->service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
   }
 
   public function testGenusOntologyService() {
-    \Drupal::state()->set('is_a_test_environment', TRUE);
-
     // Class created.
     $this->assertNotNull($this->service);
 
@@ -59,7 +96,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     // during install process.
 
     // Created genus of type null (id: 1).
-    $test_insert_genus = ['Lens', 'Cicer'];
+    $test_insert_genus = $this->test_genus;
 
     // #Test defineGenusOntology().
     $define_genusontology = $this->service->defineGenusOntology();
@@ -96,8 +133,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     $this->assertTrue($is_saved);
 
     // Compare what was registered in the config settings.
-    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-    $config_genus_ontology = $config->get('trpcultivate.phenotypes.ontology.cvdbon');
+    $config_genus_ontology = $this->config->get('trpcultivate.phenotypes.ontology.cvdbon');
     foreach($test_insert_genus as $genus) {
       $g = $this->service->formatGenus($genus);
       // Genus configuration found.
