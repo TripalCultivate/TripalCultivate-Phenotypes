@@ -26,4 +26,17 @@ function trpcultivate_phenotypes_install() {
   $file_system->prepareDirectory($dir_watermark, FileSystemInterface::CREATE_DIRECTORY);
 
   // Define other directories here:  
+
+  // Register a Tripal Job instance to install default terms and 
+  // set term configuration variable.
+  // @see module file for the callback function.
+  $user = \Drupal::currentUser();
+  $uid = $user->id();
+  
+  try {
+    tripal_add_job('Tripal Cultivate Phenotypes: Install Ontology and Terms', 'tripal', 'trpcultivate_phenotypes_install_ontologyterms', [], $uid, 10, []);
+  }
+  catch (\Exception $e) {
+    throw new \Exception('Cannot create a job to install terms:' . $e->getMessage);
+  }
 }
