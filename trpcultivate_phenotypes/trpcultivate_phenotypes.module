@@ -36,6 +36,16 @@ function trpcultivate_phenotypes_help($route_name, RouteMatchInterface $route_ma
 }
 
 /**
+ * Tripal Job callback.
+ * Job registered during install to insert terms used by configuration
+ * page default field values.
+ */
+function trpcultivate_phenotypes_install_terms() {
+  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+  $term_service->loadTerms();
+}
+
+/**
  * Implements hook_theme().
  * 
  * @see templates in /templates.

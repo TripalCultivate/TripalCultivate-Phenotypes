@@ -5,7 +5,7 @@ on:
       - 4.x
       - g5.18-workflows
 jobs:
-  grid-2A:
+  grid-2D:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -19,4 +19,4 @@ jobs:
           dockerfile: 'Dockerfile'
           php-version: '8.1'
           pgsql-version: '13'
-          drupal-version: '9.4.x-dev'
+          drupal-version: '10.1.x-dev'

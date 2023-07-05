@@ -1,5 +1,9 @@
 # TripalCultivate Phenotypes Services.
-
 services:
-  trpcultivate_phenotypes.experiment:
-    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesExperimentService'
+  trpcultivate_phenotypes.terms:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService'
+    arguments: ['@config.factory', '@tripal.logger']
+
+  trpcultivate_phenotypes.genus_ontology:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService'
+    arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
