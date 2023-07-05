@@ -1,0 +1,24 @@
+# Tripal Cultivate Phenotypes Libraries.
+
+# Script to auto-select field content for quick alteration of value.
+script-autoselect-field:
+  version: v1.x
+  js:
+    js/script-autoselect-field.js: {}
+  dependencies:
+    - core/jquery
+
+# Script collapse/expand information window.
+script-pull-window:
+  version: v1.x
+  js:
+    js/script-pull-window.js: {}
+  dependencies:
+    - core/jquery
+
+# Style upload stages.
+style-upload-stages:
+  version: v1.x
+  css:
+    theme:
+      css/style-upload-stages.css: {}

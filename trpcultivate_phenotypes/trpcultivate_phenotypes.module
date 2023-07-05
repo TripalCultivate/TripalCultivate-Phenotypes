@@ -44,3 +44,27 @@ function trpcultivate_phenotypes_install_terms() {
   $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
   $term_service->loadTerms();
 }
+
+/**
+ * Implements hook_theme().
+ * 
+ * @see templates in /templates.
+ */
+function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
+  $items = [];
+
+  $items = [
+    'theme-upload_stages' => [
+      'variables' => [
+        'data' => [
+          'cur_stage' => 1,
+          'stages' => [],
+          'help_text' => ''
+        ]
+      ],
+      'template' => 'trpcultivate-phenotypes-template-upload-stages'
+    ],
+  ];
+
+  return $items;
+}
