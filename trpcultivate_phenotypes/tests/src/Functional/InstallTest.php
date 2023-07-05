@@ -39,6 +39,14 @@ class InstallTest extends ChadoTestBrowserBase {
   protected static $help_text_excerpt = 'pports collecting all data for a specific trait (e.g. Plant Height) into a single page while still fully describing methodology and units for accurate analysis.';
 
   /**
+   * {@inheritdoc}
+   */
+  protected function setUp() :void {
+    parent::setUp();
+    $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+  }
+
+  /**
    * Tests that a specific set of pages load with a 200 response.
    */
   public function testLoad() {
@@ -92,6 +100,6 @@ class InstallTest extends ChadoTestBrowserBase {
     $this->drupalGet('admin/help/' . self::$module_machinename);
     $status_code = $session->getStatusCode();
     $this->assertEquals(200, $status_code, "The module help page should be able to load $context.");
-    $this->assertSession()->pageTextContains($some_extected_text); 
+    $this->assertSession()->pageTextContains($some_extected_text);
   }
 }
