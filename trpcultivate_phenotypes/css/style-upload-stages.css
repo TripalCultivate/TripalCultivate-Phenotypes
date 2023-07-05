@@ -1,0 +1,43 @@
+/* Import global css: */
+@import 'style-global.css';
+
+#tcp-upload-stages {
+  width: 100%;
+}
+
+#tcp-upload-stages div {
+  font-size: 1em;
+  margin: 0;
+  padding: 0;
+}
+
+/* Title text of stage */
+#tcp-upload-stages div:first-child {
+  font-size: 1.2em;
+  font-weight: 300;
+}
+
+#tcp-upload-stages div:first-child a {
+  font-size: 0.8em;
+  text-decoration: none;
+}
+
+/* Stages */
+#tcp-upload-stages div:last-child {
+  display: flex;
+  width: inherit;
+}
+
+.stage-current, .stage-upcoming {
+  flex: 1;
+  height: 10px;
+}
+
+.stage-current {
+  background-color: #000000;
+  border-bottom: 2px solid green;
+}
+
+.stage-upcoming {
+  background-color: #EAEAEA;
+}

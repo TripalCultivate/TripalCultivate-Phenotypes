@@ -77,7 +77,7 @@ trpcultivate_phenotypes.settings:
                   type: mapping
                   label: 'Terms used in inserting data'
                   mapping:
-                    collector:
+                    data_collector:
                       type: integer
                       label: 'CV Term: Data collector'
                     entry: 
@@ -95,29 +95,33 @@ trpcultivate_phenotypes.settings:
                     name:
                       type: integer
                       label: 'CV Term: Germplasm/line name'
-                    plot:
+                    experiment_container:
                       type: integer
                       label: 'CV Term: Phenotyping plot number'
-                    related:
+                    unit_to_method_relationship_type:
                       type: integer
-                      label: 'CV Term: Method - Trait - Unit relation'
-                    replicate:
+                      label: 'CV Term: Unit - Method relationship'
+                    method_to_trait_relationship_type:
+                      type: integer
+                      label: 'CV Term: Method - Trait relationship'  
+                    experiment_replicate:
                       type: integer
                       label: 'CV Term: Phenotyping replicate'
                     unit:
                       type: integer
                       label: 'CV Term: Trait unit'
-                    year:
+                    experiment_year:
                       type: integer
                       label: 'CV Term: Phenotyping year'
                 cvdbon:
                   type: sequence
                   label: 'CV, DB and Ontology'
+                  description: 'The key of this sequence is the sanitized genus and the value mapping indicates the values for this genus.'
                   nullable: True
-                  sequence: 
+                  sequence:
                     type: mapping
                     label: 'Genus-based CV, DB and Ontology'
-                    mapping: 
+                    mapping:
                       trait:
                         type: integer
                         label: 'CV: traits'
@@ -136,10 +140,44 @@ trpcultivate_phenotypes.settings:
                 allownew:
                   type: boolean
                   label: 'Allow new traits added during upload'
-                          
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'
         phenocollect:
           type: string
           label: 'Phenotypes Collect (Raw) Configuration'
+        
+        # Tripal Phenotypes default ontology/term values.
+        default_terms:
+          type: config_entity
+          label: 'Configuration Entity Collection'
+          mapping:
+            term_set:
+              type: sequence
+              label: 'Set of cv and terms'
+              sequence:
+                type: mapping
+                mapping: 
+                  name:
+                    type: string
+                    label: 'CV name'
+                  definition:
+                    type: string
+                    label: 'Definition'
+                  terms:
+                    type: sequence
+                    sequence:
+                      type: mapping
+                      mapping:
+                        config_map:
+                          type: string
+                          label: 'This term maps to which configuration variable name'
+                        id:
+                          type: string
+                          label: 'Term id'
+                        name:
+                          type: string
+                          label: 'Term name'
+                        definition:
+                          type: string
+                          label: 'Term definition'

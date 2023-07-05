@@ -1,0 +1,5 @@
+# Tripal Cultivate Phenotypes Share - Services.
+services:
+  trpcultivate_phenoshare.phenotypes_importer:
+    class: Drupal\trpcultivate_phenoshare\PhenotypesImporter\PhenotypesImporterManager
+    parent: default_plugin_manager

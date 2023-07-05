@@ -27,3 +27,24 @@ function trpcultivate_phenoshare_help($route_name, RouteMatchInterface $route_ma
     default:
   }
 }
+
+/**
+ * Implements hook_form_alter().
+ */
+function trpcultivate_phenoshare_form_alter(&$form, &$form_state, $form_id) {
+  // This hook will omit from Tripal Importer Plugin.
+  // - Field file upload.
+  // - Submit button.
+  // - Advanced Option (Database options).
+  if(isset($form['importer_plugin_id']['#value']) 
+    && $form['importer_plugin_id']['#value'] == 'trpcultivate-phenotypes-share') {
+      // Disable selection of previously uploaded file. 
+      $form['file']['file_upload_existing'] = [];
+      // Form will implement a form button that can be re-named
+      // relevant to each stage.
+      $form['button'] = [];
+      // Exclude the database option (advanced options) since phenotypes
+      // schema is always installed in chado database (default schema).
+      $form['advanced']['#access'] = FALSE;
+  }
+}
