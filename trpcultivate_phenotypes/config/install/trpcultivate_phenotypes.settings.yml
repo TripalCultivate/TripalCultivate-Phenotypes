@@ -42,7 +42,7 @@ trpcultivate:
         - '/ = div'
         - '? = unsure'
         - '- = to'
-    
+
     # trpcultivate.phenotypes.watermark:
     # Configurations relating to the watermarking of charts.
     # - charts: True, all charts will be watermarked and False, otherwise.
@@ -55,7 +55,7 @@ trpcultivate:
         - 'gif'
     
     # trpcultivate.phenotypes.ontology:
-    # Configure vocabulary term, databse and term used by many processes of phenotypes module.
+    # Configure vocabulary term, database and term used by many processes of phenotypes module.
     # - terms: terms used when inserting phenotypic data.
     # - cvdbon: CV, Database and Ontology used to house traits.
     ontology:
@@ -72,6 +72,8 @@ trpcultivate:
         experiment_replicate: 0          
         unit: 0
         experiment_year: 0
+      cvdbon:
+      allownew: true
 
   phenoshare: null
   phenocollect: null
