@@ -71,6 +71,16 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
       ],
       'template' => 'trpcultivate-phenotypes-template-upload-stages'
     ],
+    'header_instructions' => [
+      'variables' => [
+        'data' => [
+          'section' => '',
+          'link_01' => '',
+          'link_02' => ''
+        ]
+      ],
+      'template' => 'trpcultivate-phenotypes-template-header-instructions'
+    ],
   ];
 
   return $items;
