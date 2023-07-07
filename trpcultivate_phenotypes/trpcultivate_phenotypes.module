@@ -39,10 +39,17 @@ function trpcultivate_phenotypes_help($route_name, RouteMatchInterface $route_ma
  * Tripal Job callback.
  * Job registered during install to insert terms used by configuration
  * page default field values.
+ * 
+ * @see config/trpcultivate_phenotypes.settings
  */
-function trpcultivate_phenotypes_install_terms() {
-  $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
-  $term_service->loadTerms();
+function trpcultivate_phenotypes_install_ontologyterms() {
+  // Create terms defined in config entity.
+  \Drupal::service('trpcultivate_phenotypes.terms')
+    ->loadTerms();
+
+  // Create genus-ontology configuration.
+  \Drupal::service('trpcultivate_phenotypes.genus_ontology')
+    ->loadGenusOntology();
 }
 
 /**
@@ -63,6 +70,16 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
         ]
       ],
       'template' => 'trpcultivate-phenotypes-template-upload-stages'
+    ],
+    'header_instructions' => [
+      'variables' => [
+        'data' => [
+          'section' => '',
+          'link_01' => '',
+          'link_02' => ''
+        ]
+      ],
+      'template' => 'trpcultivate-phenotypes-template-header-instructions'
     ],
   ];
 
