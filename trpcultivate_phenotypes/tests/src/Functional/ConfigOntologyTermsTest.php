@@ -47,11 +47,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     // Ensure we see all logging in tests.
     \Drupal::state()->set('is_a_test_environment', TRUE);
-    $session = $this->assertSession();
 
     // Access to configuration page prior to execution of Tripal Job relating
     // to creation of Ontology and Terms will show a warning message.
     $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
+    $session = $this->assertSession();
     $session->statusCodeEquals(200);
     $session->pageTextContains('Warning message');
 
@@ -85,6 +85,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     // Access Ontology and Terms configuration page.
     $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
+    $session = $this->assertSession();
 
     $session->statusCodeEquals(200);
     $session->pageTextContains('Configure Tripal Cultivate Phenotypes: Ontology Terms');
