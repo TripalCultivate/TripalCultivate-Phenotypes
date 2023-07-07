@@ -33,20 +33,37 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
   protected $admin_user;
 
   /**
-   * Test Ontology and Terms configuration page.
+   * Chado test schema.
+   * 
+   * @var object
    */
-  public function testForm() {
+  protected $chado;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
     // Setup admin user account.
     $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
       'administer tripal'
     ]);
 
-    // Login admin user.
-    $this->drupalLogin($this->admin_user);
-
     // Ensure we see all logging in tests.
     \Drupal::state()->set('is_a_test_environment', TRUE);
+
+    $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado);
+  }
+
+  /**
+   * Test Ontology and Terms configuration page.
+   */
+  public function testForm() {
+    // Login admin user.
+    $this->drupalLogin($this->admin_user);
 
     // Access to configuration page prior to execution of Tripal Job relating
     // to creation of Ontology and Terms will show a warning message.
@@ -58,9 +75,6 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Tripal Jobs to create/insert terms and setup genus ontology configuration
     // are created on install of tripalcultivate_phenotypes. The job may execute or not
     // but this block will create them manually.
-    $chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $chado);
-
     $test_insert_genus = [
       'Lens',
       'Cicer'
@@ -73,7 +87,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
         ('$test_insert_genus[1]', 'arientinum', 1)
     ";
 
-    $chado->query($ins_genus);
+    $this->chado->query($ins_genus);
 
     // Load genus ontology.
     $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
