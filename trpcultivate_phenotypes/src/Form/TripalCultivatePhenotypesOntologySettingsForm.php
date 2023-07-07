@@ -72,15 +72,17 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     
     parent::__construct($config_factory);
   
+    // Services: genus ontology, terms and chado database.
     $this->service_genusontology = $genus_ontology;
     $this->service_terms = $terms;
     $this->chado = $chado;
 
-    $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology';
-
     // Prepare terms and ontology.
     $this->config_vars['ontology'] = $this->service_genusontology->defineGenusOntology();
     $this->config_vars['terms']    = $this->service_terms->defineTerms();
+
+    // Terms and Genus Ontology configuration.
+    $this->sysvar_ontology = 'trpcultivate.phenotypes.ontology';
   }
 
   /**
@@ -125,13 +127,16 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     // No genus nor terms to work on. Remind user to execute Tripal Job
     // registered during install to initialize module with terms.
     // Could not proceed if no genus in the host site.
-    if (count($this->config_vars['ontology']) <= 0) {
-      $this->messenger()->addWarning('No genus found in this site. Please create a genus and re-install the module.');
-      return $form;
-    }
+    if (count($this->config_vars['ontology']) <= 0 || count($this->config_vars['terms']) <= 0) {
+      $url = Url::fromRoute('tripal.jobs');
+      $link = Link::fromTextAndUrl($this->t('Click here to manage Tripal Jobs'), $url)
+        ->toString();
 
-    if (count($this->config_vars['terms']) <= 0) {
-      $this->messenger()->addWarning('Default terms are not installed. Please execute Tripal Job: Tripal Cultivate Phenotypes: Install Ontology and Terms.');
+      $warning = $this->t('Tripal Cultivate Phenotypes could not find required terms and/or organism records (Genus), 
+        both used for creating terms and genus-ontology module configuration. Please execute Tripal Job titled:
+        Tripal Cultivate Phenotypes: Install Ontology and Terms. @jobs', ['@jobs' => $link]);
+      $this->messenger()->addWarning($warning);
+
       return $form;
     }
     
@@ -190,22 +195,24 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
 
     // Each genus, create table fields for cv, method, unit, db and crop ontology.
     // Prepare vocabulary and database select field options.
-    $vocabulary_options = $this->chado->query("
+    $vocabulary = $this->chado->query("
       SELECT cv_id, name FROM {1:cv} ORDER BY name ASC    
     ")
     ->fetchAllKeyed(0, 1);
+    $vocabulary_options = (count($vocabulary) > 0) ? $vocabulary : [];
 
-    $database_options = $this->chado->query("
+    $database = $this->chado->query("
       SELECT db_id, name FROM {1:db} ORDER BY name ASC
     ")
     ->fetchAllKeyed(0, 1);
+    $database_options = (count($database) > 0) ? $database : [];
 
     $i = 0;
     foreach($this->config_vars['ontology'] as $genus => $vars) {
       // Label - Genus.
       $form['ontology_fieldset']['wrapper']['table_fields'][ $i ][ $genus . '_label' ] = [
         '#type' => 'item',
-        '#title' => ucfirst($genus)
+        '#title' => ucwords($genus)
       ];
 
       // Get genus ontology configuration set of values.
@@ -247,9 +254,12 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
 
         $j++;
       }
+
       $i++;
     }
 
+
+    // ALLOW NEW TRAITS.
     $allow_new = $this->config(static::SETTINGS)
       ->get($this->sysvar_ontology . '.allownew');
     
@@ -390,7 +400,8 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
       $values_term[ $config ] = $id;
     }  
     
-    $this->service_terms->saveTermConfigValues($values_term);
+    $this->service_terms
+      ->saveTermConfigValues($values_term);
   
     return parent::submitForm($form, $form_state);
   }
