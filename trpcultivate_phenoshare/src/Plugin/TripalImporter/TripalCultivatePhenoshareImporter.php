@@ -11,15 +11,18 @@ namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 
 /**
- * GFF3 Importer implementation of the TripalImporterBase.
+ * Tripal Cultivate Phenotypes - Share Importer.
+ *
+ * Focused on phenotypic data which has already been published or which is ready
+ * to be freely shared.
  *
  * @TripalImporter(
  *   id = "trpcultivate-phenotypes-share",
- *   label = @Translation("Phenotypes Share - Data Importer"),
- *   description = @Translation("Loads Phenotypic Data Importer."),
+ *   label = @Translation("Tripal Cultivate: Open Science Phenotypic Data"),
+ *   description = @Translation("Imports phenotypic data which has already been published or which is ready to be freely shared."),
  *   file_types = {"txt","tsv"},
  *   upload_description = @Translation("Please provide a txt or tsv data file."),
- *   upload_title = @Translation("Phenotypes Data File*"),
+ *   upload_title = @Translation("Phenotypic Data File*"),
  *   use_analysis = False,
  *   use_button = False,
  *   require_analysis = False,
@@ -36,45 +39,6 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
  * )
  */
 class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
-  /**
-   * The name of this loader.  This name will be presented to the site
-   * user.
-   */
-  public static $name = 'Tripal Cultivate Phenotypes Share Data Importer';
-
-  /**
-   * The machine name for this loader. This name will be used to construct
-   * the URL for the loader.
-   */
-  public static $machine_name = 'trpcultivate_phenotypes_share';
-
-  /**
-   * A brief description for this loader.  This description will be
-   * presented to the site user.
-   */
-  public static $description = 'Loads Phenotypic Data Importer';
-
-  /**
-   * An array containing the extensions of allowed file types.
-   */
-  public static $file_types = ['txt', 'tsv'];
-
-  /**
-   * Provides information to the user about the file upload.  Typically this
-   * may include a description of the file types allowed.
-   */
-  public static $upload_description = 'Please provide a txt or tsv data file.';
-
-  /**
-   * The title that should appear above the upload button.
-   */
-  public static $upload_title = 'Phenotypes Data File';
-
-  /**
-   * Text that should appear on the button at the bottom of the importer
-   * form.
-   */
-  public static $button_text = 'Import File';
 
   /**
    * {@inheritDoc}
@@ -117,16 +81,16 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       $stage = ($stage > count($stages)) ? 1 : $stage;
     }
     else {
-      // On initial load of the importer set the stage to 
+      // On initial load of the importer set the stage to
       // stage 1 of the upload/import process.
-      $stage = 1;      
+      $stage = 1;
     }
 
     // Save the current stage in a $form_state variable.
     $form_state->set($current_stage, $stage);
 
     // Render the stage details in the header section of the form.
-    // Set with the lowest weight to embed in the header of the form.  
+    // Set with the lowest weight to embed in the header of the form.
     $form['stage_indicator'] = [
       '#type' => 'inline_template',
       '#theme' => 'theme-upload_stages',
@@ -144,7 +108,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
         // Upload file stage.
         $form = $this->formStage01($form, $form_state);
         break;
-      
+
       case 2:
         // Describe traits stage.
         $form = $this->formStage02($form, $form_state);
@@ -164,13 +128,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       '#weight' => 100,
       '#id' => 'tcps-submit-button'
     ];
-  
+
     return $form;
   }
 
 
   ///// Stages - form callback.
-  
+
   /**
    * Form STAGE 01 - Upload file.
    */

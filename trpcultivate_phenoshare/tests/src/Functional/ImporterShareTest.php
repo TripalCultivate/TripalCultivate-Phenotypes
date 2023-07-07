@@ -33,28 +33,28 @@ class ImporterShareTest extends BrowserTestBase {
    */
   public function testImportShareForm() {
     // Ensure we see all logging in tests.
-    \Drupal::state()->set('is_a_test_environment', TRUE);  
+    \Drupal::state()->set('is_a_test_environment', TRUE);
 
     $admin = $this->drupalCreateUser([
       'administer site configuration',
-      'administer tripal', 
+      'administer tripal',
       'allow tripal import'
     ]);
     $this->drupalLogin($admin);
 
-    // Assert custom Phenotypes Share importer is an item in 
+    // Assert custom Phenotypes Share importer is an item in
     // admin/tripal/loaders page.
-    // Link titled - Phenotypes Share - Data Importer
+    // Link titled - Tripal Cultivate: Open Science Phenotypic Data
     $this->drupalGet('admin/tripal/loaders/');
     $session = $this->assertSession();
     $session->statusCodeEquals(200);
-    $session->pageTextContains('Phenotypes Share - Data Importer');
+    $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
 
     // Phenotypes Share Importer page, default to stage 01.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
     $session = $this->assertSession();
     $session->statusCodeEquals(200);
-    $session->pageTextContains('Phenotypes Share - Data Importer');
+    $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
     $session->pageTextContains('Stage 1');
 
     // Navigate stages.
