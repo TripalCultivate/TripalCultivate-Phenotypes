@@ -48,7 +48,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form = parent::form($form, $form_state);
     // Attach libraries.
     $form['#attached']['library'] = [
-      'trpcultivate_phenotypes/script-pull-window'
+      'trpcultivate_phenotypes/trpcultivate-script-pull-window'
     ];
 
     // Reminder to user about expected phenotypes.

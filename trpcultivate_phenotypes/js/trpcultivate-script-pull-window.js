@@ -16,7 +16,7 @@
       var fldControl = '.tcp-toggle-pull-window';
 
       var pullWindow = $(fldClass);
-      var buttonToggle = $(fldControl);
+      var buttonToggle = $(fldControl, context);
       
       buttonToggle.once(fldControl).click(function(e) {
         e.preventDefault();
