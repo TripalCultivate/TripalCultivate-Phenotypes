@@ -7,12 +7,13 @@
 
 namespace Drupal\Tests\trpcultivate_phenoshare\Functional;
 
-use Drupal\Tests\BrowserTestBase;
+use Drupal\Component\Utility\SafeMarkup;
+use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
  /**
   *  Class definition ImporterShareTest.
   */
-class ImporterShareTest extends BrowserTestBase {
+class ImporterShareTest extends ChadoTestBrowserBase {
   protected $defaultTheme = 'stark';
 
   /**

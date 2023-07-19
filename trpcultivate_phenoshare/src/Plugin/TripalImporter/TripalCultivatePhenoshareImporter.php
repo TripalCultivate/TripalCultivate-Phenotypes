@@ -26,7 +26,7 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
  *   use_analysis = False,
  *   use_button = False,
  *   require_analysis = False,
- *   button_text = @Translation("Next Step"),
+ *   button_text = "",
  *   file_upload = False,
  *   file_load = False,
  *   file_remote = False,
