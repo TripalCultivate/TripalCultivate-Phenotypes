@@ -61,14 +61,14 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Navigate stages.
     // Stage 1 to Stage 2.
     $this->submitForm([], 'Next Stage');
-    $session->pageTextContains('Stage');
+    $session->pageTextContains('Stage 2');
 
     // Stage 2 to Stage 3.
     $this->submitForm([], 'Next Stage');
-    $session->pageTextContains('Stage');
+    $session->pageTextContains('Stage 3');
 
     // Stage 3 back to Stage 1.
-    $this->submitForm([], 'Save');
-    $session->pageTextContains('Stage');
+    $this->submitForm([], t('Save'));
+    $session->pageTextContains('Stage 1');
   }
 }

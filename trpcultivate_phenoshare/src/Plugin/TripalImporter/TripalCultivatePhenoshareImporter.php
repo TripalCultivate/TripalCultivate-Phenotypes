@@ -122,7 +122,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Submit, next stage or save.
     $btn_text = ($stage < count($stages)) ? 'Next Stage' : 'Save';
-    $form['submit'] = [
+    $form['submit_stage'] = [
       '#type' => 'submit',
       '#value' => t($btn_text),
       '#weight' => 100,
