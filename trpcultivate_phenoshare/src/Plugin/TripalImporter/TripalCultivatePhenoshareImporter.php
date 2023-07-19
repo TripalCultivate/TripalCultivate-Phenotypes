@@ -139,7 +139,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * Form STAGE 01 - Upload file.
    */
   public function formStage01($form, &$form_state) {
-    $form['stage1']['#markup'] = '<h3>Stage 1</h3>';
+    $form['stage1']['#markup'] = '<h3>Stage01</h3>';
 
     return $form;
   }
@@ -148,7 +148,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * Form STAGE 02 - Describe traits.
    */
   public function formStage02($form, &$form_state) {
-    $form['stage2']['#markup'] = '<h3>Stage 2</h3>';
+    $form['stage2']['#markup'] = '<h3>Stage02</h3>';
 
     return $form;
   }
@@ -157,7 +157,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * Form STAGE 03 - Save.
    */
   public function formStage03($form, &$form_state) {
-    $form['stage3']['#markup'] = '<h3>Stage 3</h3>';
+    $form['stage3']['#markup'] = '<h3>Stage03</h3>';
 
     return $form;
   }
