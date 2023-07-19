@@ -59,7 +59,9 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $session->pageTextContains('Stage01');
 
     // Navigate stages.
-    $db = 'chado';
+    $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $db = $this->chado->getSchemaName();
+
     // Stage 1 to Stage 2.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
     $session->statusCodeEquals(200);
