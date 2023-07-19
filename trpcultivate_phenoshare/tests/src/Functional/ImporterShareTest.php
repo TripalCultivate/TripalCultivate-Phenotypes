@@ -61,26 +61,28 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Navigate stages.
     $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
     $db = $this->chado->getSchemaName();
+    $schema = (empty($db)) ? '' : $db;
+    
 
     // Stage 1 to Stage 2.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
-    $session->statusCodeEquals(200);
-    $this->submitForm(['schema_name' => $db], 'Next Stage');
+    $session->statusCodeEquals(200);    
+    $this->submitForm(['schema_name' => $schema], 'Next Stage');
     $session->pageTextContains('Stage02');
 
     // Stage 2 to Stage 3.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
     $session->statusCodeEquals(200);
-    $this->submitForm(['schema_name' => $db], 'Next Stage');
-    $this->submitForm(['schema_name' => $db], 'Next Stage');
+    $this->submitForm(['schema_name' => $schema], 'Next Stage');
+    $this->submitForm(['schema_name' => $schema], 'Next Stage');
     $session->pageTextContains('Stage03');
 
     // Stage 3 back to Stage 1.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
     $session->statusCodeEquals(200);
-    $this->submitForm(['schema_name' => $db], 'Next Stage');
-    $this->submitForm(['schema_name' => $db], 'Next Stage');
-    $this->submitForm(['schema_name' => $db], 'Save');
+    $this->submitForm(['schema_name' => $schema], 'Next Stage');
+    $this->submitForm(['schema_name' => $schema], 'Next Stage');
+    $this->submitForm(['schema_name' => $schema], 'Save');
     $session->pageTextContains('Stage01');
   }
 }
