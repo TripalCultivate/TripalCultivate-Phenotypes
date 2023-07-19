@@ -60,15 +60,24 @@ class ImporterShareTest extends ChadoTestBrowserBase {
 
     // Navigate stages.
     // Stage 1 to Stage 2.
-    $this->submitForm([], 'tcps-submit-button');
+    $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+    $session->statusCodeEquals(200);
+    $this->submitForm([], 'Next Stage');
     $session->pageTextContains('Stage02');
 
     // Stage 2 to Stage 3.
-    $this->submitForm([], 'tcps-submit-button');
+    $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+    $session->statusCodeEquals(200);
+    $this->submitForm([], 'Next Stage');
+    $this->submitForm([], 'Next Stage');
     $session->pageTextContains('Stage03');
 
     // Stage 3 back to Stage 1.
-    $this->submitForm([], 'tcps-submit-button');
+    $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+    $session->statusCodeEquals(200);
+    $this->submitForm([], 'Next Stage');
+    $this->submitForm([], 'Next Stage');
+    $this->submitForm([], 'Save');
     $session->pageTextContains('Stage01');
   }
 }
