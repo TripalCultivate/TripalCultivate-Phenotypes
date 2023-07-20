@@ -83,9 +83,13 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $page_text = $this->getSession()->getPage()->getText();
     $has_schema_option = (str_contains($page_text, $db)) ? TRUE : FALSE;
         
-    if ($fld_name == $fld_schema) {
+    if ($fld_name == $fld_schema && $has_schema_option) {
+      // Perform test of each stage if field has schema field select
+      // in advance options of the form.
+
+      // Could not test if schema field has no schema to select from.
       $schema = (empty($db)) ? '' : $db;
-      $args = ($has_schema_option) ? [$fld_schema => $schema] : [$fld_schema => ''];
+      $args =  [$fld_schema => $schema];
 
       // Stage 1 to Stage 2.
       $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
