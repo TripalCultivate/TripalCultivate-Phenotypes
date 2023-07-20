@@ -17,6 +17,13 @@ class ImporterShareTest extends ChadoTestBrowserBase {
   protected $defaultTheme = 'stark';
 
   /**
+   * Tripal DBX Chado Connection object
+   *
+   * @var ChadoConnection
+   */
+  protected $chado;
+
+  /**
    * Modules to enabled
    *
    * @var array
@@ -28,6 +35,16 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     'trpcultivate_phenotypes',
     'trpcultivate_phenoshare'
   ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() :void {
+    parent::setUp();
+    
+    // Create a test schema.
+    $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+  }
 
   /**
    * Test Phenotypes Share Importer.
@@ -63,14 +80,11 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $fld_name = $fld->getAttribute('name');
   
     if ($fld_name == $fld_schema) {
-      // Navigate stages.
-      $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
       $db = $this->chado->getSchemaName();
       $schema = (empty($db)) ? '' : $db;
       
       // Stage 1 to Stage 2.
       $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
-      print($this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share'));
       $session->statusCodeEquals(200);    
       $this->submitForm([$fld_schema => $schema], 'Next Stage');
       $session->pageTextContains('Stage02');
