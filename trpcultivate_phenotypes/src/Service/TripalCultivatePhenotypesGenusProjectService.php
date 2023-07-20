@@ -67,37 +67,50 @@ class TripalCultivatePhenotypesGenusProjectService {
    */
   function setGenusToProject($project, $genus, $replace = FALSE) {
     $error = 0;
-
-    if ($project > 0 && !empty($genus)) {
-      $result = $this->chado->query("
-        SELECT projectprop_id AS id FROM {1:projectprop} 
-        WHERE project_id = :project_id AND type_id = :type_id LIMIT 1
-      ", [':project_id' => $project, ':type_id' => $this->sysvar_genus]);
-      
-      $projectprop_id = $result->fetchField();
-
-      if ($projectprop_id > 0) {
-        // Has a genus.
-        if ($replace) {
-          // And wishes to replace with another genus.
-          $this->chado->query("
-            UPDATE {1:projectprop} SET value = :new_genus WHERE projectprop_id = :id
-          ", [':new_genus' => $genus, ':id' => $projectprop_id]);
-        }
-
-        // Do nothing if maintain the same genus.
-      } 
-      else {
-        // Not set yet, no record in projectprop.
-        // Create a relationship regardless to replace or not.
-        $sql = "INSERT INTO {1:projectprop} (project_id, type_id, value) VALUES ('%s', '%s', '%s')";
-        $query = sprintf($sql, $project, $this->sysvar_genus, $genus);
-        $this->chado->query($query);
-      }
+    
+    if (empty($project) || $project <= 0) {
+      $error = 1;
+      $this->logger->error('Error, Project id is empty string, 0 or not a positive number. Could not replace genus.');
+    }
+    elseif (empty($genus)) {
+      $error = 1;
+      $this->logger->error('Error, Genus is an empty string. Could not replace genus.');
     }
     else {
-      $error = 1;
-      $this->logger->error('Error. Could not replace genus. Invalid project or genus');
+      // Ensure that only active genus are paired with a project.
+      $g = strtolower(str_replace(' ', '_', $genus));
+      $is_active_genus = (in_array($g, array_keys($this->sysvar_genusontology))) ? TRUE : FALSE;
+
+      if ($is_active_genus) {
+        $result = $this->chado->query("
+          SELECT projectprop_id AS id FROM {1:projectprop} 
+          WHERE project_id = :project_id AND type_id = :type_id LIMIT 1
+        ", [':project_id' => $project, ':type_id' => $this->sysvar_genus]);
+        
+        $projectprop_id = $result->fetchField();
+
+        if ($projectprop_id > 0) {
+          // Has a genus.
+          if ($replace) {
+            // And wishes to replace with another genus.
+            $this->chado->query("
+              UPDATE {1:projectprop} SET value = :new_genus WHERE projectprop_id = :id
+            ", [':new_genus' => $genus, ':id' => $projectprop_id]);
+          }
+
+          // Do nothing if maintain the same genus.
+        } 
+        else {
+          // Not set yet, no record in projectprop.
+          // Create a relationship regardless to replace or not.
+          $sql = "INSERT INTO {1:projectprop} (project_id, type_id, value) VALUES (:project, :config_genus, :genus)";
+          $this->chado->query($sql, [':project' => $project, ':config_genus' => $this->sysvar_genus, ':genus' => $genus]);
+        }
+      }
+      else {
+        $error = 1;
+        $this->logger->error('Error, Genus is not configured. Could not replace genus.' . $g);
+      }
     }
 
     return ($error) ? FALSE : TRUE;
