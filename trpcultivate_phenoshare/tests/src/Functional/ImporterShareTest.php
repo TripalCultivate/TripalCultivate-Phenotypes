@@ -70,6 +70,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
       
       // Stage 1 to Stage 2.
       $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+      print($this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share'));
       $session->statusCodeEquals(200);    
       $this->submitForm([$fld_schema => $schema], 'Next Stage');
       $session->pageTextContains('Stage02');
