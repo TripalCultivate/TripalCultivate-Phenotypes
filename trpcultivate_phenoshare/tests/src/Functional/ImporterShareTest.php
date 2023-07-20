@@ -79,29 +79,33 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $fld = $this->getSession()->getPage()->findField($fld_schema);
     $fld_name = $fld->getAttribute('name');
   
+    $db = $this->chado->getSchemaName();
+    $page_text = $this->getSession()->getPage()->getText();
+    $has_schema_option = (str_contains($page_text, $db)) ? TRUE : FALSE;
+        
     if ($fld_name == $fld_schema) {
-      $db = $this->chado->getSchemaName();
       $schema = (empty($db)) ? '' : $db;
-      
+      $args = ($has_schema_option) ? [$fld_schema => $schema] : [$fld_schema => ''];
+
       // Stage 1 to Stage 2.
       $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
       $session->statusCodeEquals(200);    
-      $this->submitForm([$fld_schema => $schema], 'Next Stage');
+      $this->submitForm($args, 'Next Stage');
       $session->pageTextContains('Stage02');
 
       // Stage 2 to Stage 3.
       $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
       $session->statusCodeEquals(200);
-      $this->submitForm([$fld_schema => $schema], 'Next Stage');
-      $this->submitForm([$fld_schema => $schema], 'Next Stage');
+      $this->submitForm($args, 'Next Stage');
+      $this->submitForm($args, 'Next Stage');
       $session->pageTextContains('Stage03');
 
       // Stage 3 back to Stage 1.
       $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
       $session->statusCodeEquals(200);
-      $this->submitForm([$fld_schema => $schema], 'Next Stage');
-      $this->submitForm([$fld_schema => $schema], 'Next Stage');
-      $this->submitForm([$fld_schema => $schema], 'Save');
+      $this->submitForm($args, 'Next Stage');
+      $this->submitForm($args, 'Next Stage');
+      $this->submitForm($args, 'Save');
       $session->pageTextContains('Stage01');
     }
   }
