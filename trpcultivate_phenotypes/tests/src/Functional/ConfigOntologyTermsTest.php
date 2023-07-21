@@ -106,17 +106,36 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     $genus_ontology = $service_genusontology->defineGenusOntology();
     
-    $null_value = 1;
+    // Find cv id in the test schema to be used as test values.
+    $cvs = $this->chado->query("SELECT cv_id FROM {1:cv} LIMIT 10")
+      ->fetchAllKeyed(0, 0);
+
+    $test_cv_id = array_keys($cvs);  
+
+    // Find db id in test schema to be used as test values.
+    $dbs = $this->chado->query("SELECT db_id FROM {1:db} LIMIT 2")
+      ->fetchAllKeyed(0, 0);
+
+    $test_db_id = array_keys($dbs);
+
     $values_genusontology = [];
     
+    $j = 0;
     foreach($genus_ontology as $genus => $vars) {
       foreach($vars as $i => $config) {
         $fld_name = $genus . '_' . $config;
         // Test if each genus has a trait, unit, method, db and crop ontology field.
         $session->fieldExists($fld_name);
 
-        // set to Null (id: 1) all genus ontology configuration.
-        $values_genusontology[ $fld_name ] = $null_value;
+        if ($config == 'database') {
+          $set_val = $test_db_id[ $j ];
+          $j++;
+        }
+        else {
+          $set_val = $test_cv_id[ $i ];
+        }
+
+        $values_genusontology[ $fld_name ] = $set_val;
       }
     }
 
@@ -124,9 +143,21 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $this->submitForm($values_genusontology, 'Save configuration');
     $session->pageTextContains('The configuration options have been saved.');
     
-    foreach(array_keys($values_genusontology) as $fld) {
-      // If all config got null set as the value.
-      $session->fieldValueEquals($fld, $null_value);
+    $j = 0;
+    foreach($genus_ontology as $genus => $vars) {
+      foreach($vars as $i => $config) {
+        $fld_name = $genus . '_' . $config;
+        
+        if ($config == 'database') {
+          $set_val = $test_db_id[ $j ];
+          $j++;
+        }
+        else {
+          $set_val = $test_cv_id[ $i ];
+        }
+
+        $session->fieldValueEquals($fld_name, $set_val);
+      }
     }
     
     // Allow new trait.
@@ -137,25 +168,38 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $session->pageTextContains('The configuration options have been saved.');
     $session->fieldValueEquals($allow_new, FALSE);
 
+    // Find cvterms in test schema to be used as test values.
+    // Terms will accept term values in cvterm name (database:accession) format.
+    $cvterms = $this->chado->query("
+      SELECT ct.cvterm_id, CONCAT(ct.name, ' (', db.name, ':', dx.accession, ')')
+      FROM {1:cvterm} AS ct LEFT JOIN {1:dbxref} AS dx USING(dbxref_id) LEFT JOIN {1:db} USING(db_id)
+      LIMIT 12
+    ")
+      ->fetchAllKeyed(0, 1);
+
+    $test_cvterms = array_values($cvterms);
+
     // Terms.
-    $null_value = 'null (null:local:null)';
     $terms = $service_terms->defineTerms();
     $values_terms = [];
-
+    
+    $i = 0;
     foreach($terms as $config => $prop) {
       // Test each term has an autocomplete field.
       $session->fieldExists($config);
 
-      $values_terms[ $config ] = $null_value;
+      $values_terms[ $config ] = $test_cvterms[ $i ];
+      $i++;
     }
 
     // Update default values.
     $this->submitForm($values_terms, 'Save configuration');
     $session->pageTextContains('The configuration options have been saved.');
 
-    foreach(array_keys($values_terms) as $fld) {
-      // If all config term got null set as the value.
-      $session->fieldValueEquals($fld, $null_value);
+    $i = 0;
+    foreach($terms as $config => $prop) {
+      $session->fieldValueEquals($config, $test_cvterms[ $i ]);
+      $i++;
     }
   }
 }

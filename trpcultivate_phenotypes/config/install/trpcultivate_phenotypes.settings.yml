@@ -92,7 +92,7 @@ trpcultivate:
             id: TAXRANK:0000005
             name: genus
             definition: 'The genus'
-            field_label: 'This term indicates that a given property is the associated "genus". For example, this module save experiments producing phenotypic data as projects and the organism that experiment assays is indicated by adding a "genus" property to it.'
+            help_text: 'This term indicates that a given property is the associated "genus". For example, this module save experiments producing phenotypic data as projects and the organism that experiment assays is indicated by adding a "genus" property to it.'
       -
         name: uo
         definition: 'Units of Measurement Ontology.'
@@ -102,7 +102,7 @@ trpcultivate:
             id: UO:0000000
             name: unit
             definition: 'Unit of measurement'
-            field_label: 'This term describes the relationship between your method and the unit with which it was measured.'
+            help_text: 'This term describes the relationship between your method and the unit with which it was measured.'
       -
         name: synonym_type
         definition: 'A local vocabulary added for synonynm types.'
@@ -112,13 +112,13 @@ trpcultivate:
             id: internal:related
             name: related
             definition: 'Is related to.'
-            field_label: 'This term describes the relationship between your unit to method vocabulary term and the chosen equivalent crop ontology term.'
+            help_text: 'This term describes the relationship between your unit to method vocabulary term and the chosen equivalent crop ontology term.'
           -
             config_map: method_to_trait_relationship_type
             id: internal:related
             name: related
             definition: 'Is related to.'
-            field_label: 'This term describes the relationship between your method to trait vocabulary term and the chosen equivalent crop ontology term.'
+            help_text: 'This term describes the relationship between your method to trait vocabulary term and the chosen equivalent crop ontology term.'
       -
         name: tripal_pub
         definition: 'Tripal Publication Ontology. A temporary ontology until a more formal appropriate ontology to be identified.'
@@ -128,7 +128,7 @@ trpcultivate:
             id: TPUB:0000059
             name: Year
             definition: 'The year the work was published. This should be a 4 digit year.'
-            field_label: 'Metadata tagged with this term indicates the year in which a phenotypic datapoint was collected.'
+            help_text: 'Metadata tagged with this term indicates the year in which a phenotypic datapoint was collected.'
       -
         name: NCIT
         definition: 'The NCIT OBO Edition project aims to increase integration of the NCIt with OBO Library ontologies NCIt is a reference terminology that includes broad coverage of the cancer domain, including cancer related diseases, findings and abnormalities. NCIt OBO Edition releases should be considered experimental.'
@@ -138,37 +138,37 @@ trpcultivate:
             id: NCIT:C71460
             name: method
             definition: 'A means, manner of procedure, or systematic course of action that have to be performed in order to accomplish a particular goal.'
-            field_label: 'This term describes the relationship between your trait vocabulary and the method with which the data was taken.'
+            help_text: 'This term describes the relationship between your trait vocabulary and the method with which the data was taken.'
           -
             config_map: location
             id: NCIT:C25341
             name: Location
             definition: 'A position, site, or point in space where something can be found.'
-            field_label: 'Metadata tagged with this term indicates the physical location of the environment giving rise to the phenotype.'
+            help_text: 'Metadata tagged with this term indicates the physical location of the environment giving rise to the phenotype.'
           -
             config_map: experiment_replicate
             id: NCIT:C28038
             name: replicate
             definition: 'A role played by a biological sample in the context of an experiment where the intent is that biological or technical variation is measured.'
-            field_label: 'Metadata tagged with this term indicates the unique identifier for the replicate the current datapoint is part of.'
+            help_text: 'Metadata tagged with this term indicates the unique identifier for the replicate the current datapoint is part of.'
           -
             config_map: data_collector
             id: NCIT:C45262
             name: 'Collected By'
             definition: 'Indicates the person, group, or institution who performed the collection act.'
-            field_label: 'Metadata tagged with this term indicates the name of the person who collected the phenotypic measurement.'
+            help_text: 'Metadata tagged with this term indicates the name of the person who collected the phenotypic measurement.'
           -
             config_map: entry
             id: NCIT:C43381
             name: Entry
             definition: 'An item inserted in a written or electronic record.'
-            field_label: 'Metadata tagged with this term indicates the entry number.'
+            help_text: 'Metadata tagged with this term indicates the entry number.'
           -   
             config_map: name
             id: NCIT:C42614
             name: name
             definition: 'The words or language unit by which a thing is known.'
-            field_label: 'Metadata tagged with this term indicates the name of the germplasm or line.'
+            help_text: 'Metadata tagged with this term indicates the name of the germplasm or line.'
       -
         name: AGRO
         definition: 'Agricultural experiment plot'
@@ -178,4 +178,4 @@ trpcultivate:
             id: AGRO:00000301
             name: plot
             definition: 'A site within which an agricultural experimental process is conducted'
-            field_label: 'Metadata tagged with this term indicates the plot number.'
+            help_text: 'Metadata tagged with this term indicates the plot number.'

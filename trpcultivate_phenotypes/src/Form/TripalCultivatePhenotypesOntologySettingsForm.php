@@ -292,7 +292,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     // Render each term as autocomplete field element.
     foreach($this->config_vars['terms'] as $config => $prop) {
       // Field description.
-      $describe = $this->t($prop['field_label']);
+      $describe = $this->t($prop['help_text']);
       // Field placeholder and title text.
       $placeholder = $title = $this->t(ucwords($prop['name']));
       // Field default value.
