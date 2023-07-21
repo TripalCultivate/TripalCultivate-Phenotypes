@@ -129,16 +129,14 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // All configuration and database value to null (id: 1).
     $config_name = str_replace(' ', '_', strtolower($genus));
     $genus_ontology_config = [
-      $config_name => [
-        'trait' => 1,
-        'unit'   => 1,
-        'method'  => 1,
-        'database' => 1,
-        'crop_ontology' => 1
-      ]
+      'trait' => 1,
+      'unit'   => 1,
+      'method'  => 1,
+      'database' => 1,
+      'crop_ontology' => 1
     ];
 
-    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon', $genus_ontology_config);
+    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $genus_ontology_config);
 
     // Insert a secondary genus to be used to test when setting up a genus
     // where replace existing genus is enabled.
@@ -151,24 +149,26 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // All configuration and database value to null (id: 1).
     $config_name = str_replace(' ', '_', strtolower($genus));
     $genus_ontology_config = [
-      $config_name => [
-        'trait' => 1,
-        'unit'   => 1,
-        'method'  => 1,
-        'database' => 1,
-        'crop_ontology' => 1
-      ]
+      'trait' => 1,
+      'unit'   => 1,
+      'method'  => 1,
+      'database' => 1,
+      'crop_ontology' => 1
     ];
 
-    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon', $genus_ontology_config);
+    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $genus_ontology_config);
 
     $genus_id =$this->chado->query(
       "SELECT organism_id FROM {1:organism} WHERE genus = :genus LIMIT 1", [':genus' => $genus]
     )
       ->fetchField();
+   
 
     $this->ins['second_genus_id'] = $genus_id;
     $this->ins['second_genus'] = $genus;
+
+    // Save all genus ontology config.
+    $this->config->save();
 
     // Term service.
     $this->service = \Drupal::service('trpcultivate_phenotypes.genus_project');
@@ -183,17 +183,9 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
       $this->assertNotNull($value, $key . ' Test record not created.');
     }
 
-    // Test get activeGenus().
-    $active_genus = $this->service->getActiveGenus();
-    $this->assertNotNull($active_genus, 'Fetch lists of active genus method returned empty result.');
-    
-    foreach($active_genus as $i => $g) {
-      $to_test_genus = ($i == 0) ? $this->ins['second_genus'] : $this->ins['genus'];
-      $this->assertEquals($g, $to_test_genus, 'Active genus does not match expected: ' . $g);
-    }
-
     // Test getGenusOfProject().
     $genus_project = $this->service->getGenusOfProject($this->ins['project_id']);
+    
     $this->assertNotNull($genus_project, 'Genus of a project returned null: project_id - ' . $this->ins['project_id']);
     $this->assertEquals($genus_project['genus'], $this->ins['genus'], 'Genus does not match expected genus: ' . $genus_project['genus']);
 
@@ -221,10 +213,10 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     )
       ->fetchField();
 
-    $set = $this->service->setGenusToProject($project_id, $genus);
-    $this->assertTrue($set, 'Change of genus failed: project_id - ' . $project_id . ' to ' . $genus);
+    $set = $this->service->setGenusToProject($project_id, $this->ins['second_genus']);
+    $this->assertTrue($set, 'Change of genus failed: project_id - ' . $project_id . ' to ' . $this->ins['second_genus']);
 
     $new_project_genus = $this->service->getGenusOfProject($project_id);
-    $this->assertEquals($new_project_genus['genus'], $genus, 'Genus does not match expected genus: ' . $genus);
+    $this->assertEquals($new_project_genus['genus'], $this->ins['second_genus'], 'Genus does not match expected genus: ' . $this->ins['second_genus']);
   }
 }

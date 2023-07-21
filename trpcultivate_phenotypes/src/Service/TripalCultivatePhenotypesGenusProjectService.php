@@ -109,7 +109,7 @@ class TripalCultivatePhenotypesGenusProjectService {
       }
       else {
         $error = 1;
-        $this->logger->error('Error, Genus is not configured. Could not replace genus.' . $g);
+        $this->logger->error('Error, Genus is not configured. Could not replace genus.');
       }
     }
 
@@ -129,39 +129,21 @@ class TripalCultivatePhenotypesGenusProjectService {
     $genus_project = 0;
 
     if ($project > 0) {
+      $sysvar_genus = array_keys($this->sysvar_genusontology);
+      $active_genus = array_map(function($g) { return strtolower(str_replace('_', ' ', $g)); }, $sysvar_genus);
+      
+      // Fetch genus paired to a project. If multiple genus have been set prior,
+      // restrict search to genus that are active/configured using this module.
       $result = $this->chado->query("
         SELECT organism_id AS id, genus FROM {1:organism} 
         WHERE genus = (SELECT value::VARCHAR FROM {1:projectprop} 
-          WHERE project_id = :project_id AND type_id = :type_id LIMIT 1)
+          WHERE project_id = :project_id AND type_id = :type_id AND LOWER(value) IN (:active_genus[]) LIMIT 1) 
         LIMIT 1
-      ", [':project_id' => $project, ':type_id' => $this->sysvar_genus]);
+      ", [':project_id' => $project, ':type_id' => $this->sysvar_genus, ':active_genus[]' => $active_genus]);
 
       $genus_project = $result->fetchObject();
     }
 
     return ($genus_project) ? ['id' => $genus_project->id, 'genus' => $genus_project->genus] : 0;
-  }
-
-  /**
-   * Get all genus that have been configured (traits, unit, method, database and crop ontology).
-   *
-   * @return array
-   *   An array of genus names, sorted alphabetically.
-   */
-  public function getActiveGenus() {
-    $genus = [];
-
-    if ($this->sysvar_genusontology) {
-      $genus_keys = array_keys($this->sysvar_genusontology);
-
-      foreach($genus_keys as $active_genus) {
-        // Each genus-ontology configuration variable name was
-        // formatted where all spaces were replaced by underscore.
-        // Reconstruct original value.
-        $genus[] = ucwords(str_replace('_', ' ', $active_genus));
-      }
-    }
-
-    return $genus;
   }
 }
