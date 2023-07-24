@@ -85,45 +85,36 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // Prepare by adding test records to genus, project and projectproperty
     // to relate a genus to a project.
     $project = 'Project - ' . uniqid();
-    $sql = "INSERT INTO {1:project} (name, description) VALUES('%s', '%s')";
-    $query = sprintf($sql, $project, $project . ': Description');
-    $this->chado->query($query);
-    
-    $project_id =$this->chado->query(
-      "SELECT project_id FROM {1:project} WHERE name = :name LIMIT 1", [':name' => $project]
-    )
-      ->fetchField();
-    
+    $project_id = $this->chado->insert('1:project')
+      ->fields([
+        'name' => $project,
+        'description' => $project . ' : Description'   
+      ])
+      ->execute();
+
     $this->ins['project_id'] = $project_id;
     
-
     $genus = 'Wild Genus ' . uniqid();
-    $sql = "INSERT INTO {1:organism} (genus, species, type_id) VALUES('%s', '%s', '%s')";
-    $query = sprintf($sql, $genus, 'Wild Species', 1); // Adding as null organism type.
-    $this->chado->query($query);
-    
-    $genus_id =$this->chado->query(
-      "SELECT organism_id FROM {1:organism} WHERE genus = :genus LIMIT 1", [':genus' => $genus]
-    )
-      ->fetchField();
-    
+    $genus_id = $this->chado->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'Wild Species',
+        'type_id' => 1 
+      ])
+      ->execute();
+
     $this->ins['genus_id'] = $genus_id;
     $this->ins['genus'] = $genus;
 
-    $sql = "INSERT INTO {1:projectprop} (project_id, type_id, value) VALUES('%s', '%s', '%s')";
-    // Adding as a type null relationship, this null term should correspond
-    // to configuration value for term - genus.
-    $query = sprintf($sql, $project_id, 1, $genus);
-    $this->chado->query($query); 
+    $prop_id = $this->chado->insert('1:projectprop')
+      ->fields([
+        'project_id' => $project_id,
+        'type_id' => 1,
+        'value' => $genus 
+      ])
+      ->execute();
 
-    $created =$this->chado->query(
-      "SELECT projectprop_id FROM {1:projectprop} 
-      WHERE project_id = :project_id AND type_id = 1 AND value = :genus_id LIMIT 1", 
-      [':project_id' => $project_id, ':genus_id' => $genus_id]
-    )
-      ->fetchField();
-
-    $this->ins['projectprop_id'] = $created;
+    $this->ins['projectprop_id'] = $prop_id;
 
     // Create Genus Ontology configuration. 
     // All configuration and database value to null (id: 1).
@@ -141,10 +132,14 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // Insert a secondary genus to be used to test when setting up a genus
     // where replace existing genus is enabled.
     $genus = 'Cultivated Genus ' . uniqid();
-    $sql = "INSERT INTO {1:organism} (genus, species, type_id) VALUES('%s', '%s', '%s')";
-    $query = sprintf($sql, $genus, 'Cultivated Species', 1); // Adding as null organism type.
-    $this->chado->query($query);
-     
+    $genus_id = $this->chado->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'Cultivated Species',
+        'type_id' => 1 
+      ])
+      ->execute();
+    
     // Configure this other genus.
     // All configuration and database value to null (id: 1).
     $config_name = str_replace(' ', '_', strtolower($genus));
@@ -157,12 +152,6 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     ];
 
     $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $genus_ontology_config);
-
-    $genus_id =$this->chado->query(
-      "SELECT organism_id FROM {1:organism} WHERE genus = :genus LIMIT 1", [':genus' => $genus]
-    )
-      ->fetchField();
-   
 
     $this->ins['second_genus_id'] = $genus_id;
     $this->ins['second_genus'] = $genus;
@@ -204,14 +193,12 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // No relationship yet. Create a relationship in projectprop table.
     // Create a new project.
     $project = 'New Project - ' . uniqid();
-    $sql = "INSERT INTO {1:project} (name, description) VALUES('%s', '%s')";
-    $query = sprintf($sql, $project, $project . ': Description');
-    $this->chado->query($query);
-    
-    $project_id =$this->chado->query(
-      "SELECT project_id FROM {1:project} WHERE name = :name LIMIT 1", [':name' => $project]
-    )
-      ->fetchField();
+    $project_id = $this->chado->insert('1:project')
+    ->fields([
+      'name' => $project,
+      'description' => $project . ' : Description'
+    ])
+    ->execute();
 
     $set = $this->service->setGenusToProject($project_id, $this->ins['second_genus']);
     $this->assertTrue($set, 'Change of genus failed: project_id - ' . $project_id . ' to ' . $this->ins['second_genus']);
