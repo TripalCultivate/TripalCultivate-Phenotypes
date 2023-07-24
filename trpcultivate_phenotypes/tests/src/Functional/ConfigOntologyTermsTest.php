@@ -80,14 +80,19 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
       'Cicer'
     ];
 
-    $ins_genus = "
-      INSERT INTO {1:organism} (genus, species, type_id)
-      VALUES
-        ('$test_insert_genus[0]', 'culinaris', 1),
-        ('$test_insert_genus[1]', 'arientinum', 1)
-    ";
-
-    $this->chado->query($ins_genus);
+    $this->chado->insert('1:organism')
+      ->fields(['genus', 'species', 'type_id'])
+      ->values([
+        'genus' => $test_insert_genus[0],
+        'species' => 'culinaris',
+        'type_id'  => 1  
+      ])
+      ->values([
+        'genus' => $test_insert_genus[1],
+        'species' => 'arietinum',
+        'type_id'  => 1 
+      ])
+      ->execute();
 
     // Load genus ontology.
     $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
