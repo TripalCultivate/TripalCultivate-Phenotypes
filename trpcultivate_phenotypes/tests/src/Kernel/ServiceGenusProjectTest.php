@@ -205,5 +205,16 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
 
     $new_project_genus = $this->service->getGenusOfProject($project_id);
     $this->assertEquals($new_project_genus['genus'], $this->ins['second_genus'], 'Genus does not match expected genus: ' . $this->ins['second_genus']);
+  
+    // Test method inserted correct record into projectprop table.
+    $projectprop = $this->chado->query("
+      SELECT * FROM {1:projectprop} 
+      WHERE project_id = :project_id AND type_id = :term_genus AND value = :value_genus LIMIT 1
+    ", [':project_id' => $project_id, ':term_genus' => 1, ':value_genus' => $new_project_genus['genus']])
+      ->fetchObject();
+    
+    $this->assertNotNull($projectprop->projectprop_id, 'Method setGenusToProject failed to create a record in projectprop table.');
+    $this->assertEquals($new_project_genus['genus'], $projectprop->value, 'Genus set value in projectprop does not match expected genus.');
+    $this->assertEquals($project_id, $projectprop->project_id, 'Project id set value in projectprop does not match expected project id.');
   }
 }
