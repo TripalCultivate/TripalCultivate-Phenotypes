@@ -88,6 +88,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
         'type_id'  => 1  
       ])
       ->values([
+        'genus' => $test_insert_genus[0],
+        'species' => 'samegenus',
+        'type_id'  => 1  
+      ])
+      ->values([
         'genus' => $test_insert_genus[1],
         'species' => 'arietinum',
         'type_id'  => 1 
