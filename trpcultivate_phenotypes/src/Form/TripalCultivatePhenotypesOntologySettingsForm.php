@@ -124,20 +124,44 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     // @TODO: Tripal add vocabulary not available, mark with # sign in
     // ontology instructions/guide.
 
-    // No genus nor terms to work on. Remind user to execute Tripal Job
-    // registered during install to initialize module with terms.
-    // Could not proceed if no genus in the host site.
-    if (count($this->config_vars['ontology']) <= 0 || count($this->config_vars['terms']) <= 0) {
-      $url = Url::fromRoute('tripal.jobs');
-      $link = Link::fromTextAndUrl($this->t('Click here to manage Tripal Jobs'), $url)
-        ->toString();
+    
+    // Inspect if this Tripal instance contains records in organism table.
+    $genus_count = $this->chado->select('1:organism')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
 
-      $warning = $this->t('Tripal Cultivate Phenotypes could not find required terms and/or organism records (Genus), 
-        both used for creating terms and genus-ontology module configuration. Please execute Tripal Job titled:
-        Tripal Cultivate Phenotypes: Install Ontology and Terms. @jobs', ['@jobs' => $link]);
-      $this->messenger()->addWarning($warning);
-
+    if ($genus_count <= 0) {
+      // Ready organism first before executing Tripal job.
+      $genus_warning = $this->t('Your Tripal site instance contains 0 organism records in Chado organism table. 
+        Please create/insert an organism.');
+      
+      $this->messenger()->addWarning($genus_warning);
       return $form;
+    }
+    else {
+      // With organism created, inform to execute Tripal job if term configurations
+      // have been set a value. Test genus configuration.
+      $term_genus = $this->service_terms
+        ->getTermId($this->config_vars['terms']['genus']['config_map']);
+      
+      if ($term_genus <= 0) {
+        $url = Url::fromRoute('tripal.jobs', ['attributes' => ['target' => '_blank']]);
+        $link_to_jobs = Link::fromTextAndUrl($this->t('Click here to manage Tripal Jobs'), $url)
+          ->toString();
+  
+        $url = Url::fromUri('https://tripaldoc.readthedocs.io/en/latest/index.html', ['attributes' => ['target' => '_blank']]);
+        $link_to_docs = Link::fromTextAndUrl($this->t('Tripal 4 User Guide'), $url)
+          ->toString();
+
+        $config_warning = $this->t('Tripal Cultivate Phenotypes module requires controlled vocabulary terms and genus records
+          used for creating terms and genus-ontology module configuration. If you already know how to execute a Tripal Job,
+          please proceed with the Tripal Job Id number for Tripal Job titled: Tripal Cultivate Phenotypes: Install Ontology and Terms
+          (@tripaljobs), otherwise, please visit @tripaldocs to learn more about Tripal Jobs.', ['@tripaljobs' => $link_to_jobs, '@tripaldocs' => $link_to_docs]);
+        
+        $this->messenger()->addWarning($config_warning);
+        return $form;
+      }
     }
     
     // Attach library.
@@ -308,7 +332,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
         '#default_value' => $default_value,
         // Tripal autocomplete cvtern service: parameter - count.
         '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
-        '#autocomplete_route_parameters' => ['count' => 5],
+        '#autocomplete_route_parameters' => ['cv_id' => 0, 'count' => 5],
       ]; 
     }
     
@@ -328,6 +352,11 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
       $fld_names = [];
       
       foreach($vars as $i => $config) {
+        // Crop ontology is an optional field.
+        if ($config == 'crop_ontology') {
+          continue;
+        }
+
         $fld_names[ $i ] = $genus . '_' . $config;
         if ((int) $form_state->getValue($fld_names[$i]) > 0) {
           $var_set_ctr++;
