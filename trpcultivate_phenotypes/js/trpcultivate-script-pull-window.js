@@ -18,7 +18,7 @@
       var pullWindow = $(fldClass);
       var buttonToggle = $(fldControl, context);
       
-      buttonToggle.once(fldControl).click(function(e) {
+      buttonToggle.once('pullWindow').click(function(e) {
         e.preventDefault();
         var linkControl = $(this);
         
