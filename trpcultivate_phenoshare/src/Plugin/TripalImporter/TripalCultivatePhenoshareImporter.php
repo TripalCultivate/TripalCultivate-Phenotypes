@@ -46,17 +46,14 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
   public function form($form, &$form_state) {
     // Always call the parent form to ensure Chado is handled properly.
     $form = parent::form($form, $form_state);
-    // Attach libraries.
-    $form['#attached']['library'] = [
-      'trpcultivate_phenotypes/trpcultivate-script-pull-window'
-    ];
-
+    
     // Reminder to user about expected phenotypes.
-    $phenotypes_minder = 'Phenotypic data should be filtered for outliers and mis-entries before
+    $phenotypes_minder = t('Phenotypic data should be filtered for outliers and mis-entries before
       being uploaded here. Do not upload data that should not be used in the final analysis for a
-      scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.';
+      scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.');
     \Drupal::messenger()->addWarning($phenotypes_minder);
 
+    // Set stage number.
     // Describe the stages and help text/guide for this importer.
     // Stage indicators.
     $help_text = t('This is a test help text.');
@@ -93,77 +90,30 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // Set with the lowest weight to embed in the header of the form.
     $form['stage_indicator'] = [
       '#type' => 'inline_template',
-      '#theme' => 'theme-upload_stages',
+      '#theme' => 'theme-upload-stages',
       '#weight' => -100,
       '#data' => [
         'stages'  => $stages,
         'cur_stage' => $stage,
-        'help_text'  => $help_text
+      ],
+    ];
+    
+    // Upload stages in accordion layout.
+    $form['stage_accordion'] = [
+      '#type' => 'inline_template',
+      '#theme' => 'theme-accordion',
+      '#weight' => -90,
+      '#data' => [
+        'stages' => $stages,
+        'cur_stage' => $stage,
       ],
     ];
 
-    // With the determined stage, load form.
-    switch($stage) {
-      case 1:
-        // Upload file stage.
-        $form = $this->formStage01($form, $form_state);
-        break;
 
-      case 2:
-        // Describe traits stage.
-        $form = $this->formStage02($form, $form_state);
-        break;
 
-      case 3:
-        // Save data stage.
-        $form = $this->formStage03($form, $form_state);
-        break;
-    }
-
-    // Submit, next stage or save.
-    $btn_text = ($stage < count($stages)) ? 'Next Stage' : 'Save';
-    $form['submit_stage'] = [
-      '#type' => 'submit',
-      '#value' => t($btn_text),
-      '#weight' => 100,
-      '#id' => 'tcps-submit-button'
-    ];
 
     return $form;
   }
-
-
-  ///// Stages - form callback.
-
-  /**
-   * Form STAGE 01 - Upload file.
-   */
-  public function formStage01($form, &$form_state) {
-    $form['stage1']['#markup'] = '<h3>Stage01</h3>';
-
-    return $form;
-  }
-
-  /**
-   * Form STAGE 02 - Describe traits.
-   */
-  public function formStage02($form, &$form_state) {
-    $form['stage2']['#markup'] = '<h3>Stage02</h3>';
-
-    return $form;
-  }
-
-  /**
-   * Form STAGE 03 - Save.
-   */
-  public function formStage03($form, &$form_state) {
-    $form['stage3']['#markup'] = '<h3>Stage03</h3>';
-
-    return $form;
-  }
-
-  /////
-
 
   /**
    * {@inheritdoc}

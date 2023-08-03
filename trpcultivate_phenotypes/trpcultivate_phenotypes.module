@@ -54,15 +54,23 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
   $items = [];
 
   $items = [
-    'theme-upload_stages' => [
+    'theme-upload-stages' => [
       'variables' => [
         'data' => [
-          'cur_stage' => 1,
           'stages' => [],
-          'help_text' => ''
+          'cur_stage' => 1,
         ]
       ],
       'template' => 'trpcultivate-phenotypes-template-upload-stages'
+    ],
+    'theme-accordion' => [
+      'variables' => [
+        'data' => [
+          'stages' => [],
+          'cur_stage' => 1,
+        ]
+      ],
+      'template' => 'trpcultivate-phenotypes-template-accordion'
     ],
   ];
 

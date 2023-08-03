@@ -1,0 +1,35 @@
+/**
+ * @file
+ * Style style accordion.
+ */
+
+.tcp-stage-accordion-title {
+  background-color: #EAEAEA;
+  border: 0;
+  color: #333333;
+  cursor: pointer;
+  font-weight: 300;
+  margin: 1px 0 0 0;
+  padding: 20px;
+  text-align: left;
+  transition: 0.7s;
+  width: inherit;
+}
+
+.tcp-stage-accordion-active, 
+.tcp-stage-accordion-title:hover {
+  background-color: #DADADA;
+}
+
+.tcp-stage-accordion-content-panel{
+  background-color: #FFFFFF;
+  padding: 10px;
+} 
+
+.tcp-stage-accordion-content-on {
+  display: block;
+}
+
+.tcp-stage-accordion-content-off {
+  display: none;
+}
