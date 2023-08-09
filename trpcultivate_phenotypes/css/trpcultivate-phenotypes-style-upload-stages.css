@@ -1,14 +1,28 @@
-/* Import global css: */
-@import 'style-global.css';
+/**
+ * @file
+ * Style header notes, upload stage indicator in an implementation of 
+ * Tripal Importer Plugin.
+ *
+ */
 
+/* Importer notes */
+#tcp-importer-notes {
+  margin: 10px 0;
+}
+
+/* Stage indicators */ 
 #tcp-upload-stages {
   width: 100%;
 }
 
 #tcp-upload-stages div {
   font-size: 1em;
-  margin: 0;
+  margin: 0 4px 0 0;
   padding: 0;
+}
+
+#tcp-upload-stages div:last-child {
+  margin-right: 0;
 }
 
 /* Title text of stage */

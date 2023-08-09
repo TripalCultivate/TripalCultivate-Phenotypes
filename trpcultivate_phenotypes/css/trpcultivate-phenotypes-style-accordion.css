@@ -3,7 +3,8 @@
  * Style style accordion.
  */
 
-.tcp-stage-accordion-title {
+/* Stage Title Panel */
+.tcp-stage {
   background-color: #EAEAEA;
   border: 0;
   color: #333333;
@@ -16,20 +17,14 @@
   width: inherit;
 }
 
-.tcp-stage-accordion-active, 
-.tcp-stage-accordion-title:hover {
-  background-color: #DADADA;
-}
-
-.tcp-stage-accordion-content-panel{
+/* Stage Content Panel */
+div.tcp-stage + div {
   background-color: #FFFFFF;
+  display: none;
   padding: 10px;
-} 
-
-.tcp-stage-accordion-content-on {
-  display: block;
 }
 
-.tcp-stage-accordion-content-off {
-  display: none;
+.tcp-stage-active, 
+.tcp-stage:hover {
+  background-color: #DADADA;
 }
