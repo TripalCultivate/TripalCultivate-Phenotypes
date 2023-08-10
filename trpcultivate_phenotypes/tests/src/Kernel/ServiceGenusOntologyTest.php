@@ -88,7 +88,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
 
   public function testGenusOntologyService() {
     // Class created.
-    $this->assertNotNull($this->service);
+    $this->assertNotNull($this->service, 'Genus ontology service not created.');
 
     // TEST WHEN THERE IS A GENUS RECORD.
     // Create genus records since a clean Tripal site has
@@ -100,14 +100,14 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
 
     // #Test defineGenusOntology().
     $define_genusontology = $this->service->defineGenusOntology();
-    $this->assertNotNull($define_genusontology);
+    $this->assertNotNull($define_genusontology, 'Failed to define genus ontology configuration.');
     // Is an array.
     $is_array = (is_array($define_genusontology)) ? TRUE : FALSE;
-    $this->assertTrue($is_array);
+    $this->assertTrue($is_array, 'Define genus ontology returned an unexpected value.');
 
     foreach($test_insert_genus as $g) {
       $key = $this->service->formatGenus($g);
-      $this->assertNotNull($define_genusontology[ $key ]);
+      $this->assertNotNull($define_genusontology[ $key ], 'Failed to create genus ontology configuration with key: ' . $key);
     }
 
     // #Test formatGenus().
@@ -125,32 +125,32 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
 
     foreach($test_genus as $base => $result) {
       $format_genus = $this->service->formatGenus($base);
-      $this->assertEquals($format_genus, $result);
+      $this->assertEquals($format_genus, $result, 'Base genus key and formatted genus key do not match.');
     }
 
     // #Test loadGenusOntology().
     $is_saved = $this->service->loadGenusOntology();
-    $this->assertTrue($is_saved);
+    $this->assertTrue($is_saved, 'Failed to load genus ontology.');
 
     // Compare what was registered in the config settings.
     $config_genus_ontology = $this->config->get('trpcultivate.phenotypes.ontology.cvdbon');
     foreach($test_insert_genus as $genus) {
       $g = $this->service->formatGenus($genus);
       // Genus configuration found.
-      $this->assertNotNull($config_genus_ontology[ $g ]);
+      $this->assertNotNull($config_genus_ontology[ $g ], 'Failed to register a configuration with the key: ' . $g);
 
       // Genus configuration properties/variables are set to 0.
       foreach($config_genus_ontology[ $g ] as $prop => $val) {
         $is_config = (in_array($prop, ['trait', 'unit', 'method', 'database', 'crop_ontology'])) ? TRUE : FALSE;
-        $this->assertTrue($is_config);
-        $this->assertEquals($val, 0);
+        $this->assertTrue($is_config, 'Genus ontology configuration has no property: ' . $g . ' - ' . $prop);
+        $this->assertEquals($val, 0, 'Genus ontology has unexpected default value (expecting 0): ' . $val);
       }
     }
 
     // #Test getGenusOntologyConfigValues().
     foreach($test_insert_genus as $genus) {
       $genus_config = $this->service->getGenusOntologyConfigValues($genus);
-      $this->assertNotNull($genus_config);
+      $this->assertNotNull($genus_config, 'Failed to fetch value of a genus ontology configuration: ' . $genus);
     }
 
     $not_valid_keys = [':p', -1, 0, 'abc', 999999, '', 'lorem_ipsum', '.', 'G', 'lenz', '@'];
@@ -174,13 +174,13 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     }
 
     $is_saved = $this->service->saveGenusOntologyConfigValues($genus_ontology_values);
-    $this->assertTrue($is_saved);
+    $this->assertTrue($is_saved, 'Failed to save genus ontology value.');
 
     // Test if all genus ontology config got nulled.
     foreach($test_insert_genus as $genus) {
       $genus_config = $this->service->getGenusOntologyConfigValues($genus);
       foreach($genus_config as $config_name => $config_value) {
-        $this->assertEquals($config_value, $null_id);
+        $this->assertEquals($config_value, $null_id, 'Genus ontology configuration has unexpected value (expecting 1): ' . $config_value);
       }
     }
   }
