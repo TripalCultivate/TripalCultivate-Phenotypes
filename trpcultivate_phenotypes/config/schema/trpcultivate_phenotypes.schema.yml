@@ -181,3 +181,6 @@ trpcultivate_phenotypes.settings:
                         definition:
                           type: string
                           label: 'Term definition'
+                        help_text:
+                          type: string
+                          label: 'Term field label text'
