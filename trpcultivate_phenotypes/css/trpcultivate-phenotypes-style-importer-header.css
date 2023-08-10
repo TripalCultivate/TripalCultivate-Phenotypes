@@ -6,7 +6,9 @@
  */
 
 /* Importer notes */
-#tcp-importer-notes {
+#tcp-header-notes {
+  font-weight: 300;
+  list-style-position: inside;
   margin: 10px 0;
 }
 

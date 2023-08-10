@@ -3,24 +3,24 @@
 # Script to auto-select field content for quick alteration of value.
 
 # Script collapse/expand information window.
-trpcultivate-phenotypes-script-accordion:
+trpcultivate-phenotypes-script-stage-accordion:
   version: v1.x
   js:
-    js/trpcultivate-phenotypes-script-accordion.js: {}
+    js/trpcultivate-phenotypes-script-stage-accordion.js: {}
   dependencies:
     - core/jquery
     - core/once
 
 # Style upload stages.
-trpcultivate-phenotypes-style-upload-stages:
+trpcultivate-phenotypes-style-importer-header:
   version: v1.x
   css:
     theme:
-      css/trpcultivate-phenotypes-style-upload-stages.css: {}
+      css/trpcultivate-phenotypes-style-importer-header.css: {}
 
 # Style accordion
-trpcultivate-phenotypes-style-accordion:
+trpcultivate-phenotypes-style-stage-accordion:
   version: v1.x
   css:
     theme:
-      css/trpcultivate-phenotypes-style-accordion.css: {}
+      css/trpcultivate-phenotypes-style-stage-accordion.css: {}

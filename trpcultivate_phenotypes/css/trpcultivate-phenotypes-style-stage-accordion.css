@@ -1,6 +1,6 @@
 /**
  * @file
- * Style style accordion.
+ * Style style stage accordion.
  */
 
 /* Stage Title Panel */
@@ -9,7 +9,6 @@
   border: 0;
   color: #333333;
   cursor: pointer;
-  font-weight: 300;
   margin: 1px 0 0 0;
   padding: 20px;
   text-align: left;
@@ -27,4 +26,8 @@ div.tcp-stage + div {
 .tcp-stage-active, 
 .tcp-stage:hover {
   background-color: #DADADA;
+}
+
+.tcp-current-stage {
+  font-weight: bold;
 }
