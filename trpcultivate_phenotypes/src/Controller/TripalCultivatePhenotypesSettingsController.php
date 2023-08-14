@@ -73,7 +73,10 @@ class TripalCultivatePhenotypesSettingsController extends ControllerBase {
     ];
 
     // Describe Ontologies configuration:
-    // @TODO: create link to config.
+    $url = Url::fromRoute('trpcultivate_phenotypes.settings_ontology');
+    $link = Link::fromTextAndUrl($this->t('Click here'), $url)
+      ->toString();
+
     $describe = 'Tripal Cultivate Phenotypes require that phenotypic traits be housed in a Controlled Vocabulary (CV)
       and pre-define terms used throughout the various processes. Use Ontology Terms configuration to setup terms that
       best support your data.';

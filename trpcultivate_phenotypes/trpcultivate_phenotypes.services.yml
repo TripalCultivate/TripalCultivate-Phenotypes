@@ -7,3 +7,7 @@ services:
   trpcultivate_phenotypes.genus_ontology:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
+  
+  trpcultivate_phenotypes.genus_project:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
+    arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']

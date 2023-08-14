@@ -89,7 +89,7 @@ class TripalCultivatePhenotypesTermsService {
     foreach($default_terms as $i => $cv) {
       foreach($cv['terms'] as $term_set) {
         // Add the cv information of the term.
-        $term_set['cv'] = $cv;
+        $term_set['cv'] = ['name' => $cv['name'], 'definition' => $cv['definition']];
         // Access a term by configuration map value.
         // ie: term['experiment_container']
         $terms[ $term_set['config_map'] ] = $term_set;
@@ -112,7 +112,11 @@ class TripalCultivatePhenotypesTermsService {
     if ($terms) {
       // Install terms.
       foreach($terms as $config_map => $config_prop) {
+        // Remove cv information.
         unset($config_prop['cv']);
+        // Remove term field_label text.
+        unset($config_prop['field_label']);
+
         $cvterm = chado_insert_cvterm($config_prop, [], $schema);
 
         // Set the term id as the configuration value of the
