@@ -66,6 +66,34 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $this->drupalGet('admin/tripal/loaders/');
     $session = $this->assertSession();
     $session->statusCodeEquals(200);
+    // There is a link to the the importer with this link description.
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
+
+    // Importer share page.
+    $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+    $session = $this->assertSession();
+    $session->statusCodeEquals(200);
+    $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
+    
+
+    // Stage indicator shows Stage 1 of total number of pages on
+    // initial load of the importer page.
+    $page_text = $this->getSession()->getPage()->getText();
+    preg_match('/Stage [1-9] of ([1-9])/', $page_text, $matches);
+    $total_stages = trim($matches[1]);
+
+    // Each stage in accordion has a submit button that will
+    // move to next stage and stage progress indicator will indicate
+    // the current stage.
+    for($i = 1; $i == $total_stages; $i++) {
+      $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+      $this->submitForm([], 'Next Stage');
+      $session->pageTextContains('Upload Stage ' . $i . ' of ' . $total_stages);
+
+      // Ensure that stage accordion shows the correct stage - that is
+      // current stage is expanded whereas the others are collapsed and
+      // the title bar for each stage is mark by an * symbol.
+      $session->pageTextContains('* Stage ' . $i . ':');
+    }
   }
 }

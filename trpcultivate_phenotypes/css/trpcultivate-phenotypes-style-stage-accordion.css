@@ -31,3 +31,7 @@ div.tcp-stage + div {
 .tcp-current-stage {
   font-weight: bold;
 }
+
+.tcp-current-stage::before {
+  content: '* ';
+}
