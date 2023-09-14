@@ -238,8 +238,20 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
       // Get genus ontology configuration set of values.
       $config_value = $this->service_genusontology
         ->getGenusOntologyConfigValues($genus);
-      if (is_array($config_value)) {
 
+      // Genus configurations are created during install and any additional 
+      // organism inserted post-install should be accounted for.
+      if (is_null($config_value)) {
+        // Detected a genus with a null value for all configuration
+        // variables. Register this genus as a new genus configuration entry.
+        $new_genus[ $genus ] = array_fill_keys($vars, 0);
+        $this->service_genusontology->saveGenusOntologyConfigValues($new_genus);
+
+        $config_value = $this->service_genusontology
+          ->getGenusOntologyConfigValues($genus);
+      }
+
+      if (is_array($config_value)) {
         // Label - Genus.
         $form['ontology_fieldset']['wrapper']['table_fields'][ $i ][ $genus . '_label' ] = [
           '#type' => 'item',
