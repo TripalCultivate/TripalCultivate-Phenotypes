@@ -91,6 +91,12 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
       ],
       'template' => 'trpcultivate-phenotypes-template-header-instructions'
     ],
+    'result_window' => [
+      'variables' => [
+        'data' => []
+      ],
+      'template' => 'trpcultivate-phenotypes-template-result-window'
+    ],
   ];
 
   return $items;

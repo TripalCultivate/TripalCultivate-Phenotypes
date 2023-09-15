@@ -24,9 +24,9 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
  *   upload_description = @Translation("Please provide a txt or tsv data file."),
  *   upload_title = @Translation("Phenotypic Data File*"),
  *   use_analysis = False,
- *   use_button = False,
+ *   use_button = True,
  *   require_analysis = False,
- *   button_text = "",
+ *   button_text = "Execute Tripal Job",
  *   file_upload = True,
  *   file_load = False,
  *   file_remote = False,
@@ -79,9 +79,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       // Retrieve the cache value of current stage and increment by 1.
       $cache_stage = $form_state->get($current_stage);
       $stage = (int) $cache_stage + 1;
-
-      // Return to stage 1 after final step.
-      $stage = ($stage > count($stages)) ? 1 : $stage;
     }
     else {
       // On initial load of the importer set the stage to
@@ -212,10 +209,12 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     ];
     
     // Other relevant fields here.
-    $form[ $fld_wrapper ]['field_elements'] = [
-      '#markup' => '<p>Stage 2 field elements here</p>'
+    // Validation result.
+    $form[ $fld_wrapper ]['validation_result'] = [
+      '#type' => 'inline_template',
+      '#theme' => 'result_window',
+      '#data' => [],
     ];
-
 
     // Stage submit button.
     $form[ $fld_wrapper ]['next_stage'] = [

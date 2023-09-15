@@ -25,10 +25,15 @@
       for(var i = 0; i < tcpAccordionTitle.length; i++) {
         // Activate current stage.
         if (i+1 == currentStage) {
-          tcpAccordionTitle[i].classList.add('tcp-current-stage');
+          tcpAccordionTitle[i].classList.add(tcpActive, 'tcp-current-stage');
           tcpAccordionTitle[i].nextElementSibling.style.display = 'block'
         }
 
+        // Mark previous stages complete.
+        if (i+1 < currentStage) {
+          tcpAccordionTitle[i].classList.add('tcp-completed-stage');
+        }
+          
         tcpAccordionTitle[i].addEventListener('click', function() {
           // Reset any previously activated stage to only show
           // one stage at a time.
@@ -39,23 +44,14 @@
               active[j].nextElementSibling.style.display = 'none';
             }
           }
-
+          
           // Content panel of a stage.
           var tcpAccordionContent = this.nextElementSibling;
-           
-          // Inspect the current state of the stage title to know
-          // if section should expanded or collapsed.
-          if(!this.classList.contains(tcpActive)) {
-            // It is in collapsed state. Proceed to expand.
-            this.classList.add(tcpActive);
-            tcpAccordionContent.style.display = 'block'
-          }
-          else {
-            // It is in expanded state. Proceed to collapse.
-            this.classList.remove(tcpActive);
-            tcpAccordionContent.style.display = 'none';
-          }
-
+          
+          // When clicked, set the title to active stage
+          // and expand the content area.
+          this.classList.add(tcpActive);
+          tcpAccordionContent.style.display = 'block';
         });
       }
     }
