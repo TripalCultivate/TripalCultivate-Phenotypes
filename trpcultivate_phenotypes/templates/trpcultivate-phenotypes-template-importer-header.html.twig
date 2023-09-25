@@ -13,15 +13,6 @@
 
 {{ attach_library('trpcultivate_phenotypes/trpcultivate-phenotypes-style-importer-header') }}
 
-<div id="tcp-upload-stages">
-  <div>Upload Stage {{data.current_stage}} of {{data.stages|length}}</div>
-  <div> 
-    {% for stage_no,stage_title in data.stages %}
-    <div class="{{(stage_no <= data.current_stage) ? 'stage-current' : 'stage-upcoming'}}" title="{{stage_title}}">&nbsp;</div>
-    {% endfor %}
-  </div>
-</div>
-
 <div id="tcp-header-notes">
   <p>This should be a tab-separated file with the following columns:</p>
   <ol id="tcp-header-notes">
