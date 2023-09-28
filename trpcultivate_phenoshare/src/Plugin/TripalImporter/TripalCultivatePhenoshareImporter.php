@@ -25,6 +25,7 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
  *   upload_title = @Translation("Phenotypic Data File*"),
  *   use_analysis = False,
  *   use_button = True,
+ *   submit_disabled = True,
  *   require_analysis = False,
  *   button_text = "Execute Tripal Job",
  *   file_upload = True,
@@ -39,13 +40,25 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
  * )
  */
 class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
+  // Reference the current stage with this variable to calibrate
+  // each stage accordingly (form, validation, etc.).
+  private $current_stage = 'current_stage';
+
+  // Headers required by this importer.
+  private $headers = [
+    'Header 1' => 'Header 1 Description',
+    'Header 2' => 'Header 2 Description',
+    'Header 3' => 'Header 3 Description',
+    'Header 4' => 'Header 4 Description',
+    'Header 5' => 'Header 5 Description',
+  ];
 
   /**
    * {@inheritDoc}
    */
   public function form($form, &$form_state) {
     // Always call the parent form to ensure Chado is handled properly.
-    $form = parent::form($form, $form_state);
+    //$form = parent::form($form, $form_state);
     
     // Attach scripts and libraries.
     $form['#attached']['library'] = [
@@ -58,77 +71,63 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       being uploaded here. Do not upload data that should not be used in the final analysis for a
       scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.');
     \Drupal::messenger()->addWarning($phenotypes_minder);
+    
 
+    // Cacheing of stage number:
+    // Cache current stage and id to allow script to reference this value.
+    $stage = ($form_state->getValue('next_stage')) 
+      ? (int) $form_state->getValue( $this->current_stage ) + 1
+      : 1;
+    
+    $form[ $this->current_stage ] = [
+      '#type' => 'hidden',
+      '#value' => $stage,
+      '#attributes' => ['id' => 'tcp-current-stage']
+    ];
+
+
+    // Rendering of Stage:
     // Compose stage array that will become the basis of the stages rendered in 
-    // stage accordion layout. Each stage is a method titled stage + stage no.
-    $importer_methods = get_class_methods(get_class($this));
-    $stages = [];
-    foreach ($importer_methods as $method) {
+    // stage accordion layout. Each stage is a method titled stage + stage no (ie. stage1).
+    $stage_methods = get_class_methods(get_class($this));
+    $total_stages = 0;
+
+    foreach ($stage_methods as $method) {
       if (preg_match('/stage([1-9])/', $method, $matches)) {
         if ($stage_no = $matches[1]) {
-          $stages[ $stage_no ] = $method;
+          // Call method to build stage.
+          // Set the status of the stage (current, complete, upcoming).
+          
+          $stage_status = '';
+          if ($stage == $stage_no) {
+            // Is the current stage.
+            $stage_status = 'tcp-current-stage';
+          }
+          elseif ($stage_no < $stage) {
+            // Is the previous completed stage.
+            $stage_status = 'tcp-completed-stage';
+          }
+
+          $this->$method($form, $form_state, $stage_status);
+          $total_stages++;
         } 
       }
+    } 
+
+
+    // Manage importer submit button: Execute Tripal Job.
+    // Enable button when it reaches the last stage.
+    if ($stage > $total_stages) {
+      $storage = $form_state->getStorage();
+      $storage['disable_TripalImporter_submit'] = FALSE;
+      $form_state->setStorage($storage);
     }
-
-    // Manage stage request. Determine the stage.
-    // Cache current page value using this element id.
-    $current_stage = 'current_stage';
-
-    if ($form_state->getUserInput()) {
-      // Retrieve the cache value of current stage and increment by 1.
-      $cache_stage = $form_state->get($current_stage);
-      $stage = (int) $cache_stage + 1;
-    }
-    else {
-      // On initial load of the importer set the stage to
-      // stage 1 of the upload/import process.
-      $stage = 1;
-    }
-
-    // Save the current stage in a $form_state variable and settings
-    // for stage accordion script variable.
-    $form_state->set($current_stage, $stage);
-    $form['#attached']['drupalSettings']['trpcultivate_phenoshare'][ $current_stage ] = $stage;
-
-    // Importer header section: Stage indicator, importer notes and a
-    // download link to a pre-configured template file.
-    // Header/Column - Definition/Expected value.
-    $headers = [
-      'Header 1' => 'Header 1 Description',
-      'Header 2' => 'Header 2 Description',
-      'Header 3' => 'Header 3 Description',
-      'Header 4' => 'Header 4 Description',
-      'Header 5' => 'Header 5 Description',
-    ];
-
-    // Set this variable to the filename of the template file.
-    $template_file = 'phenoshare-data-collection-file.tsv';
-
-    $form['importer_header'] = [
-      '#type' => 'inline_template',
-      '#theme' => 'theme-importer-header',
-      '#weight' => -100,
-      '#data' => [
-        'stages'  => $stages,
-        'current_stage' => $stage,
-        'headers' => $headers,
-        'template_file' => $template_file, 
-      ],
-    ];
-
-    // Stage Accordion
-    // Render stage accordion callback.
-    foreach($stages as $stage_callback) {
-      // Render Stage Accordion.
-      $this->$stage_callback($form, $form_state);
-    }
-
+ 
     return $form;
   }
 
 
-  /// Stage accordion callback.
+  /// Stage accordion methods.
 
   /**
    * Stage 1: Upload data file callback.
@@ -149,8 +148,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    *   Drupal form object.
    * @param $form_state
    *   Drupal form state object.
+   * @param $stage_status
+   *   String, class name to correctly style each stage.
+   *   tcp-current-stage: active/current stage
+   *   tcp-completed-stage: completed stage. 
+   *   Default to empty string.
    */
-  public function stage1(&$form, $form_state) {
+  public function stage1(&$form, $form_state, $stage_status = '') {
     // Describe stage.
     $stage = [
       'stage#' => 1,
@@ -159,8 +163,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
     $form[ $fld_wrapper ] = [
-      '#prefix' => t('<div class="tcp-stage">Stage @stage#: @title</div><div>', 
-        ['@stage#' => $stage['stage#'], '@title' => $stage['title']]),
+      '#prefix' => t('<div class="tcp-stage @stage_status">Stage @stage#: @title</div><div>', 
+        ['@stage_status' => $stage_status, '@stage#' => $stage['stage#'], '@title' => $stage['title']]),
       '#suffix' => '</div>'
     ];
 
@@ -178,11 +182,11 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Other relevant fields here.
 
-
     // Stage submit button.
     $form[ $fld_wrapper ]['next_stage'] = [
       '#type' => 'submit',
       '#value' => 'Next Stage',
+      '#name' => 'next_stage'
     ];
   }
 
@@ -193,8 +197,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    *   Drupal form object.
    * @param $form_state
    *   Drupal form state object.
+   * @param $stage_status
+   *   String, class name to correctly style each stage.
+   *   tcp-current-stage: active/current stage
+   *   tcp-completed-stage: completed stage. 
+   *   Default to empty string.
    */
-  public function stage2(&$form, $form_state) {
+  public function stage2(&$form, $form_state, $stage_status = '') {
     // Describe stage.
     $stage = [
       'stage#' => 2,
@@ -203,8 +212,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
     $form[ $fld_wrapper ] = [
-      '#prefix' => t('<div class="tcp-stage">Stage @stage#: @title</div><div>', 
-        ['@stage#' => $stage['stage#'], '@title' => $stage['title']]),
+      '#prefix' => t('<div class="tcp-stage @stage_status">Stage @stage#: @title</div><div>', 
+        ['@stage_status' => $stage_status, '@stage#' => $stage['stage#'], '@title' => $stage['title']]),
       '#suffix' => '</div>'
     ];
     
@@ -220,6 +229,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form[ $fld_wrapper ]['next_stage'] = [
       '#type' => 'submit',
       '#value' => 'Next Stage',
+      '#name' => 'next_stage'
     ];
   }
 
@@ -230,8 +240,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    *   Drupal form object.
    * @param $form_state
    *   Drupal form state object.
+   * @param $stage_status
+   *   String, class name to correctly style each stage.
+   *   tcp-current-stage: active/current stage
+   *   tcp-completed-stage: completed stage. 
+   *   Default to empty string.
    */
-  public function stage3(&$form, $form_state) {
+  public function stage3(&$form, $form_state, $stage_status = '') {
     // Describe stage.
     $stage = [
       'stage#' => 3,
@@ -240,8 +255,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
     $form[ $fld_wrapper ] = [
-      '#prefix' => t('<div class="tcp-stage">Stage @stage#: @title</div><div>', 
-        ['@stage#' => $stage['stage#'], '@title' => $stage['title']]),
+      '#prefix' => t('<div class="tcp-stage @stage_status">Stage @stage#: @title</div><div>', 
+        ['@stage_status' => $stage_status, '@stage#' => $stage['stage#'], '@title' => $stage['title']]),
       '#suffix' => '</div>'
     ];
     
@@ -255,10 +270,11 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form[ $fld_wrapper ]['next_stage'] = [
       '#type' => 'submit',
       '#value' => 'Next Stage',
+      '#name' => 'next_stage'
     ];
   }
 
-  // End stage accordion callback.
+  // End stage accordion methods.
 
   ///
 
@@ -289,5 +305,20 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    */
   public function postRun() {
 
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function describeUploadFileFormat() {
+    $build = [
+      '#theme' => 'importer_header',
+      '#data' => [
+        'headers' => $this->headers,
+        'template_file' => '#'
+      ]
+    ];
+
+    return \Drupal::service('renderer')->render($build);
   }
 }

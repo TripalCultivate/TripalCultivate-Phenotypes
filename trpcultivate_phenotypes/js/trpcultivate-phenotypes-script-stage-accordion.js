@@ -3,7 +3,6 @@
 * Manage events in stage accordion.
 */
 
-
 (function ($, Drupal, drupalSettings) {
   var initialized;
  
@@ -59,8 +58,20 @@
   
   Drupal.behaviors.stageAccordion = {
     attach: function(context, settings) {
-      var currentStage = drupalSettings.trpcultivate_phenoshare.current_stage;
+      var currentStage = $('#tcp-current-stage').val();
       initAccordion(currentStage);
+
+      // Existing file.
+      var elementFileExisting = $('select[name="file_upload_existing"]');
+      elementFileExisting.prev().hide();
+      elementFileExisting.next().hide();
+      elementFileExisting.hide();
+
+      // File server path.
+      var elementFileServer = $('input[name="file_local"]');
+      elementFileServer.prev().hide();
+      elementFileServer.next().hide();
+      elementFileServer.hide();
     }
   }
  } (jQuery, Drupal, drupalSettings)); 

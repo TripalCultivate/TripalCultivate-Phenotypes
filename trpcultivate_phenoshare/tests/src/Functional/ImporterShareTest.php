@@ -75,25 +75,32 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $session->statusCodeEquals(200);
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
     
+    
+    // Test cacheing of stage number.
+    // Test stage is correctly styled (tcp-current-stage class).
 
-    // Stage indicator shows Stage 1 of total number of pages on
-    // initial load of the importer page.
-    $page_text = $this->getSession()->getPage()->getText();
-    preg_match('/Stage [1-9] of ([1-9])/', $page_text, $matches);
-    $total_stages = trim($matches[1]);
+    // On page load, test that it is stage 1. Subsequent tests will
+    // be second stage then the last stage.
+    $page_content = $this->getSession()->getPage()->getContent();
+    // Important field that holds the current stage.
+    preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
+    $current_stage = $matches[1];
+    $this->assertEquals($current_stage, 1);
 
-    // Each stage in accordion has a submit button that will
-    // move to next stage and stage progress indicator will indicate
-    // the current stage.
-    for($i = 1; $i == $total_stages; $i++) {
-      $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
+    // All stages (with class tcp-stage), but less one stage since first stage has been verified.
+    preg_match_all('/tcp-stage/', $page_content, $matches);
+    unset($matches[0][ count($matches[0]) - 1 ]);
+
+    foreach($matches[0] as $i => $stage) {
       $this->submitForm([], 'Next Stage');
-      $session->pageTextContains('Upload Stage ' . $i . ' of ' . $total_stages);
+      $page_content = $this->getSession()->getPage()->getContent();
+      preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
+      $current_stage = $matches[1];
 
-      // Ensure that stage accordion shows the correct stage - that is
-      // current stage is expanded whereas the others are collapsed and
-      // the title bar for each stage is mark by an * symbol.
-      $session->pageTextContains('* Stage ' . $i . ':');
+      $this->assertEquals($current_stage, $i + 2);
+
+      preg_match_all('/(tcp-stage\s*.*)/', $page_content, $matches);
+      //print_r($matches);
     }
   }
 }

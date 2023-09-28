@@ -1,11 +1,9 @@
 {#
 /**
  * @file
- * Theme implementation of importer upload stages.
+ * Theme implementation of header definitions.
  *
  * Available variables:
- * - stages: array showing number of stages and title for each stage.
- * - current_stage: current stage displayed to user.
  * - header_notes: array of headers keyed by the header name. Value is description and expected value.
  * - template_file: a file name of a template file. 
  */
@@ -15,6 +13,7 @@
 
 <div id="tcp-header-notes">
   <p>This should be a tab-separated file with the following columns:</p>
+  
   <ol id="tcp-header-notes">
     {% for header,description in data.headers %}
     <li>

@@ -61,26 +61,18 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
   $items = [];
 
   $items = [
-    'theme-importer-header' => [
+    // Theme header requirements of an importer.
+    'importer_header' => [
       'variables' => [
         'data' => [
-          'stages'  => [],
-          'current_stage' => 1,
           'headers' => [],
-          'template_file' => '',
+          'template_file' => '#',
         ]
       ],
       'template' => 'trpcultivate-phenotypes-template-importer-header'
     ],
-    'theme-accordion' => [
-      'variables' => [
-        'data' => [
-          'stages' => [],
-          'current_stage' => 1,
-        ]
-      ],
-      'template' => 'trpcultivate-phenotypes-template-accordion'
-    ],
+    // Theme instructions found in the header section
+    // of ontology configuration page.
     'header_instructions' => [
       'variables' => [
         'data' => [
@@ -91,6 +83,7 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
       ],
       'template' => 'trpcultivate-phenotypes-template-header-instructions'
     ],
+    // Theme validation result window of an importer.
     'result_window' => [
       'variables' => [
         'data' => []
