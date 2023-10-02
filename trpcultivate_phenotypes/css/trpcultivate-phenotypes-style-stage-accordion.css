@@ -4,7 +4,7 @@
  */
 
 /* Stage Title Panel */
-.tcp-stage {
+.tcp-stage-title {
   background-color: #EAEAEA;
   border: 0;
   color: #333333;
@@ -16,44 +16,18 @@
 }
 
 /* Stage Content Panel */
-div.tcp-stage + div {
+div.tcp-stage-title + div {
   background-color: #FFFFFF;
   display: none;
   padding: 10px;
 }
  
-.tcp-stage:hover {
+.tcp-stage-title:hover {
   background-color: #DADADA;
 }
 
-/* Result window */
-.tcp-result-window {
-  border: 1px solid #aaa;
-  border-radius: 4px;
-  padding: 0.5em 0.5em 0;
-}
-
-.tcp-result-window summary {
-  font-weight: bold;
-  margin: -0.5em -0.5em 0;
-  padding: 0.5em;
-  border-bottom: 1px solid #aaa;
-  margin-bottom: 0.5em;
-}
-
-.tcp-result-window ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
-}
-
-.tcp-result-window ul li {
-  margin: 10px 0;
-  padding: 0 0 0 25px;
-}
-
 /* Iconography - stage indicators */
-.tcp-current-stage {
+.tcp-stage-title.tcp-current-stage {
   background-image: url(../images/tcp-importer-current-stage.png);
   background-repeat: no-repeat;
   background-position: 15px 15px;
@@ -61,30 +35,15 @@ div.tcp-stage + div {
   padding-left: 50px;
 }
 
-.tcp-completed-stage {
+.tcp-stage-content.tcp-current-stage {
+  display: block;
+}
+
+.tcp-stage-title.tcp-completed-stage {
   background-color: #C0D9B2;
   background-image: url(../images/tcp-importer-completed-stage.png);
   background-repeat: no-repeat;
   background-position: 15px 15px;
   font-weight: bold;
   padding-left: 50px;
-}
-
-.tcp-validate-todo {
-  background-image: url(../images/tcp-validate-todo.jpg);
-  background-repeat: no-repeat;
-  background-position: 0 1px;
-  opacity: 0.6;
-}
-
-.tcp-validate-pass {
-  background-image: url(../images/tcp-validate-pass.jpg);
-  background-repeat: no-repeat;
-  background-position: 0 1px;
-}
-
-.tcp-validate-failed {
-  background-image: url(../images/tcp-validate-failed.jpg);
-  background-repeat: no-repeat;
-  background-position: 0 1px;
 }

@@ -19,18 +19,12 @@
       var tcpActive = 'tcp-stage-active';
 
       // Reference all stage accordion title elements.
-      var tcpAccordionTitle = document.querySelectorAll('.tcp-stage');
+      var tcpAccordionTitle = document.querySelectorAll('.tcp-stage-title');
       // Add click event listener.
       for(var i = 0; i < tcpAccordionTitle.length; i++) {
-        // Activate current stage.
+        // Add active class to the current stage.
         if (i+1 == currentStage) {
-          tcpAccordionTitle[i].classList.add(tcpActive, 'tcp-current-stage');
-          tcpAccordionTitle[i].nextElementSibling.style.display = 'block'
-        }
-
-        // Mark previous stages complete.
-        if (i+1 < currentStage) {
-          tcpAccordionTitle[i].classList.add('tcp-completed-stage');
+          tcpAccordionTitle[i].classList.add(tcpActive);
         }
           
         tcpAccordionTitle[i].addEventListener('click', function() {
@@ -60,18 +54,6 @@
     attach: function(context, settings) {
       var currentStage = $('#tcp-current-stage').val();
       initAccordion(currentStage);
-
-      // Existing file.
-      var elementFileExisting = $('select[name="file_upload_existing"]');
-      elementFileExisting.prev().hide();
-      elementFileExisting.next().hide();
-      elementFileExisting.hide();
-
-      // File server path.
-      var elementFileServer = $('input[name="file_local"]');
-      elementFileServer.prev().hide();
-      elementFileServer.next().hide();
-      elementFileServer.hide();
     }
   }
  } (jQuery, Drupal, drupalSettings)); 

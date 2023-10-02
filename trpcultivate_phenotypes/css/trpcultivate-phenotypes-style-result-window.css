@@ -1,0 +1,50 @@
+/**
+ * @file
+ * Style validation result window.
+ */
+
+/* Result window */
+.tcp-result-window {
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  padding: 0.5em 0.5em 0;
+}
+
+.tcp-result-window summary {
+  font-weight: bold;
+  margin: -0.5em -0.5em 0;
+  padding: 0.5em;
+  border-bottom: 1px solid #aaa;
+  margin-bottom: 0.5em;
+}
+
+.tcp-result-window ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tcp-result-window ul li {
+  margin: 10px 0;
+  padding: 0 0 0 25px;
+}
+
+/* Iconography - validation result */
+.tcp-validate-todo {
+  background-image: url(../images/tcp-validate-todo.jpg);
+  background-repeat: no-repeat;
+  background-position: 0 1px;
+  opacity: 0.6;
+}
+
+.tcp-validate-pass {
+  background-image: url(../images/tcp-validate-pass.jpg);
+  background-repeat: no-repeat;
+  background-position: 0 1px;
+}
+
+.tcp-validate-failed {
+  background-image: url(../images/tcp-validate-failed.jpg);
+  background-repeat: no-repeat;
+  background-position: 0 1px;
+}

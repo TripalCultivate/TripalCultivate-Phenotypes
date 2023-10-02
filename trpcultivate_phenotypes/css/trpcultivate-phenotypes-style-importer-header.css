@@ -1,8 +1,6 @@
 /**
  * @file
- * Style header notes, upload stage indicator in an implementation of 
- * Tripal Importer Plugin.
- *
+ * Style header notes of Tripal Importer Plugin.
  */
 
 /* Importer notes */
@@ -14,18 +12,4 @@
 
 #tcp-header-notes p {
   margin-top: 0;
-}
-
-.stage-current, .stage-upcoming {
-  flex: 1;
-  height: 10px;
-}
-
-.stage-current {
-  background-color: #000000;
-  border-bottom: 2px solid green;
-}
-
-.stage-upcoming {
-  background-color: #EAEAEA;
 }

@@ -2,8 +2,7 @@
 
 /**
  * @file
- * Tripal Importer Plugin implementation for Tripal Cultivate Phenotypes - Share
- * data file uploader/importer.
+ * Tripal Importer Plugin implementation for Tripal Cultivate Phenotypes - Share.
  */
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
@@ -58,7 +57,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    */
   public function form($form, &$form_state) {
     // Always call the parent form to ensure Chado is handled properly.
-    //$form = parent::form($form, $form_state);
+    $form = parent::form($form, $form_state);
     
     // Attach scripts and libraries.
     $form['#attached']['library'] = [
@@ -74,7 +73,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
 
     // Cacheing of stage number:
-    // Cache current stage and id to allow script to reference this value.
+    // Cache current stage and id field to allow script to reference this value.
     $stage = ($form_state->getValue('next_stage')) 
       ? (int) $form_state->getValue( $this->current_stage ) + 1
       : 1;
@@ -114,9 +113,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       }
     } 
 
-
+    
+    // Submit button.
     // Manage importer submit button: Execute Tripal Job.
-    // Enable button when it reaches the last stage.
+    // Enable button after the last stage.
     if ($stage > $total_stages) {
       $storage = $form_state->getStorage();
       $storage['disable_TripalImporter_submit'] = FALSE;
@@ -130,45 +130,45 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
   /// Stage accordion methods.
 
   /**
-   * Stage 1: Upload data file callback.
+   * Stage 1: Upload data file. Method/Function template.
    * 
    * Subsequent stages in accordion will correspond to a public method titled
    * stage + stage number (ie. stage1, or stage2). In each method
-   * will define the stage markup using the structure below:
+   * will define the stage markup and form render array using the structure below:
    *
-   * <div class="tcp-stage">Title</div>
-   * <div>Stage Body/Content</div>
+   * <div class="tcp-stage-title">Title</div>
+   * <div class="tcp-stage-content">
+   *   Stage Body/Content
+   *   Form render array - stage form elements. 
+   * </div>
    * 
    * Additional field elements will be wrapped using the field wrapper
-   * variable defined in each stage accordion. 
+   * variable defined in each stage accordion, in the following format:
    * 
-   * @see accordion stlying (css) and behaviours (js).
+   * accordion_stage + STAGE NUMBER (ie. accordion_stage1) 
    * 
    * @param $form
    *   Drupal form object.
    * @param $form_state
    *   Drupal form state object.
    * @param $stage_status
-   *   String, class name to correctly style each stage.
-   *   tcp-current-stage: active/current stage
-   *   tcp-completed-stage: completed stage. 
-   *   Default to empty string.
+   *   String, class name to style each stage with the correct css class
+   *   corresponding to a stage - completed, current and upcoming stage.
    */
   public function stage1(&$form, $form_state, $stage_status = '') {
-    // Describe stage.
+    // Describe stage by providing the stage number and title of the stage.
+    // The status key in the stage description array corresponds to the parameter of the method
+    // and is determined by the method call to render stage in the form build above.
     $stage = [
       'stage#' => 1,
-      'title' => 'Upload Data File'
+      'title'  => 'Upload Data File',
+      'status' => $stage_status
     ];
     
+    // Field wrapper name. All additional elements that go into this stage should
+    // use this name to encapsulate into a specific stage in the accordion.
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
-    $form[ $fld_wrapper ] = [
-      '#prefix' => t('<div class="tcp-stage @stage_status">Stage @stage#: @title</div><div>', 
-        ['@stage_status' => $stage_status, '@stage#' => $stage['stage#'], '@title' => $stage['title']]),
-      '#suffix' => '</div>'
-    ];
-
-    // Other relevant fields here.
+    $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
     // Apply field stage field wrapper to file upload element.
     // For the file upload field to conform to the accordion layout,
@@ -178,7 +178,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // Omit old copy so there would not be duplicate file
     // element in the upload data file stage.
     $form['file'] = [];
-    ///
 
     // Other relevant fields here.
 
@@ -192,30 +191,27 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
   /**
    * Stage 2: Validate data. 
-   * 
+   *
+   * @see stage 1 method template.
+   *  
    * @param $form
    *   Drupal form object.
    * @param $form_state
    *   Drupal form state object.
    * @param $stage_status
-   *   String, class name to correctly style each stage.
-   *   tcp-current-stage: active/current stage
-   *   tcp-completed-stage: completed stage. 
-   *   Default to empty string.
+   *   String, class name to style each stage with the correct css class
+   *   corresponding to a stage - completed, current and upcoming stage. 
    */
   public function stage2(&$form, $form_state, $stage_status = '') {
     // Describe stage.
     $stage = [
       'stage#' => 2,
-      'title' => 'Validate Data'
+      'title'  => 'Validate Data',
+      'status' => $stage_status
     ];
     
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
-    $form[ $fld_wrapper ] = [
-      '#prefix' => t('<div class="tcp-stage @stage_status">Stage @stage#: @title</div><div>', 
-        ['@stage_status' => $stage_status, '@stage#' => $stage['stage#'], '@title' => $stage['title']]),
-      '#suffix' => '</div>'
-    ];
+    $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
     // Other relevant fields here.
     // Validation result.
@@ -236,29 +232,26 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
   /**
    * Stage 3: Describe and save data. 
    * 
+   * @see stage 1 method template.
+   *  
    * @param $form
    *   Drupal form object.
    * @param $form_state
    *   Drupal form state object.
    * @param $stage_status
-   *   String, class name to correctly style each stage.
-   *   tcp-current-stage: active/current stage
-   *   tcp-completed-stage: completed stage. 
-   *   Default to empty string.
+   *   String, class name to style each stage with the correct css class
+   *   corresponding to a stage - completed, current and upcoming stage.
    */
   public function stage3(&$form, $form_state, $stage_status = '') {
     // Describe stage.
     $stage = [
       'stage#' => 3,
-      'title' => 'Describe and Save Data'
+      'title'  => 'Describe and Save Data',
+      'status' => $stage_status
     ];
     
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
-    $form[ $fld_wrapper ] = [
-      '#prefix' => t('<div class="tcp-stage @stage_status">Stage @stage#: @title</div><div>', 
-        ['@stage_status' => $stage_status, '@stage#' => $stage['stage#'], '@title' => $stage['title']]),
-      '#suffix' => '</div>'
-    ];
+    $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
     // Other relevant fields here.
     $form[ $fld_wrapper ]['field_elements'] = [
@@ -311,6 +304,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * {@inheritdoc}
    */
   public function describeUploadFileFormat() {
+    // @TODO: resolve template_file download, either:
+    // 1. programmatically create a temp file for download based on $headers property defined.
+    // 2. a created file, with pre-configured headers in a specific location (ie. file_template/).
+
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
@@ -320,5 +317,41 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     ];
 
     return \Drupal::service('renderer')->render($build);
+  }
+
+  /**
+   * Construct markup for a stage with title and a corresponding content area
+   * that will be rendered as a stage in the accordion. Each stage will utilize
+   * the structure below:
+   * 
+   * <div class="tcp-stage-title">Title</div>
+   * <div class="tcp-stage-content">Stage Body/Content</div>
+   *
+   * @param $stage
+   *   An associative array with the following keys.
+   *   - stage#: integer, stage number.
+   *   - title : string, stage title.
+   *   - status: string, class name to correctly style each stage. 
+   *     Class is assigned in the method call to render stage in form build method above.
+   *     - tcp-current-stage: active/current stage
+   *     - tcp-completed-stage: completed stage. 
+   *     - Default to empty string in each stage method: upcoming stage.
+   */
+  public function createStageAccordion($stage) {
+    // Stage number.
+    $stage_no = $stage['stage#'];
+    // Stage title.
+    $title   = $stage['title'];
+    // Stage status - class name.
+    $status = $stage['status'];
+
+    $markup = [
+      '#prefix' => t('<div class="tcp-stage-title @stage_status">Stage @stage#: @title</div>
+        <div class="tcp-stage-content @stage_status"><!-- Stage Form Here -->', 
+        ['@stage_status' => $status, '@stage#' => $stage_no, '@title' => $title]),
+      '#suffix' => '</div>'
+    ];
+    
+    return $markup;
   }
 }

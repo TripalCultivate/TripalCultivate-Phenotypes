@@ -69,38 +69,30 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // There is a link to the the importer with this link description.
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
 
-    // Importer share page.
+    // Test stage cacheing and if stage is styled with the correct css class.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
     $session = $this->assertSession();
     $session->statusCodeEquals(200);
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
-    
-    
-    // Test cacheing of stage number.
-    // Test stage is correctly styled (tcp-current-stage class).
-
-    // On page load, test that it is stage 1. Subsequent tests will
-    // be second stage then the last stage.
+ 
     $page_content = $this->getSession()->getPage()->getContent();
-    // Important field that holds the current stage.
-    preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
-    $current_stage = $matches[1];
-    $this->assertEquals($current_stage, 1);
-
-    // All stages (with class tcp-stage), but less one stage since first stage has been verified.
-    preg_match_all('/tcp-stage/', $page_content, $matches);
-    unset($matches[0][ count($matches[0]) - 1 ]);
-
+    // Get all stage accordion title/header element.
+    preg_match_all('/tcp\-stage-title/', $page_content, $matches); 
+ 
     foreach($matches[0] as $i => $stage) {
-      $this->submitForm([], 'Next Stage');
-      $page_content = $this->getSession()->getPage()->getContent();
       preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
       $current_stage = $matches[1];
+      
+      // Stage number set in the hidden field used as cache.
+      $this->assertEquals($current_stage, ($i + 1), 'Current stage does not match expected stage');
 
-      $this->assertEquals($current_stage, $i + 2);
-
-      preg_match_all('/(tcp-stage\s*.*)/', $page_content, $matches);
-      //print_r($matches);
+      // Current stage styled with css class name tcp-current-stage
+      preg_match_all('/(tcp\-stage-title[\s{1}tcp\-\w+\-stage]*)">/', $page_content, $matches);
+      $this->assertEquals('tcp-stage-title tcp-current-stage', $matches[1][ $i ], 'Stage does not contain expected css class.');
+      
+      // Next stage...
+      $this->submitForm([], 'Next Stage');
+      $page_content = $this->getSession()->getPage()->getContent();
     }
   }
 }

@@ -11,14 +11,21 @@ trpcultivate-phenotypes-script-stage-accordion:
     - core/jquery
     - core/once
 
-# Style upload stages.
+# Style importer header elements (notes, header definitions).
 trpcultivate-phenotypes-style-importer-header:
   version: v1.x
   css:
     theme:
       css/trpcultivate-phenotypes-style-importer-header.css: {}
 
-# Style accordion
+# Style validation result window.
+trpcultivate-phenotypes-style-result-window:
+  version: v1.x
+  css:
+    theme:
+      css/trpcultivate-phenotypes-style-result-window.css: {}
+
+# Style stage accordion.
 trpcultivate-phenotypes-style-stage-accordion:
   version: v1.x
   css:
