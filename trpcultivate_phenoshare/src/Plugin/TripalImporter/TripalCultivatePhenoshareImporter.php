@@ -74,7 +74,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Cacheing of stage number:
     // Cache current stage and id field to allow script to reference this value.
-    $stage = ($form_state->getValue('next_stage')) 
+    $triggering_element = $form_state->getTriggeringElement();
+
+    $stage = ($form_state->getValue('next_stage') && $triggering_element['#value'] == 'Next Stage')
       ? (int) $form_state->getValue( $this->current_stage ) + 1
       : 1;
     
