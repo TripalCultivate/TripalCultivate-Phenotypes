@@ -26,7 +26,7 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
  *   use_button = True,
  *   submit_disabled = True,
  *   require_analysis = False,
- *   button_text = "Execute Tripal Job",
+ *   button_text = "Import",
  *   file_upload = True,
  *   file_load = False,
  *   file_remote = False,
@@ -48,8 +48,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     'Header 1' => 'Header 1 Description',
     'Header 2' => 'Header 2 Description',
     'Header 3' => 'Header 3 Description',
-    'Header 4' => 'Header 4 Description',
-    'Header 5' => 'Header 5 Description',
   ];
 
   /**
@@ -75,8 +73,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // Cacheing of stage number:
     // Cache current stage and id field to allow script to reference this value.
     $triggering_element = $form_state->getTriggeringElement();
+    $valid_triggering_element = [
+      'Validate Data File', // Stage 1
+      'Check Values', // Stage 2
+      'Skip' // Stage 2
+    ];
 
-    $stage = ($form_state->getValue('next_stage') && $triggering_element['#value'] == 'Next Stage')
+    $stage = ($form_state->getValue('trigger_element') && in_array($triggering_element['#value'], $valid_triggering_element))
       ? (int) $form_state->getValue( $this->current_stage ) + 1
       : 1;
     
@@ -117,9 +120,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     
     // Submit button.
-    // Manage importer submit button: Execute Tripal Job.
-    // Enable button after the last stage.
-    if ($stage > $total_stages) {
+    // Manage importer submit button: Import
+    // By default, is disabled in the plugin annotation definition: submit_disabled
+    // and enabled one less stage of the total stages.
+    if ($stage > ($total_stages - 1)) {
       $storage = $form_state->getStorage();
       $storage['disable_TripalImporter_submit'] = FALSE;
       $form_state->setStorage($storage);
@@ -172,6 +176,14 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $fld_wrapper = 'accordion_stage' . $stage['stage#'];
     $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
+    // Validation result.
+    $form[ $fld_wrapper ]['validation_result'] = [
+      '#type' => 'inline_template',
+      '#theme' => 'result_window',
+      '#data' => [],
+      '#weight' => -100
+    ];
+
     // Apply field stage field wrapper to file upload element.
     // For the file upload field to conform to the accordion layout,
     // this override script must be performed.
@@ -184,10 +196,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // Other relevant fields here.
 
     // Stage submit button.
-    $form[ $fld_wrapper ]['next_stage'] = [
+    $form[ $fld_wrapper ]['validate_stage'] = [
       '#type' => 'submit',
-      '#value' => 'Next Stage',
-      '#name' => 'next_stage'
+      '#value' => 'Validate Data File',
+      '#name' => 'trigger_element'
     ];
   }
 
@@ -208,7 +220,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // Describe stage.
     $stage = [
       'stage#' => 2,
-      'title'  => 'Validate Data',
+      'title'  => 'Describe Traits',
       'status' => $stage_status
     ];
     
@@ -216,18 +228,21 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
     // Other relevant fields here.
-    // Validation result.
-    $form[ $fld_wrapper ]['validation_result'] = [
-      '#type' => 'inline_template',
-      '#theme' => 'result_window',
-      '#data' => [],
+    $form[ $fld_wrapper ]['field_elements'] = [
+      '#markup' => '<p>Stage 2 field elements here</p>'
+    ];
+ 
+    // Stage submit button.
+    $form[ $fld_wrapper ]['validate_stage'] = [
+      '#type' => 'submit',
+      '#value' => 'Check Values',
+      '#name' => 'trigger_element'
     ];
 
-    // Stage submit button.
-    $form[ $fld_wrapper ]['next_stage'] = [
+    $form[ $fld_wrapper ]['skip_stage'] = [
       '#type' => 'submit',
-      '#value' => 'Next Stage',
-      '#name' => 'next_stage'
+      '#value' => 'Skip',
+      '#name' => 'trigger_element'
     ];
   }
 
@@ -248,7 +263,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // Describe stage.
     $stage = [
       'stage#' => 3,
-      'title'  => 'Describe and Save Data',
+      'title'  => 'Review Data',
       'status' => $stage_status
     ];
     
@@ -257,15 +272,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
     // Other relevant fields here.
     $form[ $fld_wrapper ]['field_elements'] = [
-      '#markup' => '<p>Stage 3 field elements here</p>'
-    ];
-
-
-    // Stage submit button.
-    $form[ $fld_wrapper ]['next_stage'] = [
-      '#type' => 'submit',
-      '#value' => 'Next Stage',
-      '#name' => 'next_stage'
+      '#markup' => '<p>Stage 3 summary table here</p>'
     ];
   }
 
@@ -307,7 +314,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    */
   public function describeUploadFileFormat() {
     // @TODO: resolve template_file download, either:
-    // 1. programmatically create a temp file for download based on $headers property defined.
+    // 1. via service, programmatically create a temp file for download based on $headers property defined.
     // 2. a created file, with pre-configured headers in a specific location (ie. file_template/).
 
     $build = [
@@ -348,7 +355,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $status = $stage['status'];
 
     $markup = [
-      '#prefix' => t('<div class="tcp-stage-title @stage_status">Stage @stage#: @title</div>
+      '#prefix' => t('<div class="tcp-stage-title @stage_status">STAGE @stage#: @title</div>
         <div class="tcp-stage-content @stage_status"><!-- Stage Form Here -->', 
         ['@stage_status' => $status, '@stage#' => $stage_no, '@title' => $title]),
       '#suffix' => '</div>'

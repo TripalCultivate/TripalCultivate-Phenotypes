@@ -78,8 +78,8 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $page_content = $this->getSession()->getPage()->getContent();
     // Get all stage accordion title/header element.
     preg_match_all('/tcp\-stage-title/', $page_content, $matches); 
- 
-    foreach($matches[0] as $i => $stage) {
+
+    foreach($matches[0] as $i => $stage) {      
       preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
       $current_stage = $matches[1];
       
@@ -91,7 +91,10 @@ class ImporterShareTest extends ChadoTestBrowserBase {
       $this->assertEquals('tcp-stage-title tcp-current-stage', $matches[1][ $i ], 'Stage does not contain expected css class.');
       
       // Next stage...
-      $this->submitForm([], 'Next Stage');
+      if ($i == 2) break; // Skip last stage 3, review stage as the submit will be the import button.
+
+      $next = ($i == 0) ? 'Validate Data File' : 'Check Values';
+      $this->submitForm([], $next);
       $page_content = $this->getSession()->getPage()->getContent();
     }
   }
