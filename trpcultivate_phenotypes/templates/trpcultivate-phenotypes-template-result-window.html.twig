@@ -1,0 +1,20 @@
+{#
+/**
+ * @file
+ * Theme result window.
+ * 
+ * Available variables:
+ * 
+ */
+#}
+
+{{ attach_library('trpcultivate_phenotypes/trpcultivate-phenotypes-style-result-window') }}
+
+<details open="true" class="tcp-result-window">
+  <summary>Validation Result</summary>
+  <ul>
+    <li class="tcp-validate-pass">Experiment/Project Exists</li>
+    <li class="tcp-validate-failed">Genus Exists</li>
+    <li class="tcp-validate-todo">File is a valid tab-separated values (.tsv)</li>
+  </ul>
+</details>

@@ -1,0 +1,15 @@
+/**
+ * @file
+ * Style header notes of Tripal Importer Plugin.
+ */
+
+/* Importer notes */
+#tcp-header-notes {
+  font-weight: 300;
+  list-style-position: inside;
+  margin: 0 0 10px 0;
+}
+
+#tcp-header-notes p {
+  margin-top: 0;
+}

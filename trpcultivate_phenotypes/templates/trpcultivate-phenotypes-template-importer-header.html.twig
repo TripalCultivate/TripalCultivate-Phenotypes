@@ -1,0 +1,30 @@
+{#
+/**
+ * @file
+ * Theme implementation of header definitions.
+ *
+ * Available variables:
+ * - header_notes: array of headers keyed by the header name. Value is description and expected value.
+ * - template_file: a file name of a template file. 
+ */
+#}
+
+{{ attach_library('trpcultivate_phenotypes/trpcultivate-phenotypes-style-importer-header') }}
+
+<div id="tcp-header-notes">
+  <p>This should be a tab-separated file with the following columns:</p>
+  
+  <ol id="tcp-header-notes">
+    {% for header,description in data.headers %}
+    <li>
+      <strong>{{header}}</strong>: {{description}}
+    </li>  
+    {% endfor %}
+  </ol>
+</div>
+
+<div id="tcp-template-file">
+  <a href="{{data.template_file}}" target="_blank">Download a template file</a>
+</div>
+
+<br />

@@ -1,0 +1,49 @@
+/**
+ * @file
+ * Style style stage accordion.
+ */
+
+/* Stage Title Panel */
+.tcp-stage-title {
+  background-color: #EAEAEA;
+  border: 0;
+  color: #333333;
+  cursor: pointer;
+  margin: 1px 0 0 0;
+  padding: 20px;
+  text-align: left;
+  width: inherit;
+}
+
+/* Stage Content Panel */
+div.tcp-stage-title + div {
+  background-color: #FFFFFF;
+  display: none;
+  padding: 10px;
+}
+ 
+.tcp-stage-title:hover {
+  background-color: #DADADA;
+}
+
+/* Iconography - stage indicators */
+.tcp-stage-title.tcp-current-stage {
+  background-image: url(../images/tcp-importer-current-stage.png);
+  background-repeat: no-repeat;
+  background-position: 15px 15px;
+  font-weight: bold;
+  padding-left: 50px;
+}
+
+.tcp-stage-content.tcp-current-stage {
+  display: block;
+}
+
+.tcp-stage-title.tcp-completed-stage {
+  background-color: #C0D9B2;
+  background-image: url(../images/tcp-importer-completed-stage.png);
+  background-repeat: no-repeat;
+  background-position: 15px 15px;
+  font-weight: bold;
+  padding-left: 50px;
+}
