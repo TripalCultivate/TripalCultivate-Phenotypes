@@ -11,3 +11,8 @@ services:
   trpcultivate_phenotypes.genus_project:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
+
+  plugin.manager.trpcultivate_validator:
+    class: 'Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorManager'
+    parent: default_plugin_manager
+    arguments: ['@tripal_chado.database']

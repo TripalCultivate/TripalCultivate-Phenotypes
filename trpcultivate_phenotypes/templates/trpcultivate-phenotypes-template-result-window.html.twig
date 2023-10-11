@@ -4,7 +4,10 @@
  * Theme result window.
  * 
  * Available variables:
- * 
+ * - validation_result: validation result from all validation levels (PROJECT, GENUS, FILE, TRAITS, VALUES).
+ *   Each validation result has the following keys:
+ *   - passed: boolean, true if validation passed and false otherwise.
+ *   - details: text details about failed validation, empty string if validation passed.
  */
 #}
 
@@ -13,8 +16,8 @@
 <details open="true" class="tcp-result-window">
   <summary>Validation Result</summary>
   <ul>
-    <li class="tcp-validate-pass">Experiment/Project Exists</li>
-    <li class="tcp-validate-failed">Genus Exists</li>
-    <li class="tcp-validate-todo">File is a valid tab-separated values (.tsv)</li>
+    {% for level,result in data.validation_result %}
+      <li class="tcp-validate-{{ result.status }}">{{ result.title }} <p>{{ result.details }}</p></li>
+    {% endfor %}
   </ul>
 </details>

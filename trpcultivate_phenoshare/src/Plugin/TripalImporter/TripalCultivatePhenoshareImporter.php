@@ -8,6 +8,8 @@
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
+
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -43,6 +45,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
   // each stage accordingly (form, validation, etc.).
   private $current_stage = 'current_stage';
 
+  // Reference the validation result summary values in Drupal storage
+  // system using this variable.
+  private $validation_result = 'validation_result';
+
   // Headers required by this importer.
   private $headers = [
     'Header 1' => 'Header 1 Description',
@@ -72,6 +78,19 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Cacheing of stage number:
     // Cache current stage and id field to allow script to reference this value.
+
+    // Account for failed validation.
+    // Refer to Drupal $storage system for validation result values saved.
+    $storage = $form_state->getStorage();
+    // Full validation result.
+
+    $validation_result = [];
+    $has_fail = FALSE;
+
+    if (isset($storage[ $this->validation_result ])) {
+      $has_fail = $this->hasFailedValidation($storage[ $this->validation_result ]); 
+    }
+
     $triggering_element = $form_state->getTriggeringElement();
     $valid_triggering_element = [
       'Validate Data File', // Stage 1
@@ -79,7 +98,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       'Skip' // Stage 2
     ];
 
-    $stage = ($form_state->getValue('trigger_element') && in_array($triggering_element['#value'], $valid_triggering_element))
+    $stage = (!$has_fail && $form_state->getValue('trigger_element') && in_array($triggering_element['#value'], $valid_triggering_element))
       ? (int) $form_state->getValue( $this->current_stage ) + 1
       : 1;
     
@@ -95,7 +114,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // stage accordion layout. Each stage is a method titled stage + stage no (ie. stage1).
     $stage_methods = get_class_methods(get_class($this));
     $total_stages = 0;
-
+  
     foreach ($stage_methods as $method) {
       if (preg_match('/stage([1-9])/', $method, $matches)) {
         if ($stage_no = $matches[1]) {
@@ -124,7 +143,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     // By default, is disabled in the plugin annotation definition: submit_disabled
     // and enabled one less stage of the total stages.
     if ($stage > ($total_stages - 1)) {
-      $storage = $form_state->getStorage();
       $storage['disable_TripalImporter_submit'] = FALSE;
       $form_state->setStorage($storage);
     }
@@ -177,11 +195,31 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
     // Validation result.
-    $form[ $fld_wrapper ]['validation_result'] = [
-      '#type' => 'inline_template',
-      '#theme' => 'result_window',
-      '#data' => [],
-      '#weight' => -100
+    $storage = $form_state->getStorage();
+    // Full validation result.
+    if (isset($storage[ $this->validation_result ])) {
+      $validation_result = $storage[ $this->validation_result ];
+
+      $form[ $fld_wrapper ]['validation_result'] = [
+        '#type' => 'inline_template',
+        '#theme' => 'result_window',
+        '#data' => [
+          'validation_result' => $validation_result
+        ],
+        '#weight' => -100
+      ];
+    }
+
+    // Other relevant fields here.
+    // Select experiment, Genus field will reflect the genus project is set to.
+    $form[ $fld_wrapper ]['project'] = [
+      '#title' => t('Project/Experiment'),
+      '#type' => 'textfield',
+      '#description' => t('Type in the experiment or project title your data is specific to.'),
+      '#weight' => -100,      
+      '#attributes' => ['placeholder' => 'Project/Experiment Name', 'class' => ['tcp-autocomplete']],
+      '#autocomplete_route_name' => 'tripal_chado.project_autocomplete',
+      '#autocomplete_route_parameters' => ['type_id' => 0, 'count' => 5],
     ];
 
     // Apply field stage field wrapper to file upload element.
@@ -293,6 +331,45 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    */
   public function formValidate($form, &$form_state) {
     $form_state_values = $form_state->getValues();
+    
+    // Current stage.
+    if ($stage = $form_state_values[ $this->current_stage ]) {
+      if ($stage > 0) {
+        // Validate only when stage is 1 or higher.
+        
+        // Counter, count number of validators that failed.
+        $failed_validator = 0;
+
+        // Test validator plugin.
+        $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+        $plugins = $manager->getDefinitions();
+        $plugin_definitions = array_values($plugins);
+
+        // All values will be accessible to every instance of the validator Plugin.
+        $project = $form_state_values['project'];
+        // @TODO: this will be a select field.
+        $genus = 'Lens';
+        $file = $form_state_values['file_upload'];
+
+        if ($stage == 1) {
+          $scope = 'PROJECT';
+
+          $plugin_key = array_search($scope, array_column($plugin_definitions, 'validator_scope'));
+          $validator = $plugin_definitions[ $plugin_key ]['id'];
+          
+          $instance = $manager->createInstance($validator);
+          $instance->loadAssets($project, $genus, $file);
+          
+          // Perform Project Level validation.
+          $validation[ $scope ] = $instance->validate();
+          
+          // Save validation result.
+          $storage = $form_state->getStorage();
+          $storage[ $this->validation_result ] = $validation;
+          $form_state->setStorage($storage);
+        }
+      }
+    }
   }
 
   /**
@@ -362,5 +439,35 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     ];
     
     return $markup;
+  }
+
+  /**
+   * Check if validation failed.
+   * 
+   * @param $validation_result
+   *   An associative array where each element is the validation summary of each 
+   *   level (PROJECT, GENUS, FILE etc.).
+   *   [level => [
+   *       'status' => 'fail', // pass, todo
+   *       'detail' => 'String, describing more details about the failed validation'
+   *     ],
+   *    ...
+   *   ]
+   */  
+  public function hasFailedValidation($validation_result = []) {
+    $has_fail = FALSE;
+
+    if ($validation_result) {
+      foreach($validation_result as $validator) {
+        // Inspect the validation result summary and if any one level
+        // failed validation should suffice to stop import.
+        if ($validator['status'] == 'fail') {
+          $has_fail = TRUE;
+          break;
+        }
+      }
+    }
+
+    return $has_fail;
   }
 }
