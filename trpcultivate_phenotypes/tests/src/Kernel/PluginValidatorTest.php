@@ -42,7 +42,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    */
   private $test_records = [
     'genus' => '',
-    'project' => ''
+    'project' => '',
   ];
 
   /**
@@ -152,8 +152,16 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
 
-    // Test validator with a project with incorrect genus.
-    $instance->loadAssets($project, 'NON-Existent-Genus', $file);
+    // Test validator with a project without genus configured.
+    $project = 'No Genus';
+    $this->chado->insert('1:project')
+      ->fields([
+        'name' => $project,
+        'description' => $project . ' : Description'   
+      ])
+      ->execute();
+
+    $instance->loadAssets($project, $genus, $file);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
   }
