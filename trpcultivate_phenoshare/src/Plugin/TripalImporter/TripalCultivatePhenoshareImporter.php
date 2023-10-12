@@ -348,7 +348,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
         // All values will be accessible to every instance of the validator Plugin.
         $project = $form_state_values['project'];
         // @TODO: this will be a select field.
-        $genus = 'Lens';
+        $genus = '#';
         $file = $form_state_values['file_upload'];
 
         if ($stage == 1) {

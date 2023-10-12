@@ -76,7 +76,7 @@ class Project extends TripalCultivatePhenotypesValidatorBase implements Containe
     // Project:
     //   - Is not empty
     //   - Exists in chado.project
-    //   - Has genus paired/set
+    //   - Has genus
 
     if (empty($this->project)) {
       $validator_status['status']  = 'fail';
@@ -94,7 +94,7 @@ class Project extends TripalCultivatePhenotypesValidatorBase implements Containe
         // Check if it has a genus set.
         $genus = $this->service_genus_project->getGenusOfProject($project_id);
 
-        if (!$genus || $genus['genus'] != $this->genus) {
+        if (!$genus) {
           $validator_status['status']  = 'fail';
           $validator_status['details'] = 'Project/Experiment entered does not have a genus set in the configuration. Please enter a value and try again.';
         }
