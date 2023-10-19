@@ -333,18 +333,25 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form_state_values = $form_state->getValues();
     
     // Current stage.
+    // Get the cached stage value from the formstate values and perform validation
+    // when it is set to a value. Starting with index 1 - as stage 1, index 2 as stage 2
+    // and so on to the last stage.
+
+    // NOTE: not all stages require a validation and a subsequent condition will
+    // target a specific stage to perform pertinent validation.
+
+    // NOTE: $this->current_stage is the name of the field in the formstate that holds
+    // the current stage value (cacheing of stage no.). See $current_stage property.
     if ($stage = $form_state_values[ $this->current_stage ]) {
-      if ($stage > 0) {
-        // Validate only when stage is 1 or higher.
+      if ($stage == 1) {
+        // Validate Stage 1.
         
         // Counter, count number of validators that failed.
         $failed_validator = 0;
 
-        // Test validator plugin.
+        // Call validator manager service.
         $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-        $plugins = $manager->getDefinitions();
-        $plugin_definitions = array_values($plugins);
-
+       
         // All values will be accessible to every instance of the validator Plugin.
         $project = $form_state_values['project'];
         // @TODO: this will be a select field.
@@ -353,10 +360,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
         if ($stage == 1) {
           $scope = 'PROJECT';
-
-          $plugin_key = array_search($scope, array_column($plugin_definitions, 'validator_scope'));
-          $validator = $plugin_definitions[ $plugin_key ]['id'];
-          
+          // Create instance of the scope-specific plugin and perform validation.
+          $validator = $manager->getValidatorIdWithScope($scope);
           $instance = $manager->createInstance($validator);
           $instance->loadAssets($project, $genus, $file);
           

@@ -52,12 +52,6 @@ class Project extends TripalCultivatePhenotypesValidatorBase implements Containe
 
   /**
    * Validate items in the phenotypic data upload assets.
-   * 
-   * @TODO Structure:
-   *    1. Determine service you need + initialize this. Should be added via DI.
-   *    2. Massage values from importer to match needs of service.
-   *    3. Call service with parameters to get our answer (is valid?)
-   *    4. Interpret response and return valid or not.
    *
    * @return array
    *   An associative array with the following keys.

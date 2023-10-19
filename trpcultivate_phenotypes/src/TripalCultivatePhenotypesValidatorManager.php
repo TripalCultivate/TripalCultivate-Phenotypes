@@ -44,4 +44,25 @@ class TripalCultivatePhenotypesValidatorManager extends DefaultPluginManager {
     $this->alterInfo('trpcultivate_phenotypes_validators_info');
     $this->setCacheBackend($cache_backend, 'tripalcultivate_phenotypes_validators');
   }
+
+  /**
+   * Retrieve validator implementation with a specific scope.
+   * 
+   * @param string $scope
+   *   The validator_scope you are interested in.
+   * 
+   * @return string
+   *   The id of the validator with that scope based on it's annotation.
+   */
+  public function getValidatorIdWithScope($scope) {
+    $plugins = $this->getDefinitions();
+    $plugin_definitions = array_values($plugins);
+
+    $plugin_key = array_search(
+      $scope, 
+      array_column($plugin_definitions, 'validator_scope')
+    );
+
+    return $plugin_definitions[ $plugin_key ]['id'];
+  }
 }
