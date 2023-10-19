@@ -342,7 +342,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // NOTE: $this->current_stage is the name of the field in the formstate that holds
     // the current stage value (cacheing of stage no.). See $current_stage property.
-    if ($stage = $form_state_values[ $this->current_stage ]) {
+    if (array_key_exists($this->current_stage, $form_state_values)) {      
+      $stage = $form_state_values[ $this->current_stage ];
+
       if ($stage == 1) {
         // Validate Stage 1.
         
