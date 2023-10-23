@@ -9,7 +9,7 @@ namespace Drupal\trpcultivate_phenotypes;
 
 use Drupal\Component\Plugin\PluginBase;
 
-class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
+abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
   /**
    * Project name/title.
    */

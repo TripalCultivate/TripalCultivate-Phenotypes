@@ -43,4 +43,15 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    * @return void.
    */
   public function loadAssets($project, $genus, $file_id);
+
+  /**
+   * Validate items in the phenotypic data upload assets.
+   *
+   * @return array
+   *   An associative array with the following keys.
+   *   - title: string, section or title of the validation as it appears in the result window.
+   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
+   *   - details: details about the offending field/value.
+   */
+  public function validate();
 }
