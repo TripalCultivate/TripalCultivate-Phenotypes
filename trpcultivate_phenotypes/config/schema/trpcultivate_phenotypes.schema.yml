@@ -30,6 +30,9 @@ trpcultivate_phenotypes.settings:
                 trait_photo:
                   type: path
                   label: 'Trait images'
+                template_file:
+                  type: path
+                  label: 'Directory: data collection template file'
             r_config:
               type: mapping
               label: 'R Translation Rules'

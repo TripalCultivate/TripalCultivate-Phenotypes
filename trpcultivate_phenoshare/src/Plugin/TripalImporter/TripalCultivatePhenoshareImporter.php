@@ -8,6 +8,7 @@
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\Core\Url;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -313,15 +314,16 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * {@inheritdoc}
    */
   public function describeUploadFileFormat() {
-    // @TODO: resolve template_file download, either:
-    // 1. via service, programmatically create a temp file for download based on $headers property defined.
-    // 2. a created file, with pre-configured headers in a specific location (ie. file_template/).
+    // A template file has been generated and is ready for download.
+    $importer_id = $this->pluginDefinition['id'];
+    $template_generator = \Drupal::service('trpcultivate_phenotypes.template_generator');
+    $href = $template_generator->generateFile($importer_id, array_keys($this->headers));
 
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
-        'template_file' => '#'
+        'template_file' => $href
       ]
     ];
 
