@@ -78,6 +78,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $page_content = $this->getSession()->getPage()->getContent();
     // Get all stage accordion title/header element.
     preg_match_all('/tcp\-stage-title/', $page_content, $matches); 
+    $initial_page_dom = $matches[0];
 
     foreach($matches[0] as $i => $stage) {      
       preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
@@ -97,5 +98,29 @@ class ImporterShareTest extends ChadoTestBrowserBase {
       $this->submitForm([], $next);
       $page_content = $this->getSession()->getPage()->getContent();
     }
+    
+
+    // Test if template file generator created a file. This is the link value
+    // of the href attribute of the download a template file link in the header notes of the importer.
+    
+    // Inspect the directory configured for template files in the settings.
+    // @see config install and schema.
+    $config = \Drupal::config('trpcultivate_phenotypes.settings');
+    $dir_template_file = $config->get('trpcultivate.phenotypes.directory.template_file'); 
+    $dir_uri = \Drupal::service('file_system')->realpath($dir_template_file);
+
+    // Scan the directory for tsv file.
+    // tsv file, parent dir (..) then current dir (.).
+    $template_file = scandir($dir_uri, SCANDIR_SORT_DESCENDING)[0];
+    
+    // Template file is generated.
+    $is_file = file_exists($dir_uri . '/' . $template_file);
+    $this->assertTrue($is_file);
+    
+    // Template file has header row.
+    $file_content = file_get_contents($dir_uri . '/' . $template_file);    
+    $this->assertNotNull($file_content);
+
+    $this->drupalLogout();
   }
 }

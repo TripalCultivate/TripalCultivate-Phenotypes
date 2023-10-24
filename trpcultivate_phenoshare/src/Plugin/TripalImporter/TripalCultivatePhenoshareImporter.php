@@ -316,14 +316,18 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
-    $template_generator = \Drupal::service('trpcultivate_phenotypes.template_generator');
-    $href = $template_generator->generateFile($importer_id, array_keys($this->headers));
+    $column_headers = array_keys($this->headers);
 
+    $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
+      ->generateFile($importer_id, $column_headers);
+    
+    // Render the header notes/lists template and use the file link as 
+    // the value to href attribute of the link to download a template file.
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
-        'template_file' => $href
+        'template_file' => $file_link
       ]
     ];
 
