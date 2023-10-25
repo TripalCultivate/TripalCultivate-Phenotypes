@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Kernel test of Genus Template Generator service.
+ * Kernel test of Template Generator service.
  */
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
