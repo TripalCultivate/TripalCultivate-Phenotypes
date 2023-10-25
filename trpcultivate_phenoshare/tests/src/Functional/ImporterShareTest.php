@@ -78,7 +78,6 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $page_content = $this->getSession()->getPage()->getContent();
     // Get all stage accordion title/header element.
     preg_match_all('/tcp\-stage-title/', $page_content, $matches); 
-    $initial_page_dom = $matches[0];
 
     foreach($matches[0] as $i => $stage) {      
       preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
@@ -115,11 +114,14 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     
     // Template file is generated.
     $is_file = file_exists($dir_uri . '/' . $template_file);
-    $this->assertTrue($is_file);
+    $this->assertTrue($is_file, 'Template generator failed to create a file.');
+
+    // Template is not empty file.
+    $this->assertGreaterThanOrEqual(1, filesize($dir_uri . '/' . $template_file), 'The template file generated is empty.');
     
     // Template file has header row.
     $file_content = file_get_contents($dir_uri . '/' . $template_file);    
-    $this->assertNotNull($file_content);
+    $this->assertNotNull($file_content, 'Template generator failed to add the header row.');
 
     $this->drupalLogout();
   }
