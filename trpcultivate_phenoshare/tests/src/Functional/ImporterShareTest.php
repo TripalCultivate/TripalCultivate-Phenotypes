@@ -13,7 +13,18 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
  /**
   *  Class definition ImporterShareTest.
   */
-class ImporterShareTest extends ChadoTestBrowserBase {
+class ImporterShareTest extends ChadoTestBrowserBase {  
+  // Project.
+  private $project;
+  private $project_id;
+
+  // Genus.
+  private $genus;
+  // Holds genus - ontology config names.
+  private $genus_ontology;
+  // Admin user created. 
+  private $admin_user;
+
   protected $defaultTheme = 'stark';
 
   /**
@@ -41,24 +52,75 @@ class ImporterShareTest extends ChadoTestBrowserBase {
    */
   protected function setUp() :void {
     parent::setUp();
-    
+  
+    // Ensure we see all logging in tests.
+    \Drupal::state()->set('is_a_test_environment', TRUE);
+
     // Create a test schema.
     $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado);
+
+    // Prepare by adding test records to genus and project.
+    $project = 'Project - ' . uniqid();
+    $this->project = $project;
+
+    $project_id = $this->chado->insert('1:project')
+      ->fields([
+        'name' => $project,
+        'description' => $project . ' : Description'   
+      ])
+      ->execute();
+
+    $this->project_id = $project_id;  
+
+    $genus = 'Wild Genus ' . uniqid();
+    $this->genus = $genus;
+    $this->chado->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'Wild Species',
+        'type_id' => 1 
+      ])
+      ->execute();
+    
+    // Install all default terms.
+    $service_terms = \Drupal::service('trpcultivate_phenotypes.terms');
+    $service_terms->loadTerms();
+
+    // Define a genus ontology configuration value.
+    $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');  
+    $service_genusontology->loadGenusOntology();
+    $this->genus_ontology = $service_genusontology->defineGenusOntology();
+
+    // Pair the project with the genus.
+    $service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
+    $service_genusproject->setGenusToProject($this->project_id, $this->genus, $replace = FALSE);
   }
 
   /**
    * Test Phenotypes Share Importer.
    */
   public function testImportShareForm() {
-    // Ensure we see all logging in tests.
-    \Drupal::state()->set('is_a_test_environment', TRUE);
-
-    $admin = $this->drupalCreateUser([
+    // Setup admin user account.
+    $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
       'administer tripal',
       'allow tripal import'
     ]);
-    $this->drupalLogin($admin);
+
+    // Login admin user.
+    $this->drupalLogin($this->admin_user);
+    
+    foreach($this->genus_ontology as $genus => $vars) {
+      foreach($vars as $i => $config) {
+        $fld_name = $genus . '_' . $config;
+        $values_genus_ontology[ $fld_name ] = 1;
+      }
+    }
+    
+    // Setup genus ontology configuration through the interface.
+    $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
+    $this->submitForm($values_genus_ontology, 'Save configuration');
 
     // Assert custom Phenotypes Share importer is an item in
     // admin/tripal/loaders page.
@@ -77,12 +139,11 @@ class ImporterShareTest extends ChadoTestBrowserBase {
  
     $page_content = $this->getSession()->getPage()->getContent();
     // Get all stage accordion title/header element.
-    preg_match_all('/tcp\-stage-title/', $page_content, $matches); 
-
+    preg_match_all('/tcp\-stage-title/', $page_content, $matches);
     foreach($matches[0] as $i => $stage) {      
       preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
       $current_stage = $matches[1];
-      
+
       // Stage number set in the hidden field used as cache.
       $this->assertEquals($current_stage, ($i + 1), 'Current stage does not match expected stage');
 
@@ -92,9 +153,21 @@ class ImporterShareTest extends ChadoTestBrowserBase {
       
       // Next stage...
       if ($i == 2) break; // Skip last stage 3, review stage as the submit will be the import button.
+      $next = ($i == 0) ? 'Validate Data File' : 'Check Values';
+
+      if ($i == 0) {
+        // Stage 1 prefill project field with the project created in setup.
+        $form = ['project' => $this->project];
+      }
+      else {
+        // No form elements to set here.
+        $form = [];
+      }
 
       $next = ($i == 0) ? 'Validate Data File' : 'Check Values';
-      $this->submitForm([], $next);
+      // Submit form with stage form field values.
+      $this->submitForm($form, $next);
+      // Get the page content.
       $page_content = $this->getSession()->getPage()->getContent();
     }
   }
