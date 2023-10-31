@@ -5,7 +5,7 @@
 
 /* Result window */
 .tcp-result-window {
-  border: 1px solid #aaa;
+  border: 1px solid #AAAAAA;
   border-radius: 4px;
   padding: 0.5em 0.5em 0;
 }
@@ -14,7 +14,7 @@
   font-weight: bold;
   margin: -0.5em -0.5em 0;
   padding: 0.5em;
-  border-bottom: 1px solid #aaa;
+  border-bottom: 1px solid #AAAAAA;
   margin-bottom: 0.5em;
 }
 
@@ -27,6 +27,13 @@
 .tcp-result-window ul li {
   margin: 10px 0;
   padding: 0 0 0 25px;
+}
+
+.tcp-result-window ul li p {
+  margin: 0;
+  padding: 0;
+  font-size: 0.8em;
+  font-style: italic;
 }
 
 /* Iconography - validation result */
@@ -43,7 +50,7 @@
   background-position: 0 1px;
 }
 
-.tcp-validate-failed {
+.tcp-validate-fail {
   background-image: url(../images/tcp-validate-failed.jpg);
   background-repeat: no-repeat;
   background-position: 0 1px;
