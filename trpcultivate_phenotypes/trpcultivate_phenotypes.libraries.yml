@@ -11,6 +11,15 @@ trpcultivate-phenotypes-script-stage-accordion:
     - core/jquery
     - core/once
 
+# Script auto-select text field to assist quick value replacement.
+trpcultivate-phenotypes-script-autoselect-field:
+  version: v1.x
+  js:
+    js/trpcultivate-phenotypes-script-autoselect-field.js: {}
+  dependencies:
+    - core/jquery
+    - core/once
+
 # Style importer header elements (notes, header definitions).
 trpcultivate-phenotypes-style-importer-header:
   version: v1.x
