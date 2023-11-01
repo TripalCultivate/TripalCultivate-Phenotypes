@@ -15,6 +15,7 @@ trpcultivate:
       data_backup: 'public://TripalCultivatePhenotypes/data_backup/'
       data_env: 'public://TripalCultivatePhenotypes/data_env/'
       trait_photo: ''
+      template_file: 'public://TripalCultivatePhenotypes/template_file/'
 
     # trpcultivate.phenotypes.r_config:
     # Configurations relating to rules to apply when transforming trait names 

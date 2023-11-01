@@ -170,5 +170,32 @@ class ImporterShareTest extends ChadoTestBrowserBase {
       // Get the page content.
       $page_content = $this->getSession()->getPage()->getContent();
     }
+    
+
+    // Test if template file generator created a file. This is the link value
+    // of the href attribute of the download a template file link in the header notes of the importer.
+    
+    // Inspect the directory configured for template files in the settings.
+    // @see config install and schema.
+    $config = \Drupal::config('trpcultivate_phenotypes.settings');
+    $dir_template_file = $config->get('trpcultivate.phenotypes.directory.template_file'); 
+    $dir_uri = \Drupal::service('file_system')->realpath($dir_template_file);
+
+    // Scan the directory for tsv file.
+    // tsv file, parent dir (..) then current dir (.).
+    $template_file = scandir($dir_uri, SCANDIR_SORT_DESCENDING)[0];
+    
+    // Template file is generated.
+    $is_file = file_exists($dir_uri . '/' . $template_file);
+    $this->assertTrue($is_file, 'Template generator failed to create a file.');
+
+    // Template is not empty file.
+    $this->assertGreaterThanOrEqual(1, filesize($dir_uri . '/' . $template_file), 'The template file generated is empty.');
+    
+    // Template file has header row.
+    $file_content = file_get_contents($dir_uri . '/' . $template_file);    
+    $this->assertNotNull($file_content, 'Template generator failed to add the header row.');
+
+    $this->drupalLogout();
   }
 }

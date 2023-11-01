@@ -12,6 +12,10 @@ services:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
 
+  trpcultivate_phenotypes.template_generator:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService'
+    arguments: ['@config.factory', '@current_user']
+
   plugin.manager.trpcultivate_validator:
     class: 'Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorManager'
     parent: default_plugin_manager

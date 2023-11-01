@@ -8,6 +8,7 @@
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\Core\Url;
 use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
 
 
@@ -397,15 +398,20 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * {@inheritdoc}
    */
   public function describeUploadFileFormat() {
-    // @TODO: resolve template_file download, either:
-    // 1. via service, programmatically create a temp file for download based on $headers property defined.
-    // 2. a created file, with pre-configured headers in a specific location (ie. file_template/).
+    // A template file has been generated and is ready for download.
+    $importer_id = $this->pluginDefinition['id'];
+    $column_headers = array_keys($this->headers);
 
+    $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
+      ->generateFile($importer_id, $column_headers);
+    
+    // Render the header notes/lists template and use the file link as 
+    // the value to href attribute of the link to download a template file.
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
-        'template_file' => '#'
+        'template_file' => $file_link
       ]
     ];
 
