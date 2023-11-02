@@ -12,7 +12,7 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Url;
-use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -70,9 +70,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    */
   public function form($form, &$form_state) {
     // Set genus project service.
-    $this->service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
+    //$this->service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
     // Set genus ontology configuration service.
-    $this->service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
+    //$this->service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
 
     ///
 
@@ -98,7 +98,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Account for failed validation.
     // Refer to Drupal $storage system for validation result values saved.
-    $storage = $form_state->getStorage();
+    //$storage = $form_state->getStorage();
     // Full validation result.
 
     $validation_result = [];
@@ -213,7 +213,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     $form[ $fld_wrapper ] = $this->createStageAccordion($stage);
     
     // Validation result.
-    $storage = $form_state->getStorage();
+    //$storage = $form_state->getStorage();
     // Full validation result.
     if (isset($storage[ $this->validation_result ])) {
       $validation_result = unserialize($storage[ $this->validation_result ]);
@@ -255,6 +255,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     ];
     
     // Genus field:
+    $this->service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
     // Prepare select options with only active genus.
     $all_genus = chado_select_record('organism', ['genus'], []);
     // Array to hold all active genus.
@@ -447,9 +448,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
             $validation[ $scope ] = $instance->validate();
           
             // Save validation result.
-            $storage = $form_state->getStorage();
-            $storage[ $this->validation_result ] = serialize($validation);
-            $form_state->setStorage($storage);
+            //$storage = $form_state->getStorage();
+            //$storage[ $this->validation_result ] = serialize($validation);
+            //$form_state->setStorage($storage);
           
             // Inspect for any failed validation to halt the importer.
             if ($validation[ $scope ]['status'] == 'fail') {
@@ -585,16 +586,17 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * @return Drupal AJAX response object.
    */
   public function ajaxLoadGenusOfProject($form, &$form_state) {
+    //$this->service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
     // For the project entered fetch the genus set.
     $project = $form_state->getValue('project');
     $response = new AjaxResponse();
 
     if (!empty($project)) {
-      $project_id = ChadoProjectAutocompleteController::getProjectId($project);
-
+       $rec_project = chado_select_record('project', ['project_id'], ['name' => $project]);
       // Get genus of project here.
-      $genus_of_project = $this->service_genusproject->getGenusOfProject($project_id);
+      //$genus_of_project = $this->service_genusproject->getGenusOfProject($rec_project->project_id);
       // Empty string - set to - Select - option added by Drupal to select field.
+      $genus_of_project['Lens'] = 1;
       $genus_of_project = ($genus_of_project['genus']) ?? '';
     }
     else {
