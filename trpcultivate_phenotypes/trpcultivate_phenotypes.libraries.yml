@@ -1,7 +1,5 @@
 # Tripal Cultivate Phenotypes Libraries.
 
-# Script to auto-select field content for quick alteration of value.
-
 # Script collapse/expand information window.
 trpcultivate-phenotypes-script-stage-accordion:
   version: v1.x
@@ -16,6 +14,15 @@ trpcultivate-phenotypes-script-autoselect-field:
   version: v1.x
   js:
     js/trpcultivate-phenotypes-script-autoselect-field.js: {}
+  dependencies:
+    - core/jquery
+    - core/once
+
+# Script auto-select project genus.
+trpcultivate-phenotypes-script-autoselect-project-genus:
+  version: v1.x
+  js:
+    js/trpcultivate-phenotypes-script-autoselect-project-genus.js: {}
   dependencies:
     - core/jquery
     - core/once

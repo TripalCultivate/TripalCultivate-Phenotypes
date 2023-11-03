@@ -113,14 +113,16 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     
     foreach($this->genus_ontology as $genus => $vars) {
       foreach($vars as $i => $config) {
-        $fld_name = $genus . '_' . $config;
-        $values_genus_ontology[ $fld_name ] = 1;
+        $values_genus_ontology[ $genus ][ $config ] = 1;
       }
     }
-    
+
     // Setup genus ontology configuration through the interface.
-    $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
-    $this->submitForm($values_genus_ontology, 'Save configuration');
+    // $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
+    // $this->submitForm($values_genus_ontology, 'Save configuration');
+
+    \Drupal::service('trpcultivate_phenotypes.genus_ontology')
+      ->saveGenusOntologyConfigValues($values_genus_ontology);
 
     // Assert custom Phenotypes Share importer is an item in
     // admin/tripal/loaders page.
@@ -137,7 +139,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $session->statusCodeEquals(200);
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
  
-    $page_content = $this->getSession()->getPage()->getContent();
+    $page_content = $this->getSession()->getPage()->getContent(); 
     // Get all stage accordion title/header element.
     preg_match_all('/tcp\-stage-title/', $page_content, $matches);
     foreach($matches[0] as $i => $stage) {      
@@ -157,7 +159,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
 
       if ($i == 0) {
         // Stage 1 prefill project field with the project created in setup.
-        $form = ['project' => $this->project];
+        $form = ['project' => $this->project, 'genus' => $this->genus];
       }
       else {
         // No form elements to set here.
