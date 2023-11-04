@@ -90,9 +90,17 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
       // Test if the genus is an active genus. This will at the same time 
       // confirm that it exists in organism table.
       $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($this->genus);
-      if ($genus_config['trait'] <= 0) {
+      if (!$genus_config) {
+        // Genus is not recognized by the module.
         $validator_status['status']  = 'fail';
-        $validator_status['details'] = 'Genus is not configured. Please enter a value and try again.';
+        $validator_status['details'] = 'Genus does not exist. Please enter a value and try again.';
+      }
+      else {
+        if ($genus_config['trait'] <= 0) {
+          // Genus exits, but not configured.
+          $validator_status['status']  = 'fail';
+          $validator_status['details'] = 'Genus is not configured. Please enter a value and try again.';
+        }        
       }
 
       // Additional check if genus is pared with project, ensure that

@@ -164,5 +164,22 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $instance->loadAssets($project, $genus, $file);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
+
+
+    $scope = 'GENUS';
+    $plugin_key = array_search($scope, array_column($plugin_definitions, 'validator_scope'));
+    $validator = $plugin_definitions[ $plugin_key ]['id'];
+          
+    $instance = $manager->createInstance($validator);
+    $instance->loadAssets($project, $genus, $file);
+
+    // Perform Genus Level validation.
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], 'pass');
+
+    // Genus not paired with the project.
+    $instance->loadAssets($project, 'NOT GENUS', $file);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], 'fail');
   }
 }

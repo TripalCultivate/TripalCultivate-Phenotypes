@@ -241,7 +241,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
     // Field Genus:
     // Prepare select options with only active genus.
-    $all_genus = chado_select_record('organism', ['genus'], []);
+    $all_genus = $this->connection->query("SELECT genus FROM {1:organism}");
     
     // Array to hold all active genus.
     $active_genus = [];
@@ -380,6 +380,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
    * {@inheritdoc}
    */
   public function formSubmit($form, &$form_state) {
+    $form_state->setRebuild(TRUE);
   }
 
   /**

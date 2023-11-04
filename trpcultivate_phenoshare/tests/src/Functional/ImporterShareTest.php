@@ -90,7 +90,17 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Define a genus ontology configuration value.
     $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');  
     $service_genusontology->loadGenusOntology();
-    $this->genus_ontology = $service_genusontology->defineGenusOntology();
+      
+    // Configure genus with null cv and db.
+    $service_genusontology->saveGenusOntologyConfigValues([
+      $this->genus => [
+        'trait' => 1,
+        'unit' => 1,
+        'method' => 1,
+        'database' => 1,
+        'crop_ontology' => 1
+      ]
+    ]);
 
     // Pair the project with the genus.
     $service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
@@ -111,18 +121,11 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Login admin user.
     $this->drupalLogin($this->admin_user);
     
-    foreach($this->genus_ontology as $genus => $vars) {
-      foreach($vars as $i => $config) {
-        $values_genus_ontology[ $genus ][ $config ] = 1;
-      }
-    }
-
-    // Setup genus ontology configuration through the interface.
-    // $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
-    // $this->submitForm($values_genus_ontology, 'Save configuration');
-
-    \Drupal::service('trpcultivate_phenotypes.genus_ontology')
-      ->saveGenusOntologyConfigValues($values_genus_ontology);
+    // Save configurations.
+    // Ensure genus created.
+    $genus = $this->chado->query('SELECT genus FROM {1:organism} WHERE genus = :genus', [':genus' => $this->genus])
+      ->fetchField();
+    $this->assertEquals($genus, $this->genus, 'Failed to create a genus record.');
 
     // Assert custom Phenotypes Share importer is an item in
     // admin/tripal/loaders page.
@@ -139,7 +142,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     $session->statusCodeEquals(200);
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
  
-    $page_content = $this->getSession()->getPage()->getContent(); 
+    $page_content = $this->getSession()->getPage()->getContent();
     // Get all stage accordion title/header element.
     preg_match_all('/tcp\-stage-title/', $page_content, $matches);
     foreach($matches[0] as $i => $stage) {      
@@ -197,7 +200,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Template file has header row.
     $file_content = file_get_contents($dir_uri . '/' . $template_file);    
     $this->assertNotNull($file_content, 'Template generator failed to add the header row.');
-
+    
     $this->drupalLogout();
   }
 }
