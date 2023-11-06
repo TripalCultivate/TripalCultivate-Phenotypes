@@ -77,6 +77,14 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
       'details' => ''
     ];
 
+    // Instructed to skip this validation. This will set this validator as upcoming or todo.
+    // This happens when other prior validation failed and this validation could only proceed
+    // when input values in the failed validator have been rectified.  
+    if ($this->skip) {
+      $validator_status['status'] = 'todo';
+      return $validator_status;
+    }
+
     // Genus:
     //   - Is not empty
     //   - Is active, therefore it exits in chado.organism.

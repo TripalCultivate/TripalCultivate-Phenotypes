@@ -67,6 +67,14 @@ class Project extends TripalCultivatePhenotypesValidatorBase implements Containe
       'details' => ''
     ];
 
+    // Instructed to skip this validation. This will set this validator as upcoming or todo.
+    // This happens when other prior validation failed and this validation could only proceed
+    // when input values have been rectified.  
+    if ($this->skip) {
+      $validator_status['status'] = 'todo';
+      return $validator_status;
+    }
+
     // Project:
     //   - Is not empty
     //   - Exists in chado.project

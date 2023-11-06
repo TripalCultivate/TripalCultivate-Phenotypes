@@ -415,6 +415,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
         $project = $form_state_values['project'];
         $genus = $form_state_values['genus'];
         $file = $form_state_values['file_upload'];
+        // @TODO: load headers in validators that require reference to the headers.
+        $headers = [];
 
         if ($stage == 1) {
           $scopes = ['PROJECT', 'GENUS'];
@@ -423,11 +425,15 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
             // Create instance of the scope-specific plugin and perform validation.
             $validator = $manager->getValidatorIdWithScope($scope);
             $instance = $manager->createInstance($validator);
-            $instance->loadAssets($project, $genus, $file);
+            
+            // Set other validation level to upcoming/todo if a validation failed.
+            $skip = ($failed_validator > 0) ? 1 : 0;
+            
+            $instance->loadAssets($project, $genus, $file, $headers, $skip);
             
             // Perform Project Level validation.
             $validation[ $scope ] = $instance->validate();
-            
+
             // Save validation result.
             $storage = $form_state->getStorage();
             $storage[ $this->validation_result ] = $validation;
