@@ -9,6 +9,8 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
+use Symfony\Component\HttpFoundation\Request;
+use Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesProjectGenusController;
 
 /**
  * Test Tripal Cultivate Phenotypes Genus Project service.
@@ -60,6 +62,10 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     'second_genus_id' => 0
   ];
 
+  /**
+   * Project that is set with a genus.
+   */
+  private $project;
 
   /**
    * {@inheritdoc}
@@ -85,6 +91,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // Prepare by adding test records to genus, project and projectproperty
     // to relate a genus to a project.
     $project = 'Project - ' . uniqid();
+    $this->project = $project;
     $project_id = $this->chado->insert('1:project')
       ->fields([
         'name' => $project,
@@ -216,5 +223,31 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     $this->assertNotNull($projectprop->projectprop_id, 'Method setGenusToProject failed to create a record in projectprop table.');
     $this->assertEquals($new_project_genus['genus'], $projectprop->value, 'Genus set value in projectprop does not match expected genus.');
     $this->assertEquals($project_id, $projectprop->project_id, 'Project id set value in projectprop does not match expected project id.');
+  }
+
+  /**
+   * Test AJAX request to fetch project genus.
+   * 
+   * @see Importer behavior - auto-select project genus
+   */
+  public function testControllerGetProjectGenus() {
+    // Controller to handle ajax request. This controller does not append parameter values
+    // into the query string, instead is uses a POST method to attach value to the request.
+    $controller = new TripalCultivatePhenotypesProjectGenusController();
+    
+    // Route that points to this controller.
+    $url_generator = \Drupal::service('url_generator');
+    $route = $url_generator->generateFromRoute('trpcultivate_phenotypes.ajax_callback_get_project_genus', [], ['absolute' => TRUE]);
+    
+    // Create an AJAX request like in the form. This will mock the request POST value for project
+    // that the controller will base the project parameter.
+    $request = Request::create($route, 'POST', ['project' => $this->project]);
+    // Save posted value in Drupal http request stack.
+    \Drupal::requestStack()->push($request);
+    
+    // Get response.
+    $response = $controller->getProjectGenus();
+    $genus_response = $response->getContent();
+    $this->assertEquals($this->ins['genus'], trim($genus_response, '"'));
   }
 }

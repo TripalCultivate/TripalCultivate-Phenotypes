@@ -429,6 +429,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
             // Set other validation level to upcoming/todo if a validation failed.
             $skip = ($failed_validator > 0) ? 1 : 0;
             
+            // Load values.
             $instance->loadAssets($project, $genus, $file, $headers, $skip);
             
             // Perform Project Level validation.

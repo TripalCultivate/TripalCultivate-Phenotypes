@@ -6,36 +6,51 @@
 (function($) {
   Drupal.behaviors.autoselectProjectGenus = {
     attach: function (context, settings) {
-      $('#trpcultivate-fld-project', context).on('blur', function () {
+      // Project field.
+      var fldNameProject = '#trpcultivate-fld-project';
+      var fldProject = $(fldNameProject);
+      // Genus field.
+      var fldGenus = $('#trpcultivate-fld-genus');
+      
+      // Add listener to project field when a project has been eneterd/selected.
+      $(fldNameProject, context).on('blur', function () {
         // Project - this is the project name.
         var project = $(this).val();
-        
+
         if (project.length > 0) {
+          // Project entered.
           // Route to get project genus.
-          var route = '/admin/tripal/extension/tripal-cultivate/phenotypes/get-project-genus';
+          var route = Drupal.url('admin/tripal/extension/tripal-cultivate/phenotypes/get-project-genus');
           
           $.ajax({
             url: route,
             method: 'POST',
             data: {
-              value: project,
+              project: project,
+            },
+            beforeSend: function() {
+              // Disable project field while processing project-genus.
+              fldProject.prop('disabled', true);
             },
             success: function (data) {
-              // Genus field.
-              var fldGenus = $('#trpcultivate-fld-genus');
-
               if (data) {
                 // Set the genus field to the project genus.
                 fldGenus.val(data);
               }
               else {
-                // Reset genus.
+                // Project has no genus, reset genus field.
                 fldGenus.prop('selectedIndex', 0);
-                // Inform user that the project entered has no genus set.
-                alert('The project/experiment entered does not have a genus set.');
               }
             },
+            complete: function(data) {
+              // Re-enable project field
+              fldProject.prop('disabled', false);
+            }
           });
+        }
+        else {
+          // No project, reset the genus field.
+          fldGenus.prop('selectedIndex', 0);
         }
       });
 

@@ -135,20 +135,22 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $project = $this->test_records['project'];
     $genus = $this->test_records['genus'];
     $file = 1;
+    $headers = [];
+    $skip = 0;
     $scope = 'PROJECT';
 
     $plugin_key = array_search($scope, array_column($plugin_definitions, 'validator_scope'));
     $validator = $plugin_definitions[ $plugin_key ]['id'];
           
     $instance = $manager->createInstance($validator);
-    $instance->loadAssets($project, $genus, $file);
+    $instance->loadAssets($project, $genus, $file, $headers, $skip);
           
     // Perform Project Level validation.
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'pass');    
 
     // Test validator plugin with non-existent project.
-    $instance->loadAssets('NON-Existent-Project', $genus, $file);
+    $instance->loadAssets('NON-Existent-Project', $genus, $file, $headers, $skip);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
 
@@ -161,7 +163,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
-    $instance->loadAssets($project, $genus, $file);
+    $instance->loadAssets($project, $genus, $file, $headers, $skip);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
 
@@ -171,15 +173,26 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $validator = $plugin_definitions[ $plugin_key ]['id'];
           
     $instance = $manager->createInstance($validator);
-    $instance->loadAssets($project, $genus, $file);
+    $instance->loadAssets($project, $genus, $file, $headers, $skip);
 
     // Perform Genus Level validation.
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'pass');
 
     // Genus not paired with the project.
-    $instance->loadAssets($project, 'NOT GENUS', $file);
+    $instance->loadAssets($project, 'NOT GENUS', $file, $headers, $skip);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
+
+    // Just genus by itself.
+    $instance->loadAssets($project = '', $genus, $file, $headers, $skip);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], 'pass');
+
+
+    // Test skip - upcoming or todo validation.
+    $instance->loadAssets($project, $genus, $file, $headers, $skip = 1);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], 'todo');
   }
 }
