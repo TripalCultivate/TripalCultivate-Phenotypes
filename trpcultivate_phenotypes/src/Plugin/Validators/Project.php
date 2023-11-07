@@ -8,9 +8,6 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
 /**
@@ -22,34 +19,7 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
  *   validator_scope = "PROJECT",
  * )
  */
-class Project extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
-  /**
-   * Genus Project Service.
-   */
-  protected $service_genus_project;
-
-  /**
-   * Constructor.
-   */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, TripalCultivatePhenotypesGenusProjectService $service_genus_project) { 
-    parent::__construct($configuration, $plugin_id, $plugin_definition);
-    
-    // DI project-related service.
-    $this->service_genus_project = $service_genus_project;
-  }
-  
-  /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition){
-    return new static(
-      $configuration,
-      $plugin_id,
-      $plugin_definition,
-      $container->get('trpcultivate_phenotypes.genus_project')
-    );
-  }
-
+class Project extends TripalCultivatePhenotypesValidatorBase {
   /**
    * Validate items in the phenotypic data upload assets.
    *
@@ -78,7 +48,6 @@ class Project extends TripalCultivatePhenotypesValidatorBase implements Containe
     // Project:
     //   - Is not empty
     //   - Exists in chado.project
-    //   - Has genus
 
     if (empty($this->project)) {
       $validator_status['status']  = 'fail';
@@ -91,15 +60,6 @@ class Project extends TripalCultivatePhenotypesValidatorBase implements Containe
       if (!$project_id) {
         $validator_status['status']  = 'fail';
         $validator_status['details'] = 'Project/Experiment does not exist. Please enter a value and try again.';
-      }
-      else {
-        // Check if it has a genus set.
-        $genus = $this->service_genus_project->getGenusOfProject($project_id);
-
-        if (!$genus) {
-          $validator_status['status']  = 'fail';
-          $validator_status['details'] = 'Project/Experiment entered does not have a genus set in the configuration. Please enter a value and try again.';
-        }
       }
     }
 

@@ -155,6 +155,8 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $this->assertEquals($validation[ $scope ]['status'], 'fail');
 
     // Test validator with a project without genus configured.
+    // This will allow (pass) so long as project has no genus set and user
+    // can set the genus so further in the importer the project-genus can be created.
     $project = 'No Genus';
     $this->chado->insert('1:project')
       ->fields([
@@ -165,7 +167,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     $instance->loadAssets($project, $genus, $file, $headers, $skip);
     $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'fail');
+    $this->assertEquals($validation[ $scope ]['status'], 'pass');
 
 
     $scope = 'GENUS';

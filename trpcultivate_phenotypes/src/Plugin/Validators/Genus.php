@@ -110,6 +110,11 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
           $validator_status['details'] = 'Genus is not configured. Please enter a value and try again.';
         }        
       }
+      
+      // This check should factor in the status of the project entered to see
+      // if that project has genus set or not. The former should check if they match
+      // and the latter should allow so that further in the process will create 
+      // the project-genus relationship.
 
       // Additional check if genus is pared with project, ensure that
       // it is the genus the project is set to.
