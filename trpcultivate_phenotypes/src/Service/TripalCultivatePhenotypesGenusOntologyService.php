@@ -7,9 +7,9 @@
 
 namespace Drupal\trpcultivate_phenotypes\Service;
 
-use \Drupal\Core\Config\ConfigFactoryInterface;
-use \Drupal\tripal_chado\Database\ChadoConnection;
-use \Drupal\tripal\Services\TripalLogger;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal\Services\TripalLogger;
 
 /**
  * Class TripalCultivatePhenotypesOntologyService.
