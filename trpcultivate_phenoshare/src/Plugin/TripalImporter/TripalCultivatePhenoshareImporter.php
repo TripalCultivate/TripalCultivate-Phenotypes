@@ -230,7 +230,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
       '#type' => 'textfield',
       '#weight' => -100,  
       '#required' => TRUE,   
-      '#description' => t('Type in the experiment or project title your data is specific to.'), 
+      '#description' => t('Enter the name of the experiment or project your data was generated as part of.'), 
       '#attributes' => ['placeholder' => 'Project/Experiment Name', 'class' => ['tcp-autocomplete']],
       '#autocomplete_route_name' => 'tripal_chado.project_autocomplete',
       '#autocomplete_route_parameters' => ['type_id' => 0, 'count' => 5],
