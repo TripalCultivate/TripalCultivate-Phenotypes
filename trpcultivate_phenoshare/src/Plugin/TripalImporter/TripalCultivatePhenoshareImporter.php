@@ -11,7 +11,6 @@ use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
-
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
  *
@@ -242,20 +241,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
     
     // Field Genus:
     // Prepare select options with only active genus.
-    $all_genus = $this->connection->query("SELECT genus FROM {1:organism}");
-    
-    // Array to hold all active genus.
-    $active_genus = [];
-    foreach($all_genus as $obj_genus) {
-      $genus = $obj_genus->genus;
-
-      $genus_config = $this->service_genusontology->getGenusOntologyConfigValues($genus);
-      if ($genus_config && $genus_config['trait']) {
-        $active_genus[ $genus ] = $genus;
-      }
-    } 
-
-    asort($active_genus);
+    $all_genus = $this->service_genusontology->getConfiguredGenusList();
+    $active_genus = array_combine($all_genus, $all_genus);
 
     $form[ $fld_wrapper ]['genus'] = [
       '#title' => t('Genus'),
