@@ -25,12 +25,12 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
  *   upload_description = @Translation("Please provide a txt or tsv data file."),
  *   upload_title = @Translation("Phenotypic Data File*"),
  *   use_analysis = False,
+ *   require_analysis = False,
  *   use_button = True,
  *   submit_disabled = True,
- *   require_analysis = False,
  *   button_text = "Import",
  *   file_upload = True,
- *   file_load = False,
+ *   file_local  = False,
  *   file_remote = False,
  *   file_required = False,
  *   cardinality = 1,
@@ -274,9 +274,11 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
 
     // Other relevant fields here.
     
-    // This importer does not support using file sources from existing field and local/external source.
-    $form[ $fld_wrapper ]['file']['file_upload_existing'] = ['#access' => 'FALSE'];
-    $form[ $fld_wrapper ]['file']['file_local'] = ['#type' => 'hidden'];
+    // This importer does not support using file sources from existing field.
+    // #access: (bool) Whether the element is accessible or not; when FALSE, 
+    // the element is not rendered and the user submitted value is not taken 
+    // into consideration.
+    $form[ $fld_wrapper ]['file']['file_upload_existing']['#access'] = FALSE;
 
     // Stage submit button.
     $form[ $fld_wrapper ]['validate_stage'] = [
