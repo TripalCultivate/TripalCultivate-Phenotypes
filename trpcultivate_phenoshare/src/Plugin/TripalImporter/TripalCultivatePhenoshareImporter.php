@@ -10,6 +10,9 @@ namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
+use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -40,7 +43,7 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
  *   callback_path = "",
  * )
  */
-class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
+class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
   // Reference the current stage with this variable to calibrate
   // each stage accordingly (form, validation, etc.).
   private $current_stage = 'current_stage';
@@ -57,20 +60,53 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase {
   ];
   
   // Service: Make the following services available to all stages.
-  // Genus Of Project service.
-  protected $service_genusproject;
   // Genus Ontology configuration service.
   protected $service_genusontology;
+
+  /**
+   * Injection of services through setter methods.
+   * 
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+   * @param array $configuration
+   * @param string $plugin_id
+   * @param mixed $plugin_definition
+   *
+   * @return static
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    $service = $container->get('trpcultivate_phenotypes.genus_ontology');
+    
+    $instance = new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('tripal_chado.database'),
+      $service
+    );
+    
+    // Call service setter method to set the service.
+    $instance->setServiceGenusOntology($service);
+
+    return $instance;
+  }
+
+  /**
+   * Service setter method:
+   * Set genus ontology configuration service.
+   * 
+   * @param $service
+   *   Service as created/injected through create method. 
+   */
+  public function setServiceGenusOntology($service) {
+    if ($service) {
+      $this->service_genusontology = $service;
+    }
+  } 
 
   /**
    * {@inheritDoc}
    */
   public function form($form, &$form_state) {
-    // Set genus project service.
-    $this->service_genusproject  = \Drupal::service('trpcultivate_phenotypes.genus_project');
-    // Set genus ontology configuration service.
-    $this->service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
-
     // Always call the parent form to ensure Chado is handled properly.
     $form = parent::form($form, $form_state);
     
