@@ -446,7 +446,11 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
 
         if ($stage == 1) {
           $scopes = ['PROJECT', 'GENUS'];
-          
+
+          // Array to hold all validation result for each level.
+          // Each result is keyed by the scope.
+          $validation = [];
+
           foreach($scopes as $scope) {
             // Create instance of the scope-specific plugin and perform validation.
             $validator = $manager->getValidatorIdWithScope($scope);
@@ -458,19 +462,20 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
             // Load values.
             $instance->loadAssets($project, $genus, $file, $headers, $skip);
             
-            // Perform Project Level validation.
+            // Perform current scope level validation.
             $validation[ $scope ] = $instance->validate();
-
-            // Save validation result.
-            $storage = $form_state->getStorage();
-            $storage[ $this->validation_result ] = $validation;
-            $form_state->setStorage($storage);
 
             // Inspect for any failed validation to halt the importer.
             if ($validation[ $scope ]['status'] == 'fail') {
               $failed_validator++;
             }
           }
+
+          // Save all validation results in Drupal storage to be used by
+          // validation window to create summary report.
+          $storage = $form_state->getStorage();
+          $storage[ $this->validation_result ] = $validation;
+          $form_state->setStorage($storage);
 
           if ($failed_validator > 0) {
             // There are issues in the submission and are detailed in the validation result window.
