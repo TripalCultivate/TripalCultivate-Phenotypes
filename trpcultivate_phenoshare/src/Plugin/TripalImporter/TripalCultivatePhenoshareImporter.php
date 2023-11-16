@@ -13,6 +13,9 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Ajax\ReplaceCommand;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -115,7 +118,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       'trpcultivate_phenotypes/trpcultivate-phenotypes-style-stage-accordion',
       'trpcultivate_phenotypes/trpcultivate-phenotypes-script-stage-accordion',
       'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-field',
-      'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-project-genus'
     ];
 
     // This is a reminder to user about expected phenotypic data.
@@ -272,7 +274,19 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       '#autocomplete_route_parameters' => ['type_id' => 0, 'count' => 5],
       
       // Used by script to pre-select genus paired to project entered.
-      '#id' => 'trpcultivate-fld-project'
+      '#id' => 'trpcultivate-fld-project',
+
+      // AJAX.
+      '#ajax' => [
+        'callback' => [self::class, 'ajaxLoadGenusOfProject'],
+        'disable-refocus' => TRUE,
+        'event' => 'blur',
+        'progress' => [
+          'type' => 'throbber',
+          'message' => '',
+        ],
+        'wrapper' => 'trpcultivate-field-genus-wrapper'
+      ]
     ];
     
     // Field Genus:
@@ -296,7 +310,11 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       ],
       
       // Used by script to pre-select when project was supplied. 
-      '#id' => 'trpcultivate-fld-genus'
+      '#id' => 'trpcultivate-fld-genus',
+
+      // AJAX.
+      '#prefix' => '<div id="trpcultivate-field-genus-wrapper">',
+      '#suffix' => '</div>',
     ]; 
 
     // Apply field stage field wrapper to file upload element.
@@ -590,5 +608,45 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     }
 
     return $has_fail;
+  }
+
+  // AJAX callback.
+
+  /**
+   * Load genus of project.
+   * 
+   * @param $form
+   *   Drupal form object.
+   * @param $form_state
+   *   Drupal form state object.
+   * 
+   * @return Drupal\Core\Ajax\AjaxResponse.
+   */
+  public static function ajaxLoadGenusOfProject($form, &$form_state) {
+    // Project name.
+    $project = $form_state->getValue('project');
+    $response = new AjaxResponse();
+
+    if (!empty($project)) {
+      // The project entered through the auto-complete project field
+      // returns a string, the project name. Additional step of resolving 
+      // the name to its project id is required to determine the genus.
+      $project_id = ChadoProjectAutocompleteController::getProjectId($project);
+
+      // Get genus of project.
+      $genus_of_project = \Drupal::service('trpcultivate_phenotypes.genus_project')
+        ->getGenusOfProject($project_id);
+
+      // Set the value of genus field to default (- Select -) when genus 
+      // is not set for the project.
+      $genus_of_project = ($genus_of_project['genus']) ?? '';
+    }
+    else {
+      // Set the value of genus to default.
+      $genus_of_project = '';
+    }
+
+    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val', [ $genus_of_project ]));
+    return $response;
   }
 }

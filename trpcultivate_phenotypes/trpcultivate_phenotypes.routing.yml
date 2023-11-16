@@ -34,15 +34,3 @@ trpcultivate_phenotypes.settings_ontology:
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm'
   requirements:
     _permission: 'administer tripal'
-
-
-# AJAX callback:
-
-# Get project genus.
-trpcultivate_phenotypes.ajax_callback_get_project_genus:
-  path: 'admin/tripal/extension/tripal-cultivate/phenotypes/get-project-genus'
-  defaults:
-    _title: 'AJAX Callback : Get Project Genus'
-    _controller: '\Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesProjectGenusController:getProjectGenus'
-  requirements:
-    _permission: 'administer tripal'
