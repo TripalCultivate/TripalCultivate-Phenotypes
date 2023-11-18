@@ -17,11 +17,9 @@ use Drupal\tripal\Services\TripalLogger;
   */
 class PluginValidatorTest extends ChadoTestKernelBase {
   /**
-   * Term service.
-   * 
-   * @var object
+   * Plugin Manager service.
    */
-  protected $service;
+  protected $plugin_manager;
 
   /**
    * Tripal DBX Chado Connection object
@@ -38,13 +36,16 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   private $config;
 
   /**
-   * Test genus and project.
+   * Import assets.
    */
-  private $test_records = [
-    'genus' => '',
+  private $assets = [
     'project' => '',
+    'genus' => '',
+    'file' => 0,
+    'headers' => [],
+    'skip' => 0
   ];
-
+  
   /**
    * Modules to enable.
    */
@@ -69,6 +70,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Set ontology.term: genus to null (id: 1).
+    // This is used as type_id when creating relationship between a project and genus.
     $this->config->set('trpcultivate.phenotypes.ontology.terms.genus', 1);
 
     // Test Chado database.
@@ -86,7 +88,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
-    $this->test_records['project'] = $project;
+    $this->assets['project'] = $project;
 
     $genus = 'Wild Genus ' . uniqid();
     $this->chado->insert('1:organism')
@@ -97,7 +99,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ])
       ->execute();
     
-    $this->test_records['genus'] = $genus;  
+    $this->assets['genus'] = $genus;  
 
     $this->chado->insert('1:projectprop')
       ->fields([
@@ -119,82 +121,152 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     ];
 
     $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $genus_ontology_config);
+
+    // Set plugin manager service.
+    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+  }
+  
+  /**
+   * Test test records were created.
+   */
+  public function testRecordsCreated() {
+    // Test project.
+    $sql_project = "SELECT name FROM {1:project} WHERE name = :name LIMIT 1";
+    $project = $this->chado->query($sql_project, [':name' => $this->assets['project']])
+      ->fetchField();
+
+    $this->assertNotNull($project, 'Project test record not created.');
+    
+    // Test genus.
+    $sql_genus = "SELECT genus FROM {1:organism} WHERE genus = :genus LIMIT 1";
+    $genus = $this->chado->query($sql_genus, [':genus' => $this->assets['genus']])
+      ->fetchField();
+
+    $this->assertNotNull($genus, 'Genus test record not created.');
   }
 
-  public function testPluginValidator() {
-    // Assert genus and project records created.
-    foreach($this->test_records as $key => $value) {
-      $this->assertNotNull($value, $key . ' Test record not created.');
-    }
-
-    // Create instance of the validator plugin - Project.
-    $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-    $plugins = $manager->getDefinitions();
-    $plugin_definitions = array_values($plugins);
-    
-    $project = $this->test_records['project'];
-    $genus = $this->test_records['genus'];
-    $file = 1;
-    $headers = [];
-    $skip = 0;
+  /**
+   * Test Project Plugin Validator.
+   */
+  public function testProjectPluginValidator() {
     $scope = 'PROJECT';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
 
-    $plugin_key = array_search($scope, array_column($plugin_definitions, 'validator_scope'));
-    $validator = $plugin_definitions[ $plugin_key ]['id'];
-          
-    $instance = $manager->createInstance($validator);
-    $instance->loadAssets($project, $genus, $file, $headers, $skip);
-          
-    // Perform Project Level validation.
+    // PASS:
+    $status = 'pass';
+
+    // Test a valid project - exists.
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'pass');    
+    $this->assertEquals($validation[ $scope ]['status'], $status);
 
-    // Test validator plugin with non-existent project.
-    $instance->loadAssets('NON-Existent-Project', $genus, $file, $headers, $skip);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'fail');
-
-    // Test validator with a project without genus configured.
+    // Test validator with a project (exists) without genus configured.
     // This will allow (pass) so long as project has no genus set and user
     // can set the genus so further in the importer the project-genus can be created.
-    $project = 'No Genus';
+    $project_no_genus = 'Project No Genus';
     $this->chado->insert('1:project')
       ->fields([
-        'name' => $project,
-        'description' => $project . ' : Description'   
+        'name' => $project_no_genus,
+        'description' => $project_no_genus . ' : Description'   
       ])
       ->execute();
 
-    $instance->loadAssets($project, $genus, $file, $headers, $skip);
+    $instance->loadAssets($project_no_genus, $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'pass');
+    $this->assertEquals($validation[ $scope ]['status'], $status);
 
 
-    $scope = 'GENUS';
-    $plugin_key = array_search($scope, array_column($plugin_definitions, 'validator_scope'));
-    $validator = $plugin_definitions[ $plugin_key ]['id'];
-          
-    $instance = $manager->createInstance($validator);
-    $instance->loadAssets($project, $genus, $file, $headers, $skip);
+    // FAIL:
+    $status = 'fail';
 
-    // Perform Genus Level validation.
+    // Test empty value.
+    $instance->loadAssets('', $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'pass');
+    $this->assertEquals($validation[ $scope ]['status'], $status);
 
-    // Genus not paired with the project.
-    $instance->loadAssets($project, 'NOT GENUS', $file, $headers, $skip);
+    // Test validator plugin with non-existent project.
+    $instance->loadAssets('NON-Existent-Project', $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'fail');
+    $this->assertEquals($validation[ $scope ]['status'], $status);
 
-    // Just genus by itself.
-    $instance->loadAssets($project = '', $genus, $file, $headers, $skip);
+
+    // TODO:
+    $status = 'todo';
+
+    // Test skip flag to skip this test - set to upcoming validation step.
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
     $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'pass');
-
-
-    // Test skip - upcoming or todo validation.
-    $instance->loadAssets($project, $genus, $file, $headers, $skip = 1);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], 'todo');
+    $this->assertEquals($validation[ $scope ]['status'], $status);
   }
+
+  /**
+   * Test Genus Plugin Validator.
+   */
+  public function testGenusPluginValidator() {
+    $scope = 'GENUS';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
+
+    // PASS:
+    $status = 'pass';
+
+    // Test project exits and has a genus (active genus).
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Check genus is an active genus when not paired with a project.
+    $instance->loadAssets(null, $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
+    // FAIL:
+    $status = 'fail';
+    
+    // Test empty value.
+    $instance->loadAssets($assets['project'], '', $assets['file'], $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Incorrect genus picked for a project that has genus set (mismatch).
+    $instance->loadAssets($assets['project'], 'NOT THE GENUS', $assets['file'], $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
+    // TODO:
+    $status = 'todo';
+
+    // Test skip flag to skip this test - set to upcoming validation step.
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+  }
+
+  /**
+   * Template.
+   * Test SCOPE Plugin Validator.
+   *//*
+  public function testScopePluginValidator() {
+    $scope = 'SCOPE';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
+
+     // PASS:
+     $status = 'pass';
+
+
+     // FAIL:
+     $status = 'fail';
+
+
+     // TODO:
+     $status = 'todo';
+  }
+  */
 }
