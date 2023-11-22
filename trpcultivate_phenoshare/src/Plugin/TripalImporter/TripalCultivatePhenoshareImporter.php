@@ -463,7 +463,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
         $headers = [];
 
         if ($stage == 1) {
-          $scopes = ['PROJECT', 'GENUS'];
+          $scopes = ['PROJECT', 'GENUS', 'FILE'];
 
           // Array to hold all validation result for each level.
           // Each result is keyed by the scope.
