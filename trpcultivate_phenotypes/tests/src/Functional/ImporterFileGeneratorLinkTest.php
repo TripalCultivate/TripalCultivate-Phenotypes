@@ -16,12 +16,16 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {  
   protected $defaultTheme = 'stark';
 
+  // Holds genus - ontology config names.
+  private $genus_ontology;
+
   /**
    * Modules to enabled
    *
    * @var array
    */
   protected static $modules = [
+    'node',
     'tripal',
     'tripal_chado',
     'trpcultivate_phenotypes',
@@ -36,6 +40,41 @@ class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {
   
     // Ensure we see all logging in tests.
     \Drupal::state()->set('is_a_test_environment', TRUE);
+
+    // Create a test schema.
+    $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado);
+
+    // Prepare by adding test records to genus and project.
+    $project = 'Project - ' . uniqid();
+    $project_id = $this->chado->insert('1:project')
+      ->fields([
+        'name' => $project,
+        'description' => $project . ' : Description'   
+      ])
+      ->execute();
+
+    $genus = 'Wild Genus ' . uniqid();
+    $this->chado->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'Wild Species',
+        'type_id' => 1 
+      ])
+      ->execute();
+    
+    // Install all default terms.
+    $service_terms = \Drupal::service('trpcultivate_phenotypes.terms');
+    $service_terms->loadTerms(); 
+
+    // Define a genus ontology configuration value.
+    $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');  
+    $service_genusontology->loadGenusOntology();
+    $this->genus_ontology = $service_genusontology->defineGenusOntology();
+
+    // Pair the project with the genus.
+    $service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
+    $service_genusproject->setGenusToProject($project_id, $genus, $replace = FALSE);
   }
 
   /**
@@ -60,6 +99,18 @@ class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {
     $session->statusCodeEquals(200);
     // There is a link to the the importer with this link description.
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
+    
+    // Configure genus ontology.
+    foreach($this->genus_ontology as $genus => $vars) {
+      foreach($vars as $i => $config) {
+        $fld_name = $genus . '_' . $config;
+        $values_genus_ontology[ $fld_name ] = 1;
+      }
+    }
+    
+    // Setup genus ontology configuration through the interface.
+    $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
+    $this->submitForm($values_genus_ontology, 'Save configuration');
     
     // Access Phenotypes Importer Share - this will create a template file.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
