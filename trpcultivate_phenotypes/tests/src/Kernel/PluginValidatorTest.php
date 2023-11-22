@@ -43,7 +43,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     'project' => '',
     'genus' => '',
     'file' => 0,
-    'headers' => [],
+    'headers' => ['Header 1', 'Header 2', 'Header 3'],
     'skip' => 0
   ];
 
@@ -142,6 +142,9 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $test_file  = 'test_data_file';
     $dir_public = 'public://';
 
+    // Column headers - in the importer this is the headers property.
+    $column_headers = implode("\t", $this->assets['headers']);
+
     // Prepare test file for the following extensions.
     // Each extension is set to file id 0 until created.
     $create_files = [
@@ -174,6 +177,12 @@ class PluginValidatorTest extends ChadoTestKernelBase {
         'ext' => 'tsv',
         'mime' => 'application/pdf',
         'content' => ''
+      ],
+      // Test file with the correct headers.
+      'file-6' => [
+        'ext' => 'tsv',
+        'mime' => 'text/tab-separated-values',
+        'content' => $column_headers
       ],
     ];
 
@@ -373,6 +382,55 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     // TODO:
     $status = 'todo';
 
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+  }
+
+  /**
+   * Test Headers Plugin Validator.
+   */
+  public function testScopePluginValidator() {
+    $scope = 'HEADERS';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
+
+    // PASS:
+    $status = 'pass';
+
+    // File headers match the expected headers.
+    $file_id = $this->test_files['file-6']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
+    // FAIL:
+    $status = 'fail';
+    
+    // Change the contents of the tsv_file so the headers do not match the headers asset;
+    $file = File::load($file_id);
+    $file_uri = $file->getFileUri();
+    file_put_contents($file_uri, 'NOT THE HEADERS EXPECTED');
+    
+    // File headers do not match the expected headers - Extra Headers.
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // File headers do not match the expected headers - Less/Missing Headers.
+    unset($assets['headers'][2]); // Removes Header 3.
+    file_put_contents($file_uri, $assets['headers']);
+
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // TODO:
+    $status = 'todo';
+
+    // Test skip flag to skip this test - set to upcoming validation step.
     $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
