@@ -427,6 +427,14 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
 
+    // Header row is missing.
+    file_put_contents($file_uri, '');
+
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
     // TODO:
     $status = 'todo';
 
