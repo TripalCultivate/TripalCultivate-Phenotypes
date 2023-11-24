@@ -20,3 +20,7 @@ services:
     class: 'Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorManager'
     parent: default_plugin_manager
     arguments: ['@tripal_chado.database']
+
+  trpcultivate_phenotypes.traits:
+    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService'
+    arguments: ['@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms', '@tripal_chado.database', '@tripal.logger']  

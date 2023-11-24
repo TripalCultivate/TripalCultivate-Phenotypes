@@ -180,3 +180,13 @@ trpcultivate:
             name: plot
             definition: 'A site within which an agricultural experimental process is conducted'
             help_text: 'Metadata tagged with this term indicates the plot number.'
+      -
+        name: schema
+        definition: 'Schema.org is sponsored by Google, Microsoft, Yahoo and Yandex. The vocabularies are developed by open community process.' 
+        terms:
+          -
+            config_map: additional_type
+            id: schema:additionalType
+            name: additionalType
+            definition: 'Supplemental data type attached to a unit (ie. quantitative or qualitative).'
+            help_text: 'Metadata tagged with this term indicates the data type of a unit of measurement.'
