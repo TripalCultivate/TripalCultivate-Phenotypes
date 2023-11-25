@@ -50,30 +50,32 @@ class TripalCultivatePhenotypesTraitsService {
 
     // Fetch all configured genus (active genus).
     $active_genus = $this->service_genus_ontology->getConfiguredGenusList(); 
-    
-    // Create a map of genus-ontology configuration values accessible by genus with
-    // all values (id) resolved to db name or cv name.
-    foreach($active_genus as $i => $genus) {
-      // Fetch genus trait, method, unit, db and ontology configuration values.
-      $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
 
-      // Resolve each configuration entry to matching cv or db id number.
-      foreach($genus_config as $config => $value) {
-        if ($value > 0) {
-          // Ontology might be set to 0 - as it is optional in the config page.
-          // Map only values that have been set.
+    if ($active_genus) {
+      // Create a map of genus-ontology configuration values accessible by genus with
+      // all values (id) resolved to db name or cv name.
+      foreach($active_genus as $genus) {
+        // Fetch genus trait, method, unit, db and ontology configuration values.
+        $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
 
-          if ($config == 'database') {
-            // DB configuration. 
-            $rec = chado_get_db(['db_id' => $value]);
-          }
-          else {
-            // CV configuration.
-            $rec = chado_get_cv(['cv_id' => $value]);
-          }
+        // Resolve each configuration entry to matching cv or db id number.
+        foreach($genus_config as $config => $value) {
+          if ($value > 0) {
+            // Ontology might be set to 0 - as it is optional in the config page.
+            // Map only values that have been set.
 
-          if ($rec) {
-            $this->config[ $i ][ $config ] = ['id' => $value, 'name' => $rec->name];
+            if ($config == 'database') {
+              // DB configuration. 
+              $rec = chado_get_db(['db_id' => $value]);
+            }
+            else {
+              // CV configuration.
+              $rec = chado_get_cv(['cv_id' => $value]);
+            }
+
+            if ($rec) {
+              $this->config[ $genus ][ $config ] = ['id' => $value, 'name' => $rec->name];
+            }
           }
         }
       }
@@ -123,24 +125,30 @@ class TripalCultivatePhenotypesTraitsService {
    *   - Unit: the full word describing the unit used in the method (e.g. centimeters)
    *   - Type: Quantitative or Qualitative.
    * @param string $genus
-   *   - Genus: the organism genus the trait is for (e.g. Lens).
-   * 
+   *   Genus: the organism genus the trait is for (e.g. Lens).
+   * @param object $schema
+   *   Tripal DBX Chado Connection object
+   *   
    * @see Header property and Trait Importer.
    * NOTE: 
    *   - Tripal Importer Plugin loading of file is performed using database transaction.
    *   - Although Genus is collected in the Importer form, It is not saved as part of the terms/traits.
-   *     Genus functions as a pointer to which CV to to save the terms as set in the Genus-ontology configuration.  
+   *     Genus functions as a pointer to which CV to save the terms as set in the Genus-ontology configuration.  
    * 
    * @return
    *   An array with the following keys where each value is the new cvterm:
    *   trait, method, unit.
    */
-  public function insertTrait($trait, $genus) {
+  public function insertTrait($trait, $genus, $schema = NULL) {
     // Fetch configuration settings of the genus.
     $genus_config = $this->config[ $genus ];
-  
+    
+    if (!$genus_config) {
+      return 0;
+    }
+    
     // Query to check term.
-    $sql = 'SELECT cvterm_id FROM {cvterm} WHERE %s = :value AND cv_id IN (SELECT cv_id FROM {cv} WHERE name = :cv_name)';
+    $sql = 'SELECT cvterm_id FROM {1:cvterm} WHERE %s = :value AND cv_id IN (SELECT cv_id FROM {1:cv} WHERE name = :cv_name)';
 
     // TRAIT:
     // Save trait. Trait object.
@@ -149,7 +157,7 @@ class TripalCultivatePhenotypesTraitsService {
       'id' => $genus_config['database']['name'] . ':' . $trait['Trait Name'],
       'name' => $trait['Trait Name'],
       'definition' => $trait['Trait Description'] 
-    ]);
+    ], [], $schema);
 
     if (!$rec_trait) {
       // Could not insert cvterm.
@@ -177,7 +185,7 @@ class TripalCultivatePhenotypesTraitsService {
         'id' => $genus_config['database']['name'] . ':' . $trait['Method Short Name'],
         'name' => $trait['Method Short Name'],
         'definition' => $trait['Collection Method']   
-      ]);
+      ], [], $schema);
 
       if (!$method) {
         // Could not insert cvterm.
@@ -209,7 +217,7 @@ class TripalCultivatePhenotypesTraitsService {
         'id' => $genus_config['database']['name'] . ':' . $trait['Unit'],
         'name' => $trait['Unit'],
         'definition' => $trait['Unit']
-      ]);
+      ], [], $schema);
 
       if (!$unit) {
         // Could not insert cvterm.

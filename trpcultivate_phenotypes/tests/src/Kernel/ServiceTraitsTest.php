@@ -100,6 +100,36 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
   
     // Set the traits service.
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+
+    // Install required dependencies - T3 legacy functions .
+    $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
+    $tripal_chado_api = [
+      'tripal_chado.cv.api.php',
+      'tripal_chado.variables.api.php',
+      'tripal_chado.schema.api.php'
+    ];
+
+    if ($handle = opendir($tripal_chado_path)) {
+      while (false !== ($file = readdir($handle))) {
+        if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
+          include_once($tripal_chado_path . $file);
+        }
+      }
+
+      closedir($handle);
+    }
+  }
+
+  /**
+   * Test test records were created.
+   */
+  public function testRecordsCreated() {
+    // Test genus.
+    $sql_genus = "SELECT genus FROM {1:organism} WHERE genus = :genus LIMIT 1";
+    $genus = $this->chado->query($sql_genus, [':genus' => $this->genus])
+      ->fetchField();
+
+    $this->assertNotNull($genus, 'Genus test record not created.');
   }
 
   /**
@@ -137,10 +167,54 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     }
 
     // Save the trait.
-    // @TODO: Test genus was created before 
     $ins_trait = $this->service_traits->insertTrait($trait, $this->genus);
 
-    // Test inserted traits.
-    print_r($ins_trait);
+    // Test inserted trait, method and unit.
+    $this->assertEquals($ins_trait['trait']->name, $trait['Trait Name'], 'Failed to insert trait.');
+    $this->assertEquals($ins_trait['method']->name, $trait['Method Short Name'], 'Failed to insert trait method.');
+    $this->assertEquals($ins_trait['unit']->name, $trait['Unit'], 'Failed to insert trait unit.');
+
+    // Test trait, method and unit are inserted in the correct cv as
+    // configured for the genus.
+    $this->assertEquals($ins_trait['trait']->cv_id, 1, 'Failed to insert trait in the configured cv.');
+    $this->assertEquals($ins_trait['trait']->db_id, 1, 'Failed to insert trait in the configured db.');
+
+    $this->assertEquals($ins_trait['method']->cv_id, 1, 'Failed to insert trait method in the configured cv.');
+    $this->assertEquals($ins_trait['method']->db_id, 1, 'Failed to insert trait method in the configured db.');
+    
+    $this->assertEquals($ins_trait['unit']->cv_id, 1, 'Failed to insert trait unit in the configured cv.');
+    $this->assertEquals($ins_trait['unit']->db_id, 1, 'Failed to insert trait unit in the configured db.');    
+
+    // Test relationships created.
+
+    // Supplemental metadata to unit.
+    $unit_type = [
+      'cvterm_id' => $ins_trait['unit']->cvterm_id,
+      'type_id' => 1 // Null.
+    ];
+
+    $prop_unit = chado_select_record('cvtermprop', ['cvtermprop_id', 'value'], $unit_type)[0];
+    $this->assertNotNull($prop_unit->cvtermprop_id, 'Failed to insert unit property - additional type.');
+    $this->assertEquals($prop_unit->value, 'Quantitative', 'Unit property - additional type does not match expected value.');
+
+    // Trait-Method Relation.
+    $trait_method_rel = [
+      'subject_id' => $ins_trait['trait']->cvterm_id,
+      'type_id' => 1, // Null
+      'object_id' => $ins_trait['method']->cvterm_id,
+    ];
+
+    $rec_trait_method = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $trait_method_rel);
+    $this->assertNotNull($rec_trait_method, 'Failed to relate trait to method.');
+    
+    // Method-Unit Relation.
+    $method_unit_rel = [
+      'subject_id' => $ins_trait['method']->cvterm_id,
+      'type_id' => 1, // Null
+      'object_id' => $ins_trait['unit']->cvterm_id,
+    ];
+
+    $rec_method_unit = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $method_unit_rel);
+    $this->assertNotNull($rec_trait_method, 'Failed to relate method to unit.');
   }
 }
