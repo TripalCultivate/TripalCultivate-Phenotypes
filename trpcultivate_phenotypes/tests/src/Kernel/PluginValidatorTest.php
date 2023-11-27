@@ -445,6 +445,52 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test TRAIT IMPORT VALUES Plugin Validator.
+   */
+  public function testTraitImportValuePluginValidator() {
+    $scope = 'TRAIT IMPORT VALUES';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
+
+    // Write expected headers into the file and a sample data for every column.
+    $file_id = $this->test_files['file-6']['ID'];
+    $file = File::load($file_id);
+    $file_uri = $file->getFileUri();
+    $test_data = implode("\t", $assets['headers']) . "\n" . "Value Header 1 Value Header 2  Value Header 3";
+    file_put_contents($file_uri, $test_data);
+
+    // PASS:
+    $status = 'pass';
+
+    // All columns present, all columns have value and headers match the header array.
+    $instance->loadAssets(0, $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    
+    // FAIL:
+    $status = 'fail';
+
+    // Header 2 is empty.
+    $test_data = implode("\t", $assets['headers']) . "\n" . implode("\t", ['Header 1 Value', '', 'Header 3 Value']);
+    file_put_contents($file_uri, $test_data);
+
+    $instance->loadAssets(0, $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
+    // TODO:
+    $status = 'todo';
+
+    // Test skip flag to skip this test - set to upcoming validation step.
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+  }
+
+  /**
    * Template.
    * Test SCOPE Plugin Validator.
    *//*
