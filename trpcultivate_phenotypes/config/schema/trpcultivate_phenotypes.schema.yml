@@ -116,6 +116,9 @@ trpcultivate_phenotypes.settings:
                     experiment_year:
                       type: integer
                       label: 'CV Term: Phenotyping year'
+                    additional_type:
+                      type: integer
+                      label: 'CV Term: Additional type - Qualitative or Quantitative'
                 cvdbon:
                   type: sequence
                   label: 'CV, DB and Ontology'
