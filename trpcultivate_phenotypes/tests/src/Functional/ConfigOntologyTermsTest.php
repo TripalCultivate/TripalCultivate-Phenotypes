@@ -183,7 +183,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $cvterms = $this->chado->query("
       SELECT ct.cvterm_id, CONCAT(ct.name, ' (', db.name, ':', dx.accession, ')')
       FROM {1:cvterm} AS ct LEFT JOIN {1:dbxref} AS dx USING(dbxref_id) LEFT JOIN {1:db} USING(db_id)
-      LIMIT 12
+      LIMIT 13
     ")
       ->fetchAllKeyed(0, 1);
 
