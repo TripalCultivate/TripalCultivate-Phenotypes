@@ -237,7 +237,7 @@ class TripalCultivatePhenotypesTraitsService {
       'type_id' => $this->terms['additional_type']
     ];
 
-    $rec_unit_prop = chado_select_record('cvtermprop', ['cvtermprop_id'], $unit_type, $schema);
+    $rec_unit_prop = chado_select_record('cvtermprop', ['cvtermprop_id'], $unit_type);
     if (!$rec_unit_prop) {
       $unit_type['value'] = $trait['Type'];
       chado_insert_record('cvtermprop', $unit_type);
@@ -251,7 +251,7 @@ class TripalCultivatePhenotypesTraitsService {
       'object_id' => $rec_method->cvterm_id
     ];
 
-    $rec_trait_method = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $trait_method_relationship, $schema);
+    $rec_trait_method = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $trait_method_relationship);
     if (!$rec_trait_method) {
       chado_insert_record('cvterm_relationship', $trait_method_relationship);
     }
