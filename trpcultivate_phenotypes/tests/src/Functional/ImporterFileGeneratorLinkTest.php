@@ -2,37 +2,22 @@
 
 /**
  * @file
- * Functional test of Phenotypes Share Importer.
+ * Functional test of Tripal Cultivate Phenotypes Importer 
+ * template file generator download link.
  */
 
-namespace Drupal\Tests\trpcultivate_phenoshare\Functional;
+namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
- /**
-  *  Class definition ImporterShareTest.
-  */
-class ImporterShareTest extends ChadoTestBrowserBase {  
-  // Project.
-  private $project;
-  private $project_id;
-
-  // Genus.
-  private $genus;
-  // Holds genus - ontology config names.
-  private $genus_ontology;
-  // Admin user created. 
-  private $admin_user;
-
+/**
+ *  Class definition ImporterFileGeneratorLinkTest.
+ */
+class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {  
   protected $defaultTheme = 'stark';
 
-  /**
-   * Tripal DBX Chado Connection object
-   *
-   * @var ChadoConnection
-   */
-  protected $chado;
+  // Holds genus - ontology config names.
+  private $genus_ontology;
 
   /**
    * Modules to enabled
@@ -62,8 +47,6 @@ class ImporterShareTest extends ChadoTestBrowserBase {
 
     // Prepare by adding test records to genus and project.
     $project = 'Project - ' . uniqid();
-    $this->project = $project;
-
     $project_id = $this->chado->insert('1:project')
       ->fields([
         'name' => $project,
@@ -71,10 +54,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
       ])
       ->execute();
 
-    $this->project_id = $project_id;  
-
     $genus = 'Wild Genus ' . uniqid();
-    $this->genus = $genus;
     $this->chado->insert('1:organism')
       ->fields([
         'genus' => $genus,
@@ -85,7 +65,7 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     
     // Install all default terms.
     $service_terms = \Drupal::service('trpcultivate_phenotypes.terms');
-    $service_terms->loadTerms();
+    $service_terms->loadTerms(); 
 
     // Define a genus ontology configuration value.
     $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');  
@@ -94,23 +74,33 @@ class ImporterShareTest extends ChadoTestBrowserBase {
 
     // Pair the project with the genus.
     $service_genusproject = \Drupal::service('trpcultivate_phenotypes.genus_project');
-    $service_genusproject->setGenusToProject($this->project_id, $this->genus, $replace = FALSE);
+    $service_genusproject->setGenusToProject($project_id, $genus, $replace = FALSE);
   }
 
   /**
-   * Test Phenotypes Share Importer.
+   * Test download link.
    */
-  public function testImportShareForm() {
+  public function testImporterFileGeneratorLink() {
     // Setup admin user account.
-    $this->admin_user = $this->drupalCreateUser([
+    $admin_user = $this->drupalCreateUser([
       'administer site configuration',
       'administer tripal',
       'allow tripal import'
     ]);
 
     // Login admin user.
-    $this->drupalLogin($this->admin_user);
+    $this->drupalLogin($admin_user);
     
+    // Assert custom Phenotypes Share importer is an item in
+    // admin/tripal/loaders page.
+    // Link titled - Tripal Cultivate: Open Science Phenotypic Data
+    $this->drupalGet('admin/tripal/loaders/');
+    $session = $this->assertSession();
+    $session->statusCodeEquals(200);
+    // There is a link to the the importer with this link description.
+    $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
+    
+    // Configure genus ontology.
     foreach($this->genus_ontology as $genus => $vars) {
       foreach($vars as $i => $config) {
         $fld_name = $genus . '_' . $config;
@@ -121,57 +111,13 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Setup genus ontology configuration through the interface.
     $this->drupalGet('admin/tripal/extension/tripal-cultivate/phenotypes/ontology');
     $this->submitForm($values_genus_ontology, 'Save configuration');
-
-    // Assert custom Phenotypes Share importer is an item in
-    // admin/tripal/loaders page.
-    // Link titled - Tripal Cultivate: Open Science Phenotypic Data
-    $this->drupalGet('admin/tripal/loaders/');
-    $session = $this->assertSession();
-    $session->statusCodeEquals(200);
-    // There is a link to the the importer with this link description.
-    $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
-
-    // Test stage cacheing and if stage is styled with the correct css class.
+    
+    // Access Phenotypes Importer Share - this will create a template file.
     $this->drupalGet('admin/tripal/loaders/trpcultivate-phenotypes-share');
     $session = $this->assertSession();
     $session->statusCodeEquals(200);
     $session->pageTextContains('Tripal Cultivate: Open Science Phenotypic Data');
- 
-    $page_content = $this->getSession()->getPage()->getContent();
-    // Get all stage accordion title/header element.
-    preg_match_all('/tcp\-stage-title/', $page_content, $matches);
-    foreach($matches[0] as $i => $stage) {      
-      preg_match('/<input id="tcp-current-stage" .+ value="([1-9])" \/>/', $page_content, $matches);
-      $current_stage = $matches[1];
-
-      // Stage number set in the hidden field used as cache.
-      $this->assertEquals($current_stage, ($i + 1), 'Current stage does not match expected stage');
-
-      // Current stage styled with css class name tcp-current-stage
-      preg_match_all('/(tcp\-stage-title[\s{1}tcp\-\w+\-stage]*)">/', $page_content, $matches);
-      $this->assertEquals('tcp-stage-title tcp-current-stage', $matches[1][ $i ], 'Stage does not contain expected css class.');
-      
-      // Next stage...
-      if ($i == 2) break; // Skip last stage 3, review stage as the submit will be the import button.
-      $next = ($i == 0) ? 'Validate Data File' : 'Check Values';
-
-      if ($i == 0) {
-        // Stage 1 prefill project field with the project created in setup.
-        $form = ['project' => $this->project];
-      }
-      else {
-        // No form elements to set here.
-        $form = [];
-      }
-
-      $next = ($i == 0) ? 'Validate Data File' : 'Check Values';
-      // Submit form with stage form field values.
-      $this->submitForm($form, $next);
-      // Get the page content.
-      $page_content = $this->getSession()->getPage()->getContent();
-    }
-    
-
+     
     // Test if template file generator created a file. This is the link value
     // of the href attribute of the download a template file link in the header notes of the importer.
     
@@ -184,18 +130,19 @@ class ImporterShareTest extends ChadoTestBrowserBase {
     // Scan the directory for tsv file.
     // tsv file, parent dir (..) then current dir (.).
     $template_file = scandir($dir_uri, SCANDIR_SORT_DESCENDING)[0];
+    $template_file_uri = $dir_uri . '/' . $template_file;
     
     // Template file is generated.
-    $is_file = file_exists($dir_uri . '/' . $template_file);
+    $is_file = file_exists($template_file_uri);
     $this->assertTrue($is_file, 'Template generator failed to create a file.');
 
     // Template is not empty file.
-    $this->assertGreaterThanOrEqual(1, filesize($dir_uri . '/' . $template_file), 'The template file generated is empty.');
+    $this->assertGreaterThanOrEqual(1, filesize($template_file_uri), 'The template file generated is empty.');
     
     // Template file has header row.
-    $file_content = file_get_contents($dir_uri . '/' . $template_file);    
+    $file_content = file_get_contents($template_file_uri);    
     $this->assertNotNull($file_content, 'Template generator failed to add the header row.');
-
+    
     $this->drupalLogout();
   }
 }

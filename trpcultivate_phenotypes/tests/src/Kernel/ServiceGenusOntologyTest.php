@@ -183,5 +183,12 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
         $this->assertEquals($config_value, $null_id, 'Genus ontology configuration has unexpected value (expecting 1): ' . $config_value);
       }
     }
+
+    // Active Genus list.
+    $active_genus = $this->service->getConfiguredGenusList();
+    $extra_item = array_diff($active_genus, $this->test_genus);
+    
+    // Assert no extra item thus both arrays are the same.
+    $this->assertEmpty($extra_item, 'Active genus arrays do not match.');
   }
 }

@@ -247,4 +247,34 @@ class TripalCultivatePhenotypesGenusOntologyService {
 
     return $config_values;
   }
+
+  /**
+   * Retrieve a sorted list of all configured genus.
+   * 
+   * @return array
+   *   Array where the key and value are the genus.
+   */
+  public function getConfiguredGenusList() {
+    // Fetch all unique genus.
+    $query = "SELECT genus FROM {1:organism} GROUP BY genus ORDER BY genus ASC";
+    $result = $this->chado->query($query);
+    
+    // Array to hold active genus.
+    $active_genus = [];
+
+    foreach($result as $genus) {
+      $genus = $genus->genus;
+      $genus_key = $this->formatGenus($genus);
+
+      // Test if a genus is active by using the trait configuration.
+      $config_trait = $this->config
+        ->get($this->sysvar_genus_ontology . '.' . $genus_key . '.' . 'trait');
+      
+      if ($config_trait && $config_trait > 0) {
+        $active_genus[] = $genus;
+      }
+    }
+
+    return $active_genus;
+  }
 }

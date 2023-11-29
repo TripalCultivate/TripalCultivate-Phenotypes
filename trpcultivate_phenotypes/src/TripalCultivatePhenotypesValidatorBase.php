@@ -26,6 +26,17 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   public $file_id;
 
   /**
+   * Required column headers as defined in the importer.
+   */
+  public $column_headers;
+
+  /**
+   * Skip flag, indicate validator not to execute validation logic and
+   * set the validator as upcoming or todo.
+   */
+  public $skip;
+
+  /**
    * Load phenotypic data upload assets to validated.
    * 
    * @param $project
@@ -34,12 +45,26 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   String, Genus - chado.organism: genus.
    * @param $file_id
    *   Integer, Drupal file id number.
+   * @param $headers
+   *   Array, required column headers defined in the importer.
+   * @param $skip
+   *   Boolean, skip flag when set to true will skip the validation
+   *   logic and set the validator as upcoming/todo.
+   *   Default: false - execute validation process.
    */
-  public function loadAssets($project, $genus, $file_id) {
-    // Prepare assets, query db, or load file.
+  public function loadAssets($project, $genus, $file_id, $headers, $skip = 0) {
+    // Prepare assets:
+
+    // Project.
     $this->project = $project;
+    // Genus.
     $this->genus = $genus;
+    // File id.
     $this->file_id = $file_id;
+    // Column Headers.
+    $this->column_headers = $headers;
+    // Skip.
+    $this->skip = $skip;
   }
 
   /**
