@@ -38,11 +38,17 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    * @param $genus
    *   String, Genus - chado.organism: genus.
    * @param $file_id
-   *   Integer, Drupal file id number. 
+   *   Integer, Drupal file id number.
+   * @param $headers
+   *   Array, required column headers defined in the importer.
+   * @param $skip
+   *   Boolean, skip flag when set to true will skip the validation
+   *   logic and set the validator as upcoming/todo.
+   *   Default: false - execute validation process.
    * 
    * @return void.
    */
-  public function loadAssets($project, $genus, $file_id);
+  public function loadAssets($project, $genus, $file_id, $headers, $skip);
 
   /**
    * Validate items in the phenotypic data upload assets.

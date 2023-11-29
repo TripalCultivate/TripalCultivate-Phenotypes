@@ -9,6 +9,8 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
+use Symfony\Component\HttpFoundation\Request;
+use Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesProjectGenusController;
 
 /**
  * Test Tripal Cultivate Phenotypes Genus Project service.
@@ -60,6 +62,10 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     'second_genus_id' => 0
   ];
 
+  /**
+   * Project that is set with a genus.
+   */
+  private $project;
 
   /**
    * {@inheritdoc}
@@ -85,6 +91,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // Prepare by adding test records to genus, project and projectproperty
     // to relate a genus to a project.
     $project = 'Project - ' . uniqid();
+    $this->project = $project;
     $project_id = $this->chado->insert('1:project')
       ->fields([
         'name' => $project,
