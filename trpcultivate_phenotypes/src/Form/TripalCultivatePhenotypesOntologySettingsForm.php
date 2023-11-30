@@ -202,9 +202,6 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
 
     $form['ontology_fieldset']['wrapper'] = [
       '#type' => 'container',
-      '#attributes' => [
-        'style' => 'height: 300px; overflow-y: scroll;'
-      ]
     ];
 
     $form['ontology_fieldset']['wrapper']['table_fields'] = [
