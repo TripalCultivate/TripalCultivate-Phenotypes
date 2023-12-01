@@ -136,7 +136,7 @@ class TripalCultivatePhenotypesTraitsService {
    *     Genus functions as a pointer to which CV to save the terms as set in the Genus-ontology configuration.  
    * 
    * @return
-   *   An array with the following keys where each value is the new cvterm:
+   *   An array with the following keys where each value is the id of new cvterm:
    *   trait, method, unit.
    */
   public function insertTrait($trait, $genus, $schema = NULL) {
@@ -147,143 +147,122 @@ class TripalCultivatePhenotypesTraitsService {
       return 0;
     }
     
-    // Query to check term.
-    $sql = 'SELECT cvterm_id FROM {1:cvterm} WHERE %s = :value AND cv_id IN (SELECT cv_id FROM {1:cv} WHERE name = :cv_name)';
+    // Query term.
+    $sql = "SELECT cvterm_id FROM {1:cvterm} INNER JOIN {1:cv} USING (cv_id) 
+      WHERE cvterm.name = :value AND cv.cv_id = :id LIMIT 1";
 
-    // TRAIT:
-    // Save trait. Trait object.
-    $rec_trait = chado_insert_cvterm([
-      'cv_name' => $genus_config['trait']['name'],
-      'id' => $genus_config['database']['name'] . ':' . $trait['Trait Name'],
-      'name' => $trait['Trait Name'],
-      'definition' => $trait['Trait Description'] 
-    ], [], $schema);
-
-    if (!$rec_trait) {
-      // Could not insert cvterm.
-      $this->logger->error('Error. Could not insert term/trait @key.', ['@key' => $trait['Trait Name']]);
-    }
-    
-    // METHOD:
-    // Save method.
-    // Reuse method if it existed otherwise create a new record.
-    $sql_method = sprintf($sql, 'definition');
-    $rec_method = $this->chado->query($sql_method, [
-      ':value' => $trait['Collection Method'], 
-      ':cv_name' => $this->terms['method']
-    ])
-      ->fetchField();
-    
-    if ($rec_method > 0) {
-      // Method already exists.
-      $method = chado_get_cvterm(['cvterm_id' => $rec_method]);
-    }
-    else {
-      // Create the a new method.
-      $method = chado_insert_cvterm([
-        'cv_name' => $genus_config['method']['name'],
-        'id' => $genus_config['database']['name'] . ':' . $trait['Method Short Name'],
+    // TRAIT, METHOD and UNIT data array.
+    $arr_trait = [
+      'trait' =>  [
+        'name' =>  $trait['Trait Name'],
+        'description' => $trait['Trait Description'],
+      ],
+      'method' => [
         'name' => $trait['Method Short Name'],
-        'definition' => $trait['Collection Method']   
-      ], [], $schema);
+        'description' => $trait['Collection Method'],
+      ],
+      'unit'  =>  [
+        'name' => $trait['Unit'],
+        'description' => $trait['Unit'],
+      ]
+    ];
+    
+    // Create trait.
+    foreach($arr_trait as $type => $values) {
+      // Check if a record exists in the same Genus.
+      $value = ($type == 'method') ? $values['description'] : $values['name'];
+      $id = $this->chado->query($sql, [':value' => $value, ':id' => $genus_config[ $type ]['id']])
+        ->fetchField();
+      
+      // Found a record. If trait is found, trigger an error as same trait 
+      // is already in the genus, otherwise reuse information.
+         
+      if ($id && $type == 'trait') {
+        $this->logger->error('Error. Trait @key already exists in the Genus.', ['@key' => $trait['Trait Name']]);
+      }
+      
+      if ($id) {
+        $arr_trait[ $type ]['id'] = $id;
+      }
+      else {
+        $rec = [
+          'id' => $genus_config['database']['name'] . ':' . $values['name'],
+          'name' => $values['name'],
+          'cv_name' => $genus_config[ $type ]['name'],
+          'definition' => $values['description']   
+        ];
+        
+        $ins = chado_insert_cvterm($rec, [], $schema);
+        if (!$ins) {
+          // Could not insert cvterm.
+          $this->logger->error('Error. Could not insert unit @key.', ['@key' => $values['name']]);
+        }
 
-      if (!$method) {
-        // Could not insert cvterm.
-        $this->logger->error('Error. Could not insert method @key.', ['@key' => $trait['Method Short Name']]);
+        $arr_trait[ $type ]['id'] = $ins->cvterm_id;
+      } 
+    }
+
+    // RELATIONSHIPS: trait-method and method-unit.
+    // Query relationship.
+    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} 
+      WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id";
+
+    $arr_rel = [
+      'method-trait' => $this->terms['method_to_trait_relationship_type'], 
+      'method-unit'  => $this->terms['unit_to_method_relationship_type']
+    ];
+
+    // Create relationships.
+    foreach($arr_rel as $type => $rel) {
+      // Check if relationship exists.
+      if ($type == 'method-trait') {
+        $subject = $arr_trait['trait']['id'];
+        $object  = $arr_trait['method']['id'];
+      }
+      else {
+        $subject = $arr_trait['method']['id'];
+        $object  = $arr_trait['unit']['id'];
+      }
+
+      $exists = $this->chado->query($sql, [':s_id' => $subject, ':t_id' => $rel, ':o_id' => $object])
+        ->fetchField();
+      
+      if (!$exists) {
+        $this->chado->insert('1:cvterm_relationship')
+          ->fields([
+            'subject_id' => $subject,
+            'type_id' => $rel,
+            'object_id' => $object
+          ])
+          ->execute();
       }
     }
-    
-    // Method object.
-    $rec_method = $method;
-    
-    // UNIT:
-    // Save unit.
-    // Reuse unit if it existed otherwise create a new record.
-    $sql_unit = sprintf($sql, 'name');
-    $rec_unit = $this->chado->query($sql_unit, [
-      ':value' => $trait['Unit'],
-      ':cv_name' => $this->terms['unit']
-    ])
-      ->fetchField();
 
-    if ($rec_unit > 0) {
-      // Unit already exits.
-      $unit = chado_get_cvterm(['cvterm_id' => $rec_unit]);
+    // UNIT DATA TYPE:
+    $sql = "SELECT cvtermprop_id FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
+    $data_type = $this->chado->query($sql, [':c_id' => $arr_trait['unit']['id'], ':t_id' => $this->terms['additional_type']])
+      ->fetchField();
+    
+    if (!$data_type) {
+      $this->chado->insert('1:cvtermprop')
+        ->fields([
+          'cvterm_id' => $arr_trait['unit']['id'],
+          'type_id' => $this->terms['additional_type'],
+          'value' => $trait['Type']
+        ])
+        ->execute();
+    }
+
+    // Return record id created.
+    if (isset($arr_trait['trait']['id']) && isset($arr_trait['method']['id']) && isset($arr_trait['unit']['id'])) {
+      return [
+        'trait' => $arr_trait['trait']['id'],
+        'method' => $arr_trait['method']['id'],
+        'unit'  => $arr_trait['unit']['id']
+      ];
     }
     else {
-      // Create a new unit.
-      $unit = chado_insert_cvterm([
-        'cv_name' => $genus_config['unit']['name'],
-        'id' => $genus_config['database']['name'] . ':' . $trait['Unit'],
-        'name' => $trait['Unit'],
-        'definition' => $trait['Unit']
-      ], [], $schema);
-
-      if (!$unit) {
-        // Could not insert cvterm.
-        $this->logger->error('Error. Could not insert unit @key.', ['@key' => $trait['Unit']]);
-      }
+      return 0;
     }
-    
-    // Unit object.
-    $rec_unit = $unit;
-
-    // PROPERTIES AND RELATIONSHIPS:
-    
-    // Supplemental metadata to unit - to tell whether unit is numerical (Quantitative)
-    // or descriptive (Qualitative) data type.
-    $unit_type = [
-      'cvterm_id' => $rec_unit->cvterm_id,
-      'type_id' => $this->terms['additional_type']
-    ];
-
-    $sql = "SELECT cvtermprop_id FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $rec_unit_prop = $this->chado->query($sql, [':c_id' => $rec_unit->cvterm_id, ':t_id' => $this->terms['additional_type']])
-      ->fetchField();
-
-    if (!$rec_unit_prop) {
-      $unit_type['value'] = $trait['Type'];
-      chado_insert_record('cvtermprop', $unit_type);
-    }
-  
-    // Relate the trait with the method.
-    // Query to test relationship property.
-    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id LIMIT 1";
-
-    // Method ABC (object) is used in/by Trait XYZ (subject).
-    $trait_method_relationship = [
-      'subject_id' => $rec_trait->cvterm_id,
-      'type_id' => $this->terms['method_to_trait_relationship_type'],
-      'object_id' => $rec_method->cvterm_id
-    ];
-
-    $rec_trait_method = $this->chado->query($sql, [':s_id' => $rec_trait->cvterm_id, ':t_id' => $this->terms['method_to_trait_relationship_type'], ':o_id' => $rec_method->cvterm_id])
-      ->fetchField();
-    
-    if (!$rec_trait_method) {
-      chado_insert_record('cvterm_relationship', $trait_method_relationship);
-    }
-    
-    // Relate the method with the unit.
-    // Method ABC (subject) is measuring Unit EFG (object).
-    $method_unit_relationship = [
-      'subject_id' => $rec_method->cvterm_id,
-      'type_id' => $this->terms['unit_to_method_relationship_type'],
-      'object_id' => $rec_unit->cvterm_id
-    ];
-   
-    $rec_method_unit = $this->chado->query($sql, [':s_id' => $rec_trait->cvterm_id, ':t_id' => $this->terms['unit_to_method_relationship_type'], ':o_id' => $rec_unit->cvterm_id])
-      ->fetchField();
-
-    if (!$rec_method_unit) {
-      chado_insert_record('cvterm_relationship', $method_unit_relationship);
-    }
-
-    // Return the created trait, method and unit.
-    return [
-      'trait' => $rec_trait,
-      'method' => $rec_method,
-      'unit' => $rec_unit
-    ];
   }
 }
