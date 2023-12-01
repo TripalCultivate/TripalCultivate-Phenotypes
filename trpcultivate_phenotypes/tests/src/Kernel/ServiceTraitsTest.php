@@ -226,7 +226,7 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       'object_id' => $ins_trait['method']->cvterm_id,
     ];
 
-    $rec_trait_method = $this->chado->query($sql, [':s_id' =>$ins_trait['trait']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['method']->cvterm_id])
+    $rec_trait_method = $this->chado->query($sql, [':s_id' =>$ins_trait['trait']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['method']->cvterm_id]);
     $this->assertNotNull($rec_trait_method, 'Failed to relate trait to method.');
     
     // Method-Unit Relation.
@@ -236,7 +236,7 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       'object_id' => $ins_trait['unit']->cvterm_id,
     ];
 
-    $rec_method_unit = $this->chado->query($sql, [':s_id' =>$ins_trait['method']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['unit']->cvterm_id])
+    $rec_method_unit = $this->chado->query($sql, [':s_id' =>$ins_trait['method']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['unit']->cvterm_id]);
     $this->assertNotNull($rec_trait_method, 'Failed to relate method to unit.');
   }
 }
