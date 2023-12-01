@@ -151,11 +151,24 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     // As with the traits importer, values are:
     // Trait Name, Trait Description, Method Short Name, Collection Method, Unit and Type.
     // This is a tsv string similar to a line/row in traits data file.
-    $trait_ABC = "TraitABC\t\"TraitABC Description\"\tM-ABC\t\"Pull from ground\"\tcm\tQuantitative";
+    $trait  = 'TraitABC'  . uniqid(); 
+    $method = 'MethodABC' . uniqid();
+    $unit   = 'UnitABC'   . uniqid();
+
+    $insert_trait = [
+      $trait,
+      $trait  . ' Description',
+      $method . '-SName',
+      $method . ' - Pull from ground',
+      $unit,
+      'Quantitative'
+    ]; 
+    
+    $line = implode("\t", $insert_trait);
 
     // Split tsv to data points and map to headers array where the key is the header
     // and value is the corresponding data point.
-    $data_columns = str_getcsv($trait_ABC, "\t");
+    $data_columns = str_getcsv($line, "\t");
     // Sanitize every data in rows and columns.
     $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
     
@@ -194,8 +207,17 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     ];
 
     $prop_unit = chado_select_record('cvtermprop', ['cvtermprop_id', 'value'], $unit_type)[0];
-    $this->assertNotNull($prop_unit->cvtermprop_id, 'Failed to insert unit property - additional type.');
+
+
+    $sql = "SELECT cvtermprop_id FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
+    $prop_unit = $this->chado->query($sql, [':c_id' => $ins_trait['unit']->cvterm_id, ':t_id' => 1])
+      ->fetchField();
+
+    $this->assertNotNull($prop_unit, 'Failed to insert unit property - additional type.');
     $this->assertEquals($prop_unit->value, 'Quantitative', 'Unit property - additional type does not match expected value.');
+
+    // Relationships:
+    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id LIMIT 1";
 
     // Trait-Method Relation.
     $trait_method_rel = [
@@ -204,7 +226,7 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       'object_id' => $ins_trait['method']->cvterm_id,
     ];
 
-    $rec_trait_method = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $trait_method_rel);
+    $rec_trait_method = $this->chado->query($sql, [':s_id' =>$ins_trait['trait']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['method']->cvterm_id])
     $this->assertNotNull($rec_trait_method, 'Failed to relate trait to method.');
     
     // Method-Unit Relation.
@@ -214,7 +236,7 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       'object_id' => $ins_trait['unit']->cvterm_id,
     ];
 
-    $rec_method_unit = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $method_unit_rel);
+    $rec_method_unit = $this->chado->query($sql, [':s_id' =>$ins_trait['method']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['unit']->cvterm_id])
     $this->assertNotNull($rec_trait_method, 'Failed to relate method to unit.');
   }
 }

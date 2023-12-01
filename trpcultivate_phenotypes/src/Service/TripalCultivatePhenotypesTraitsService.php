@@ -237,13 +237,19 @@ class TripalCultivatePhenotypesTraitsService {
       'type_id' => $this->terms['additional_type']
     ];
 
-    $rec_unit_prop = chado_select_record('cvtermprop', ['cvtermprop_id'], $unit_type);
+    $sql = "SELECT cvtermprop_id FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
+    $rec_unit_prop = $this->chado->query($sql, [':c_id' => $rec_unit->cvterm_id, ':t_id' => $this->terms['additional_type']])
+      ->fetchField();
+
     if (!$rec_unit_prop) {
       $unit_type['value'] = $trait['Type'];
       chado_insert_record('cvtermprop', $unit_type);
     }
   
     // Relate the trait with the method.
+    // Query to test relationship property.
+    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id LIMIT 1";
+
     // Method ABC (object) is used in/by Trait XYZ (subject).
     $trait_method_relationship = [
       'subject_id' => $rec_trait->cvterm_id,
@@ -251,7 +257,9 @@ class TripalCultivatePhenotypesTraitsService {
       'object_id' => $rec_method->cvterm_id
     ];
 
-    $rec_trait_method = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $trait_method_relationship);
+    $rec_trait_method = $this->chado->query($sql, [':s_id' => $rec_trait->cvterm_id, ':t_id' => $this->terms['method_to_trait_relationship_type'], ':o_id' => $rec_method->cvterm_id])
+      ->fetchField();
+    
     if (!$rec_trait_method) {
       chado_insert_record('cvterm_relationship', $trait_method_relationship);
     }
@@ -263,8 +271,10 @@ class TripalCultivatePhenotypesTraitsService {
       'type_id' => $this->terms['unit_to_method_relationship_type'],
       'object_id' => $rec_unit->cvterm_id
     ];
+   
+    $rec_method_unit = $this->chado->query($sql, [':s_id' => $rec_trait->cvterm_id, ':t_id' => $this->terms['unit_to_method_relationship_type'], ':o_id' => $rec_unit->cvterm_id])
+      ->fetchField();
 
-    $rec_method_unit = chado_select_record('cvterm_relationship', ['cvterm_relationship_id'], $method_unit_relationship);
     if (!$rec_method_unit) {
       chado_insert_record('cvterm_relationship', $method_unit_relationship);
     }
