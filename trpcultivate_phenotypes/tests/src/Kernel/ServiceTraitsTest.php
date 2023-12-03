@@ -138,7 +138,6 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
   public function testTraitsService() {
     // Create a trait, unit and method test records.
     
-    /*
     // As defined by headers property in the importer.
     $headers = [
       'Trait Name', 
@@ -181,64 +180,54 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     }
 
     // Save the trait.
-    $ins_trait = $this->service_traits->insertTrait($trait, $this->genus);
-
-    // Test inserted trait, method and unit.
-    $this->assertEquals($ins_trait['trait']->name, $trait['Trait Name'], 'Failed to insert trait.');
-    $this->assertEquals($ins_trait['method']->name, $trait['Method Short Name'], 'Failed to insert trait method.');
-    $this->assertEquals($ins_trait['unit']->name, $trait['Unit'], 'Failed to insert trait unit.');
-
-    // Test trait, method and unit are inserted in the correct cv as
-    // configured for the genus.
-    $this->assertEquals($ins_trait['trait']->cv_id, 1, 'Failed to insert trait in the configured cv.');
-    $this->assertEquals($ins_trait['trait']->db_id, 1, 'Failed to insert trait in the configured db.');
-
-    $this->assertEquals($ins_trait['method']->cv_id, 1, 'Failed to insert trait method in the configured cv.');
-    $this->assertEquals($ins_trait['method']->db_id, 1, 'Failed to insert trait method in the configured db.');
+    $trait_assets = $this->service_traits->insertTrait($trait, $this->genus);
     
-    $this->assertEquals($ins_trait['unit']->cv_id, 1, 'Failed to insert trait unit in the configured cv.');
-    $this->assertEquals($ins_trait['unit']->db_id, 1, 'Failed to insert trait unit in the configured db.');    
-
-    // Test relationships created.
-
-    // Supplemental metadata to unit.
-    $unit_type = [
-      'cvterm_id' => $ins_trait['unit']->cvterm_id,
-      'type_id' => 1 // Null.
-    ];
-
-    $prop_unit = chado_select_record('cvtermprop', ['cvtermprop_id', 'value'], $unit_type)[0];
-
-
-    $sql = "SELECT cvtermprop_id FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $prop_unit = $this->chado->query($sql, [':c_id' => $ins_trait['unit']->cvterm_id, ':t_id' => 1])
-      ->fetchField();
-
-    $this->assertNotNull($prop_unit, 'Failed to insert unit property - additional type.');
-    $this->assertEquals($prop_unit->value, 'Quantitative', 'Unit property - additional type does not match expected value.');
-
-    // Relationships:
-    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id LIMIT 1";
-
-    // Trait-Method Relation.
-    $trait_method_rel = [
-      'subject_id' => $ins_trait['trait']->cvterm_id,
-      'type_id' => 1, // Null
-      'object_id' => $ins_trait['method']->cvterm_id,
-    ];
-
-    $rec_trait_method = $this->chado->query($sql, [':s_id' =>$ins_trait['trait']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['method']->cvterm_id]);
-    $this->assertNotNull($rec_trait_method, 'Failed to relate trait to method.');
+    // Trait, method and unit.
+    $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id LIMIT 1";
     
-    // Method-Unit Relation.
-    $method_unit_rel = [
-      'subject_id' => $ins_trait['method']->cvterm_id,
-      'type_id' => 1, // Null
-      'object_id' => $ins_trait['unit']->cvterm_id,
-    ];
+    foreach($trait_assets as $type => $value) {
+      // Query.
+      $rec = $this->chado->query($sql, [':id' => $value])
+        ->fetchObject();
+      
+      if ($type == 'trait') {
+        // Trait created.
+        $this->assertEquals($rec->name, $trait['Trait Name'], 'Failed to insert trait.');  
+        // Inserted into the correct cv the genus is configured.
+        $this->assertEquals($rec->cv_id, 1, 'Failed to insert trait into cv genus is configured.');  
+      }
+      elseif ($type == 'method') {
+        // Trait method created.
+        $this->assertEquals($rec->name, $trait['Method Short Name'], 'Failed to insert trait method.');  
+        // Inserted into the correct cv the genus is configured.
+        $this->assertEquals($rec->cv_id, 1, 'Failed to insert trait method into cv genus is configured.');  
+      }
+      elseif ($type == 'unit') {
+        // Trait unit created.
+        $this->assertEquals($rec->name, $trait['Unit'], 'Failed to insert trait unit.');  
+        // Inserted into the correct cv the genus is configured.
+        $this->assertEquals($rec->cv_id, 1, 'Failed to insert trait unit into cv genus is configured.');  
+      }
+    }
 
-    $rec_method_unit = $this->chado->query($sql, [':s_id' =>$ins_trait['method']->cvterm_id, ':t_id' => 1, ':o_id' => $ins_trait['unit']->cvterm_id]);
-    $this->assertNotNull($rec_trait_method, 'Failed to relate method to unit.');
-    */
+    // Test relations.
+    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} 
+      WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id";
+
+    // Method - trait.
+    $rec = $this->chado->query($sql, [':s_id' =>$trait_assets['trait'], ':t_id' => 1, ':o_id' => $trait_assets['method']]);
+    $this->assertNotNull($rec, 'Failed to relate method to trait.');
+    
+    // Method - unit.
+    $rec = $this->chado->query($sql, [':s_id' =>$trait_assets['method'], ':t_id' => 1, ':o_id' => $trait_assets['unit']]);
+    $this->assertNotNull($rec, 'Failed to relate method to unit.');
+    
+    // Test unit data type.
+    $sql = "SELECT cvtermprop_id, value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
+    $data_type = $this->chado->query($sql, [':c_id' => $trait_assets['unit'], ':t_id' => 1])
+      ->fetchObject();
+    
+    $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
+    $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
   }
 }
