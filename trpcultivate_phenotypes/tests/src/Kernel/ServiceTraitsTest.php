@@ -179,8 +179,10 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       $trait[ $headers[ $i ] ] = $data[ $i ];
     }
 
+    // Set genus to use by the traits service.
+    $this->service_traits->setTraitGenus($this->genus);
     // Save the trait.
-    $trait_assets = $this->service_traits->insertTrait($trait, $this->genus);
+    $trait_assets = $this->service_traits->insertTrait($trait);
     
     // Trait, method and unit.
     $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id LIMIT 1";

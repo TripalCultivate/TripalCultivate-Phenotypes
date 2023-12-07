@@ -273,6 +273,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Values provided by user in the importer page.
     // Genus.
     $genus = $this->arguments['run_args']['genus'];
+    // Instruct trait service that all trait assets will be contained in this genus.
+    $service_traits->setTraitGenus($genus);
     // Traits data file id.
     $file_id = $this->arguments['files'][0]['fid'];
     // Load file object.
@@ -312,7 +314,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // NOTE: Loading of this file is performed using a database transaction. 
         // If it fails or is terminated prematurely then all insertions and updates 
         // are rolled back and will not be found in the database.
-        $service_traits->insertTrait($trait, $genus);
+        $service_traits->insertTrait($trait);
 
         unset($data);
       }

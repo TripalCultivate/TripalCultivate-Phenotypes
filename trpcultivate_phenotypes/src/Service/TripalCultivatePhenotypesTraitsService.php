@@ -48,39 +48,6 @@ class TripalCultivatePhenotypesTraitsService {
     // Tripal logger service.
     $this->logger = $logger;
 
-    // Fetch all configured genus (active genus).
-    $active_genus = $this->service_genus_ontology->getConfiguredGenusList(); 
-
-    if ($active_genus) {
-      // Create a map of genus-ontology configuration values accessible by genus with
-      // all values (id) resolved to db name or cv name.
-      foreach($active_genus as $genus) {
-        // Fetch genus trait, method, unit, db and ontology configuration values.
-        $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
-
-        // Resolve each configuration entry to matching cv or db id number.
-        foreach($genus_config as $config => $value) {
-          if ($value > 0) {
-            // Ontology might be set to 0 - as it is optional in the config page.
-            // Map only values that have been set.
-
-            if ($config == 'database') {
-              // DB configuration. 
-              $rec = chado_get_db(['db_id' => $value]);
-            }
-            else {
-              // CV configuration.
-              $rec = chado_get_cv(['cv_id' => $value]);
-            }
-
-            if ($rec) {
-              $this->config[ $genus ][ $config ] = ['id' => $value, 'name' => $rec->name];
-            }
-          }
-        }
-      }
-    }
-
     // Terms configurations.
     // Terms focused on adding traits, required by this service.
     // NOTE: method to trait and unit to method both point to the
@@ -109,7 +76,51 @@ class TripalCultivatePhenotypesTraitsService {
       $container->get('tripal_chado.database'),
       $container->get('tripal.logger')
     );
-  }  
+  }
+  
+  /**
+   * Set the genus configuration values to which all
+   * methods will use to restrict any trait data operations.
+   * 
+   * @param $genus
+   *   String, a specific genus to reference in genus ontology configurations.
+   * 
+   * @return void
+   */
+  public function setTraitGenus($genus) {
+    // Fetch all configured genus (active genus).
+    $active_genus = $this->service_genus_ontology->getConfiguredGenusList(); 
+
+    if ($active_genus && in_array($genus, $active_genus)) {
+      $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
+      
+      // Resolve each configuration entry id number to names.
+      $sql = "SELECT name FROM {1:%s} WHERE %s = :id LIMIT 1";
+      
+      foreach($genus_config as $config => $value) {
+        if ($value > 0) {
+          // Ontology might be set to 0 - as it is optional in the config page.
+          // Reference only values that have been set.
+          if ($config == 'database') {
+            // DB configuration.
+            $sql = sprintf($sql, 'db', 'db_id');
+          }
+          else {
+            // CV configuration.
+            // Configurations: traits, method, unit and crop_ontology.
+            $sql = sprintf($sql, 'cv', 'cv_id');
+          }
+          
+          $name = $this->chado->query($sql, [':id' => $value])
+            ->fetchField();
+
+          if ($name) {
+            $this->config[ $config ] = ['id' => $value, 'name' => $name];
+          }
+        }
+      }
+    }  
+  }
   
   /**
    * Create/Insert phenotypic trait.
@@ -124,8 +135,6 @@ class TripalCultivatePhenotypesTraitsService {
    *     (e.g. measured 5 plants from the plot and then averaged them.)
    *   - Unit: the full word describing the unit used in the method (e.g. centimeters)
    *   - Type: Quantitative or Qualitative.
-   * @param string $genus
-   *   Genus: the organism genus the trait is for (e.g. Lens).
    * @param object $schema
    *   Tripal DBX Chado Connection object
    *   
@@ -139,9 +148,9 @@ class TripalCultivatePhenotypesTraitsService {
    *   An array with the following keys where each value is the id of new cvterm:
    *   trait, method, unit.
    */
-  public function insertTrait($trait, $genus, $schema = NULL) {
+  public function insertTrait($trait, $schema = NULL) {
     // Fetch configuration settings of the genus.
-    $genus_config = $this->config[ $genus ];
+    $genus_config = $this->config;
     
     if (!$genus_config) {
       return 0;
