@@ -149,7 +149,7 @@ class TripalCultivatePhenotypesTraitsService {
    *   trait, method, unit.
    */
   public function insertTrait($trait, $schema = NULL) {
-    // Fetch configuration settings of the genus.
+    // Configuration settings of the genus.
     $genus_config = $this->config;
     
     if (!$genus_config) {
@@ -273,5 +273,44 @@ class TripalCultivatePhenotypesTraitsService {
     else {
       return 0;
     }
+  }
+
+  /**
+   * Get trait.
+   * 
+   * @param array $trait
+   *   Key: 
+   *     id - get trait by id number (cvterm_id) or
+   *     name - get trait by name (cvterm.name).
+   * 
+   * @return object
+   *   Matching record/line in cvterm table. 
+   */
+  public function getTrait($trait) {
+    // Configuration settings of the genus.
+    $genus_config = $this->config;
+
+    if (!isset($genus_config['trait']['id'])) {
+      // Genus is not configured.
+      return 0;
+    }
+    
+    $sql = "SELECT cvterm.* FROM {1:cvterm} LEFT JOIN {1:cv} USING (cv_id) 
+      WHERE cvterm.%s = :value AND cv.cv_id = :id";
+    
+    $field = isset($trait['id']) ? 'cvterm_id' : 'name';
+    $sql = sprintf($sql, $field);
+
+    // Query values.
+    $args = [
+      ':value' => $trait['id'] ?? $trait['name'],
+      ':id' => $genus_config['trait']['id']
+    ];
+    
+    // Query.
+    $trait = $this->chado->query($sql, $args)
+      ->fetchObject();
+    
+    return $trait ?? 0;
   }
 }

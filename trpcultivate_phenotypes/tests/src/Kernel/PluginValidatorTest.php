@@ -492,6 +492,28 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
   /**
    * Template.
+   * Test Phenotypes-Share Values Plugin Validator.
+   */
+  public function testShareImportValuePluginValidator() {
+    $scope = 'PHENOSHARE IMPORT VALUES';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
+
+     // PASS:
+     $status = 'pass';
+
+
+     // FAIL:
+     $status = 'fail';
+
+
+     // TODO:
+     $status = 'todo';
+  }
+
+  /**
+   * Template.
    * Test SCOPE Plugin Validator.
    *//*
   public function testScopePluginValidator() {

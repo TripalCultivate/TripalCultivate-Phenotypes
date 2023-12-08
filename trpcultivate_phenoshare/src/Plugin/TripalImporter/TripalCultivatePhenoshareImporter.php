@@ -57,9 +57,16 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
 
   // Headers required by this importer.
   private $headers = [
-    'Header 1' => 'Header 1 Description',
-    'Header 2' => 'Header 2 Description',
-    'Header 3' => 'Header 3 Description',
+    'Trait Name' => 'The full name of the trait as you would like it to appear on a trait page. This should not be abbreviated (e.g. Days till one open flower).',
+    'Method Name' => 'A short (<4 words) name describing the method. This should uniquely identify the method while being very succinct (e.g. 10% Plot at R1).',
+    'Unit' => 'The unit the trait was measured with. In the case of a scale this column should defined the scale. (e.g. days)',
+    'Germplasm Accession' => 'The stock.uniquename for the germplasm whose phenotype was measured. (e.g. ID:1234)',
+    'Germplasm Name' => 'The stock.name for the germplasm whose phenotype was measured. (e.g. Variety ABC)',
+    'Year' => 'The 4-digit year in which the measurement was taken. (e.g. 2020)',
+    'Location' => 'The full name of the location either using “location name, country” or GPS coordinates (e.g. Saskatoon, Canada)',
+    'Replicate' => 'The number for the replicate the current measurement is in. (e.g. 3)',
+    'Value' => 'The measured phenotypic value. (e.g. 34)',
+    'Data Collector' => 'The name of the person or organization which measured the phenotype.',
   ];
   
   // Service: Make the following services available to all stages.
