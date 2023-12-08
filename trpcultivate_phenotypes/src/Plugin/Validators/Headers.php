@@ -78,6 +78,7 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
     // Headers:
     //   - Header line is not empty.
     //   - No missing headers.
+    $file_column_headers = [];
 
     // Open file and read the first line, the column headers line.
     $file = File::load($this->file_id);
