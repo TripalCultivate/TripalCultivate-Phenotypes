@@ -9,6 +9,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\file\Entity\File;
 
  /**
   * Test Tripal Cultivate Phenotypes Validator Plugin.
@@ -45,11 +46,18 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     'headers' => [],
     'skip' => 0
   ];
+
+  /**
+   * Test file ids.
+   */
+  private $test_files;
   
   /**
    * Modules to enable.
    */
   protected static $modules = [
+    'file',
+    'user',
     'tripal',
     'tripal_chado',
     'trpcultivate_phenotypes'
@@ -124,6 +132,73 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+  
+    // Test files.
+
+    // File schema for FILE validator.
+    $this->installEntitySchema('file');
+
+    // Create a test file.
+    $test_file  = 'test_data_file';
+    $dir_public = 'public://';
+
+    // Prepare test file for the following extensions.
+    // Each extension is set to file id 0 until created.
+    $create_files = [
+      // A valid file type, default type expected by the importer.
+      'file-1' => [
+        'ext' => 'tsv', 
+        'mime' => 'text/tab-separated-values',
+        'content' => 'Header 1  Header 2  Header 3'
+      ],
+      // A valid file type, an empty file.
+      'file-2' => [
+        'ext' => 'tsv',
+        'mime' => 'text/tab-separated-values',
+        'content' => ''
+      ],
+      // An alternative file type.
+      'file-3' => [
+        'ext' => 'txt',
+        'mime' => 'text/plain',
+        'content' => 'Header 4  Header  5 HEADER 6'
+      ],
+      // Not valid file
+      'file-4' => [
+        'ext' => 'png',
+        'mime' => 'image/png',
+        'content' => ''
+      ],
+      // Pretend tsv file.
+      'file-5' => [
+        'ext' => 'tsv',
+        'mime' => 'application/pdf',
+        'content' => ''
+      ],
+    ];
+
+    foreach($create_files as $id => $prop) {
+      $filename = $test_file . '.' . $prop['ext'];
+
+      $file = File::create([
+        'filename' => $filename,
+        'filemime' => $prop['mime'],
+        'uri' => $dir_public . $filename,
+        'status' => 0,
+      ]);
+
+      $file->save();
+      // Save id created.
+      $create_files[ $id ]['ID'] = $file->id();
+
+      // Write something on file with content key set to a string.
+      if (!empty($prop['content'])) {      
+        $fileuri = $file->getFileUri();
+        file_put_contents($fileuri, $prop['content']);
+      }
+    }
+
+    $this->test_files =  $create_files;
   }
   
   /**
@@ -242,6 +317,62 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $status = 'todo';
 
     // Test skip flag to skip this test - set to upcoming validation step.
+    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+  }
+
+  /**
+   * Test Data file Plugin Validator.
+   */
+  public function testDataFilePluginValidator() {
+    $scope = 'FILE';
+    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
+    $instance = $this->plugin_manager->createInstance($validator);
+    $assets = $this->assets;
+
+    // PASS:
+    $status = 'pass';
+
+    // File is tsv, not empty and can be read.
+    $file_id = $this->test_files['file-1']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // File is txt (alternative file type), not empty and can be read.
+    $file_id = $this->test_files['file-3']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
+    // FAIL:
+    $status = 'fail';
+
+    // File is tsv, can be read but is an empty file.
+    // Could not test empty file, file size is still greater than 0.
+    $file_id = $this->test_files['file-2']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    // $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // File is pdf but pretending to be tsv.
+    $file_id = $this->test_files['file-5']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Not a valid file. Image/PNG.
+    $file_id = $this->test_files['file-4']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+
+    // TODO:
+    $status = 'todo';
+
     $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
