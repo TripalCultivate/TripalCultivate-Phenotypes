@@ -459,11 +459,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
         $project = $form_state_values['project'];
         $genus = $form_state_values['genus'];
         $file = $form_state_values['file_upload'];
-        // @TODO: load headers in validators that require reference to the headers.
-        $headers = [];
+        $headers = array_keys($this->headers);
 
         if ($stage == 1) {
-          $scopes = ['PROJECT', 'GENUS', 'FILE'];
+          $scopes = ['PROJECT', 'GENUS', 'FILE', 'HEADERS'];
 
           // Array to hold all validation result for each level.
           // Each result is keyed by the scope.
