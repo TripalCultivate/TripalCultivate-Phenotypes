@@ -313,4 +313,100 @@ class TripalCultivatePhenotypesTraitsService {
     
     return $trait ?? 0;
   }
+
+  /**
+   * Get trait method.
+   * 
+   * @param array $trait
+   *   Key: 
+   *     id - get method by trait id number (cvterm_id) or
+   *     name - get method by trait name (cvterm.name).
+   * 
+   * @return object
+   *   Matching record/line in cvterm table (method). 
+   */
+  public function getTraitMethod($trait) {
+    // Configuration settings of the genus.
+    $genus_config = $this->config;
+
+    if (!isset($genus_config['method']['id']) && $this->terms['method_to_trait_relationship_type'] <= 0) {
+      // Not configured genus and term.
+      return 0;
+    }
+    
+    $methods = [];
+    $trait = $this->getTrait($trait);
+
+    if ($trait) {
+      // Get the method.
+      $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
+      
+      // Query values.
+      $args = [
+        ':s_id' => (int) $trait->cvterm_id,
+        ':t_id' => $this->terms['method_to_trait_relationship_type']
+      ];
+
+      // Query method/s
+      $method_ids = $this->chado->query($sql, $args);
+      $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id AND cv_id = :c_id LIMIT 1";
+
+      foreach($method_ids as $method_id) {
+        // Resolve the method id.
+        $method = $this->chado->query($sql, [':id' => $method_id->id, ':c_id' => $genus_config['method']['id']])
+          ->fetchObject();
+        
+        if ($method) {
+          $methods[] = $method;
+        }
+      }
+    }
+
+    return count($methods) > 0 ? $methods : 0;
+  }
+
+  /**
+   * Get trait method unit and unit data type.
+   * 
+   * @param array $method_id
+   *   Method id number (method cvterm id).
+   * 
+   * @return object
+   *   Matching record/line in cvterm table (unit) and
+   *   unit data type.  
+   */
+  public function getMethodUnit($method_id) {
+    // Configuration settings of the genus.
+    $genus_config = $this->config;
+
+    if (!isset($genus_config['unit']['id']) && $this->terms['additional_type'] <= 0 && 
+      $this->terms['unit_to_method_relationship_type'] <= 0) {
+      
+      // Not configured genus and term.
+      return 0;
+    }
+    
+    $unit = 0;
+
+    // Get unit.
+    $sql = "SELECT object_id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
+
+    // Query values.
+    $args = [
+      ':s_id' => (int) $method_id,
+      ':t_id' => $this->terms['unit_to_method_relationship_type']
+    ];
+    
+    // Query unit.
+    $unit_id = $this->chado->query($sql, $args)
+      ->fetchField();
+
+    if ($unit_id) {
+      $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id AND cv_id = :c_id LIMIT 1";
+      $unit = $this->chado->query($sql, [':id' => $unit_id, ':c_id' => $genus_config['unit']['id']])
+        ->fetchObject();
+    }
+    
+    return $unit;
+  }
 }

@@ -60,13 +60,20 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
    */
   public function validate() {
     // Validate ...
+    
+    // Keys to indicate an empty value, data type mismatch
+    // and unrecognized trait, method, unit and/or germplasm.
+    $empty = '#EMPTY_VALUE';
+    $mismatch = '#TYPE_MISMATCH';
+    $unrecognized = '#UNRECOGNIZED';
+
     $validator_status = [
       'title' => 'All columns have values and value matched the column data type',
       'status' => 'pass',
       'details' => [
-        '#EMPTY_VALUE'  =>  ['details' => 'Empty values'],
-        '#TYPE_MISMATCH' => ['details' => 'Unexpected data type'],
-        '#UNRECOGNIZED' =>  ['details' => 'Unrecognized Trait, Unit, Method or Germplasm'],
+        $empty   =>  ['details' => 'Empty values'],
+        $mismatch  =>  ['details' => 'Unexpected data type'],
+        $unrecognized => ['details' => 'Unrecognized Trait, Unit, Method or Germplasm'],
       ],
     ];
 
@@ -114,30 +121,51 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
 
         // Sanitize every data in rows and columns.
         $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-               
+        // Quick access of data values by column header.
+        $header_keys = array_flip($this->column_headers);
+
         foreach($data as $i => $value) {
+          // Reference the trait name.
+          $trait_name = $data[ $header_keys['Trait Name'] ];
+          // Reference the method name.
+          $method_name = $data[ $header_keys['Method Name'] ];
           
-          
-          if (empty($value) && isset($this->column_headers[ $i ])) {
-            // EMPTY VALUES.
-            $failed_rows[ $line_no ][] = $this->column_headers[ $i ]; 
-          }
-          else {
-            if ($this->column_headers[ $i ] == 'Trait Name') {
-              // Check if header is trait - trait exits
-              $trait_exists = $this->plugin_helper->validatorTraitExists($value);
-              if (!$trait_exists) {
-                $failed_rows[ $line_no ][] = $this->column_headers[ $i ]; 
+          if (isset($this->column_headers[ $i ])) {
+            // Current header to check.
+            $current_header = $this->column_headers[ $i ];
+            
+            // Validate:
+            if (empty($value)) {
+              // Empty cell.
+              $failed_rows[ $empty ][ $line_no ][] = $current_header;
+            }
+            else {
+              // Has a value, validate if data entry exists.
+              
+              if ($current_header == 'Trait Name') {
+                // Check if header is trait - trait exits.
+                $trait_exists = $this->plugin_helper->validatorTraitExists($value);
+                if (!$trait_exists) {
+                  $failed_rows[ $unrecognized ]['TRAIT'][ $line_no ][] = $current_header; 
+                }
+              }
+  
+              if ($current_header == 'Method Name') {
+                // Check if header is method name - method name exits.
+                $method_exists = $this->plugin_helper->validatorMethodNameExists($trait_name, $value);
+                if (!$method_exists) {
+                  $failed_rows[ $unrecognized ]['METHOD'][ $line_no ][] = $current_header; 
+                }
+              }
+  
+              if ($current_header == 'Unt') {
+                // Check if header is unit - method unit exits.
+                $unit_exists = $this->plugin_helper->validatorUnitNameExists($trait_name, $method_name, $value);
+                if (!$unit_exists) {
+                  $failed_rows[ $unrecognized ]['UNIT'][ $line_no ][] = $current_header; 
+                }
               }
             }
-
-
-            // Check if header is method - method exits
-            // Check if header is unit - unit exits
-
-            // Check if header is year - must be four digit and no future year
-            // Check if header is replicate - integer
-            // Check if header is value - check the data type for the unit and compare.
           }
         }
 
@@ -152,17 +180,12 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
 
     // Array to hold all failed line.
     if (count($failed_rows) > 0) {
-      // Construct failed lines to say: line number - list of headers that has empty value.
-      $line = 'Empty values found in the following line number and column header: ';
-      foreach($failed_rows as $line_no => $headers) {
-        $line .= '@ line #' . $line_no . ' Column(s): ' . implode(', ', $headers) . ' ';
-      }
 
       // Report validation result.
       $validator_status = [
         'title' => 'Column Headers have Values',
         'status' => 'fail',
-        'details' => $line
+        'details' => ''
       ];  
     }
 

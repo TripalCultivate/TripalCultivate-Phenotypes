@@ -43,7 +43,18 @@ class PluginValuesValidatorTest extends ChadoTestKernelBase {
     'project' => '',
     'genus' => '',
     'file' => 0,
-    'headers' => ['Header 1', 'Header 2', 'Header 3'],
+    'headers' => [
+      'Trait Name', 
+      'Method Name', 
+      'Unit',
+      'Germplasm Accession',
+      'Germplasm Name',
+      'Year',
+      'Location',
+      'Replicate',
+      'Value',
+      'Data Collector'
+    ],
     'skip' => 0
   ];
 
@@ -152,36 +163,12 @@ class PluginValuesValidatorTest extends ChadoTestKernelBase {
       'file-1' => [
         'ext' => 'tsv', 
         'mime' => 'text/tab-separated-values',
-        'content' => 'Header 1  Header 2  Header 3'
-      ],
-      // A valid file type, an empty file.
-      'file-2' => [
-        'ext' => 'tsv',
-        'mime' => 'text/tab-separated-values',
-        'content' => ''
+        'content' => $column_headers
       ],
       // An alternative file type.
       'file-3' => [
         'ext' => 'txt',
         'mime' => 'text/plain',
-        'content' => 'Header 4  Header  5 HEADER 6'
-      ],
-      // Not valid file
-      'file-4' => [
-        'ext' => 'png',
-        'mime' => 'image/png',
-        'content' => ''
-      ],
-      // Pretend tsv file.
-      'file-5' => [
-        'ext' => 'tsv',
-        'mime' => 'application/pdf',
-        'content' => ''
-      ],
-      // Test file with the correct headers.
-      'file-6' => [
-        'ext' => 'tsv',
-        'mime' => 'text/tab-separated-values',
         'content' => $column_headers
       ],
     ];
@@ -239,16 +226,17 @@ class PluginValuesValidatorTest extends ChadoTestKernelBase {
     $instance = $this->plugin_manager->createInstance($validator);
     $assets = $this->assets;
 
-     // PASS:
-     $status = 'pass';
+
+    // PASS:
+    $status = 'pass';
 
 
-     // FAIL:
-     $status = 'fail';
+    // FAIL:
+    $status = 'fail';
 
 
-     // TODO:
-     $status = 'todo';
+    // TODO:
+    $status = 'todo';
   }
 
   /**
