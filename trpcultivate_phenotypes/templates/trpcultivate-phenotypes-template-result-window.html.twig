@@ -17,7 +17,20 @@
   <summary>Validation Result</summary>
   <ul>
     {% for level,result in data.validation_result %}
-      <li class="tcp-validate-{{ result.status }}" title="{{ result.status }}">{{ result.title }} <p>{{ result.details }}</p></li>
+      <li class="tcp-validate-{{ result.status }}" title="{{ result.status }}">
+        {{ result.title }} 
+
+        <p>
+        {% if result.details is iterable %}
+          Error(s) found in the following line number and column header. <br />
+          {% for details in result.details %}
+            &bull; {{ details }} <br />
+          {% endfor %}
+        {% else %}
+          {{ result.details }}
+        {% endif %}
+        </p>
+      </li>
     {% endfor %}
   </ul>
 </details>
