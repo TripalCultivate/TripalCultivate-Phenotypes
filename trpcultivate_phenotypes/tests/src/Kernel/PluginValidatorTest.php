@@ -390,7 +390,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   /**
    * Test Headers Plugin Validator.
    */
-  public function testScopePluginValidator() {
+  public function testColumnHeaderPluginValidator() {
     $scope = 'HEADERS';
     $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
     $instance = $this->plugin_manager->createInstance($validator);
