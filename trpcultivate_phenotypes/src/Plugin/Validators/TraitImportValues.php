@@ -52,22 +52,6 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
    *   NOTE: keep track of the line no to point user exactly which line failed.
    */
   public function validate() {
-    // Keys to indicate and EMPTY value and DUPLICATE trait name in the same genus.
-    $error_types = [
-      'empty' => [
-        'key' => '#EMPTY', 
-        'info' => 'Empty values',
-      ],
-      'duplicate' => [
-        'key' => '#DUPLICATE',
-        'info' => 'Duplicate traits',
-      ],
-      'unexpected' => [
-        'key' => '#UNEXPECTED',
-        'info' => 'Unexpected Type (Qualitative or Quantitative only)',
-      ] 
-    ];
-
     // Validate ...
     $validator_status = [
       'title' => 'Column Headers have Values',
@@ -88,6 +72,21 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
     //   - Column type value is either Quantitative or Qualitative.
     //   - No duplicate trait name + method short name and unit in the same Genus (data file).
     
+    $error_types = [
+      'empty' => [
+        'key' => '#EMPTY', 
+        'info' => 'Empty values',
+      ],
+      'duplicate' => [
+        'key' => '#DUPLICATE',
+        'info' => 'Duplicate traits (Trait Name + Method Short Name + Unit)',
+      ],
+      'unexpected' => [
+        'key' => '#UNEXPECTED',
+        'info' => 'Unexpected Type (Qualitative or Quantitative only)',
+      ] 
+    ];
+
     // Load file object.
     $file = File::load($this->file_id);
     // Open and read file in this uri.
@@ -149,12 +148,10 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
         // Trait Name + Method Short Name and Unit.
         if ($unique_cols) {
           $trait_count[ $unique_cols ][] = $line_no;
-        }
 
-        if (count($trait_count[ $unique_cols ]) > 1) {
-          // Reference all duplicates.
-          foreach($trait_count[ $unique_cols ] as $duplicate_lines) {
-            $failed_rows[ $error_types['duplicate']['key'] ][ $duplicate_lines ][] = '';
+          if (count($trait_count[ $unique_cols ]) > 1) {
+            // Reference all duplicates.
+            $failed_rows[ $error_types['duplicate']['key'] ][ $unique_cols ] = $trait_count[ $unique_cols ];
           }
         }
 
@@ -172,14 +169,11 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
               
               if (!in_array($type, ['qualitative', 'quantitative'])) {
                 // Unexpected value in Type column.
-                // No need to track the column header as it is the Type column.
-                $failed_rows[ $error_types['unexpected']['key'] ][ $line_no ][] = '';
+                $failed_rows[ $error_types['unexpected']['key'] ]['Trait'][] = $line_no;
               }
             }
           }
         }
-
-
         
         // Reset data.
         unset($data);
@@ -214,8 +208,17 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
           $line[ $error_types[ $type ]['key'] ] = $error['info'];
 
           // Error line number and column header.
-          foreach($failed_rows[ $error_types[ $type ]['key'] ] as $line_no => $header) {
-            // @TODO: Construct line message.
+          if ($type == 'empty') {
+            foreach($failed_rows[ $error_types[ $type ]['key'] ] as $line_no => $header) {
+              $str_headers = implode(', ', $header);
+              $line[ $error_types[ $type ]['key'] ] .= ' @ line #' . $line_no . ' Column(s): ' . $str_headers;
+            }
+          }
+          else {
+            foreach($failed_rows[ $error_types[ $type ]['key'] ] as $line_no) {
+              $str_lines = implode(', ', $line_no);
+              $line[ $error_types[ $type ]['key'] ] .= ' @ line #' . $str_lines;
+            }
           }
         }
       }

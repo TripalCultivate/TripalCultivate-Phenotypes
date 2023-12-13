@@ -457,14 +457,34 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $file_id = $this->test_files['file-6']['ID'];
     $file = File::load($file_id);
     $file_uri = $file->getFileUri();
-    $test_data = implode("\t", $assets['headers']) . "\n" . "Value Header 1 Value Header 2  Value Header 3";
+    
+    // Trait importer required column headers.
+    $assets_header = [
+      'Trait Name',
+      'Trait Description',
+      'Method Short Name',
+      'Collection Method',
+      'Unit',
+      'Type'
+    ];
+
+    $values = [
+      'Trait 1',
+      '"Trait 1 Description"',
+      'method-1',
+      '"Pull from the ground"',  
+      'cm',
+      'Quantitative'
+    ];
+
+    $test_data = implode("\t", $assets_header) . "\n" . implode("\t", $values);
     file_put_contents($file_uri, $test_data);
 
     // PASS:
     $status = 'pass';
 
     // All columns present, all columns have value and headers match the header array.
-    $instance->loadAssets(0, $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $instance->loadAssets(0, $assets['genus'], $file_id, $assets_header, $assets['skip']);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
 
@@ -472,11 +492,54 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     // FAIL:
     $status = 'fail';
 
-    // Header 2 is empty.
-    $test_data = implode("\t", $assets['headers']) . "\n" . implode("\t", ['Header 1 Value', '', 'Header 3 Value']);
+    // Empty column.
+    $values = [
+      'Trait 1',
+      '',
+      '',  
+      '"Trait 1 First Method"',
+      '',
+      'Quantitative'
+    ];
+
+    $test_data = implode("\t", $assets_header) . "\n" . implode("\t", $values);
     file_put_contents($file_uri, $test_data);
 
-    $instance->loadAssets(0, $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $instance->loadAssets(0, $assets['genus'], $file_id, $assets_header, $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Unexpected Type value column.
+    $values = [
+      'Trait 1',
+      '"Trait 1 Description"',
+      'method-1',
+      '"Pull from the ground"',  
+      'cm',
+      'Collective' // Quantitative or Qualitative only.
+    ];
+
+    $test_data = implode("\t", $assets_header) . "\n" . implode("\t", $values);
+    file_put_contents($file_uri, $test_data);
+
+    $instance->loadAssets(0, $assets['genus'], $file_id, $assets_header, $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Duplicate trait (Trait Name + Method Short Name + Unit).
+    $values = [
+      'Trait 1',
+      '"Trait 1 Description"',
+      'method-1',
+      '"Pull from the ground"',  
+      'cm',
+      'Qualitative'
+    ];
+
+    $test_data = implode("\t", $assets_header) . "\n" . implode("\t", $values) . "\n" . implode("\t", $values);
+    file_put_contents($file_uri, $test_data);
+
+    $instance->loadAssets(0, $assets['genus'], $file_id, $assets_header, $assets['skip']);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
 
