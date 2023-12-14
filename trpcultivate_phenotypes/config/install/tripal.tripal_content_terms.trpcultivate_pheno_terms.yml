@@ -1,0 +1,32 @@
+id: 'trpcultivate_pheno_terms'
+label: 'TripalCultivate Terms'
+description: 'Default terms used by the TripalCultivate Phenotype collection of modules.'
+vocabularies:
+    -   name: 'PECO'
+        label: 'Plant Experimental Conditions Ontology'
+        url: 'https://agroportal.lirmm.fr/ontologies/PECO'
+        idSpaces:
+            -   name: 'PECO'
+                description: 'Plant Experimental Conditions Ontology'
+                urlPrefix: 'http://purl.obolibrary.org/obo/PECO_{accession}'
+        terms:
+            -   id: 'PECO::0007256'
+                name: 'field study'
+                description: 'The treatment where the plants were grown under field conditions. This may involve supplemental treatments in addition to any naturally occurring conditions.'
+            -   id: 'PECO::0007248'
+                name: 'greenhouse study'
+                description: 'The treatment where the plants were grown under greenhouse conditions. This may involve supplemental treatments in addition to any standard conditions.'
+            -   id: 'PECO::0007269'
+                name: 'growth chamber study'
+                description: 'The treatment involving study type in which plants were grown in growth chambers.'
+    -   name: 'SIO'
+        label: 'Semanticscience Integrated Ontology'
+        url: 'https://www.ebi.ac.uk/ols4/ontologies/sio'
+        idSpaces:
+            -   name: 'SIO'
+                description: 'Semanticscience Integrated Ontology'
+                urlPrefix: 'http://semanticscience.org/resource/SIO_{accession}'
+        terms:
+            -   id: 'SIO::001007'
+                name: 'assay'
+                description: 'An assay is an investigative (analytic) procedure in laboratory medicine, pharmacology, environmental biology, and molecular biology for qualitatively assessing or quantitatively measuring the presence or amount or the functional activity of a target entity (the analyte) which can be a drug or biochemical substance or a cell in an organism or organic sample.'

@@ -1,0 +1,36 @@
+id: 'phenomic_experiments'
+label: 'Phenomic Experiment and Sample Content Types (Chado)'
+description: 'Provide pages describing phenomic experiments (e.g. field, biochemical and survey) and constituent samples.'
+content_types:
+
+    -   label: Field Phenomic Experiment
+        term: PECO:0007256
+        help_text: Use to describe experiments collecting phenomic data that are carried out in organized trials in field sites.
+        category: Phenomic Experiments
+        id: field_experiment
+        title_format: "[experiment_name]"
+        url_format: "phenomic-experiment/[TripalEntity__entity_id]"
+
+    -   label: Greenhouse Phenomic Experiment
+        term: PECO:0007248
+        help_text:
+        category: Phenomic Experiments
+        id: greenhouse_experiment
+        title_format: "[experiment_name]"
+        url_format: "phenomic-experiment/[TripalEntity__entity_id]"
+
+    -   label: Growth Chamber Phenomic Experiment
+        term: PECO:0007269
+        help_text:
+        category: Phenomic Experiments
+        id: growthchamber_experiment
+        title_format: "[experiment_name]"
+        url_format: "phenomic-experiment/[TripalEntity__entity_id]"
+
+    -   label: Biochemical Assay
+        term: SIO:0007256
+        help_text: Use to describe experiments collecting phenomic measuremets by assaying biological materials using various protocols and/or devices.
+        category: Phenomic Experiments
+        id: biochem_experiment
+        title_format: "[experiment_name]"
+        url_format: "phenomic-experiment/[TripalEntity__entity_id]"
