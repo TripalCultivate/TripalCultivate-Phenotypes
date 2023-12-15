@@ -183,13 +183,6 @@ class TripalCultivatePhenotypesTraitsService {
       $id = $this->chado->query($sql, [':value' => $value, ':id' => $genus_config[ $type ]['id']])
         ->fetchField();
       
-      // Found a record. If trait is found, trigger an error as same trait 
-      // is already in the genus, otherwise reuse information.
-         
-      if ($id && $type == 'trait') {
-        $this->logger->error('Error. Trait @key already exists in the Genus.', ['@key' => $trait['Trait Name']]);
-      }
-      
       if ($id) {
         $arr_trait[ $type ]['id'] = $id;
       }

@@ -50,7 +50,7 @@ class ValuesValidatorPluginHelper {
    *   True, trait exists in the genus - cv configuration for traits. False otherwise.
    */
   public function validatorTraitExists($trait) {
-    $trait = $service_traits->getTrait(['name' => $trait]);
+    $trait = $this->service_traits->getTrait(['name' => $trait]);
 
     return ($trait) ? TRUE : FALSE;
   }
@@ -68,12 +68,14 @@ class ValuesValidatorPluginHelper {
    */
   public function validatorMethodNameExists($trait, $method_name) {
     $found = FALSE;
-    $trait_method = $service_traits->getTraitMethod(['name' => $trait]);
-
-    foreach($trait_method as $method) {
-      if ($method->name == $method_name) {
-        $found = TRUE;
-        break;
+    $trait_method = $this->service_traits->getTraitMethod(['name' => $trait]);
+    
+    if ($trait_method) {
+      foreach($trait_method as $method) {
+        if ($method->name == $method_name) {
+          $found = TRUE;
+          break;
+        }
       }
     }
 
@@ -95,7 +97,7 @@ class ValuesValidatorPluginHelper {
    */
   public function validatorUnitNameExists($trait, $method_name, $unit_name) {
     $method_id = 0;
-    $trait_method = $service_traits->getTraitMethod(['name' => $trait]);
+    $trait_method = $this->service_traits->getTraitMethod(['name' => $trait]);
 
     foreach($trait_method as $method) {
       if ($method->name == $method_name) {
@@ -104,7 +106,7 @@ class ValuesValidatorPluginHelper {
       }
     }
 
-    $trait_method_unit = $service_traits->getMethodUnit($method_id);
+    $trait_method_unit = $this->service_traits->getMethodUnit($method_id);
     return ($trait_method_unit) ? TRUE : FALSE;
   }
 
