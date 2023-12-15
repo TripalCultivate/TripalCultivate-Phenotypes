@@ -158,7 +158,8 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-2' => [
         'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
-        'content' => ''
+        'content' => '',
+        'filesize' => 0
       ],
       // An alternative file type.
       'file-3' => [
@@ -186,8 +187,14 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ],
     ];
 
+    // To create an actual empty file with 0 file size:
+    // First create the file and write an empty string then
+    // create a file entity off this file.
+    $empty_file = $dir_public . $test_file . 'file-2.' . $create_files['file-2']['ext'];
+    file_put_contents($empty_file, '');
+
     foreach($create_files as $id => $prop) {
-      $filename = $test_file . '.' . $prop['ext'];
+      $filename = $test_file . $id . '.' . $prop['ext'];
 
       $file = File::create([
         'filename' => $filename,
@@ -195,6 +202,12 @@ class PluginValidatorTest extends ChadoTestKernelBase {
         'uri' => $dir_public . $filename,
         'status' => 0,
       ]);
+
+      if (isset($prop['filesize'])) {
+        // This is an empty file and to ensure the size is
+        // as expected of an empty file = 0;
+        $file->setSize(0);
+      }
 
       $file->save();
       // Save id created.
@@ -359,12 +372,23 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     // FAIL:
     $status = 'fail';
 
-    // File is tsv, can be read but is an empty file.
-    // Could not test empty file, file size is still greater than 0.
+    // No file attached - the file field did not return any file id.
+    $file_id = null;
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Failed to load file id because it does not exist.
+    $file_id = 9999;
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // File is tsv, can be read but is an empty file - 0 file size.
     $file_id = $this->test_files['file-2']['ID'];
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
-    // $this->assertEquals($validation[ $scope ]['status'], $status);
+    $this->assertEquals($validation[ $scope ]['status'], $status);
 
     // File is pdf but pretending to be tsv.
     $file_id = $this->test_files['file-5']['ID'];
