@@ -176,7 +176,16 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-5' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        'content' => ''
+        'content' => '%PDF-1.3
+        %âãÏÓ
+        
+        1 0 obj
+        <<
+        /Type /Catalog
+        /Outlines 2 0 R
+        /Pages 3 0 R
+        >>
+        endobj'
       ],
       // Test file with the correct headers.
       'file-6' => [

@@ -84,11 +84,20 @@ class DataFile extends TripalCultivatePhenotypesValidatorBase {
           else {
             // Check if it can be opened and read the contents.
             $file_uri = $file->getFileUri();
-            $handle = fopen($file_uri, 'r');
+            $handle = fopen($file_uri, 'rb');
             
             if (!$handle) {
               $validator_status['status']  = 'fail';
               $validator_status['details'] = 'The file uploaded could not be opened. Please upload a file and try again.';           
+            }
+            else {
+              // Check if file content for PDF signature.
+              $pdf = fread($handle, 4);
+
+              if ($pdf == '%PDF') {
+                $validator_status['status']  = 'fail';
+                $validator_status['details'] = 'The file uploaded does not have the expected file format of TSV or TXT file. Please upload a file and try again.';           
+              }
             }
 
             fclose($handle);
