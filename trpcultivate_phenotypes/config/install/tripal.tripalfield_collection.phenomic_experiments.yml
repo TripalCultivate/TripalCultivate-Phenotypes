@@ -1,0 +1,1504 @@
+id: 'phenomic_experiments'
+label: 'Phenomic Experiment and Sample Content Types (Chado)'
+description: 'Provide pages describing phenomic experiments (e.g. field, biochemical and survey) and constituent samples.'
+fields:
+
+## Field Phenomic Experiment ##
+## Chado Table: project
+## Required Columns: name (varchar 255)
+## Optional columns: description (text)
+## Related: projectprop, project_pub, project_relationship
+##          array_project, nd_experiment_project, project_analysis, project_contact, project_dbxref, project_feature, project_stock
+    -   name: experiment_name
+        content_type: field_experiment
+        label: Name
+        type: chado_string_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: name
+            max_length: 255
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: experiment_description
+        content_type: field_experiment
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: experiment_contact
+        content_type: field_experiment
+        label: Contact
+        type: chado_contact_default
+        description: An individual or organization that serves as a contact for this record.
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_contact
+                linker_fkey_column: contact_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C47954
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 20
+          form:
+            default:
+              region: content
+              weight: 20
+
+    -   name: experiment_analysis
+        content_type: field_experiment
+        label: Analysis
+        type: chado_analysis_default
+        description: Application of analytical methods to existing data of a specific type
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_analysis
+                linker_fkey_column: analysis_id
+        settings:
+            termIdSpace: operation
+            termAccession: "2945"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 25
+          form:
+            default:
+              region: content
+              weight: 25
+
+## Greenhouse Phenomic Experiment ##
+## Chado Table: project
+## Required Columns: name (varchar 255)
+## Optional columns: description (text)
+## Related: projectprop, project_pub, project_relationship
+##          array_project, nd_experiment_project, project_analysis, project_contact, project_dbxref, project_feature, project_stock
+    -   name: experiment_name
+        content_type: greenhouse_experiment
+        label: Name
+        type: chado_string_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: name
+            max_length: 255
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: experiment_description
+        content_type: greenhouse_experiment
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: experiment_contact
+        content_type: greenhouse_experiment
+        label: Contact
+        type: chado_contact_default
+        description: An individual or organization that serves as a contact for this record.
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_contact
+                linker_fkey_column: contact_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C47954
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 20
+          form:
+            default:
+              region: content
+              weight: 20
+
+    -   name: experiment_analysis
+        content_type: greenhouse_experiment
+        label: Analysis
+        type: chado_analysis_default
+        description: Application of analytical methods to existing data of a specific type
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_analysis
+                linker_fkey_column: analysis_id
+        settings:
+            termIdSpace: operation
+            termAccession: "2945"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 25
+          form:
+            default:
+              region: content
+              weight: 25
+
+## Growth Chamber Phenomic Experiment ##
+## Chado Table: project
+## Required Columns: name (varchar 255)
+## Optional columns: description (text)
+## Related: projectprop, project_pub, project_relationship
+##          array_project, nd_experiment_project, project_analysis, project_contact, project_dbxref, project_feature, project_stock
+    -   name: experiment_name
+        content_type: growthchamber_experiment
+        label: Name
+        type: chado_string_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: name
+            max_length: 255
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: experiment_description
+        content_type: growthchamber_experiment
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: experiment_contact
+        content_type: growthchamber_experiment
+        label: Contact
+        type: chado_contact_default
+        description: An individual or organization that serves as a contact for this record.
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_contact
+                linker_fkey_column: contact_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C47954
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 20
+          form:
+            default:
+              region: content
+              weight: 20
+
+    -   name: experiment_analysis
+        content_type: growthchamber_experiment
+        label: Analysis
+        type: chado_analysis_default
+        description: Application of analytical methods to existing data of a specific type
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_analysis
+                linker_fkey_column: analysis_id
+        settings:
+            termIdSpace: operation
+            termAccession: "2945"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 25
+          form:
+            default:
+              region: content
+              weight: 25
+
+## Biochemical Assay ##
+## Chado Table: project
+## Required Columns: name (varchar 255)
+## Optional columns: description (text)
+## Related: projectprop, project_pub, project_relationship
+##          array_project, nd_experiment_project, project_analysis, project_contact, project_dbxref, project_feature, project_stock
+    -   name: experiment_name
+        content_type: biochem_experiment
+        label: Name
+        type: chado_string_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: name
+            max_length: 255
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: experiment_description
+        content_type: biochem_experiment
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: experiment_contact
+        content_type: biochem_experiment
+        label: Contact
+        type: chado_contact_default
+        description: An individual or organization that serves as a contact for this record.
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_contact
+                linker_fkey_column: contact_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C47954
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 20
+          form:
+            default:
+              region: content
+              weight: 20
+
+    -   name: experiment_analysis
+        content_type: biochem_experiment
+        label: Analysis
+        type: chado_analysis_default
+        description: Application of analytical methods to existing data of a specific type
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_analysis
+                linker_fkey_column: analysis_id
+        settings:
+            termIdSpace: operation
+            termAccession: "2945"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 25
+          form:
+            default:
+              region: content
+              weight: 25
+
+## Ecosystem Survey ##
+## Chado Table: project
+## Required Columns: name (varchar 255)
+## Optional columns: description (text)
+## Related: projectprop, project_pub, project_relationship
+##          array_project, nd_experiment_project, project_analysis, project_contact, project_dbxref, project_feature, project_stock
+    -   name: experiment_name
+        content_type: ecosystem_survey
+        label: Name
+        type: chado_string_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: name
+            max_length: 255
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: experiment_description
+        content_type: ecosystem_survey
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: experiment_contact
+        content_type: ecosystem_survey
+        label: Contact
+        type: chado_contact_default
+        description: An individual or organization that serves as a contact for this record.
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_contact
+                linker_fkey_column: contact_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C47954
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 20
+          form:
+            default:
+              region: content
+              weight: 20
+
+    -   name: experiment_analysis
+        content_type: ecosystem_survey
+        label: Analysis
+        type: chado_analysis_default
+        description: Application of analytical methods to existing data of a specific type
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_analysis
+                linker_fkey_column: analysis_id
+        settings:
+            termIdSpace: operation
+            termAccession: "2945"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 25
+          form:
+            default:
+              region: content
+              weight: 25
+
+## General Phenomics Experiment ##
+## Chado Table: project
+## Required Columns: name (varchar 255)
+## Optional columns: description (text)
+## Related: projectprop, project_pub, project_relationship
+##          array_project, nd_experiment_project, project_analysis, project_contact, project_dbxref, project_feature, project_stock
+    -   name: experiment_name
+        content_type: phenomic_experiment
+        label: Name
+        type: chado_string_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: name
+            max_length: 255
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: experiment_description
+        content_type: phenomic_experiment
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: experiment_contact
+        content_type: phenomic_experiment
+        label: Contact
+        type: chado_contact_default
+        description: An individual or organization that serves as a contact for this record.
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_contact
+                linker_fkey_column: contact_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C47954
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 20
+          form:
+            default:
+              region: content
+              weight: 20
+
+    -   name: experiment_analysis
+        content_type: phenomic_experiment
+        label: Analysis
+        type: chado_analysis_default
+        description: Application of analytical methods to existing data of a specific type
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: project
+                linker_table: project_analysis
+                linker_fkey_column: analysis_id
+        settings:
+            termIdSpace: operation
+            termAccession: "2945"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 25
+          form:
+            default:
+              region: content
+              weight: 25
+
+## Plant Environmental Sample ##
+## Chado Table: biomaterial
+## Optional Columns: name (varchar 255), description (text), dbxref_id (int), biosourceprovider_id (int), taxon_id (int)
+## Related: biomaterialprop, biomaterial_dbxref, biomaterial_relationship
+##          array_biomaterial, biomaterial_treatment
+
+    -   name: sample_name
+        content_type: plant_sample
+        label: Name
+        type: chado_text_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: name
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_dbxref_id
+        content_type: plant_sample
+        label: Dbxref ID
+        type: chado_integer_type
+        description: The primary key of the database reference (dbxref) to attach to this study. This field is a placeholder until we develop a more user friendly database reference field.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: dbxref_id
+        settings:
+            termIdSpace: data
+            termAccession: "2091"
+        display:
+          view:
+            default:
+              region: hidden
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: biosourceprovider_contact
+        content_type: plant_sample
+        label: Sample Collector
+        type: chado_contact_default
+        description: The technician or researcher who collected the sample.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                linker_table: biomaterial
+                linker_fkey_column: biosourceprovider_id
+        settings:
+            termIdSpace: CRO
+            termAccession: 0000094
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_organism
+        content_type: plant_sample
+        label: Taxon
+        type: chado_organism_default
+        description: A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: taxon_id
+        settings:
+            termIdSpace: OBI
+            termAccession: "0100026"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_description
+        content_type: plant_sample
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+## Insect Environmental Sample ##
+## Chado Table: biomaterial
+## Optional Columns: name (varchar 255), description (text), dbxref_id (int), biosourceprovider_id (int), taxon_id (int)
+## Related: biomaterialprop, biomaterial_dbxref, biomaterial_relationship
+##          array_biomaterial, biomaterial_treatment
+
+    -   name: sample_name
+        content_type: insect_sample
+        label: Name
+        type: chado_text_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: name
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_dbxref_id
+        content_type: insect_sample
+        label: Dbxref ID
+        type: chado_integer_type
+        description: The primary key of the database reference (dbxref) to attach to this study. This field is a placeholder until we develop a more user friendly database reference field.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: dbxref_id
+        settings:
+            termIdSpace: data
+            termAccession: "2091"
+        display:
+          view:
+            default:
+              region: hidden
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: biosourceprovider_contact
+        content_type: insect_sample
+        label: Sample Collector
+        type: chado_contact_default
+        description: The technician or researcher who collected the sample.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                linker_table: biomaterial
+                linker_fkey_column: biosourceprovider_id
+        settings:
+            termIdSpace: CRO
+            termAccession: 0000094
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_organism
+        content_type: insect_sample
+        label: Taxon
+        type: chado_organism_default
+        description: A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: taxon_id
+        settings:
+            termIdSpace: OBI
+            termAccession: "0100026"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_description
+        content_type: insect_sample
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+## Soil Microbiome Sample ##
+## Chado Table: biomaterial
+## Optional Columns: name (varchar 255), description (text), dbxref_id (int), biosourceprovider_id (int), taxon_id (int)
+## Related: biomaterialprop, biomaterial_dbxref, biomaterial_relationship
+##          array_biomaterial, biomaterial_treatment
+
+    -   name: sample_name
+        content_type: microbiome_sample
+        label: Name
+        type: chado_text_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: name
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_dbxref_id
+        content_type: microbiome_sample
+        label: Dbxref ID
+        type: chado_integer_type
+        description: The primary key of the database reference (dbxref) to attach to this study. This field is a placeholder until we develop a more user friendly database reference field.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: dbxref_id
+        settings:
+            termIdSpace: data
+            termAccession: "2091"
+        display:
+          view:
+            default:
+              region: hidden
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: biosourceprovider_contact
+        content_type: microbiome_sample
+        label: Sample Collector
+        type: chado_contact_default
+        description: The technician or researcher who collected the sample.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                linker_table: biomaterial
+                linker_fkey_column: biosourceprovider_id
+        settings:
+            termIdSpace: CRO
+            termAccession: 0000094
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_organism
+        content_type: microbiome_sample
+        label: Taxon
+        type: chado_organism_default
+        description: A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: taxon_id
+        settings:
+            termIdSpace: OBI
+            termAccession: "0100026"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_description
+        content_type: microbiome_sample
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+## Soil Sample ##
+## Chado Table: biomaterial
+## Optional Columns: name (varchar 255), description (text), dbxref_id (int), biosourceprovider_id (int), taxon_id (int)
+## Related: biomaterialprop, biomaterial_dbxref, biomaterial_relationship
+##          array_biomaterial, biomaterial_treatment
+
+    -   name: sample_name
+        content_type: microbiome_sample
+        label: Name
+        type: chado_text_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: name
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_dbxref_id
+        content_type: microbiome_sample
+        label: Dbxref ID
+        type: chado_integer_type
+        description: The primary key of the database reference (dbxref) to attach to this study. This field is a placeholder until we develop a more user friendly database reference field.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: dbxref_id
+        settings:
+            termIdSpace: data
+            termAccession: "2091"
+        display:
+          view:
+            default:
+              region: hidden
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: biosourceprovider_contact
+        content_type: microbiome_sample
+        label: Sample Collector
+        type: chado_contact_default
+        description: The technician or researcher who collected the sample.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                linker_table: biomaterial
+                linker_fkey_column: biosourceprovider_id
+        settings:
+            termIdSpace: CRO
+            termAccession: 0000094
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_organism
+        content_type: microbiome_sample
+        label: Taxon
+        type: chado_organism_default
+        description: A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: taxon_id
+        settings:
+            termIdSpace: OBI
+            termAccession: "0100026"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_description
+        content_type: microbiome_sample
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+## Sample ##
+## Chado Table: biomaterial
+## Optional Columns: name (varchar 255), description (text), dbxref_id (int), biosourceprovider_id (int), taxon_id (int)
+## Related: biomaterialprop, biomaterial_dbxref, biomaterial_relationship
+##          array_biomaterial, biomaterial_treatment
+
+    -   name: sample_name
+        content_type: general_sample
+        label: Name
+        type: chado_text_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: name
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_dbxref_id
+        content_type: general_sample
+        label: Dbxref ID
+        type: chado_integer_type
+        description: The primary key of the database reference (dbxref) to attach to this study. This field is a placeholder until we develop a more user friendly database reference field.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: dbxref_id
+        settings:
+            termIdSpace: data
+            termAccession: "2091"
+        display:
+          view:
+            default:
+              region: hidden
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: biosourceprovider_contact
+        content_type: general_sample
+        label: Sample Collector
+        type: chado_contact_default
+        description: The technician or researcher who collected the sample.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                linker_table: biomaterial
+                linker_fkey_column: biosourceprovider_id
+        settings:
+            termIdSpace: CRO
+            termAccession: 0000094
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_organism
+        content_type: general_sample
+        label: Taxon
+        type: chado_organism_default
+        description: A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: taxon_id
+        settings:
+            termIdSpace: OBI
+            termAccession: "0100026"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_description
+        content_type: general_sample
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+## Biological Sample ##
+## Chado Table: biomaterial
+## Optional Columns: name (varchar 255), description (text), dbxref_id (int), biosourceprovider_id (int), taxon_id (int)
+## Related: biomaterialprop, biomaterial_dbxref, biomaterial_relationship
+##          array_biomaterial, biomaterial_treatment
+
+    -   name: sample_name
+        content_type: biospecimen
+        label: Name
+        type: chado_text_type
+        description: The name of the item.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: name
+        settings:
+            termIdSpace: schema
+            termAccession: name
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_dbxref_id
+        content_type: biospecimen
+        label: Dbxref ID
+        type: chado_integer_type
+        description: The primary key of the database reference (dbxref) to attach to this study. This field is a placeholder until we develop a more user friendly database reference field.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: dbxref_id
+        settings:
+            termIdSpace: data
+            termAccession: "2091"
+        display:
+          view:
+            default:
+              region: hidden
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15
+
+    -   name: biosourceprovider_contact
+        content_type: biospecimen
+        label: Sample Collector
+        type: chado_contact_default
+        description: The technician or researcher who collected the sample.
+        cardinality: 1
+        required: true
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                linker_table: biomaterial
+                linker_fkey_column: biosourceprovider_id
+        settings:
+            termIdSpace: CRO
+            termAccession: 0000094
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_organism
+        content_type: biospecimen
+        label: Taxon
+        type: chado_organism_default
+        description: A material entity that is an individual living system, such as animal, plant, bacteria or virus, that is capable of replicating or reproducing, growth and maintenance in the right environment. An organism may be unicellular or made up, like humans, of many billions of cells divided into specialized tissues and organs.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: taxon_id
+        settings:
+            termIdSpace: OBI
+            termAccession: "0100026"
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 10
+          form:
+            default:
+              region: content
+              weight: 10
+
+    -   name: sample_description
+        content_type: biospecimen
+        label: Description
+        type: chado_text_type
+        description: A description of the item.
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: biomaterial
+                base_column: description
+        settings:
+            termIdSpace: schema
+            termAccession: description
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 15
+          form:
+            default:
+              region: content
+              weight: 15

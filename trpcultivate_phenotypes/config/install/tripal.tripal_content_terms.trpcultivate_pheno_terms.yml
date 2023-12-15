@@ -80,3 +80,25 @@ vocabularies:
             -   id: NCBITaxon:410658
                 name: 'soil microbiome'
                 description: ''
+    -   name: 'ncit'
+        label: 'NCI Thesaurus OBO Edition'
+        url: 'http://purl.obolibrary.org/obo/ncit.owl'
+        idSpaces:
+            -   name: 'NCIT'
+                description: 'The NCIt is a reference terminology that includes broad coverage of the cancer domain, including cancer related diseases, findings and abnormalities. NCIt OBO Edition releases should be considered experimental.'
+                urlPrefix: 'http://purl.obolibrary.org/obo/{db}_{accession}'
+        terms:
+            -   id: 'NCIT:C70699'
+                name: 'Biospecimen'
+                description: 'Any material sample taken from a biological entity for testing, diagnostic, propagation, treatment or research purposes, including a sample obtained from a living organism or taken from the biological object after halting of all its life functions. Biospecimen can contain one or more components including but not limited to cellular molecules, cells, tissues, organs, body fluids, embryos, and body excretory products.'
+    -   name: 'CRO'
+        label: 'Contributor Role Ontology'
+        url: 'https://github.com/data2health/contributor-role-ontology'
+        idSpaces:
+            -   name: 'CRO'
+                description: 'Contributor Role Ontology'
+                urlPrefix: 'http://purl.obolibrary.org/obo/{db}_{accession}'
+        terms:
+            -   id: 'CRO:0000094'
+                name: 'primary collector role'
+                description: 'In botany, this is the collector listed first for a particular specimen. Each specimen has one primary collector. The primary collector assigns a number to that specimen from his/her own number series.'

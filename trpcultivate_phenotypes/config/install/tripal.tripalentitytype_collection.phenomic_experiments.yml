@@ -90,3 +90,11 @@ content_types:
         id: general_sample
         title_format: "[sample_name]"
         url_format: "samples/[TripalEntity__entity_id]"
+
+    -   label: Biological Sample
+        term: NCIT:C70699
+        help_text: Use for samples with a single, known species that can consist of either the whole or part (e.g. tissue, seed, DNA) of one or more individuals.
+        category: Samples
+        id: biospecimen
+        title_format: "[sample_name]"
+        url_format: "samples/[TripalEntity__entity_id]"
