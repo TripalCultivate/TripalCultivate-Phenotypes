@@ -19,14 +19,64 @@ vocabularies:
             -   id: 'PECO::0007269'
                 name: 'growth chamber study'
                 description: 'The treatment involving study type in which plants were grown in growth chambers.'
+    -   name: 'EDAM'
+        label: 'Bioscientific data analysis ontology'
+        url: 'http://edamontology.org/page'
+        idSpaces:
+            -   name: 'topic'
+                description: 'A category denoting a rather broad domain or field of interest, of study, application, work, data, or technology. Topics have no clearly defined borders between each other.'
+                urlPrefix: "http://edamontology.org/{db}_{accession}"
+        terms:
+            -   id: '	topic:3298'
+                name: 'Phenomics'
+                description: 'Phenomes, or the study of the change in phenotype (the physical and biochemical traits of organisms) in response to genetic and environmental factors.'
+    -   name: 'BLH'
+        label: 'Biodiversity Thesaurus'
+        url: 'https://skosmos.loterre.fr/BLH/en/'
+        idSpaces:
+            -   name: 'BLH-ACTI'
+                description: 'Activity'
+                urlPrefix: "https://skosmos.loterre.fr/BLH/en/page/-{accession}"
+        terms:
+            -   id: 'BLH-ACTI:M0H846B9-S'
+                name: 'biodiversity observation'
+                description: 'An survey which aims to observe and assess the biodiversity of a specific ecosystem.'
     -   name: 'SIO'
-        label: 'Semanticscience Integrated Ontology'
-        url: 'https://www.ebi.ac.uk/ols4/ontologies/sio'
+        label: 'The Semanticscience Integrated Ontology (SIO) provides a simple, integrated ontology of types and relations for rich description of objects, processes and their attributes.'
+        url: 'http://sio.semanticscience.org/'
         idSpaces:
             -   name: 'SIO'
-                description: 'Semanticscience Integrated Ontology'
-                urlPrefix: 'http://semanticscience.org/resource/SIO_{accession}'
+                description: "Semanticscience Integrated Ontology"
+                urlPrefix: "http://semanticscience.org/resource/{db}_{accession}"
         terms:
-            -   id: 'SIO::001007'
-                name: 'assay'
-                description: 'An assay is an investigative (analytic) procedure in laboratory medicine, pharmacology, environmental biology, and molecular biology for qualitatively assessing or quantitatively measuring the presence or amount or the functional activity of a target entity (the analyte) which can be a drug or biochemical substance or a cell in an organism or organic sample.'
+            -   id: 'SIO:001050'
+                name: 'sample'
+                description: 'A sample is a limited quantity of something (e.g. an individual or set of individuals from a population, or a portion of a substance) to be used for testing, analysis, inspection, investigation, demonstration, or trial use.'
+    -   name: 'ENVO'
+        label: 'The Environment Ontology (ENVO) represents knowledge about environments,environmental processes, ecosystems, habitats, and related entities.'
+        url: 'http://environmentontology.org/'
+        idSpaces:
+            -   name: 'ENVO'
+                description: "The Environment Ontology"
+                urlPrefix: "http://purl.obolibrary.org/obo/{db}_{accession}"
+        terms:
+            -   id: 'ENVO:00001998'
+                name: 'soil'
+                description: 'An environmental material which is primarily composed of minerals, varying proportions of sand, silt, and clay, organic material such as humus, interstitial gases, liquids, and a broad range of resident micro- and macroorganisms.'
+    -   name: 'NCBITaxon'
+        label: 'NCBI organismal classification'
+        url: 'https://github.com/obophenotype/ncbitaxon'
+        idSpaces:
+            -   name: 'NCBITaxon'
+                description: "NCBI organismal classification"
+                urlPrefix: "http://purl.obolibrary.org/obo/{db}_{accession}"
+        terms:
+            -   id: NCBITaxon:171925
+                name: 'plant environmental sample'
+                description: ''
+            -   id: NCBITaxon:2588572
+                name: 'Insecta environmental sample'
+                description: ''
+            -   id: NCBITaxon:410658
+                name: 'soil microbiome'
+                description: ''
