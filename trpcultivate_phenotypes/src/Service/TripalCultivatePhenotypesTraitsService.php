@@ -361,7 +361,7 @@ class TripalCultivatePhenotypesTraitsService {
   /**
    * Get trait method unit and unit data type.
    * 
-   * @param array $method_id
+   * @param integer $method_id
    *   Method id number (method cvterm id).
    * 
    * @return object
@@ -372,9 +372,7 @@ class TripalCultivatePhenotypesTraitsService {
     // Configuration settings of the genus.
     $genus_config = $this->config;
 
-    if (!isset($genus_config['unit']['id']) && $this->terms['additional_type'] <= 0 && 
-      $this->terms['unit_to_method_relationship_type'] <= 0) {
-      
+    if (!isset($genus_config['unit']['id']) && $this->terms['unit_to_method_relationship_type'] <= 0) {
       // Not configured genus and term.
       return 0;
     }
@@ -401,5 +399,27 @@ class TripalCultivatePhenotypesTraitsService {
     }
     
     return $unit;
+  }
+
+  /**
+   * Get Trait Method Unit data type.
+   * 
+   * @param integer $unit_id
+   *   Method unit id number (unit cvterm id).
+   * 
+   * @return string
+   *   The data type of the unit, either quantitative or qualitative. False if not set.
+   */
+  public function getMethodUnitDataType($unit_id) {
+    if ($this->terms['additional_type'] <= 0 && !$unit_id) {
+      // Not configured term and no method id provided.
+      return 0;
+    }
+
+    $sql = "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
+    $data_type = $this->chado->query($sql, [':c_id' => $unit_id, ':t_id' => $this->terms['additional_type']])
+      ->fetchField();
+    
+    return $data_type ?? 0;
   }
 }

@@ -86,11 +86,11 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
     $error_types = [
       'empty' => [
         'key' => '#EMPTY', 
-        'info' => 'Empty values',
+        'info' => 'Empty value',
       ],
       'unrecognized' => [
         'key' => '#UNRECOGNIZED ',
-        'info' => 'Unrecognized or value does not exits',
+        'info' => 'Unrecognized value',
       ],
       'unexpected' => [
         'key' => '#UNEXPECTED',
@@ -136,55 +136,95 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
 
         // Sanitize every data in rows and columns.
         $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-
+        
+        // Empty values.
+        // Counter for empty value in a line.
+        $empty_ctr = 0;
         foreach($this->column_headers as $i => $header) {
-          if (!isset($data[ $i ]) || empty($data[ $i ])) {
-            // Empty values.
-            // Track both line number and which column header.
+          if (!isset($data[ $i ]) || $data[ $i ] == '') {
+            $empty_ctr++;
             $failed_rows[ $error_types['empty']['key'] ][ $line_no ][] = $header;
           }
-          else {
-            // Current value of a column .
-            $value = $data[ $i ];
-            // Reference trait name.
-            $trait_name = $data[ $header_key['Trait Name'] ];
-            // Reference trait method name.
-            $method_name = $data[ $header_key['Method Name'] ];
+        }
 
-            // Has value. Identify which header and perform header-specific validation.
-            if ($header == 'Trait Name') {
-              // Check if header is trait - verify trait exits.
-              $trait_exists = $this->plugin_helper->validatorTraitExists($value);
-              if (!$trait_exists) {
-                $failed_rows[ $error_types['unrecognized']['key'] ][ $header ][ $line_no ][] = $header; 
-              }
-            }
+        // Perform block only when there is no empty value in a column
+        // through the use of empty counter variable value.
+        if ($empty_ctr == 0) {
+          // UNRECOGNIZED VALUES VALIDATION:
+          $unrecognized = $error_types['unrecognized']['key'];
 
-            if ($header == 'Method Name') {
-              // Check if header is method name - verify trait method exits.
-              $method_exists = $this->plugin_helper->validatorMethodNameExists($trait_name, $value);
-              if (!$method_exists) {
-                $failed_rows[ $error_types['unrecognized']['key'] ][ $header ][ $line_no ][] = $header; 
-              }
-            }
+          // Trait Name:
+          $col = 'Trait Name';
+          $trait_name = $data[ $header_key[ $col ] ];
+          $trait_exists = $this->plugin_helper->validatorTraitExists($trait_name);
+          if (!$trait_exists) {
+            // Trait name does not exist.
+            $failed_rows[ $unrecognized ][ $col ][ $line_no ][] = $col . ': ' . $trait_name; 
+          }
+          
+          // Method Name:
+          // This is the Method Short Name of a Trait.
+          $col = 'Method Name';
+          $method_name = $data[ $header_key[ $col ] ];
+          $method_exists = $this->plugin_helper->validatorMethodNameExists($trait_name, $method_name);
+          if (!$method_exists) {
+            // Method name does not exist.
+            $failed_rows[ $unrecognized ][ $col ][ $line_no ][] = $col . ': ' . $method_name; 
+          }
 
-            if ($header == 'Unit') {
-              // Check if header is unit - verify trait method unit exits.
-              $unit_exists = $this->plugin_helper->validatorUnitNameExists($trait_name, $method_name, $value);
-              if (!$unit_exists) {
-                $failed_rows[ $error_types['unrecognized']['key']][ $header ][ $line_no ][] = $header; 
-              }
+          // Unit:
+          $col = 'Unit';
+          $unit_name = $data[ $header_key[ $col ] ];
+          $unit_exists = $this->plugin_helper->validatorUnitNameExists($trait_name, $method_name, $unit_name);
+          if (!$unit_exists) {
+            // Unit name does not exist.
+            $failed_rows[ $unrecognized ][ $col ][ $line_no ][] = $col . ': ' . $unit_name; 
+          }
+
+
+          // UNEXPECTED DATA TYPE OF VALUES VALIDATION:
+          $unexpected = $error_types['unexpected']['key'];
+
+          // Year:
+          // A four digit value and no more than the current year.
+          $col = 'Year';
+          $year = $data[ $header_key[ $col ] ];
+          
+          $is_year = $this->plugin_helper->validatorMatchDataType($year, 'FOUR_DIGIT_YEAR');
+          if (!$is_year['status']) {
+            // Year is not valid. Expected value is 4 digit value.
+            $failed_rows[ $unexpected ][ $col ][ $line_no ][] = $col . ': ' . $year . ' (expected: ' . $is_year['info'] . ')'; 
+          }
+
+          // Replicate:
+          // Number greater than 0.
+          $col = 'Replicate';
+          $replicate = $data[ $header_key[ $col ] ];
+          $is_replicate = $this->plugin_helper->validatorMatchDataType($replicate, 'NO_ZERO_NUMBER');
+          if (!$is_replicate['status']) {
+            // Replicate is not valid. Expected value is number greater than 0.
+            $failed_rows[ $unexpected ][ $col ][ $line_no ][] = $col . ': ' . $replicate . ' (expected: ' . $is_replicate['info'] . ')';
+          }
+
+          if ($trait_exists && $method_exists && $unit_exists) {
+            // Value and Unit:
+            // Unit data type of either qualitative (text) or quantitative (number).
+            $col = 'Value';
+            $value = $data[ $header_key[ $col ] ];
+            $is_match = $this->plugin_helper->validatorMatchValueToUnit($trait_name, $method_name, $unit_name, $value);
+            if (!$is_match['status']) {
+              $failed_rows[ $unexpected ][ $col ][ $line_no ][] = $col . ': ' . $value . '(expected: ' . $is_match['info'] . ')';
             }
           }
         }
-      }
+      }  
 
       $line_no++;
     } 
 
     // Close the file.
     fclose($handle);
-
+  
     // It seems the file has no data rows.
     if (!$line_check) {
       // Report validation result.
@@ -197,15 +237,27 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
       return $validator_status;
     }
 
-    // Array to hold all failed line.
+    // Prepare summary report.
     if (count($failed_rows) > 0) {
+      $line = [];
+    
+      // Each error type, construct error message.
+      foreach($error_types as $type => $error) { 
+        if (isset($failed_rows[ $error_types[ $type ]['key'] ])) {
+          // Error type.
+          $line[ $error_types[ $type ]['key'] ] = $error['info'];
+
+          
+          // @TODO: Report lines that failed.
+        }
+      }
 
       // Report validation result.
       $validator_status = [
-        'title' => 'All columns have values and value matched the column data type',
+        'title' => 'Column Headers have Values',
         'status' => 'fail',
-        'details' => ''
-      ];  
+        'details' => $line,
+      ];
     }
 
     return $validator_status;

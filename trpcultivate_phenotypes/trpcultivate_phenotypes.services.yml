@@ -18,7 +18,7 @@ services:
 
   trpcultivate_phenotypes.values_validator_plugin_helper:
     class: Drupal\trpcultivate_phenotypes\Plugin\Helper\ValuesValidatorPluginHelper
-    arguments: ['@trpcultivate_phenotypes.traits']
+    arguments: ['@trpcultivate_phenotypes.traits', '@tripal_chado.database']
 
   plugin.manager.trpcultivate_validator:
     class: 'Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorManager'
