@@ -16,7 +16,7 @@ vocabularies:
             -   id: 'PECO::0007248'
                 name: 'greenhouse study'
                 description: 'The treatment where the plants were grown under greenhouse conditions. This may involve supplemental treatments in addition to any standard conditions.'
-            -   id: 'PECO::0007269'
+            -   id: 'PECO:0007269'
                 name: 'growth chamber study'
                 description: 'The treatment involving study type in which plants were grown in growth chambers.'
     -   name: 'EDAM'
