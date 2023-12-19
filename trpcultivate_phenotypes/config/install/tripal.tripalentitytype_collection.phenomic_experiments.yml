@@ -4,7 +4,7 @@ description: 'Provide pages describing phenomic experiments (e.g. field, biochem
 content_types:
 
     -   label: Field Phenomic Experiment
-        term: PECO:0007256
+        term: 'PECO:0007256'
         help_text: Use to describe experiments collecting phenomic data that are carried out in organized trials in field sites.
         category: Phenomic Experiments
         id: field_experiment
@@ -12,23 +12,23 @@ content_types:
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: Greenhouse Phenomic Experiment
-        term: PECO:0007248
-        help_text:
+        term: 'PECO:0007248'
+        help_text: Use to describe experiments collecting phenomic data that are carried out in the greenhouse.
         category: Phenomic Experiments
         id: greenhouse_experiment
         title_format: "[experiment_name]"
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: Growth Chamber Phenomic Experiment
-        term: PECO:0007269
-        help_text:
+        term: 'PECO:0007269'
+        help_text: Use to describe experiments collecting phenomic data that are carried out in highly controlled growth chambers.
         category: Phenomic Experiments
         id: growthchamber_experiment
         title_format: "[experiment_name]"
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: Biochemical Assay
-        term: SIO:0007256
+        term: 'SIO:0007256'
         help_text: Use to describe experiments collecting phenomic measuremets by assaying biological materials using various protocols and/or devices.
         category: Phenomic Experiments
         id: biochem_experiment
@@ -36,7 +36,7 @@ content_types:
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: Ecosystem Survey
-        term: BLH-ACTI:M0H846B9-S
+        term: 'BLH-ACTI:M0H846B9-S'
         help_text: Use to describe experiments collecting phenomic measurements on samples obtained using ecosystem survey techniques.'
         category: Phenomic Experiments
         id: ecosystem_survey
@@ -44,7 +44,7 @@ content_types:
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: General Phenomics Experiment
-        term: topic:3298
+        term: 'topic:3298'
         help_text: Use to describe experiments collecting phenomic measuremets that do not fit into any of the other categories.
         category: Phenomic Experiments
         id: phenomic_experiment
@@ -52,7 +52,7 @@ content_types:
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: Plant Environmental Sample
-        term: NCBITaxon:171925
+        term: 'NCBITaxon:171925'
         help_text: Use for plant samples with mixed or unknown species composition collected via ecosystem survey.
         category: Samples
         id: plant_sample
@@ -60,7 +60,7 @@ content_types:
         url_format: "samples/[TripalEntity__entity_id]"
 
     -   label: Insect Environmental Sample
-        term: NCBITaxon:2588572
+        term: 'NCBITaxon:2588572'
         help_text: Use for insect samples with mixed or unknown species composition collected via ecosystem survey.
         category: Samples
         id: insect_sample
@@ -68,7 +68,7 @@ content_types:
         url_format: "samples/[TripalEntity__entity_id]"
 
     -   label: Soil Microbiome Sample
-        term: NCBITaxon:410658
+        term: 'NCBITaxon:410658'
         help_text: Use for soil microbiome samples with mixed or uknown composition.
         category: Samples
         id: microbiome_sample
@@ -76,7 +76,7 @@ content_types:
         url_format: "samples/[TripalEntity__entity_id]"
 
     -   label: Soil Sample
-        term: ENVO:00001998
+        term: 'ENVO:00001998'
         help_text: Use for soil samples which may or may not contain biological materials.
         category: Samples
         id: soil_sample
@@ -84,7 +84,7 @@ content_types:
         url_format: "samples/[TripalEntity__entity_id]"
 
     -   label: Sample
-        term: SIO:001050
+        term: 'SIO:001050'
         help_text: Use for samples with mixed or unknown species composition which do not fall into the above categories.
         category: Samples
         id: general_sample
@@ -92,7 +92,7 @@ content_types:
         url_format: "samples/[TripalEntity__entity_id]"
 
     -   label: Biological Sample
-        term: NCIT:C70699
+        term: 'NCIT:C70699'
         help_text: Use for samples with a single, known species that can consist of either the whole or part (e.g. tissue, seed, DNA) of one or more individuals.
         category: Samples
         id: biospecimen
