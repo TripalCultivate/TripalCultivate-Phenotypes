@@ -28,7 +28,7 @@ content_types:
         url_format: "phenomic-experiment/[TripalEntity__entity_id]"
 
     -   label: Biochemical Assay
-        term: 'SIO:0007256'
+        term: 'SIO:001007'
         help_text: Use to describe experiments collecting phenomic measuremets by assaying biological materials using various protocols and/or devices.
         category: Phenomic Experiments
         id: biochem_experiment
