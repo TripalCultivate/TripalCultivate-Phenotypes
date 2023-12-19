@@ -121,25 +121,25 @@ class ValuesValidatorPluginHelper {
   /**
    * Test that germplasm accession + germplasm name exists in stock table.
    *
-   * @param array $stock
-   *   Stock information containing the following entries:
-   *     name - germplasm name.
-   *     uniquename - germplasm accession name.
+   * @param string $name
+   *   Germplasm/stock name.
+   * @param string $accession
+   *   Germplasm/stock uniquename (Accession). Optional.
    * 
    * @return boolean
    *   True, stock with the given accession and name exists. False otherwise.
    */
-  public function validatorStockExists($stock) {
+  public function validatorGermplasmExists($name, $accession = NULL) {
     $found = 0;
     
-    if (isset($stock['name'])) {
+    if ($name) {
       $args = [];
-      $args[':g_name'] = $stock['name'];
+      $args[':g_name'] = $name;
 
       // Additional filter using stock uniquename value.
       $uniquename = '';
-      if (isset($stock['uniquename'])) {
-        $args[':u_name'] = $stock['uniquename'];
+      if (!is_null($accession)) {
+        $args[':u_name'] = $accession;
         $uniquename = ' AND uniquename = :u_name ';
       }
 

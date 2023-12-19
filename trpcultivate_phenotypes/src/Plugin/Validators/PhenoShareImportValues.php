@@ -31,7 +31,8 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, ValuesValidatorPluginHelper $plugin_helper) { 
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-
+    
+    // Plugin helper service.
     $this->plugin_helper = $plugin_helper;
   }
 
@@ -81,7 +82,7 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
     //     configuration is set to NOT allow before validating.
     //   - Expected Type/Value - Year is a 4 digit year no more than the current year
     //     Value must coincide with the unit type, qualitative or quantitative or text or number respectively
-    //     Replicate is number > 0
+    //     Replicate is number greater than 0
 
     $error_types = [
       'empty' => [
@@ -116,6 +117,19 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
     // Call values validator plugin helper.
     $this->plugin_helper->setGenus($this->genus);
     
+    // ALLOW NEW:
+    // Traits, method and unit may be created/inserted through
+    // the phenotypic data importer using the configuration allow new.
+
+    // If allow new was set to true (allow) this validator will skip
+    // unrecognized rule to trait name, method name and unit name.
+    // Validation will resume when user will provide definitions.
+
+    // If allow new was set to false (restrict) this validator will trigger
+    // an unrecognized validation error to any trait name, method name and unit name
+    // not in the genus cv configured for trait, method and unit.
+    $config_allownew = $this->getConfigAllowNew();
+
     // Begin column and row validation.
     while(!feof($handle)) {
       // Current row.
@@ -157,9 +171,9 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
           $col = 'Trait Name';
           $trait_name = $data[ $header_key[ $col ] ];
           $trait_exists = $this->plugin_helper->validatorTraitExists($trait_name);
-          if (!$trait_exists) {
+          if (!$trait_exists && $config_allownew == FALSE) {
             // Trait name does not exist.
-            $failed_rows[ $unrecognized ][ $col ][ $line_no ][] = $col . ': ' . $trait_name; 
+            $failed_rows[ $unrecognized ][ $line_no ][] = $col . ': ' . $trait_name; 
           }
           
           // Method Name:
@@ -167,18 +181,27 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
           $col = 'Method Name';
           $method_name = $data[ $header_key[ $col ] ];
           $method_exists = $this->plugin_helper->validatorMethodNameExists($trait_name, $method_name);
-          if (!$method_exists) {
+          if (!$method_exists && $config_allownew == FALSE) {
             // Method name does not exist.
-            $failed_rows[ $unrecognized ][ $col ][ $line_no ][] = $col . ': ' . $method_name; 
+            $failed_rows[ $unrecognized ][ $line_no ][] = $col . ': ' . $method_name; 
           }
 
           // Unit:
           $col = 'Unit';
           $unit_name = $data[ $header_key[ $col ] ];
           $unit_exists = $this->plugin_helper->validatorUnitNameExists($trait_name, $method_name, $unit_name);
-          if (!$unit_exists) {
+          if (!$unit_exists && $config_allownew == FALSE) {
             // Unit name does not exist.
-            $failed_rows[ $unrecognized ][ $col ][ $line_no ][] = $col . ': ' . $unit_name; 
+            $failed_rows[ $unrecognized ][ $line_no ][] = $col . ': ' . $unit_name; 
+          }
+
+          // Germplasm Accession/Germplasm Name.
+          $germplasm_accession = $data[ $header_key[ 'Germplasm Accession' ] ];
+          $germplasm_name = $data[ $header_key[ 'Germplasm Name' ] ];
+          $germplasm_exists = $this->plugin_helper->validatorGermplasmExists($germplasm_name, $germplasm_accession);
+          if (!$germplasm_exists) {
+            // Germplasm Name + Germplasm Accession does not exist.
+            $failed_rows[ $unrecognized ][ $line_no ][] = 'Germplasm Accession/Germplasm Name' . ': ' . $germplasm_accession . '/' . $germplasm_name; 
           }
 
 
@@ -193,7 +216,7 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
           $is_year = $this->plugin_helper->validatorMatchDataType($year, 'FOUR_DIGIT_YEAR');
           if (!$is_year['status']) {
             // Year is not valid. Expected value is 4 digit value.
-            $failed_rows[ $unexpected ][ $col ][ $line_no ][] = $col . ': ' . $year . ' (expected: ' . $is_year['info'] . ')'; 
+            $failed_rows[ $unexpected ][ $line_no ][] = $col . ': ' . $year . ' (expected: ' . $is_year['info'] . ')'; 
           }
 
           // Replicate:
@@ -203,17 +226,20 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
           $is_replicate = $this->plugin_helper->validatorMatchDataType($replicate, 'NO_ZERO_NUMBER');
           if (!$is_replicate['status']) {
             // Replicate is not valid. Expected value is number greater than 0.
-            $failed_rows[ $unexpected ][ $col ][ $line_no ][] = $col . ': ' . $replicate . ' (expected: ' . $is_replicate['info'] . ')';
+            $failed_rows[ $unexpected ][ $line_no ][] = $col . ': ' . $replicate . ' (expected: ' . $is_replicate['info'] . ')';
           }
 
-          if ($trait_exists && $method_exists && $unit_exists) {
+          if ($config_allownew == FALSE) {
+            // This cannot be performed until user will define the new trait, new method and new unit
+            // when this module is set to allow new trait.
+
             // Value and Unit:
             // Unit data type of either qualitative (text) or quantitative (number).
             $col = 'Value';
             $value = $data[ $header_key[ $col ] ];
             $is_match = $this->plugin_helper->validatorMatchValueToUnit($trait_name, $method_name, $unit_name, $value);
             if (!$is_match['status']) {
-              $failed_rows[ $unexpected ][ $col ][ $line_no ][] = $col . ': ' . $value . '(expected: ' . $is_match['info'] . ')';
+              $failed_rows[ $unexpected ][ $line_no ][] = $col . ': ' . $value . '(expected: ' . $is_match['info'] . ')';
             }
           }
         }
@@ -228,11 +254,8 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
     // It seems the file has no data rows.
     if (!$line_check) {
       // Report validation result.
-      $validator_status = [
-        'title' => 'All columns have values and value matched the column data type',
-        'status' => 'fail',
-        'details' => 'Data file has no data rows to process. Please upload a file and try again.'
-      ];
+      $validator_status['status']  = 'fail';
+      $validator_status['details'] = 'Data file has no data rows to process. Please upload a file and try again.';
 
       return $validator_status;
     }
@@ -247,17 +270,25 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
           // Error type.
           $line[ $error_types[ $type ]['key'] ] = $error['info'];
 
-          
-          // @TODO: Report lines that failed.
+          // Error line number and column header.
+          if ($type == 'empty') {
+            foreach($failed_rows[ $error_types[ $type ]['key'] ] as $line_no => $header) {
+              $str_headers = implode(', ', $header);
+              $line[ $error_types[ $type ]['key'] ] .= ' @ line #' . $line_no . ' Column(s): ' . $str_headers;
+            }
+          }
+          else {
+            foreach($failed_rows[ $error_types[ $type ]['key'] ] as $line_no => $col_errors) {
+              $str_lines = implode(', ', $col_errors);
+              $line[ $error_types[ $type ]['key'] ] .= ' @ line #' . $line_no . ' Column(s): ' . $str_lines;
+            }
+          }
         }
       }
 
       // Report validation result.
-      $validator_status = [
-        'title' => 'Column Headers have Values',
-        'status' => 'fail',
-        'details' => $line,
-      ];
+      $validator_status['status']  = 'fail';
+      $validator_status['details'] = $line;
     }
 
     return $validator_status;

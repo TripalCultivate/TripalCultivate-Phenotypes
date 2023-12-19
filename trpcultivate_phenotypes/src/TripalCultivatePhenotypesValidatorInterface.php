@@ -60,4 +60,15 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *   - details: details about the offending field/value.
    */
   public function validate();
+
+  /**
+   * Traits, method and unit may be created/inserted through
+   * the phenotypic data importer using the configuration allow new.
+   * This method will fetch the value set for allow new configuration.
+   *
+   * @return boolean
+   *   True, allow trait, method and unit detected in data importer to be created. False will trigger
+   *   validation error and will not permit creation of terms.
+   */
+  public function getConfigAllowNew();
 }

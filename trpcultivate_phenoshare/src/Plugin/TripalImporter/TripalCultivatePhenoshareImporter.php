@@ -127,13 +127,24 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-field',
     ];
 
+    // Remind user about the configuration value set for allow new.
+    $allownew = \Drupal::config('trpcultivate_phenotypes.settings')
+      ->get('trpcultivate.phenotypes.ontology.allownew');
+    
+    if ($allownew == FALSE) {
+      $allownew_minder = t('This module is set to NOT to allow new trait, new method and new unit to be added
+        during the upload process. Please make sure that all trait, method and unit exist in Chado (cvterm) 
+        before uploading your data file.');
+
+      \Drupal::messenger()->addMessage($allownew_minder);  
+    }
+
     // This is a reminder to user about expected phenotypic data.
     $phenotypes_minder = t('Phenotypic data should be filtered for outliers and mis-entries before
       being uploaded here. Do not upload data that should not be used in the final analysis for a
       scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.');
     \Drupal::messenger()->addWarning($phenotypes_minder);
-    
-
+  
     // Cacheing of stage number:
     // Cache current stage and id field to allow script to reference this value.
 
