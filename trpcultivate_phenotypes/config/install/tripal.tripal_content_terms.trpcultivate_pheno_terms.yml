@@ -10,10 +10,10 @@ vocabularies:
                 description: 'Plant Experimental Conditions Ontology'
                 urlPrefix: 'http://purl.obolibrary.org/obo/PECO_{accession}'
         terms:
-            -   id: 'PECO::0007256'
+            -   id: 'PECO:0007256'
                 name: 'field study'
                 description: 'The treatment where the plants were grown under field conditions. This may involve supplemental treatments in addition to any naturally occurring conditions.'
-            -   id: 'PECO::0007248'
+            -   id: 'PECO:0007248'
                 name: 'greenhouse study'
                 description: 'The treatment where the plants were grown under greenhouse conditions. This may involve supplemental treatments in addition to any standard conditions.'
             -   id: 'PECO:0007269'
