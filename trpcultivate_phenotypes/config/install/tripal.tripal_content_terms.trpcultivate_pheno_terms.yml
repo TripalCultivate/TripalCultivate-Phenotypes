@@ -27,7 +27,7 @@ vocabularies:
                 description: 'A category denoting a rather broad domain or field of interest, of study, application, work, data, or technology. Topics have no clearly defined borders between each other.'
                 urlPrefix: "http://edamontology.org/{db}_{accession}"
         terms:
-            -   id: '	topic:3298'
+            -   id: 'topic:3298'
                 name: 'Phenomics'
                 description: 'Phenomes, or the study of the change in phenotype (the physical and biochemical traits of organisms) in response to genetic and environmental factors.'
     -   name: 'BLH'
