@@ -193,7 +193,8 @@ class ValuesValidatorPluginHelper {
       //
       case 'NO_ZERO_NUMBER':
         // Numbers, no 0.
-        if (preg_match('/[1-9]/', $value) !== 1) {
+        $value = (int) $value;
+        if ($value <= 0) {
           $is_valid = [
             'status' => FALSE,
             'info' => 'Number greater than 0'
@@ -264,23 +265,36 @@ class ValuesValidatorPluginHelper {
         }
       }
     
+      if (isset($method_id)) {
+        $trait_method_unit = $this->service_traits->getMethodUnit($method_id);
 
-      $trait_method_unit = $this->service_traits->getMethodUnit($method_id);
-
-      if ($trait_method_unit->name == $unit_name) {
-        $unit_type = $this->service_traits->getMethodUnitDataType($trait_method_unit->cvterm_id);
-        
-        if ($unit_type) {
-          // QUALITATIVE or QUANTITATIVE:
-          $data_type = strtoupper($unit_type);
-          $is_valid = $this->validatorMatchDataType($value, $data_type);
+        if ($trait_method_unit->name == $unit_name) {
+          $unit_type = $this->service_traits->getMethodUnitDataType($trait_method_unit->cvterm_id);
+          
+          if ($unit_type) {
+            // QUALITATIVE or QUANTITATIVE:
+            $data_type = strtoupper($unit_type);
+            $is_valid = $this->validatorMatchDataType($value, $data_type);
+          }
         }
+        else {
+          $is_valid = [
+            'status' => FALSE,
+            'info' => 'Unit not found'
+          ];  
+        }
+      }
+      else {
+        $is_valid = [
+          'status' => FALSE,
+          'info' => 'Method not found'
+        ];   
       }
     }
     else {
       $is_valid = [
         'status' => TRUE,
-        'info' => 'Trait method not found'
+        'info' => 'Trait has no method'
       ];  
     }
 

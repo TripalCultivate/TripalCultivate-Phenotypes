@@ -229,7 +229,7 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
             $failed_rows[ $unexpected ][ $line_no ][] = $col . ': ' . $replicate . ' (expected: ' . $is_replicate['info'] . ')';
           }
 
-          if ($config_allownew == FALSE) {
+          if ($trait_exists && $method_exists && $unit_exists && $config_allownew == FALSE) {
             // This cannot be performed until user will define the new trait, new method and new unit
             // when this module is set to allow new trait.
 
@@ -239,7 +239,7 @@ class PhenoShareImportValues extends TripalCultivatePhenotypesValidatorBase impl
             $value = $data[ $header_key[ $col ] ];
             $is_match = $this->plugin_helper->validatorMatchValueToUnit($trait_name, $method_name, $unit_name, $value);
             if (!$is_match['status']) {
-              $failed_rows[ $unexpected ][ $line_no ][] = $col . ': ' . $value . '(expected: ' . $is_match['info'] . ')';
+              $failed_rows[ $unexpected ][ $line_no ][] = $col . ': ' . $value . ' (expected: ' . $is_match['info'] . ')';
             }
           }
         }
