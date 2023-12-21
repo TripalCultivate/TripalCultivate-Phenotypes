@@ -315,7 +315,6 @@ class PluginShareValuesValidatorTest extends ChadoTestKernelBase {
    * Test test records were created.
    */
   public function testRecordsCreated() {
-    /*
     // Test project.
     $sql_project = "SELECT name FROM {1:project} WHERE name = :name LIMIT 1";
     $project = $this->chado->query($sql_project, [':name' => $this->assets['project']])
@@ -368,8 +367,6 @@ class PluginShareValuesValidatorTest extends ChadoTestKernelBase {
     $unit_type = $this->chado->query($sql_type, [':c_id' => $unit])
       ->fetchField();
     $this->assertNotNull($unit_type, 'Unit data type test record not created.');
-
-    */
   }
 
   /**
