@@ -84,23 +84,23 @@ class DataFile extends TripalCultivatePhenotypesValidatorBase {
           else {
             // Check if it can be opened and read the contents.
             $file_uri = $file->getFileUri();
-            $handle = fopen($file_uri, 'rb');
+            $handle = fopen($file_uri, 'r');
             
             if (!$handle) {
               $validator_status['status']  = 'fail';
               $validator_status['details'] = 'The file uploaded could not be opened. Please upload a file and try again.';           
             }
             else {
-              // Check if file content for PDF signature.
-              $pdf = fread($handle, 4);
+              // Inspect the first line to make sure that it is tab delimited values.
+              $first_line = fgets($handle);
+              fclose($handle);
 
-              if ($pdf == '%PDF') {
+              if (strpos($first_line, "\t") === FALSE) {
                 $validator_status['status']  = 'fail';
                 $validator_status['details'] = 'The file uploaded does not have the expected file format of TSV or TXT file. Please upload a file and try again.';           
               }
             }
 
-            fclose($handle);
           }
         }
       }
