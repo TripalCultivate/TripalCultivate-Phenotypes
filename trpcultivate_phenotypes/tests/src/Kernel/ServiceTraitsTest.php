@@ -231,5 +231,42 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
+
+    // Test get trait.
+    
+    $trait_id = $trait_assets['trait'];
+    $trait_name = $insert_trait[0];
+    
+    // Get trait by id.
+    $t = $this->service_traits->getTrait(['id' => $trait_id]);
+    $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait id).');
+    
+    // Get trait by name.
+    $t = $this->service_traits->getTrait(['name' => $trait_name]);
+    $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait name).');
+    
+    // Test get trait method.
+    $method_name = $insert_trait[2];
+
+    // Get trait method by trait id.
+    $m = $this->service_traits->getTraitMethod(['id' => $trait_id]);
+    $this->assertEquals($method_name, $m->name, 'Trait method not found (by trait id).');
+
+    // Get trait method by trait name.
+    $m = $this->service_traits->getTraitMethod(['name' => $trait_name]);
+    $this->assertEquals($method_name, $m->name, 'Trait method not found (by trait name).');
+    $method_id = $m->cvterm_id;
+
+    // Test get trait method unit.
+
+    $unit_name = $insert_trait[4];
+    $u = $this->service_traits->getMethodUnit($method_id);
+    $this->assertEquals($unit_name, $m->name, 'Trait method unit not found.');
+    $unit_id = $u->cvterm_id;
+
+    // Test get unit data type.
+    $data_type = $insert_trait[5];
+    $dt = $this->service_traits->getMethodUnit($unit_id);
+    $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
   }
 }

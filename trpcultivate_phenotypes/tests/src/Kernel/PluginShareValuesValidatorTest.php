@@ -523,5 +523,9 @@ class PluginShareValuesValidatorTest extends ChadoTestKernelBase {
 
     // TODO:
     $status = 'todo';
+    
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], 1);
+    $validation[ $scope ] = $instance->validate();      
+    $this->assertEquals($validation[ $scope ]['status'], $status);
   }
 }
