@@ -70,7 +70,7 @@ class ConfigWatermarkTest extends BrowserTestBase {
     // Update configuration settings.
     // Do not watermark any charts.
     $update_watermark = [
-      'charts' => 0,
+      'charts' => '0',
       // 'file' => '' test could not detect file field. ??
     ];
 
