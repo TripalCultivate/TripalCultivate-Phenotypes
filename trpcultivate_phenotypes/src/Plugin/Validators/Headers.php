@@ -79,6 +79,8 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
     //   - Header line is not empty.
     //   - No missing headers.
 
+    $file_column_headers = [];
+    
     // Open file and read the first line, the column headers line.
     $file = File::load($this->file_id);
     if ($file) {
@@ -97,6 +99,10 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
       }
     }  
     
+    // First remove any empty array elements.
+    $file_column_headers = array_filter($file_column_headers);
+
+    // Then check if there are any.
     if (empty($file_column_headers)) {
       // No file has been uploaded into the data file field.
       $validator_status['status']  = 'fail';
