@@ -45,11 +45,9 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
   protected $chado;
 
   /**
-   * {@inheritdoc}
+   * Test Ontology and Terms configuration page.
    */
-  protected function setUp(): void {
-    parent::setUp();
-
+  public function testForm() {
     // Setup admin user account.
     $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
@@ -61,12 +59,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
     $this->container->set('tripal_chado.database', $this->chado);
-  }
-
-  /**
-   * Test Ontology and Terms configuration page.
-   */
-  public function testForm() {
+    
     // Login admin user.
     $this->drupalLogin($this->admin_user);
 
