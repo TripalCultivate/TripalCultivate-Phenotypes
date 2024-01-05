@@ -45,9 +45,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
   protected $chado;
 
   /**
-   * Test Ontology and Terms configuration page.
+   * {@inheritdoc}
    */
-  public function testForm() {
+  protected function setUp(): void {
+    parent::setUp();
+
     // Setup admin user account.
     $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
@@ -59,7 +61,12 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
     $this->container->set('tripal_chado.database', $this->chado);
+  }
 
+  /**
+   * Test Ontology and Terms configuration page.
+   */
+  public function testForm() {
     // Login admin user.
     $this->drupalLogin($this->admin_user);
 
@@ -98,11 +105,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
       ->execute();
 
     // Load genus ontology.
-    $service_genusontology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
+    $service_genusontology = $this->container->get('trpcultivate_phenotypes.genus_ontology');
     $service_genusontology->loadGenusOntology();
 
     // Install all default terms.
-    $service_terms = \Drupal::service('trpcultivate_phenotypes.terms');
+    $service_terms = $this->container->get('trpcultivate_phenotypes.terms');
     $service_terms->loadTerms();
 
     // Access Ontology and Terms configuration page.
