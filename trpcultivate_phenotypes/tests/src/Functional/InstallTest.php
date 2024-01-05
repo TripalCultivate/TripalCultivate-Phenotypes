@@ -20,7 +20,13 @@ class InstallTest extends ChadoTestBrowserBase {
    *
    * @var array
    */
-  protected static $modules = ['help', 'trpcultivate_phenotypes'];
+  protected static $modules = [
+    'help', 
+    'tripal',
+    'tripal_chado',
+    'trpcultivate_phenotypes',
+    'trpcultivate_phenoshare'
+  ];
 
   /**
    * The name of your module in the .info.yml
