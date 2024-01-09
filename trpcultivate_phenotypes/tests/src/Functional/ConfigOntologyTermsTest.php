@@ -58,7 +58,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
+    //$this->container->set('tripal_chado.database', $this->chado);
     
     // Login admin user.
     $this->drupalLogin($this->admin_user);
