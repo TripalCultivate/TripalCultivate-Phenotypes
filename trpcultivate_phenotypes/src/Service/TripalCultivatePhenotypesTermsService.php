@@ -128,7 +128,7 @@ class TripalCultivatePhenotypesTermsService {
         else {
           // Error inserting term.
           $error = 1;
-          $this->logger->error('Error. Could not insert term.');
+          $this->logger->error('Phenotypes Term Service could not insert term: ' . $config_prop['name'] . ' (' . $config_prop['id'] . ')');
         }
       }
     }
