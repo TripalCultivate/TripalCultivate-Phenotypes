@@ -124,8 +124,11 @@ class ServiceTermTest extends ChadoTestKernelBase {
         "We expect the value returned from getTermId() to be a valid cvterm_id.");
 
       // Keep track of our expectations.
-      // mapping of cvterm_id => expected cvterm name.
-      $expected[ $id ] = $define_terms[ $key ]['name'];
+      // mapping of config key => [cvterm_id, expected cvterm name].
+      $expected[ $key ] = [
+        'cvterm_id' => $id,
+        'name' => $define_terms[ $key ]['name']
+      ];
     }
 
     $not_valid_keys = [':p', -1, 0, 'abc', 999999, '', 'lorem_ipsum', '.'];
@@ -137,7 +140,9 @@ class ServiceTermTest extends ChadoTestKernelBase {
 
     // Test values matched to what was loaded into the table.
     $chado = $this->chado_connection;
-    foreach ($expected as $cvterm_id => $expected_cvterm_name) {
+    foreach ($expected as $config_key => $expected_deets) {
+      $expected_cvterm_name = $expected_deets['name'];
+      $cvterm_id = $expected_deets['cvterm_id'];
       $query = $chado->select('1:cvterm', 'cvt')
         ->fields('cvt', ['name'])
         ->condition('cvt.cvterm_id', $cvterm_id);
@@ -145,7 +150,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $this->assertNotNull($cvterm_name,
         "We should have been able to retrieve the term $expected_cvterm_name using the id $cvterm_id but could not.");
       $this->assertEquals($expected_cvterm_name, $cvterm_name,
-        "The name of the cvterm with the id $cvterm_id did not match the one we expected based on the config.");
+        "The name of the cvterm with the id $cvterm_id did not match the one we expected based on the config key $config_key.");
     }
 
     // #Test saveTermConfigValues().

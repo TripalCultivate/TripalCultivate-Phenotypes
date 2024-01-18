@@ -122,7 +122,7 @@ class TripalCultivatePhenotypesTermsService {
         $query = $chado->select('1:cvterm', 'cvt')
           ->fields('cvt', ['cvterm_id']);
         $query->join('1:dbxref', 'dbx', 'cvt.dbxref_id = dbx.dbxref_id');
-        $query->join('1:db', 'db', 'dbx.db_id = dbx.db_id');
+        $query->join('1:db', 'db', 'dbx.db_id = db.db_id');
         $query = $query->condition('dbx.accession', $accession, '=')
           ->condition('db.name', $idspace, '=');
         $exists = $query->execute()->fetchObject();
