@@ -76,7 +76,7 @@ class ConfigWatermarkTest extends BrowserTestBase {
 
     // Fields and default value.
     $session->fieldExists('charts');
-    $session->fieldValueEquals('charts', 0);
+    $session->fieldValueEquals('charts', '0');
 
     // Could not seem to find this field in the form.
     // $session->fieldExists('file');

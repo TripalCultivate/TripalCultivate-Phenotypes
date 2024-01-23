@@ -57,8 +57,8 @@ class TripalCultivatePhenotypesWatermarkSettingsForm extends ConfigFormBase {
     ];
 
     $watermark_options = [
-      1 => $this->t('Watermark all charts'),
-      0 => $this->t('Do not watermark any charts')
+      '1' => $this->t('Watermark all charts'),
+      '0' => $this->t('Do not watermark any charts')
     ];
 
     $form['charts'] = [
