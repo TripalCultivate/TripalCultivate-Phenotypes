@@ -90,8 +90,17 @@ class DataFile extends TripalCultivatePhenotypesValidatorBase {
               $validator_status['status']  = 'fail';
               $validator_status['details'] = 'The file uploaded could not be opened. Please upload a file and try again.';           
             }
+            else {
+              // Inspect the first line to make sure that it is tab delimited values.
+              $first_line = fgets($handle);
+              fclose($handle);
 
-            fclose($handle);
+              if (strpos($first_line, "\t") === FALSE) {
+                $validator_status['status']  = 'fail';
+                $validator_status['details'] = 'The file uploaded does not have the expected file format of TSV or TXT file. Please upload a file and try again.';           
+              }
+            }
+
           }
         }
       }

@@ -152,7 +152,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-1' => [
         'ext' => 'tsv', 
         'mime' => 'text/tab-separated-values',
-        'content' => 'Header 1  Header 2  Header 3'
+        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
       ],
       // A valid file type, an empty file.
       'file-2' => [
@@ -165,7 +165,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-3' => [
         'ext' => 'txt',
         'mime' => 'text/plain',
-        'content' => 'Header 4  Header  5 HEADER 6'
+        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
       ],
       // Not valid file
       'file-4' => [
@@ -177,7 +177,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-5' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        'content' => ''
+        'content' => 'Lorem impsum'
       ],
       // Test file with the correct headers.
       'file-6' => [
