@@ -39,13 +39,18 @@ function trpcultivate_phenotypes_help($route_name, RouteMatchInterface $route_ma
  * Tripal Job callback.
  * Job registered during install to insert terms used by configuration
  * page default field values.
- * 
+ *
  * @see config/trpcultivate_phenotypes.settings
  */
 function trpcultivate_phenotypes_install_ontologyterms() {
+
+  // We need the schema to ensure we are inserting into the right one.
+  $connection = \Drupal::service('tripal_chado.database');
+  $schema = $connection->getSchemaName();
+
   // Create terms defined in config entity.
   \Drupal::service('trpcultivate_phenotypes.terms')
-    ->loadTerms();
+    ->loadTerms($schema);
 
   // Create genus-ontology configuration.
   \Drupal::service('trpcultivate_phenotypes.genus_ontology')
@@ -54,7 +59,7 @@ function trpcultivate_phenotypes_install_ontologyterms() {
 
 /**
  * Implements hook_theme().
- * 
+ *
  * @see templates in /templates.
  */
 function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
