@@ -264,12 +264,12 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
 
     $unit_name = $insert_trait[4];
     $u = $this->service_traits->getMethodUnit($method_id);
-    $this->assertEquals($unit_name, $u[0]->name, 'Trait method unit not found.');
-    $unit_id = $u[0]->cvterm_id;
+    $this->assertEquals($unit_name, $u->name, 'Trait method unit not found.');
+    $unit_id = $u->cvterm_id;
 
     // Test get unit data type.
     $data_type = $insert_trait[5];
-    $dt = $this->service_traits->getMethodUnit($unit_id);
+    $dt = $this->service_traits->getMethodUnitDataType($unit_id);
     $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
   }
 }
