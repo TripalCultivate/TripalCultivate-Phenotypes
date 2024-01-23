@@ -177,7 +177,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-5' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        'content' => 'Lorem impsum'
+        'file' => 'pdf.txt', // Can be found in the test Fixtures folder.
       ],
       // Test file with the correct headers.
       'file-6' => [
@@ -191,6 +191,12 @@ class PluginValidatorTest extends ChadoTestKernelBase {
         'mime' => 'text/tab-separated-values',
         'content' => $column_headers,
         'permissions' => 'none',
+      ],
+      // Pretend tsv file that is disguised as a tsv.
+      'file-8' => [
+        'ext' => 'tsv',
+        'mime' => 'text/tab-separated-values',
+        'file' => 'pdf.txt', // Can be found in the test Fixtures folder.
       ],
     ];
 
@@ -224,6 +230,18 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       if (!empty($prop['content'])) {
         $fileuri = $file->getFileUri();
         file_put_contents($fileuri, $prop['content']);
+      }
+
+      // If an existing file was specified then we can add that in here.
+      if (!empty($prop['file'])) {
+        $fileuri = $file->getFileUri();
+
+        $path_to_fixtures = __DIR__ . '/../Fixtures/';
+        $full_path = $path_to_fixtures . $prop['file'];
+        $this->assertFileIsReadable($full_path,
+          "Unable to setup FILE ". $id . " because cannot access Fixture file at $full_path.");
+
+        copy($full_path, $fileuri);
       }
 
       // Set file permissions if needed.
@@ -412,7 +430,13 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $this->assertEquals($validation[ $scope ]['status'], $status);
 
     // File is pdf but pretending to be tsv.
+    // -- case where mime still correctly indicates pdf.
     $file_id = $this->test_files['file-5']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+    // -- case where mime is also tsv but it is not a tsv really.
+    $file_id = $this->test_files['file-8']['ID'];
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
