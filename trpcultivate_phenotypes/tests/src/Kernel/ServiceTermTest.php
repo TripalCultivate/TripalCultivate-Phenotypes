@@ -95,35 +95,39 @@ class ServiceTermTest extends ChadoTestKernelBase {
     $keys = array_keys($define_terms);
 
     $this->assertNotNull($define_terms);
-    // Is an array.
-    $is_array = (is_array($define_terms)) ? TRUE : FALSE;
-    $this->assertTrue($is_array);
+    $this->assertIsArray($define_terms,
+      "We expected defineTerms() to return an array but it did not.");
 
     // Compare what was defined and the pre-defined terms in the
     // config settings file.
     $term_set = $this->config->get('trpcultivate.default_terms.term_set');
     foreach($term_set as $id => $terms) {
       foreach($terms['terms'] as $term) {
-        $match = (in_array($term['config_map'], $keys)) ? TRUE : FALSE;
         $this->assertNotNull($term['config_map']);
-        $this->assertTrue($match);
+        $this->assertArrayHasKey($term['config_map'], $define_terms,
+          "The config_map retrieved from config should match one of the keys from defineTerms().");
       }
     }
 
     // Test loadTerms().
     $is_loaded = $this->service->loadTerms();
-    $this->assertTrue($is_loaded);
+    $this->assertTrue($is_loaded,
+      "We expect loadTerms() to return TRUE to indicate it successfully loaded the terms.");
 
-    // #Test getTermId().
+    // Test getTermId().
+    $expected = [];
     foreach($keys as $key) {
       $id = $this->service->getTermId($key);
-      $this->assertNotNull($id);
-      $this->assertGreaterThan(0, $id);
+      $this->assertNotNull($id,
+        "We should have been able to retrieve the term based on the config_map value but we were not.");
+      $this->assertGreaterThan(0, $id,
+        "We expect the value returned from getTermId() to be a valid cvterm_id.");
 
-      $id_to_name[ $id ] = [
-        'key' => $key, // config name key.
-        'id' => $id,   // cvterm id.
-        'name' => $define_terms[ $key ]['name'] // cvterm name.
+      // Keep track of our expectations.
+      // mapping of config key => [cvterm_id, expected cvterm name].
+      $expected[ $key ] = [
+        'cvterm_id' => $id,
+        'name' => $define_terms[ $key ]['name']
       ];
     }
 
@@ -136,16 +140,17 @@ class ServiceTermTest extends ChadoTestKernelBase {
 
     // Test values matched to what was loaded into the table.
     $chado = $this->chado_connection;
-    $all_ids = array_keys($id_to_name);
-    $rec = $chado->query(
-      'SELECT cvterm_id, name FROM {1:cvterm} WHERE cvterm_id IN(:id[])',
-      [':id[]' => $all_ids]
-    );
-
-    foreach($rec as $r) {
-      $this->assertNotNull($id_to_name[ $r->cvterm_id ]);
-      $this->assertEquals($id_to_name[ $r->cvterm_id ]['id'], $r->cvterm_id);
-      $this->assertEquals($id_to_name[ $r->cvterm_id ]['name'], $r->name);
+    foreach ($expected as $config_key => $expected_deets) {
+      $expected_cvterm_name = $expected_deets['name'];
+      $cvterm_id = $expected_deets['cvterm_id'];
+      $query = $chado->select('1:cvterm', 'cvt')
+        ->fields('cvt', ['name'])
+        ->condition('cvt.cvterm_id', $cvterm_id);
+      $cvterm_name = $query->execute()->fetchField();
+      $this->assertNotNull($cvterm_name,
+        "We should have been able to retrieve the term $expected_cvterm_name using the id $cvterm_id but could not.");
+      $this->assertEquals($expected_cvterm_name, $cvterm_name,
+        "The name of the cvterm with the id $cvterm_id did not match the one we expected based on the config key $config_key.");
     }
 
     // #Test saveTermConfigValues().
@@ -155,21 +160,24 @@ class ServiceTermTest extends ChadoTestKernelBase {
 
     // This would have came from form submit method.
     $config_values = [];
-    foreach($keys as $key) {
+    foreach (array_keys($define_terms) as $key) {
       $config_values[ $key ] = 1;
     }
 
     $is_saved = $this->service->saveTermConfigValues($config_values);
-    $this->assertTrue($is_saved);
+    $this->assertTrue($is_saved,
+      "We expected the saveTermConfigValues() method to return TRUE.");
 
-    foreach($keys as $key) {
+    foreach($config_values as $key => $set_id) {
       // Test if all config got nulled.
-      $id = $this->service->getTermId($key);
-      $this->assertEquals($id, 1);
+      $retrieved_id = $this->service->getTermId($key);
+      $this->assertEquals($set_id, $retrieved_id,
+        "We expected the retrieved id to match the one we set it to but it did not.");
     }
 
     // Nothing to save.
     $not_saved = $this->service->saveTermConfigValues([]);
-    $this->assertFalse($not_saved);
+    $this->assertFalse($not_saved,
+      "We should not be able to call saveTermConfigValues() with an empty array.");
   }
 }
