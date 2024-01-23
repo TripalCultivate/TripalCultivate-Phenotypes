@@ -31,7 +31,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
   /**
    * Configuration
-   * 
+   *
    * @var config_entity
    */
   private $config;
@@ -51,7 +51,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    * Test file ids.
    */
   private $test_files;
-  
+
   /**
    * Modules to enable.
    */
@@ -92,7 +92,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $project_id = $this->chado->insert('1:project')
       ->fields([
         'name' => $project,
-        'description' => $project . ' : Description'   
+        'description' => $project . ' : Description'
       ])
       ->execute();
 
@@ -103,21 +103,21 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ->fields([
         'genus' => $genus,
         'species' => 'Wild Species',
-        'type_id' => 1 
+        'type_id' => 1
       ])
       ->execute();
-    
-    $this->assets['genus'] = $genus;  
+
+    $this->assets['genus'] = $genus;
 
     $this->chado->insert('1:projectprop')
       ->fields([
         'project_id' => $project_id,
         'type_id' => 1,
-        'value' => $genus 
+        'value' => $genus
       ])
-      ->execute();  
+      ->execute();
 
-    // Create Genus Ontology configuration. 
+    // Create Genus Ontology configuration.
     // All configuration and database value to null (id: 1).
     $config_name = str_replace(' ', '_', strtolower($genus));
     $genus_ontology_config = [
@@ -132,7 +132,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-  
+
     // Test files.
 
     // File schema for FILE validator.
@@ -150,7 +150,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $create_files = [
       // A valid file type, default type expected by the importer.
       'file-1' => [
-        'ext' => 'tsv', 
+        'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
         'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
       ],
@@ -185,6 +185,13 @@ class PluginValidatorTest extends ChadoTestKernelBase {
         'mime' => 'text/tab-separated-values',
         'content' => $column_headers
       ],
+      // Test file with the correct headers but permissions will make it unreadable.
+      'file-7' => [
+        'ext' => 'tsv',
+        'mime' => 'text/tab-separated-values',
+        'content' => $column_headers,
+        'permissions' => 'none',
+      ],
     ];
 
     // To create an actual empty file with 0 file size:
@@ -214,15 +221,23 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       $create_files[ $id ]['ID'] = $file->id();
 
       // Write something on file with content key set to a string.
-      if (!empty($prop['content'])) {      
+      if (!empty($prop['content'])) {
         $fileuri = $file->getFileUri();
         file_put_contents($fileuri, $prop['content']);
+      }
+
+      // Set file permissions if needed.
+      if (!empty($prop['permissions'])) {
+        $fileuri = $file->getFileUri();
+        if ($prop['permissions'] == 'none') {
+          chmod($fileuri, 0000);
+        }
       }
     }
 
     $this->test_files =  $create_files;
   }
-  
+
   /**
    * Test test records were created.
    */
@@ -233,7 +248,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ->fetchField();
 
     $this->assertNotNull($project, 'Project test record not created.');
-    
+
     // Test genus.
     $sql_genus = "SELECT genus FROM {1:organism} WHERE genus = :genus LIMIT 1";
     $genus = $this->chado->query($sql_genus, [':genus' => $this->assets['genus']])
@@ -266,7 +281,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $this->chado->insert('1:project')
       ->fields([
         'name' => $project_no_genus,
-        'description' => $project_no_genus . ' : Description'   
+        'description' => $project_no_genus . ' : Description'
       ])
       ->execute();
 
@@ -323,7 +338,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // FAIL:
     $status = 'fail';
-    
+
     // Test empty value.
     $instance->loadAssets($assets['project'], '', $assets['file'], $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
@@ -390,6 +405,12 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
 
+    // File is tsv, but permissions mean it cannot be read.
+    $file_id = $this->test_files['file-7']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
     // File is pdf but pretending to be tsv.
     $file_id = $this->test_files['file-5']['ID'];
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
@@ -432,12 +453,12 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // FAIL:
     $status = 'fail';
-    
+
     // Change the contents of the tsv_file so the headers do not match the headers asset;
     $file = File::load($file_id);
     $file_uri = $file->getFileUri();
     file_put_contents($file_uri, 'NOT THE HEADERS EXPECTED');
-    
+
     // File headers do not match the expected headers - Extra Headers.
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
