@@ -39,10 +39,41 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
   /**
    * Chado test schema.
-   * 
+   *
    * @var object
    */
   protected $chado;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() :void {
+
+    // As always, we first let the parent setup.
+    // This sets up the drupal test container
+    // and all services required for dependancy injection.
+    parent::setUp();
+
+    // Now, we want to setup our test chado instance.
+    // We can't do this before the parent as we need the container
+    // and Tripal DBX initialized...
+    $this->chado = $this->getTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+
+    // However, by doing things in the above order, we now have all our
+    // services for dependancy injection setup before the test chado was
+    // available. Thus here, we re-load any services that saved $chado
+    // in their contructor.
+    $services_to_refresh = [
+      'trpcultivate_phenotypes.genus_ontology',
+      'trpcultivate_phenotypes.terms'
+    ];
+    foreach ($services_to_refresh as $service_name) {
+      $this->container->set($service_name, NULL);
+      $refreshed = \Drupal::service($service_name);
+      $this->container->set($service_name, $refreshed);
+    }
+
+  }
 
   /**
    * Test Ontology and Terms configuration page.
@@ -57,9 +88,6 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Ensure we see all logging in tests.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    // $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
-    // $this->container->set('tripal_chado.database', $this->chado);
-    
     // Login admin user.
     $this->drupalLogin($this->admin_user);
 
@@ -83,17 +111,17 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
       ->values([
         'genus' => $test_insert_genus[0],
         'species' => 'culinaris',
-        'type_id'  => 1  
+        'type_id'  => 1
       ])
       ->values([
         'genus' => $test_insert_genus[0],
         'species' => 'samegenus',
-        'type_id'  => 1  
+        'type_id'  => 1
       ])
       ->values([
         'genus' => $test_insert_genus[1],
         'species' => 'arietinum',
-        'type_id'  => 1 
+        'type_id'  => 1
       ])
       ->execute();
 
@@ -113,12 +141,12 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $session->pageTextContains('Configure Tripal Cultivate Phenotypes: Ontology Terms');
 
     $genus_ontology = $service_genusontology->defineGenusOntology();
-    
+
     // Find cv id in the test schema to be used as test values.
     $cvs = $this->chado->query("SELECT cv_id FROM {1:cv} LIMIT 10")
       ->fetchAllKeyed(0, 0);
 
-    $test_cv_id = array_keys($cvs);  
+    $test_cv_id = array_keys($cvs);
 
     // Find db id in test schema to be used as test values.
     $dbs = $this->chado->query("SELECT db_id FROM {1:db} LIMIT 2")
@@ -127,7 +155,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $test_db_id = array_keys($dbs);
 
     $values_genusontology = [];
-    
+
     $j = 0;
     foreach($genus_ontology as $genus => $vars) {
       foreach($vars as $i => $config) {
@@ -150,12 +178,12 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Update default values.
     $this->submitForm($values_genusontology, 'Save configuration');
     $session->pageTextContains('The configuration options have been saved.');
-    
+
     $j = 0;
     foreach($genus_ontology as $genus => $vars) {
       foreach($vars as $i => $config) {
         $fld_name = $genus . '_' . $config;
-        
+
         if ($config == 'database') {
           $set_val = $test_db_id[ $j ];
           $j++;
@@ -167,7 +195,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
         $session->fieldValueEquals($fld_name, $set_val);
       }
     }
-    
+
     // Allow new trait.
     $allow_new = 'allow_new';
     $session->fieldExists($allow_new);
@@ -190,7 +218,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Terms.
     $terms = $service_terms->defineTerms();
     $values_terms = [];
-    
+
     $i = 0;
     foreach($terms as $config => $prop) {
       // Test each term has an autocomplete field.
