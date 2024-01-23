@@ -108,6 +108,7 @@ class TripalCultivatePhenotypesTermsService {
   public function loadTerms($schema = NULL) {
     $error = 0;
     $terms = $this->terms;
+    $chado = \Drupal::service('tripal_chado.database');
 
     if ($terms) {
       // Install terms.
@@ -117,13 +118,27 @@ class TripalCultivatePhenotypesTermsService {
         // Remove term field_label text.
         unset($config_prop['field_label']);
 
-        $cvterm = chado_insert_cvterm($config_prop, [], $schema);
+        list($idspace, $accession) = explode(':', $config_prop['id']);
+        $query = $chado->select('1:cvterm', 'cvt')
+          ->fields('cvt', ['cvterm_id']);
+        $query->join('1:dbxref', 'dbx', 'cvt.dbxref_id = dbx.dbxref_id');
+        $query->join('1:db', 'db', 'dbx.db_id = db.db_id');
+        $query = $query->condition('dbx.accession', $accession, '=')
+          ->condition('db.name', $idspace, '=');
+        $exists = $query->execute()->fetchObject();
+        if (empty($exists)) {
+          $cvterm = chado_insert_cvterm($config_prop, [], $schema);
+          $cvterm_id = $cvterm->cvterm_id;
+        }
+        else {
+          $cvterm_id = $exists->cvterm_id;
+        }
 
         // Set the term id as the configuration value of the
         // term configuration variable.
-        if ($cvterm) {
+        if ($cvterm_id) {
           $this->config
-            ->set($this->sysvar_terms . '.' . $config_map, $cvterm->cvterm_id);
+            ->set($this->sysvar_terms . '.' . $config_map, $cvterm_id);
         }
         else {
           // Error inserting term.
