@@ -43,6 +43,29 @@ class ValidTraitTest extends ChadoTestKernelBase {
   ];
 
   /**
+   * Term config key to cvterm_id mapping.
+   * Note: we just grabbed some random cvterm_ids that we know for sure exist.
+   */
+  protected array $terms = [
+    'method_to_trait_relationship_type' => 100,
+    'unit_to_method_relationship_type' => 200,
+    'trait_to_synonym_relationship_type' => 300,
+    'unit_type' => 400,
+  ];
+
+  /**
+   * CV and DB's configured for this genus.
+   * NOTE: We will create these in the setUp.
+   */
+  protected array $genus_ontology_config = [
+    'trait' => NULL,
+    'unit'   => NULL,
+    'method'  => NULL,
+    'database' => NULL,
+    'crop_ontology' => NULL
+  ];
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() :void {
@@ -50,23 +73,6 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
-
-    // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-
-    // Set ontology terms to null (id: 1).
-    $req_terms = [
-      'unit_to_method_relationship_type',  // Relate unit - method.
-      'method_to_trait_relationship_type', // Relate method - trait.
-      'unit_type' // Unit data type.
-    ];
-
-    foreach($req_terms as $term) {
-      $this->config->set('trpcultivate.phenotypes.ontology.terms.' . $term, 1);
-    }
-
-    // Create an active genus.
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by our service.
@@ -76,42 +82,52 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $this->container->set('trpcultivate_phenotypes.genus_ontology', NULL);
     $this->container->set('trpcultivate_phenotypes.terms', NULL);
 
+    // Install module configuration.
+    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+
+    // Set ontology terms in the configuration used by the terms service.
+    foreach($this->terms as $config_key => $cvterm_id) {
+      $this->config->set('trpcultivate.phenotypes.ontology.terms.' . $config_key, $cvterm_id);
+    }
+
+    // Create an chado organism genus.
+    // This will be configured below to become the active genus.
     $genus = 'Wild Genus ' . uniqid();
     $this->genus = $genus;
-
-    $this->chado->insert('1:organism')
+    $organism_id = $this->chado->insert('1:organism')
       ->fields([
         'genus' => $genus,
         'species' => 'Wild Species',
-        'type_id' => 1
       ])
       ->execute();
+    $this->assertIsNumeric($organism_id,
+      "We were unable to create the organism record in chado.");
 
     // Create Genus Ontology configuration.
-    // All configuration and database value to null (id: 1).
-    // Traits, method and unit will be inserted into cv set for trait, unit and method.
+    // First create a cv or db for each...
     $config_name = str_replace(' ', '_', strtolower($genus));
-    $genus_ontology_config = [
-      'trait' => 1,
-      'unit'   => 1,
-      'method'  => 1,
-      'database' => 1,
-      'crop_ontology' => 1
-    ];
-
-    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $genus_ontology_config);
+    foreach ($this->genus_ontology_config as $key => $id) {
+      $name = $genus . ' ' . $key;
+      $table = ($key == 'database') ? '1:db' : '1:cv';
+      $id = $this->chado->insert($table)->fields(['name' => $name])->execute();
+      $this->assertIsNumeric($id,
+        "Unable to create a record in '$table' for $key where name = '$name'");
+      $this->genus_ontology_config[$key] = $id;
+    }
+    // Then save the configuration set to the new ids.
+    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $this->genus_ontology_config);
 
     // Set the traits service.
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
 
-    // Install required dependencies - T3 legacy functions .
+    // Install required dependencies - T3 legacy functions.
     $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
     $tripal_chado_api = [
       'tripal_chado.cv.api.php',
       'tripal_chado.variables.api.php',
       'tripal_chado.schema.api.php'
     ];
-
     if ($handle = opendir($tripal_chado_path)) {
       while (false !== ($file = readdir($handle))) {
         if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
@@ -121,18 +137,6 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
       closedir($handle);
     }
-  }
-
-  /**
-   * Test test records were created.
-   */
-  public function testRecordsCreated() {
-    // Test genus.
-    $sql_genus = "SELECT genus FROM {1:organism} WHERE genus = :genus LIMIT 1";
-    $genus = $this->chado->query($sql_genus, [':genus' => $this->genus])
-      ->fetchField();
-
-    $this->assertNotNull($genus, 'Genus test record not created.');
   }
 
   /**
@@ -191,46 +195,57 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id LIMIT 1";
 
     foreach($trait_assets as $type => $value) {
-      // Query.
+      // Retrieve the cvterm with the cvterm_di returned by the service.
       $rec = $this->chado->query($sql, [':id' => $value])
         ->fetchObject();
+      $this->assertIsObject($rec,
+        "We were unable to retrieve the $type record from chado based on the cvterm_id $value provided by the service.");
 
-      if ($type == 'trait') {
-        // Trait created.
-        $this->assertEquals($rec->name, $trait['Trait Name'], 'Failed to insert trait.');
-        // Inserted into the correct cv the genus is configured.
-        $this->assertEquals($rec->cv_id, 1, 'Failed to insert trait into cv genus is configured.');
-      }
-      elseif ($type == 'method') {
-        // Trait method created.
-        $this->assertEquals($rec->name, $trait['Method Short Name'], 'Failed to insert trait method.');
-        // Inserted into the correct cv the genus is configured.
-        $this->assertEquals($rec->cv_id, 1, 'Failed to insert trait method into cv genus is configured.');
-      }
-      elseif ($type == 'unit') {
-        // Trait unit created.
-        $this->assertEquals($rec->name, $trait['Unit'], 'Failed to insert trait unit.');
-        // Inserted into the correct cv the genus is configured.
-        $this->assertEquals($rec->cv_id, 1, 'Failed to insert trait unit into cv genus is configured.');
-      }
+      // The was configured in setUp and is keyed by the type.
+      $expected_cv = $this->genus_ontology_config[$type];
+      // Ensure it was inserted into the correct cv the genus is configured for.
+      $this->assertEquals($expected_cv, $rec->cv_id,
+        "Failed to insert $type into cv genus is configured.");
+
+      // Check that the name of the cvterm is as we expect.
+      $expected_name = NULL;
+      if ($type == 'trait')  $expected_name = $trait['Trait Name'];
+      if ($type == 'method')  $expected_name = $trait['Method Short Name'];
+      if ($type == 'unit')  $expected_name = $trait['Unit'];
+      $this->assertEquals($expected_name, $rec->name,
+        "The name in the database for the $type did not match the one we expected.");
     }
 
-    // Test relations.
+    // Test relationships.
     $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship}
       WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id";
 
     // Method - trait.
-    $rec = $this->chado->query($sql, [':s_id' =>$trait_assets['trait'], ':t_id' => 1, ':o_id' => $trait_assets['method']]);
-    $this->assertNotNull($rec, 'Failed to relate method to trait.');
+    // @todo this relationship is currently in the wrong order.
+    $rec = $this->chado->query($sql, [
+      ':s_id' => $trait_assets['trait'],
+      ':t_id' => $this->terms['method_to_trait_relationship_type'],
+      ':o_id' => $trait_assets['method']
+    ]);
+    $this->assertNotNull($rec,
+      'Failed to insert a relationship between the method and it\'s trait.');
 
     // Method - unit.
-    $rec = $this->chado->query($sql, [':s_id' =>$trait_assets['method'], ':t_id' => 1, ':o_id' => $trait_assets['unit']]);
-    $this->assertNotNull($rec, 'Failed to relate method to unit.');
+    // @todo this relationship is currently in the wrong order.
+    $rec = $this->chado->query($sql, [
+      ':s_id' => $trait_assets['method'],
+      ':t_id' => $this->terms['unit_to_method_relationship_type'],
+      ':o_id' => $trait_assets['unit']
+    ]);
+    $this->assertNotNull($rec,
+      'Failed to insert a relationship between the method and it\'s unit.');
 
     // Test unit data type.
     $sql = "SELECT cvtermprop_id, value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->chado->query($sql, [':c_id' => $trait_assets['unit'], ':t_id' => 1])
-      ->fetchObject();
+    $data_type = $this->chado->query($sql, [
+      ':c_id' => $trait_assets['unit'],
+      ':t_id' => $this->terms['unit_type'],
+      ])->fetchObject();
 
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
