@@ -83,18 +83,15 @@ trpcultivate_phenotypes.settings:
                     data_collector:
                       type: integer
                       label: 'CV Term: Data collector'
-                    entry: 
+                    entry:
                       type: integer
                       label: 'CV Term: Phenotype entry number'
-                    genus: 
+                    genus:
                       type: integer
                       label: 'CV Term: Genus'
-                    location: 
+                    location:
                       type: integer
                       label: 'CV Term: Phenotyping experiment location'
-                    method: 
-                      type: integer
-                      label: 'CV Term: Phenotyping collection method'
                     name:
                       type: integer
                       label: 'CV Term: Germplasm/line name'
@@ -103,22 +100,23 @@ trpcultivate_phenotypes.settings:
                       label: 'CV Term: Phenotyping plot number'
                     unit_to_method_relationship_type:
                       type: integer
-                      label: 'CV Term: Unit - Method relationship'
+                      label: 'The type of relationship to use to connect Unit to Method (i.e. cvterm_relationship.type_id)'
                     method_to_trait_relationship_type:
                       type: integer
-                      label: 'CV Term: Method - Trait relationship'  
+                      label: 'The type of relationship to use to connect Method to Trait (i.e. cvterm_relationship.type_id)'
+                    trait_to_synonym_relationship_type:
+                      type: integer
+                      label: 'The type of relationship to use to connect Trait to a related ontology term from a crop ontology (i.e. cvterm_relationship.type_id)'
+                    unit_type:
+                      type: integer
+                      label: 'The type of unit which is expected to be Qualitative or Quantitative (i.e. cvtermprop.type_id)'
                     experiment_replicate:
                       type: integer
                       label: 'CV Term: Phenotyping replicate'
-                    unit:
-                      type: integer
-                      label: 'CV Term: Trait unit'
                     experiment_year:
                       type: integer
                       label: 'CV Term: Phenotyping year'
-                    additional_type:
-                      type: integer
-                      label: 'CV Term: Additional type - Qualitative or Quantitative'
+
                 cvdbon:
                   type: sequence
                   label: 'CV, DB and Ontology'
@@ -152,7 +150,7 @@ trpcultivate_phenotypes.settings:
         phenocollect:
           type: string
           label: 'Phenotypes Collect (Raw) Configuration'
-        
+
         # Tripal Phenotypes default ontology/term values.
         default_terms:
           type: config_entity
@@ -163,7 +161,7 @@ trpcultivate_phenotypes.settings:
               label: 'Set of cv and terms'
               sequence:
                 type: mapping
-                mapping: 
+                mapping:
                   name:
                     type: string
                     label: 'CV name'

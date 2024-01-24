@@ -3,8 +3,8 @@
 /**
  * @file
  * Tripal Cultivate Phenotypes Trait service definition.
- * 
- * This service handles all processes involving traits/unit/method or 
+ *
+ * This service handles all processes involving traits/unit/method or
  * cvterms that are used as phenotypic traits/unit/method.
  */
 
@@ -28,15 +28,20 @@ class TripalCultivatePhenotypesTraitsService {
 
   // Tripal logger.
   protected $logger;
-  
+
   // Genus ontology configuration values.
   private $config = [];
 
   // Terms configuration values.
-  private $terms = [];
+  private $terms = [
+    'method_to_trait_relationship_type' => NULL,
+    'unit_to_method_relationship_type' => NULL,
+    'trait_to_synonym_relationship_type' => NULL,
+    'unit_type' => NULL,
+  ];
 
   /**
-   * Constructor.  
+   * Constructor.
    */
   public function __construct(TripalCultivatePhenotypesGenusOntologyService $genus_ontology, TripalCultivatePhenotypesTermsService $terms, ChadoConnection $chado, TripalLogger $logger) {
     // Genus ontology service.
@@ -50,19 +55,8 @@ class TripalCultivatePhenotypesTraitsService {
 
     // Terms configurations.
     // Terms focused on adding traits, required by this service.
-    // NOTE: method to trait and unit to method both point to the
-    //       save term name: related (by default) but both can be configured 
-    //       to point to 2 different terms.
-    $req_terms = [
-      'method', // Collection method.
-      'unit',   // Trait unit of measurement. 
-      'unit_to_method_relationship_type',  // Relate unit - method.
-      'method_to_trait_relationship_type', // Relate method - trait.
-      'additional_type' // Unit data type.
-    ];
-
-    foreach($req_terms as $term) {
-      $this->terms[ $term ] = $this->service_terms->getTermId($term);
+    foreach($this->terms as $config_key => $value) {
+      $this->terms[ $config_key ] = $this->service_terms->getTermId($config_key);
     }
   }
 
@@ -77,26 +71,26 @@ class TripalCultivatePhenotypesTraitsService {
       $container->get('tripal.logger')
     );
   }
-  
+
   /**
    * Set the genus configuration values to which all
    * methods will use to restrict any trait data operations.
-   * 
+   *
    * @param $genus
    *   String, a specific genus to reference in genus ontology configurations.
-   * 
+   *
    * @return void
    */
   public function setTraitGenus($genus) {
     // Fetch all configured genus (active genus).
-    $active_genus = $this->service_genus_ontology->getConfiguredGenusList(); 
+    $active_genus = $this->service_genus_ontology->getConfiguredGenusList();
 
     if ($active_genus && in_array($genus, $active_genus)) {
       $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
-      
+
       // Resolve each configuration entry id number to names.
       $sql = "SELECT name FROM {1:%s} WHERE %s = :id LIMIT 1";
-      
+
       foreach($genus_config as $config => $value) {
         if ($value > 0) {
           // Ontology might be set to 0 - as it is optional in the config page.
@@ -110,7 +104,7 @@ class TripalCultivatePhenotypesTraitsService {
             // Configurations: traits, method, unit and crop_ontology.
             $sql = sprintf($sql, 'cv', 'cv_id');
           }
-          
+
           $name = $this->chado->query($sql, [':id' => $value])
             ->fetchField();
 
@@ -119,12 +113,12 @@ class TripalCultivatePhenotypesTraitsService {
           }
         }
       }
-    }  
+    }
   }
-  
+
   /**
    * Create/Insert phenotypic trait.
-   * 
+   *
    * @param array $trait
    *   Trait added to this module has the following data keys:
    *   - Trait Name: the name of the trait (e.g. Plant Height).
@@ -137,13 +131,13 @@ class TripalCultivatePhenotypesTraitsService {
    *   - Type: Quantitative or Qualitative.
    * @param object $schema
    *   Tripal DBX Chado Connection object
-   *   
+   *
    * @see Header property and Trait Importer.
-   * NOTE: 
+   * NOTE:
    *   - Tripal Importer Plugin loading of file is performed using database transaction.
    *   - Although Genus is collected in the Importer form, It is not saved as part of the terms/traits.
-   *     Genus functions as a pointer to which CV to save the terms as set in the Genus-ontology configuration.  
-   * 
+   *     Genus functions as a pointer to which CV to save the terms as set in the Genus-ontology configuration.
+   *
    * @return
    *   An array with the following keys where each value is the id of new cvterm:
    *   trait, method, unit.
@@ -151,13 +145,13 @@ class TripalCultivatePhenotypesTraitsService {
   public function insertTrait($trait, $schema = NULL) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
-    
+
     if (!$genus_config) {
       return 0;
     }
-    
+
     // Query term.
-    $sql = "SELECT cvterm_id FROM {1:cvterm} INNER JOIN {1:cv} USING (cv_id) 
+    $sql = "SELECT cvterm_id FROM {1:cvterm} INNER JOIN {1:cv} USING (cv_id)
       WHERE cvterm.name = :value AND cv.cv_id = :id LIMIT 1";
 
     // TRAIT, METHOD and UNIT data array.
@@ -175,14 +169,14 @@ class TripalCultivatePhenotypesTraitsService {
         'description' => $trait['Unit'],
       ]
     ];
-    
+
     // Create trait.
     foreach($arr_trait as $type => $values) {
       // Check if a record exists in the same Genus.
       $value = ($type == 'method') ? $values['description'] : $values['name'];
       $id = $this->chado->query($sql, [':value' => $value, ':id' => $genus_config[ $type ]['id']])
         ->fetchField();
-      
+
       if ($id) {
         $arr_trait[ $type ]['id'] = $id;
       }
@@ -191,9 +185,9 @@ class TripalCultivatePhenotypesTraitsService {
           'id' => $genus_config['database']['name'] . ':' . $values['name'],
           'name' => $values['name'],
           'cv_name' => $genus_config[ $type ]['name'],
-          'definition' => $values['description']   
+          'definition' => $values['description']
         ];
-        
+
         $ins = chado_insert_cvterm($rec, [], $schema);
         if (!$ins) {
           // Could not insert cvterm.
@@ -201,16 +195,16 @@ class TripalCultivatePhenotypesTraitsService {
         }
 
         $arr_trait[ $type ]['id'] = $ins->cvterm_id;
-      } 
+      }
     }
 
     // RELATIONSHIPS: trait-method and method-unit.
     // Query relationship.
-    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship} 
+    $sql = "SELECT cvterm_relationship_id FROM {1:cvterm_relationship}
       WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id";
 
     $arr_rel = [
-      'method-trait' => $this->terms['method_to_trait_relationship_type'], 
+      'method-trait' => $this->terms['method_to_trait_relationship_type'],
       'method-unit'  => $this->terms['unit_to_method_relationship_type']
     ];
 
@@ -228,7 +222,7 @@ class TripalCultivatePhenotypesTraitsService {
 
       $exists = $this->chado->query($sql, [':s_id' => $subject, ':t_id' => $rel, ':o_id' => $object])
         ->fetchField();
-      
+
       if (!$exists) {
         $this->chado->insert('1:cvterm_relationship')
           ->fields([
@@ -242,14 +236,14 @@ class TripalCultivatePhenotypesTraitsService {
 
     // UNIT DATA TYPE:
     $sql = "SELECT cvtermprop_id FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->chado->query($sql, [':c_id' => $arr_trait['unit']['id'], ':t_id' => $this->terms['additional_type']])
+    $data_type = $this->chado->query($sql, [':c_id' => $arr_trait['unit']['id'], ':t_id' => $this->terms['unit_type']])
       ->fetchField();
-    
+
     if (!$data_type) {
       $this->chado->insert('1:cvtermprop')
         ->fields([
           'cvterm_id' => $arr_trait['unit']['id'],
-          'type_id' => $this->terms['additional_type'],
+          'type_id' => $this->terms['unit_type'],
           'value' => $trait['Type']
         ])
         ->execute();
@@ -270,14 +264,14 @@ class TripalCultivatePhenotypesTraitsService {
 
   /**
    * Get trait.
-   * 
+   *
    * @param array $trait
-   *   Key: 
+   *   Key:
    *     id - get trait by id number (cvterm_id) or
    *     name - get trait by name (cvterm.name).
-   * 
+   *
    * @return object
-   *   Matching record/line in cvterm table. 
+   *   Matching record/line in cvterm table.
    */
   public function getTrait($trait) {
     // Configuration settings of the genus.
@@ -287,10 +281,10 @@ class TripalCultivatePhenotypesTraitsService {
       // Genus is not configured.
       return 0;
     }
-    
-    $sql = "SELECT cvterm.* FROM {1:cvterm} LEFT JOIN {1:cv} USING (cv_id) 
+
+    $sql = "SELECT cvterm.* FROM {1:cvterm} LEFT JOIN {1:cv} USING (cv_id)
       WHERE cvterm.%s = :value AND cv.cv_id = :id";
-    
+
     $field = isset($trait['id']) ? 'cvterm_id' : 'name';
     $sql = sprintf($sql, $field);
 
@@ -299,24 +293,24 @@ class TripalCultivatePhenotypesTraitsService {
       ':value' => $trait['id'] ?? $trait['name'],
       ':id' => $genus_config['trait']['id']
     ];
-    
+
     // Query.
     $trait = $this->chado->query($sql, $args)
       ->fetchObject();
-    
+
     return $trait ?? 0;
   }
 
   /**
    * Get trait method.
-   * 
+   *
    * @param array $trait
-   *   Key: 
+   *   Key:
    *     id - get method by trait id number (cvterm_id) or
    *     name - get method by trait name (cvterm.name).
-   * 
+   *
    * @return object
-   *   Matching record/line in cvterm table (method). 
+   *   Matching record/line in cvterm table (method).
    */
   public function getTraitMethod($trait) {
     // Configuration settings of the genus.
@@ -326,14 +320,14 @@ class TripalCultivatePhenotypesTraitsService {
       // Not configured genus and term.
       return 0;
     }
-    
+
     $methods = [];
     $trait = $this->getTrait($trait);
 
     if ($trait) {
       // Get the method.
       $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
-      
+
       // Query values.
       $args = [
         ':s_id' => (int) $trait->cvterm_id,
@@ -348,7 +342,7 @@ class TripalCultivatePhenotypesTraitsService {
         // Resolve the method id.
         $method = $this->chado->query($sql, [':id' => $method_id->id, ':c_id' => $genus_config['method']['id']])
           ->fetchObject();
-        
+
         if ($method) {
           $methods[] = $method;
         }
@@ -360,13 +354,13 @@ class TripalCultivatePhenotypesTraitsService {
 
   /**
    * Get trait method unit and unit data type.
-   * 
+   *
    * @param integer $method_id
    *   Method id number (method cvterm id).
-   * 
+   *
    * @return object
    *   Matching record/line in cvterm table (unit) and
-   *   unit data type.  
+   *   unit data type.
    */
   public function getMethodUnit($method_id) {
     // Configuration settings of the genus.
@@ -376,7 +370,7 @@ class TripalCultivatePhenotypesTraitsService {
       // Not configured genus and term.
       return 0;
     }
-    
+
     $unit = 0;
 
     // Get unit.
@@ -387,7 +381,7 @@ class TripalCultivatePhenotypesTraitsService {
       ':s_id' => (int) $method_id,
       ':t_id' => $this->terms['unit_to_method_relationship_type']
     ];
-    
+
     // Query unit.
     $unit_id = $this->chado->query($sql, $args)
       ->fetchField();
@@ -397,29 +391,29 @@ class TripalCultivatePhenotypesTraitsService {
       $unit = $this->chado->query($sql, [':id' => $unit_id, ':c_id' => $genus_config['unit']['id']])
         ->fetchObject();
     }
-    
+
     return $unit;
   }
 
   /**
    * Get Trait Method Unit data type.
-   * 
+   *
    * @param integer $unit_id
    *   Method unit id number (unit cvterm id).
-   * 
+   *
    * @return string
    *   The data type of the unit, either quantitative or qualitative. False if not set.
    */
   public function getMethodUnitDataType($unit_id) {
-    if ($this->terms['additional_type'] <= 0 && !$unit_id) {
+    if ($this->terms['unit_type'] <= 0 && !$unit_id) {
       // Not configured term and no method id provided.
       return 0;
     }
 
     $sql = "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->chado->query($sql, [':c_id' => $unit_id, ':t_id' => $this->terms['additional_type']])
+    $data_type = $this->chado->query($sql, [':c_id' => $unit_id, ':t_id' => $this->terms['unit_type']])
       ->fetchField();
-    
+
     return $data_type ?? 0;
   }
 }

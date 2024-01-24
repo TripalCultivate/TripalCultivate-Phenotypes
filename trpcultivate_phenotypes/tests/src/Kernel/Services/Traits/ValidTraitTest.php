@@ -57,11 +57,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set ontology terms to null (id: 1).
     $req_terms = [
-      'method', // Collection method.
-      'unit',   // Trait unit of measurement.
       'unit_to_method_relationship_type',  // Relate unit - method.
       'method_to_trait_relationship_type', // Relate method - trait.
-      'additional_type' // Unit data type.
+      'unit_type' // Unit data type.
     ];
 
     foreach($req_terms as $term) {
