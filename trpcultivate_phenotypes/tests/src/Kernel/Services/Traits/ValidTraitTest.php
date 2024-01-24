@@ -5,17 +5,19 @@
  * Kernel test of Traits service.
  */
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
 
 /**
- * Tests associated with the Traits Service.
+ * Tests that a valid trait/method/unit combination can be inserted/retrieved.
  *
  * @group trpcultivate_phenotypes
+ * @group services
+ * @group traits
  */
-class ServiceTraitsTest extends ChadoTestKernelBase {
+class ValidTraitTest extends ChadoTestKernelBase {
   /**
    * Plugin Manager service.
    */
