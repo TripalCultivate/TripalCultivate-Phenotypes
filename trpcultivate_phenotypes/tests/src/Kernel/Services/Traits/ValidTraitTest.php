@@ -140,9 +140,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test traits service.
+   * Tests that inserting a trait/method/unit populates the database as we expect.
    */
-  public function testTraitsService() {
+  public function testTraitsServiceDatabaseExpectations() {
     // Create a trait, unit and method test records.
 
     // As defined by headers property in the importer.
@@ -249,6 +249,60 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
+
+  }
+
+  /**
+   * Test that we can retrieve a trait we just inserted.
+   */
+  public function testTraitsServiceGetters() {
+    // Create a trait, unit and method test records.
+
+    // As defined by headers property in the importer.
+    $headers = [
+      'Trait Name',
+      'Trait Description',
+      'Method Short Name',
+      'Collection Method',
+      'Unit',
+      'Type'
+    ];
+
+    // As with the traits importer, values are:
+    // Trait Name, Trait Description, Method Short Name, Collection Method, Unit and Type.
+    // This is a tsv string similar to a line/row in traits data file.
+    $trait  = 'TraitABC'  . uniqid();
+    $method = 'MethodABC' . uniqid();
+    $unit   = 'UnitABC'   . uniqid();
+
+    $insert_trait = [
+      $trait,
+      $trait  . ' Description',
+      $method . '-SName',
+      $method . ' - Pull from ground',
+      $unit,
+      'Quantitative'
+    ];
+
+    $line = implode("\t", $insert_trait);
+
+    // Split tsv to data points and map to headers array where the key is the header
+    // and value is the corresponding data point.
+    $data_columns = str_getcsv($line, "\t");
+    // Sanitize every data in rows and columns.
+    $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
+
+    $trait = [];
+    $headers_count = count($headers);
+
+    for ($i = 0; $i < $headers_count; $i++) {
+      $trait[ $headers[ $i ] ] = $data[ $i ];
+    }
+
+    // Set genus to use by the traits service.
+    $this->service_traits->setTraitGenus($this->genus);
+    // Save the trait.
+    $trait_assets = $this->service_traits->insertTrait($trait);
 
     // Test get trait.
 
