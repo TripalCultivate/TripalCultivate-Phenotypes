@@ -143,48 +143,22 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * Tests that inserting a trait/method/unit populates the database as we expect.
    */
   public function testTraitsServiceDatabaseExpectations() {
-    // Create a trait, unit and method test records.
 
-    // As defined by headers property in the importer.
-    $headers = [
-      'Trait Name',
-      'Trait Description',
-      'Method Short Name',
-      'Collection Method',
-      'Unit',
-      'Type'
+    // Generate some fake/unique names.
+    $trait_name  = 'TraitABC'  . uniqid();
+    $method_name = 'MethodABC' . uniqid();
+    $unit_name   = 'UnitABC'   . uniqid();
+
+    // Now bring these together into the array of values
+    // requested by the insertTrait() method.
+    $trait = [
+      'Trait Name' => $trait_name,
+      'Trait Description' => $trait_name  . ' Description',
+      'Method Short Name' => $method_name . '-SName',
+      'Collection Method' => $method_name . ' - Pull from ground',
+      'Unit' => $unit_name,
+      'Type' => 'Quantitative'
     ];
-
-    // As with the traits importer, values are:
-    // Trait Name, Trait Description, Method Short Name, Collection Method, Unit and Type.
-    // This is a tsv string similar to a line/row in traits data file.
-    $trait  = 'TraitABC'  . uniqid();
-    $method = 'MethodABC' . uniqid();
-    $unit   = 'UnitABC'   . uniqid();
-
-    $insert_trait = [
-      $trait,
-      $trait  . ' Description',
-      $method . '-SName',
-      $method . ' - Pull from ground',
-      $unit,
-      'Quantitative'
-    ];
-
-    $line = implode("\t", $insert_trait);
-
-    // Split tsv to data points and map to headers array where the key is the header
-    // and value is the corresponding data point.
-    $data_columns = str_getcsv($line, "\t");
-    // Sanitize every data in rows and columns.
-    $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-
-    $trait = [];
-    $headers_count = count($headers);
-
-    for ($i = 0; $i < $headers_count; $i++) {
-      $trait[ $headers[ $i ] ] = $data[ $i ];
-    }
 
     // Set genus to use by the traits service.
     $this->service_traits->setTraitGenus($this->genus);
@@ -256,48 +230,22 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * Test that we can retrieve a trait we just inserted.
    */
   public function testTraitsServiceGetters() {
-    // Create a trait, unit and method test records.
 
-    // As defined by headers property in the importer.
-    $headers = [
-      'Trait Name',
-      'Trait Description',
-      'Method Short Name',
-      'Collection Method',
-      'Unit',
-      'Type'
+    // Generate some fake/unique names.
+    $trait_name  = 'TraitABC'  . uniqid();
+    $method_name = 'MethodABC' . uniqid();
+    $unit_name   = 'UnitABC'   . uniqid();
+
+    // Now bring these together into the array of values
+    // requested by the insertTrait() method.
+    $trait = [
+      'Trait Name' => $trait_name,
+      'Trait Description' => $trait_name  . ' Description',
+      'Method Short Name' => $method_name . '-SName',
+      'Collection Method' => $method_name . ' - Pull from ground',
+      'Unit' => $unit_name,
+      'Type' => 'Quantitative'
     ];
-
-    // As with the traits importer, values are:
-    // Trait Name, Trait Description, Method Short Name, Collection Method, Unit and Type.
-    // This is a tsv string similar to a line/row in traits data file.
-    $trait  = 'TraitABC'  . uniqid();
-    $method = 'MethodABC' . uniqid();
-    $unit   = 'UnitABC'   . uniqid();
-
-    $insert_trait = [
-      $trait,
-      $trait  . ' Description',
-      $method . '-SName',
-      $method . ' - Pull from ground',
-      $unit,
-      'Quantitative'
-    ];
-
-    $line = implode("\t", $insert_trait);
-
-    // Split tsv to data points and map to headers array where the key is the header
-    // and value is the corresponding data point.
-    $data_columns = str_getcsv($line, "\t");
-    // Sanitize every data in rows and columns.
-    $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-
-    $trait = [];
-    $headers_count = count($headers);
-
-    for ($i = 0; $i < $headers_count; $i++) {
-      $trait[ $headers[ $i ] ] = $data[ $i ];
-    }
 
     // Set genus to use by the traits service.
     $this->service_traits->setTraitGenus($this->genus);
@@ -307,7 +255,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Test get trait.
 
     $trait_id = $trait_assets['trait'];
-    $trait_name = $insert_trait[0];
+    $trait_name = $trait['Trait Name'];
 
     // Get trait by id.
     $t = $this->service_traits->getTrait(['id' => $trait_id]);
@@ -318,7 +266,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait name).');
 
     // Test get trait method.
-    $method_name = $insert_trait[2];
+    $method_name = $trait['Method Short Name'];
 
     // Get trait method by trait id.
     $m = $this->service_traits->getTraitMethod(['id' => $trait_id]);
@@ -331,13 +279,13 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Test get trait method unit.
 
-    $unit_name = $insert_trait[4];
+    $unit_name = $trait['Unit'];
     $u = $this->service_traits->getMethodUnit($method_id);
     $this->assertEquals($unit_name, $u->name, 'Trait method unit not found.');
     $unit_id = $u->cvterm_id;
 
     // Test get unit data type.
-    $data_type = $insert_trait[5];
+    $data_type = $trait['Type'];
     $dt = $this->service_traits->getMethodUnitDataType($unit_id);
     $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
   }
