@@ -195,7 +195,10 @@ class ValidTraitTest extends ChadoTestKernelBase {
       WHERE subject_id = :s_id AND type_id = :t_id AND object_id = :o_id";
 
     // Method - trait.
-    // @todo this relationship is currently in the wrong order.
+    // @todo this relationship is currently in the wrong order
+    // for the term we choose but is the same order as in AP.
+    // Expected "Measured with ruler" is "Method" of "Plant Height"
+    // but is currently saved as "Plant Height" is "Method" of "Measured with ruler"
     $rec = $this->chado->query($sql, [
       ':s_id' => $trait_assets['trait'],
       ':t_id' => $this->terms['method_to_trait_relationship_type'],
@@ -205,7 +208,10 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'Failed to insert a relationship between the method and it\'s trait.');
 
     // Method - unit.
-    // @todo this relationship is currently in the wrong order.
+    // @todo this relationship is currently in the wrong order
+    // for the term we choose but is the same order as in AP.
+    // Expected "cm" is "Unit" of "Measured with Ruler"
+    // but it is currently saved as "Measures with ruler" is "Unit" of "cm"
     $rec = $this->chado->query($sql, [
       ':s_id' => $trait_assets['method'],
       ':t_id' => $this->terms['unit_to_method_relationship_type'],
