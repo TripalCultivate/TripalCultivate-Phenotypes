@@ -89,7 +89,8 @@ class TripalCultivatePhenotypesTraitsService {
       $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
 
       // Resolve each configuration entry id number to names.
-      $sql = "SELECT name FROM {1:%s} WHERE %s = :id LIMIT 1";
+      $cv_sql = "SELECT name FROM {1:cv} WHERE cv_id = :id LIMIT 1";
+      $db_sql = "SELECT name FROM {1:db} WHERE db_id = :id LIMIT 1";
 
       foreach($genus_config as $config => $value) {
         if ($value > 0) {
@@ -97,16 +98,15 @@ class TripalCultivatePhenotypesTraitsService {
           // Reference only values that have been set.
           if ($config == 'database') {
             // DB configuration.
-            $sql = sprintf($sql, 'db', 'db_id');
+            $name = $this->chado->query($db_sql, [':id' => $value])
+            ->fetchField();
           }
           else {
             // CV configuration.
             // Configurations: traits, method, unit and crop_ontology.
-            $sql = sprintf($sql, 'cv', 'cv_id');
-          }
-
-          $name = $this->chado->query($sql, [':id' => $value])
+            $name = $this->chado->query($cv_sql, [':id' => $value])
             ->fetchField();
+          }
 
           if ($name) {
             $this->config[ $config ] = ['id' => $value, 'name' => $name];
