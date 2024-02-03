@@ -114,6 +114,10 @@ class TripalCultivatePhenotypesTraitsService {
         }
       }
     }
+    else {
+      throw new \Exception(t('The genus "@genus" was not configured for use with Tripal Cultivate Phenotypes. To configure this genus, go to @url and set the controlled vocabularies associated with this genus.',
+      ['@genus' => $genus, '@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
+    }
   }
 
   /**
