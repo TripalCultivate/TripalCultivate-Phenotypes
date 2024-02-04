@@ -26,6 +26,11 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
    */
   protected array $cvdbon;
 
+  /**
+   * The terms required by this module mapped to the cvterm_ids they are set to.
+   */
+  protected array $terms;
+
   protected $definitions = [
     'test-trait-importer' => [
       'id' => 'trpcultivate-phenotypes-traits-importer',
@@ -98,6 +103,8 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     $this->assertIsNumeric($organism_id,
       "We were not able to create an organism for testing.");
     $this->cvdbon = $this->setOntologyConfig('Tripalus');
+
+    $this->terms = $this->setTermConfig();
 
     $this->config_factory = \Drupal::configFactory();
     $this->importer = new \Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter(

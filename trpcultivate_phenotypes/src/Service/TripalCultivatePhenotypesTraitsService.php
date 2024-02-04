@@ -111,6 +111,12 @@ class TripalCultivatePhenotypesTraitsService {
           if ($name) {
             $this->config[ $config ] = ['id' => $value, 'name' => $name];
           }
+          else {
+            $schema = $this->chado->getSchemaName();
+            $table = ($config == 'database') ? $schema . '.db' : $schema . '.cv';
+            throw new \Exception(t('We were unable to retrieve the name for the Genus @type in the @table where the primary key is @id.',
+              ['@type' => $config, '@id' => $value, '@table' => $table]));
+          }
         }
       }
     }

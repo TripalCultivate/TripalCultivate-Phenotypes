@@ -110,6 +110,44 @@ trait PhenotypeImporterTestTrait {
   }
 
   /**
+   * Configures the terms used by the phenotypes module.
+   */
+  public function setTermConfig(array $terms = []) {
+    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+
+    $reference = [
+      'data_collector',
+      'entry',
+      'genus',
+      'location',
+      'name',
+      'experiment_container',
+      'unit_to_method_relationship_type',
+      'method_to_trait_relationship_type',
+      'trait_to_synonym_relationship_type',
+      'unit_type',
+      'experiment_replicate',
+      'experiment_year',
+    ];
+    foreach ($reference as $key) {
+      // Ensure the key exists in terms.
+      if (!array_key_exists($key, $terms)) {
+        $terms[$key] = 0;
+      }
+      // If the term value is not set, then choose a random integer between 10 - 300.
+      // We know there are at least 300 terms in the cvterm table so this is pretty safe.
+      if(empty($terms[$key])) {
+        $terms[$key] = random_int(10,300);
+      }
+
+      // Now set the configuration
+      $config->set("trpcultivate.phenotypes.ontology.terms.$key", $terms[$key]);
+    }
+
+    return $terms;
+  }
+
+  /**
    * Creates a Drupal Managed file based on the details provided.
    *
    * @param array $details
