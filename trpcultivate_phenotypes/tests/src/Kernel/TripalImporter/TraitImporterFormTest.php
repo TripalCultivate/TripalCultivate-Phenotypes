@@ -98,6 +98,15 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     $this->assertEquals('tripal_admin_form_tripalimporter', $form['#form_id'],
       'We did not get the form id we expected.');
 
+    // We expect there to be a Drupal message indicating that the module is not configured.
+    // There is also always a message about not importing phenotypic measurements here.
+    $warnings = \Drupal::messenger()->messagesByType('warning');
+    $this->assertCount(2, $warnings,
+      "We expect two warnings since the module is not configured.");
+    $this->assertStringContainsString('NOT configured', $warnings[1],
+      "We expected the second message logged to indicate that the module is not yet configured.");
+
+    // We also expect the full form to be rendered, so check that now.
     // Now that we have provided a plugin_id, we expect it to have...
     // title matching our importer label.
     $this->assertArrayHasKey('#title', $form,
@@ -110,7 +119,32 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     $this->assertEquals($plugin_id, $form['importer_plugin_id']['#value'],
       "The importer_plugin_id[#value] should be set to our plugin_id.");
 
+    // Check the file fieldset contents
+    $this->assertArrayHasKey('file', $form,
+      "We expect there to be a file fieldset but there is not.");
+    $this->assertEquals('fieldset', $form['file']['#type'],
+      "We expect the file element in the form to be a fieldset.");
+    // We expect there to be an upload description including a template link
+    // and numbered column description.
+    $this->assertArrayHasKey('upload_description', $form['file'],
+      "We expect the upload description to have been added to the form by the TripalImporter base class.");
+    $this->assertStringContainsString('<a href', $form['file']['upload_description']['#markup'],
+      "We expected the upload description to have a link in it.");
+    $this->assertStringContainsString('<ol id="tcp-header-notes">', $form['file']['upload_description']['#markup'],
+      "We expected the upload description to have an ordered list in it.");
+    // We also expect the file upload HTML5 element provided by Tripal
+    // and not the file local/remote.
+    $this->assertArrayHasKey('file_upload', $form['file'],
+      "We expect the file upload element to be added by the Tripal Importer base class.");
+    $this->assertArrayNotHasKey('file_local', $form['file'],
+      "The local file element should not be available.");
+    $this->assertArrayNotHasKey('file_remote', $form['file'],
+      "The remote file element should not be available.");
 
-
+    // Check the Genus form element.
+    $this->assertArrayHasKey('genus', $form,
+      "We expect there to be a genus form element but there is not.");
+    $this->assertEquals('select', $form['genus']['#type'],
+      "We expect the genus element in the form to be a select list.");
   }
 }
