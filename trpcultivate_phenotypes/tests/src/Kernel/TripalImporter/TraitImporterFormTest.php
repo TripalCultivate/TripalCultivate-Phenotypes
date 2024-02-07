@@ -284,11 +284,18 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
 
 	  $plugin_id = 'trpcultivate-phenotypes-traits-importer';
 
+    // Create a file to upload.
+    $file = $this->createTestFile([
+      'filename' => 'simple_example.txt',
+      'content' => ['file' => 'TraitImporterFiles/simple_example.txt'],
+    ]);
+
     // INVALID ORGANISM.
     // Setup the form_state.
     $form_state = new \Drupal\Core\Form\FormState();
     $form_state->addBuildInfo('args', [$plugin_id]);
     $form_state->setValue('genus', 'NONexistingOrganism');
+    $form_state->setValue('file_upload', $file->id());
 
     // Now try validation!
     \Drupal::formBuilder()->submitForm(
@@ -315,6 +322,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     $form_state = new \Drupal\Core\Form\FormState();
     $form_state->addBuildInfo('args', [$plugin_id]);
     $form_state->setValue('genus', 0);
+    $form_state->setValue('file_upload', $file->id());
 
     // Now try validation!
     \Drupal::formBuilder()->submitForm(
