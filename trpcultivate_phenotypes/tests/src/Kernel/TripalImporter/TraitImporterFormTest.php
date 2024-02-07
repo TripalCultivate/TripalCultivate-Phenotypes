@@ -79,8 +79,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Tests focusing on the run() function using a simple example file that
-   * populates all columns.
+   * Tests building the importer form when the module is not configured.
    */
   public function testTraitImporterFormNoOrganism() {
 
@@ -146,5 +145,65 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
       "We expect there to be a genus form element but there is not.");
     $this->assertEquals('select', $form['genus']['#type'],
       "We expect the genus element in the form to be a select list.");
+  }
+
+  /**
+   * Tests submitting the importer form when the module is not configured.
+   */
+  public function testTraitImporterFormSubmitNoOrganism() {
+
+	  $plugin_id = 'trpcultivate-phenotypes-traits-importer';
+
+    // INVALID ORGANISM.
+    // Setup the form_state.
+    $form_state = new \Drupal\Core\Form\FormState();
+    $form_state->addBuildInfo('args', [$plugin_id]);
+    $form_state->setValue('genus', 'NONexistingOrganism');
+
+    // Now try validation!
+    \Drupal::formBuilder()->submitForm(
+      'Drupal\tripal\Form\TripalImporterForm',
+      $form_state
+    );
+
+    // Check that we got an error about the genus not being valid.
+    $this->assertTrue($form_state->isValidationComplete(),
+      "We expect the form state to have been updated to indicate that validation is complete.");
+    //   Looking for form validation errors
+    $form_validation_messages = $form_state->getErrors();
+    $helpful_output = [];
+    foreach ($form_validation_messages as $element => $markup) {
+      $helpful_output[] = $element . " => " . (string) $markup;
+    }
+    $this->assertCount(1, $form_validation_messages,
+      "We should have exactly one validation error but instead we have: " . implode(" AND ", $helpful_output));
+    $this->assertStringContainsString('An illegal choice has been detected', $form_validation_messages['genus'],
+      "We expected the genus form element to indicate the choice was not valid.");
+
+    // NO ORGANISM.
+    // Setup the form_state.
+    $form_state = new \Drupal\Core\Form\FormState();
+    $form_state->addBuildInfo('args', [$plugin_id]);
+    $form_state->setValue('genus', 0);
+
+    // Now try validation!
+    \Drupal::formBuilder()->submitForm(
+      'Drupal\tripal\Form\TripalImporterForm',
+      $form_state
+    );
+
+    // Check that we got an error about the genus not being valid.
+    $this->assertTrue($form_state->isValidationComplete(),
+      "We expect the form state to have been updated to indicate that validation is complete.");
+    //   Looking for form validation errors
+    $form_validation_messages = $form_state->getErrors();
+    $helpful_output = [];
+    foreach ($form_validation_messages as $element => $markup) {
+      $helpful_output[] = $element . " => " . (string) $markup;
+    }
+    $this->assertCount(1, $form_validation_messages,
+      "We should have exactly one validation error but instead we have: " . implode(" AND ", $helpful_output));
+    $this->assertStringContainsString('An illegal choice has been detected', $form_validation_messages['genus'],
+      "We expected the genus form element to indicate the choice was not valid.");
   }
 }
