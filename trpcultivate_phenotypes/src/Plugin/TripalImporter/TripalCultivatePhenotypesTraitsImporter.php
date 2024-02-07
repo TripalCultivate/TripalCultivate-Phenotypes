@@ -31,8 +31,8 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsServic
  *   use_analysis = False,
  *   require_analysis = False,
  *   use_button = True,
- *   submit_disabled = False, 
- *   button_text = "Import", 
+ *   submit_disabled = False,
+ *   button_text = "Import",
  *   file_upload = True,
  *   file_local = False,
  *   file_remote = False,
@@ -48,7 +48,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   // Reference the validation result summary values in Drupal storage
   // system using this variable.
   private $validation_result = 'validation_result';
-  
+
   // Headers required by this importer.
   private $headers = [
     'Trait Name' => 'The name of the trait, as you would like it to appear to the user (e.g. Days to Flower)',
@@ -68,7 +68,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
   /**
    * Injection of services through setter methods.
-   * 
+   *
    * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
    * @param array $configuration
    * @param string $plugin_id
@@ -90,7 +90,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $service_genusontology,
       $service_traits
     );
-    
+
     // Call service setter method to set the service.
     $instance->setServiceGenusOntology($service_genusontology);
     $instance->setServiceTraits($service_traits);
@@ -101,9 +101,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   /**
    * Service setter method:
    * Set genus ontology configuration service.
-   * 
+   *
    * @param $service
-   *   Service as created/injected through create method. 
+   *   Service as created/injected through create method.
    */
   public function setServiceGenusOntology($service) {
     if ($service) {
@@ -114,9 +114,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   /**
    * Service setter method:
    * Set traits service.
-   * 
+   *
    * @param $service
-   *   Service as created/injected through create method. 
+   *   Service as created/injected through create method.
    */
   public function setServiceTraits($service) {
     if ($service) {
@@ -130,10 +130,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   public function form($form, &$form_state) {
     // Always call the parent form to ensure Chado is handled properly.
     $form = parent::form($form, $form_state);
- 
+
     // Validation result.
     $storage = $form_state->getStorage();
-    
+
     // Full validation result summary.
     if (isset($storage[ $this->validation_result ])) {
       $validation_result = $storage[ $this->validation_result ];
@@ -147,9 +147,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         '#weight' => -100
       ];
     }
-    
+
     // This is a reminder to user about expected trait data.
-    $phenotypes_minder = t('This importer allows for the upload of phenotypic trait dictionaries in preparation 
+    $phenotypes_minder = t('This importer allows for the upload of phenotypic trait dictionaries in preparation
       for uploading phenotypic data. <br /><strong>This importer Does NOT upload phenotypic measurements.</strong>');
     \Drupal::messenger()->addWarning($phenotypes_minder);
 
@@ -157,7 +157,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Prepare select options with only active genus.
     $all_genus = $this->service_genusontology->getConfiguredGenusList();
     $active_genus = array_combine($all_genus, $all_genus);
-    
+
     if (!$active_genus) {
       $phenotypes_minder = t('This module is <strong>NOT configured</strong> to import Traits for analyzed phenotypes.');
       \Drupal::messenger()->addWarning($phenotypes_minder);
@@ -168,13 +168,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     if ($active_genus && count($active_genus) == 1) {
       $default_genus = reset($active_genus);
     }
-    
+
     // Field genus.
     $form['genus'] = array(
       '#type' => 'select',
       '#title' => 'Genus',
-      '#description' => t('The genus of the germplasm being phenotyped with the supplied traits. 
-        Traits in this system are specific to the genus in order to ensure they are specific enough to accurately describe the phenotypes. 
+      '#description' => t('The genus of the germplasm being phenotyped with the supplied traits.
+        Traits in this system are specific to the genus in order to ensure they are specific enough to accurately describe the phenotypes.
         In order for genus to be availabe here is must be first configured in the Analyzed Phenotypes configuration.'),
       '#empty_option' => '- Select -',
       '#options' => $active_genus,
@@ -184,11 +184,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     );
 
     // This importer does not support using file sources from existing field.
-    // #access: (bool) Whether the element is accessible or not; when FALSE, 
-    // the element is not rendered and the user submitted value is not taken 
+    // #access: (bool) Whether the element is accessible or not; when FALSE,
+    // the element is not rendered and the user submitted value is not taken
     // into consideration.
     $form['file']['file_upload_existing']['#access'] = FALSE;
-    
+
     return $form;
   }
 
@@ -205,9 +205,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   /**
    * {@inheritdoc}
    */
-  public function formValidate($form, &$form_state) {    
+  public function formValidate($form, &$form_state) {
     $form_state_values = $form_state->getValues();
-    
+
     // Counter, count number of validators that failed.
     $failed_validator = 0;
 
@@ -222,13 +222,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $genus = $form_state_values['genus'];
     $file = $form_state_values['file_upload'];
     $headers = array_keys($this->headers);
-    
+
     $scopes = ['GENUS', 'FILE', 'HEADERS', 'TRAIT IMPORT VALUES'];
-    
+
     // Array to hold all validation result for each level.
     // Each result is keyed by the scope.
     $validation = [];
-    
+
     foreach($scopes as $scope) {
       // Create instance of the scope-specific plugin and perform validation.
       $validator = $manager->getValidatorIdWithScope($scope);
@@ -257,7 +257,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     if ($failed_validator > 0) {
       // There are issues in the submission and are detailed in the validation result window.
-      // Prevent this form from submitting and reload form with all the validation errors 
+      // Prevent this form from submitting and reload form with all the validation errors
       // in the storage system.
       $form_state->setRebuild(TRUE);
     }
@@ -269,7 +269,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   public function run() {
     // Traits service.
     $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    
+
     // Values provided by user in the importer page.
     // Genus.
     $genus = $this->arguments['run_args']['genus'];
@@ -298,9 +298,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $data_columns = str_getcsv($line, "\t");
         // Sanitize every data in rows and columns.
         $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-        
+
         // Construct trait array so that each data (value) in a line/row corresponds
-        // to the column header (key). 
+        // to the column header (key).
         // ie. ['Trait Name' => data 1, 'Trait Description' => data 2 ...]
         $trait = [];
 
@@ -311,8 +311,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
         // Create the trait.
 
-        // NOTE: Loading of this file is performed using a database transaction. 
-        // If it fails or is terminated prematurely then all insertions and updates 
+        // NOTE: Loading of this file is performed using a database transaction.
+        // If it fails or is terminated prematurely then all insertions and updates
         // are rolled back and will not be found in the database.
         $service_traits->insertTrait($trait);
 
@@ -322,7 +322,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Next line;
       $line_no++;
     }
-    
+
     // Close the file.
     fclose($handle);
   }
@@ -344,13 +344,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
       ->generateFile($importer_id, $column_headers);
-    
+
     // Additional notes to the headers.
     $notes = 'The order of the above columns is important and your file must include a header!
     If you have a single trait measured in more then one way (i.e. with multiple collection
     methods), then you should have one line per collection method with the trait repeated.';
 
-    // Render the header notes/lists template and use the file link as 
+    // Render the header notes/lists template and use the file link as
     // the value to href attribute of the link to download a template file.
     $build = [
       '#theme' => 'importer_header',
@@ -361,6 +361,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ]
     ];
 
-    return \Drupal::service('renderer')->render($build);
+    return \Drupal::service('renderer')->renderPlain($build);
   }
 }
