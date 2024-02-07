@@ -57,6 +57,6 @@ class ServiceTemplateGeneratorTest extends ChadoTestKernelBase {
     $this->assertNotNull($link, 'Failed to generate template file link.');
 
     // Works locally but fails in actions. Importer share functional test implements the same file size check.
-    // $this->assertGreaterThanOrEqual(1, filesize($link), 'The template file generated is empty.');
+    $this->assertGreaterThanOrEqual(1, filesize($link), 'The template file generated is empty.');
   }
 }
