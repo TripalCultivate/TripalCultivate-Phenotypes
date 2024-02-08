@@ -87,13 +87,43 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     $senarios[] = [
       'correct_header_no_data.tsv',
       [
-        'TRAIT IMPORT VALUES' => 'no data rows',
+        'GENUS' => ['status' => 'pass'],
+        'FILE' => ['status' => 'pass'],
+        'HEADERS' => ['status' => 'pass'],
+        'TRAIT IMPORT VALUES' => [
+          'status' => 'fail',
+          'message' => 'no data rows',
+        ]
       ]
     ];
 
     // Contains incorrect header and one line of correct data
+    $senarios[] = [
+      'incorrect_header_with_data.tsv',
+      [
+        'GENUS' => ['status' => 'pass'],
+        'FILE' => ['status' => 'pass'],
+        'HEADERS' => [
+          'status' => 'fail',
+          'message' => 'Trait Description is/are missing in the file',
+        ],
+        'TRAIT IMPORT VALUES' => ['status' => 'todo'],
+      ]
+    ];
 
     // Contains correct header and duplicate trait-method-unit combo
+    $senarios[] = [
+      'correct_header_duplicate_traitMethodUnit.tsv',
+      [
+        'GENUS' => ['status' => 'pass'],
+        'FILE' => ['status' => 'pass'],
+        'HEADERS' => ['status' => 'pass'],
+        'TRAIT IMPORT VALUES' => [
+          'status' => 'fail',
+          // Can't yet test the message here is it's a complicated structure.
+        ]
+      ]
+    ];
 
     // Contains correct header but data types are mismatched
 
@@ -159,11 +189,13 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       "We expected a validation failure reported via our plugin setup but it's not showing up in the form.");
     $validation_element_data = $form['validation_result']['#data']['validation_result'];
     // Now check our expectations are met.
-    foreach ($expectations as $validation_plugin => $expected_message) {
-      $this->assertEquals('fail', $validation_element_data[$validation_plugin]['status'],
-        "We expected the form validation element to indicate the $validation_plugin plugin returned a failed status.");
-      $this->assertStringContainsString($expected_message, $validation_element_data[$validation_plugin]['details'],
-        "We expected the details for $validation_plugin to include a specific string but it did not.");
+    foreach ($expectations as $validation_plugin => $expected) {
+      $this->assertEquals($expected['status'], $validation_element_data[$validation_plugin]['status'],
+        "We expected the form validation element to indicate the $validation_plugin plugin had the specified status.");
+      if (array_key_exists('message', $expected)) {
+        $this->assertStringContainsString($expected['message'], $validation_element_data[$validation_plugin]['details'],
+          "We expected the details for $validation_plugin to include a specific string but it did not.");
+      }
     }
   }
 }
