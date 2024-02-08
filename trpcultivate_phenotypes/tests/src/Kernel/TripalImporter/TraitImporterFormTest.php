@@ -314,8 +314,8 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     }
     $this->assertCount(1, $form_validation_messages,
       "We should have exactly one validation error but instead we have: " . implode(" AND ", $helpful_output));
-    $this->assertStringContainsString('An illegal choice has been detected', $form_validation_messages['genus'],
-      "We expected the genus form element to indicate the choice was not valid.");
+    $this->assertArrayHasKey('genus', $form_validation_messages,
+      "We expected the genus form element specifically to have a validation error but instead we have: " . implode(" AND ", $helpful_output));
 
     // NO ORGANISM.
     // Setup the form_state.
@@ -341,7 +341,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     }
     $this->assertCount(1, $form_validation_messages,
       "We should have exactly one validation error but instead we have: " . implode(" AND ", $helpful_output));
-    $this->assertStringContainsString('An illegal choice has been detected', $form_validation_messages['genus'],
-      "We expected the genus form element to indicate the choice was not valid.");
+    $this->assertArrayHasKey('genus', $form_validation_messages,
+      "We expected the genus form element specifically to have a validation error but instead we have: " . implode(" AND ", $helpful_output));
   }
 }

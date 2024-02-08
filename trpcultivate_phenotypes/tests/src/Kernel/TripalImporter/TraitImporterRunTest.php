@@ -134,6 +134,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     $this->importer->createImportJob($run_args, $file_details);
     $this->importer->prepareFiles();
     $this->importer->run();
+    $this->importer->postRun();
 
   }
 }
