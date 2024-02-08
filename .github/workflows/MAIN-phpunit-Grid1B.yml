@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - 4.x
-      - g5.18-workflows
+
 jobs:
   grid-1B:
     runs-on: ubuntu-latest
