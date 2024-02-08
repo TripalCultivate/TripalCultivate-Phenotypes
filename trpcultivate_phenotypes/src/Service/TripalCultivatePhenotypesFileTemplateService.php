@@ -31,16 +31,6 @@ class TripalCultivatePhenotypesFileTemplateService {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('config.factory'),
-      $container->get('current_user')
-    );
-  }
-
-  /**
    * Generate template file.
    *
    * @param string $importer_id

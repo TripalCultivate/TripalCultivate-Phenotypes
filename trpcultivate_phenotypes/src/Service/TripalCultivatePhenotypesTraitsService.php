@@ -61,18 +61,6 @@ class TripalCultivatePhenotypesTraitsService {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('trpcultivate_phenotypes.genus_ontology'),
-      $container->get('trpcultivate_phenotypes.terms'),
-      $container->get('tripal_chado.database'),
-      $container->get('tripal.logger')
-    );
-  }
-
-  /**
    * Set the genus configuration values to which all
    * methods will use to restrict any trait data operations.
    *
