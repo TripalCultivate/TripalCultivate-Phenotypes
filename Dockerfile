@@ -1,5 +1,6 @@
 ARG drupalversion='10.2.x-dev'
-FROM tripalproject/tripaldocker:drupal${drupalversion}-php8.3-pgsql13-noChado
+ARG phpversion='8.3'
+FROM tripalproject/tripaldocker:drupal${drupalversion}-php${phpversion}-pgsql13-noChado
 
 ARG chadoschema='testchado'
 COPY . /var/www/drupal/web/modules/contrib/TripalCultivate-Phenotypes
