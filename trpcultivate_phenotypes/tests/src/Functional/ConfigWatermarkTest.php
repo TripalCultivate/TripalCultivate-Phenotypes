@@ -70,13 +70,13 @@ class ConfigWatermarkTest extends BrowserTestBase {
     // Update configuration settings.
     // Do not watermark any charts.
     $update_watermark = [
-      'charts' => 0,
+      'charts' => '0',
       // 'file' => '' test could not detect file field. ??
     ];
 
     // Fields and default value.
     $session->fieldExists('charts');
-    $session->fieldValueEquals('charts', 0);
+    $session->fieldValueEquals('charts', '0');
 
     // Could not seem to find this field in the form.
     // $session->fieldExists('file');

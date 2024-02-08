@@ -31,7 +31,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
   /**
    * Configuration
-   * 
+   *
    * @var config_entity
    */
   private $config;
@@ -51,7 +51,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    * Test file ids.
    */
   private $test_files;
-  
+
   /**
    * Modules to enable.
    */
@@ -92,7 +92,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $project_id = $this->chado->insert('1:project')
       ->fields([
         'name' => $project,
-        'description' => $project . ' : Description'   
+        'description' => $project . ' : Description'
       ])
       ->execute();
 
@@ -103,21 +103,21 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ->fields([
         'genus' => $genus,
         'species' => 'Wild Species',
-        'type_id' => 1 
+        'type_id' => 1
       ])
       ->execute();
-    
-    $this->assets['genus'] = $genus;  
+
+    $this->assets['genus'] = $genus;
 
     $this->chado->insert('1:projectprop')
       ->fields([
         'project_id' => $project_id,
         'type_id' => 1,
-        'value' => $genus 
+        'value' => $genus
       ])
-      ->execute();  
+      ->execute();
 
-    // Create Genus Ontology configuration. 
+    // Create Genus Ontology configuration.
     // All configuration and database value to null (id: 1).
     $config_name = str_replace(' ', '_', strtolower($genus));
     $genus_ontology_config = [
@@ -132,7 +132,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-  
+
     // Test files.
 
     // File schema for FILE validator.
@@ -150,21 +150,22 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $create_files = [
       // A valid file type, default type expected by the importer.
       'file-1' => [
-        'ext' => 'tsv', 
+        'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
-        'content' => 'Header 1  Header 2  Header 3'
+        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
       ],
       // A valid file type, an empty file.
       'file-2' => [
         'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
-        'content' => ''
+        'content' => '',
+        'filesize' => 0
       ],
       // An alternative file type.
       'file-3' => [
         'ext' => 'txt',
         'mime' => 'text/plain',
-        'content' => 'Header 4  Header  5 HEADER 6'
+        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
       ],
       // Not valid file
       'file-4' => [
@@ -176,7 +177,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'file-5' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        'content' => ''
+        'file' => 'pdf.txt', // Can be found in the test Fixtures folder.
       ],
       // Test file with the correct headers.
       'file-6' => [
@@ -184,10 +185,29 @@ class PluginValidatorTest extends ChadoTestKernelBase {
         'mime' => 'text/tab-separated-values',
         'content' => $column_headers
       ],
+      // Test file with the correct headers but permissions will make it unreadable.
+      'file-7' => [
+        'ext' => 'tsv',
+        'mime' => 'text/tab-separated-values',
+        'content' => $column_headers,
+        'permissions' => 'none',
+      ],
+      // Pretend tsv file that is disguised as a tsv.
+      'file-8' => [
+        'ext' => 'tsv',
+        'mime' => 'text/tab-separated-values',
+        'file' => 'pdf.txt', // Can be found in the test Fixtures folder.
+      ],
     ];
 
+    // To create an actual empty file with 0 file size:
+    // First create the file and write an empty string then
+    // create a file entity off this file.
+    $empty_file = $dir_public . $test_file . 'file-2.' . $create_files['file-2']['ext'];
+    file_put_contents($empty_file, '');
+
     foreach($create_files as $id => $prop) {
-      $filename = $test_file . '.' . $prop['ext'];
+      $filename = $test_file . $id . '.' . $prop['ext'];
 
       $file = File::create([
         'filename' => $filename,
@@ -196,20 +216,46 @@ class PluginValidatorTest extends ChadoTestKernelBase {
         'status' => 0,
       ]);
 
+      if (isset($prop['filesize'])) {
+        // This is an empty file and to ensure the size is
+        // as expected of an empty file = 0;
+        $file->setSize(0);
+      }
+
       $file->save();
       // Save id created.
       $create_files[ $id ]['ID'] = $file->id();
 
       // Write something on file with content key set to a string.
-      if (!empty($prop['content'])) {      
+      if (!empty($prop['content'])) {
         $fileuri = $file->getFileUri();
         file_put_contents($fileuri, $prop['content']);
+      }
+
+      // If an existing file was specified then we can add that in here.
+      if (!empty($prop['file'])) {
+        $fileuri = $file->getFileUri();
+
+        $path_to_fixtures = __DIR__ . '/../Fixtures/';
+        $full_path = $path_to_fixtures . $prop['file'];
+        $this->assertFileIsReadable($full_path,
+          "Unable to setup FILE ". $id . " because cannot access Fixture file at $full_path.");
+
+        copy($full_path, $fileuri);
+      }
+
+      // Set file permissions if needed.
+      if (!empty($prop['permissions'])) {
+        $fileuri = $file->getFileUri();
+        if ($prop['permissions'] == 'none') {
+          chmod($fileuri, 0000);
+        }
       }
     }
 
     $this->test_files =  $create_files;
   }
-  
+
   /**
    * Test test records were created.
    */
@@ -220,7 +266,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       ->fetchField();
 
     $this->assertNotNull($project, 'Project test record not created.');
-    
+
     // Test genus.
     $sql_genus = "SELECT genus FROM {1:organism} WHERE genus = :genus LIMIT 1";
     $genus = $this->chado->query($sql_genus, [':genus' => $this->assets['genus']])
@@ -253,7 +299,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $this->chado->insert('1:project')
       ->fields([
         'name' => $project_no_genus,
-        'description' => $project_no_genus . ' : Description'   
+        'description' => $project_no_genus . ' : Description'
       ])
       ->execute();
 
@@ -310,7 +356,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // FAIL:
     $status = 'fail';
-    
+
     // Test empty value.
     $instance->loadAssets($assets['project'], '', $assets['file'], $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
@@ -359,15 +405,38 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     // FAIL:
     $status = 'fail';
 
-    // File is tsv, can be read but is an empty file.
-    // Could not test empty file, file size is still greater than 0.
+    // No file attached - the file field did not return any file id.
+    $file_id = null;
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // Failed to load file id because it does not exist.
+    $file_id = 9999;
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // File is tsv, can be read but is an empty file - 0 file size.
     $file_id = $this->test_files['file-2']['ID'];
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
-    // $this->assertEquals($validation[ $scope ]['status'], $status);
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+
+    // File is tsv, but permissions mean it cannot be read.
+    $file_id = $this->test_files['file-7']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
 
     // File is pdf but pretending to be tsv.
+    // -- case where mime still correctly indicates pdf.
     $file_id = $this->test_files['file-5']['ID'];
+    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
+    $validation[ $scope ] = $instance->validate();
+    $this->assertEquals($validation[ $scope ]['status'], $status);
+    // -- case where mime is also tsv but it is not a tsv really.
+    $file_id = $this->test_files['file-8']['ID'];
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
@@ -408,12 +477,12 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // FAIL:
     $status = 'fail';
-    
+
     // Change the contents of the tsv_file so the headers do not match the headers asset;
     $file = File::load($file_id);
     $file_uri = $file->getFileUri();
     file_put_contents($file_uri, 'NOT THE HEADERS EXPECTED');
-    
+
     // File headers do not match the expected headers - Extra Headers.
     $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
     $validation[ $scope ] = $instance->validate();
