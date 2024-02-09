@@ -22,12 +22,7 @@ class ConfigWatermarkTest extends BrowserTestBase {
    *
    * @var array
    */
-  protected static $modules = [
-    'tripal',
-    'tripal_chado',
-    'trpcultivate_phenotypes',
-    'trpcultivate_phenoshare'
-  ];
+  protected static $modules = ['tripal','tripal_chado','trpcultivate_phenotypes'];
 
   /**
    * Theme to enable.

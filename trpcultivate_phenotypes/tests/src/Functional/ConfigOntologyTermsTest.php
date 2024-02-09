@@ -23,12 +23,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
    *
    * @var array
    */
-  protected static $modules = [
-    'tripal',
-    'tripal_chado',
-    'trpcultivate_phenotypes',
-    'trpcultivate_phenoshare'
-  ];
+  protected static $modules = ['tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
 
   /**
    * Admin user with admin privileges.
