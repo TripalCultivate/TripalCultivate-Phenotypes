@@ -464,6 +464,18 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     if (array_key_exists($this->current_stage, $form_state_values)) {
       $stage = $form_state_values[ $this->current_stage ];
 
+      // This will support re-upload of a file but form has performed
+      // validation of a previously uploaded file.
+      if ($stage > 1 && $form_state->getValue('trigger_element') == 'Validate Data File') {
+        // Stage is no longer stage 1 from previous upload and triggering element
+        // is the upload file (in stage 1).
+
+        // Reset the stage to stage 1 to perform validation below.
+        $stage = 1;
+        // Cache stage.
+        $form_state->setValue($this->current_stage, $stage);
+      }
+
       if ($stage >= 1) {
         // Validate Stage 1.
 
