@@ -72,7 +72,11 @@ class InstallTest extends ChadoTestBrowserBase {
     $some_extected_text = self::$help_text_excerpt;
 
     // Ensure we have an admin user.
-    $user = $this->drupalCreateUser(['access administration pages', 'administer modules', 'access help pages']);
+    $permissions = ['access administration pages', 'administer modules'];
+    if (strncmp(\Drupal::VERSION, '10.2', 4) === 0) {
+      $permissions[] = 'access help pages';
+    }
+    $user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($user);
 
     $context = '(modules installed: ' . implode(',', self::$modules) . ')';
