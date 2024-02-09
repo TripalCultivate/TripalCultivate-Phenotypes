@@ -15,7 +15,7 @@ use Drupal\Core\File\FileSystemInterface;
 
 /**
  * Validate Required Headers.
- * 
+ *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_headers",
  *   validator_name = @Translation("Headers Validator"),
@@ -31,9 +31,9 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, FileSystemInterface $file_system) { 
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, FileSystemInterface $file_system) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    
+
     // DI Drupal file system service.
     $this->service_file_system = $file_system;
   }
@@ -49,7 +49,7 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
       $container->get('file_system')
     );
   }
-  
+
   /**
    * Validate items in the phenotypic data upload assets.
    *
@@ -69,7 +69,7 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
 
     // Instructed to skip this validation. This will set this validator as upcoming or todo.
     // This happens when other prior validation failed and this validation could only proceed
-    // when input values in the failed validator have been rectified.  
+    // when input values in the failed validator have been rectified.
     if ($this->skip) {
       $validator_status['status'] = 'todo';
       return $validator_status;
@@ -96,8 +96,8 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
           $file_column_headers = str_getcsv($file_column_headers, "\t");
         }
       }
-    }  
-    
+    }
+
     // First remove any empty array elements.
     $file_column_headers = array_filter($file_column_headers);
 
@@ -108,12 +108,12 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
       $validator_status['details'] = 'No column headers found in the file. Please upload a file and try again.';
     }
     else {
-      // This last check ensures that expected headers defined by the importer are 
+      // This last check ensures that expected headers defined by the importer are
       // present in the data file for both share and collect importer. Collect importer
       // may have more headers but the headers defined in the importer are assumed to
       // be required headers and must exist in the data file.
-      
-      $missing_headers = array_filter($this->column_headers, function($h) use($file_column_headers) { 
+
+      $missing_headers = array_filter($this->column_headers, function($h) use($file_column_headers) {
         return (!in_array($h, $file_column_headers));
       });
 
@@ -124,7 +124,7 @@ class Headers extends TripalCultivatePhenotypesValidatorBase implements Containe
         $validator_status['details'] = 'Columns headers: ' . $list_missing_headers . ' is/are missing in the file. Please upload a file and try again.';
       }
     }
-  
+
     return $validator_status;
   }
 }
