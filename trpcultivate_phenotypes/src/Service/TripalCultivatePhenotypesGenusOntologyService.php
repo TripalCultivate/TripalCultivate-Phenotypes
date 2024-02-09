@@ -15,7 +15,7 @@ use Drupal\tripal\Services\TripalLogger;
  * Class TripalCultivatePhenotypesOntologyService.
  */
 class TripalCultivatePhenotypesGenusOntologyService {
-  
+
   /**
    * Chado DB, module configuration and logger.
    */
@@ -26,7 +26,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
   /**
    * Holds genus - ontology configuration variable.
    */
-  private $genus_ontology;
+  private $genus_ontology = NULL;
 
   /**
    * Configuration hierarchy for configuration: cvdbon.
@@ -41,26 +41,23 @@ class TripalCultivatePhenotypesGenusOntologyService {
     $this->sysvar_genus_ontology = 'trpcultivate.phenotypes.ontology.cvdbon';
     $module_settings = 'trpcultivate_phenotypes.settings';
     $this->config = $config_factory->getEditable($module_settings);
-    
+
     // Chado database.
     $this->chado = $chado;
-    
+
     // Tripal Logger service.
     $this->logger = $logger;
-
-    // Define all default terms.
-    $this->genus_ontology = $this->defineGenusOntology();
   }
 
   /**
    * Fetch all genus from chado.organism in the host site and construct a genus ontology
-   * configuration values described above. Each genus will contain a configuration value 
+   * configuration values described above. Each genus will contain a configuration value
    * for trait+unit+method, database and crop ontology.
    *
    * @return array
    *    Associative array where each element is keyed by genus and configuration values
    *    for trait, unit, method, database and crop ontology stored in a array as the value.
-   * 
+   *
    *    ie: [genus_a] = [
    *           trait,
    *           unit,
@@ -104,43 +101,46 @@ class TripalCultivatePhenotypesGenusOntologyService {
   public function loadGenusOntology() {
     $error = 1;
 
-    if (!empty($this->genus_ontology)) {
-      $genus_ontology_configvars = [];
-      // Default value of all configuration variable.
-      // Not set.
-      $default_value = 0;  
-
-      foreach($this->genus_ontology as $genus => $vars) {
-        // Create an array keyed by the genus.
-        // Genus from genus_ontology property has been sanitized
-        // upon definition in the constructor.
-        $genus_ontology_configvars[ $genus ] = [];
-        
-        // Create configuration vars traits, unit, method, database and crop ontology.
-        foreach($vars as $var) {
-          $genus_ontology_configvars[ $genus ][ $var ] = $default_value;
-        }
-
-        // At this point each genus now has configuration vars and
-        // ready to register a configuration entry.
-        // configuration ...cvdbon.genus.genus [trait, unit, method, database, crop_ontology]
-        $this->config
-          ->set($this->sysvar_genus_ontology  . '.' . $genus, $genus_ontology_configvars[ $genus ]);
-      }
-
-      $this->config->save();
-      $error = 0;
+    // If we haven't defined the genus ontology terms yet,
+    // then do that first.
+    if (empty($this->genus_ontology)) {
+      $this->genus_ontology = $this->defineGenusOntology();
     }
 
-    return ($error) ? FALSE : TRUE;
+    $genus_ontology_configvars = [];
+    // Default value of all configuration variable.
+    // Not set.
+    $default_value = 0;
+
+    foreach($this->genus_ontology as $genus => $vars) {
+      // Create an array keyed by the genus.
+      // Genus from genus_ontology property has been sanitized
+      // upon definition in the constructor.
+      $genus_ontology_configvars[ $genus ] = [];
+
+      // Create configuration vars traits, unit, method, database and crop ontology.
+      foreach($vars as $var) {
+        $genus_ontology_configvars[ $genus ][ $var ] = $default_value;
+      }
+
+      // At this point each genus now has configuration vars and
+      // ready to register a configuration entry.
+      // configuration ...cvdbon.genus.genus [trait, unit, method, database, crop_ontology]
+      $this->config
+        ->set($this->sysvar_genus_ontology  . '.' . $genus, $genus_ontology_configvars[ $genus ]);
+    }
+
+    $this->config->save();
+
+    return TRUE;
   }
 
   /**
    * Remove any formatting from a string and convert space to underscore
-   * 
+   *
    * @param $genus
    *   String, genus.
-   * 
+   *
    * @return string
    *   Genus name where all leading and trailing spaces removed and
    *   in word (multi-word genus) spaces replaced by an underscore.
@@ -151,14 +151,14 @@ class TripalCultivatePhenotypesGenusOntologyService {
 
   /**
    * Save genus ontology configuration values.
-   * 
+   *
    * @param array $config_values
    *   Configuration values submitted from a form implementation.
-   *   Each element is keyed by the genus. A value of an associative array 
+   *   Each element is keyed by the genus. A value of an associative array
    *   for each genus key contains the following configuration variables:
    *
    *   trait, unit, method, database and crop_ontology
-   * 
+   *
    *   ie: $config_values[ genus ] = [
    *     'trait' => form field for trait value,
    *     'unit'    => form field for unit value,
@@ -169,10 +169,16 @@ class TripalCultivatePhenotypesGenusOntologyService {
    *   ...
    *
    * @return boolean
-   *   True, configuration saved successfully and False on error. 
+   *   True, configuration saved successfully and False on error.
    */
   public function saveGenusOntologyConfigValues($config_values) {
     $error = 0;
+
+    // If we haven't defined the genus ontology terms yet,
+    // then do that first.
+    if (empty($this->genus_ontology)) {
+      $this->genus_ontology = $this->defineGenusOntology();
+    }
 
     if (!empty($config_values) && is_array($config_values)) {
       // Make sure genus key exists.
@@ -180,13 +186,13 @@ class TripalCultivatePhenotypesGenusOntologyService {
 
       foreach($config_values as $genus => $values) {
         $genus_key = $this->formatGenus($genus);
-        
+
         if (in_array($genus_key, $genus_keys)) {
           // A valid genus key. Test each configuration variables
-          // and allow only configuration name that matches genus ontology 
+          // and allow only configuration name that matches genus ontology
           // configuration schema definition.
           $genus_ontology_values = [];
-          
+
           foreach($values as $config_name => $config_value) {
             if (in_array($config_name, $this->genus_ontology[ $genus_key ])) {
               // Save.
@@ -199,7 +205,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
               break; break;
             }
           }
-          
+
           // Stage a genus ontology configuration - ready for saving.
           $this->config
             ->set($this->sysvar_genus_ontology . '.' . $genus_key, $genus_ontology_values);
@@ -234,7 +240,13 @@ class TripalCultivatePhenotypesGenusOntologyService {
    */
   public function getGenusOntologyConfigValues($genus) {
     $config_values = 0;
-    
+
+    // If we haven't defined the genus ontology terms yet,
+    // then do that first.
+    if (empty($this->genus_ontology)) {
+      $this->genus_ontology = $this->defineGenusOntology();
+    }
+
     if ($genus) {
       $genus_keys = array_keys($this->genus_ontology);
       $genus_key = $this->formatGenus($genus);
@@ -250,7 +262,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
 
   /**
    * Retrieve a sorted list of all configured genus.
-   * 
+   *
    * @return array
    *   Array where the key and value are the genus.
    */
@@ -258,7 +270,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
     // Fetch all unique genus.
     $query = "SELECT genus FROM {1:organism} GROUP BY genus ORDER BY genus ASC";
     $result = $this->chado->query($query);
-    
+
     // Array to hold active genus.
     $active_genus = [];
 
@@ -269,7 +281,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
       // Test if a genus is active by using the trait configuration.
       $config_trait = $this->config
         ->get($this->sysvar_genus_ontology . '.' . $genus_key . '.' . 'trait');
-      
+
       if ($config_trait && $config_trait > 0) {
         $active_genus[] = $genus;
       }

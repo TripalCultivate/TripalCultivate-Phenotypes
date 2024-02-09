@@ -73,7 +73,6 @@ trpcultivate:
         experiment_replicate: 0
         unit: 0
         experiment_year: 0
-        additional_type: 0 
       cvdbon:
       allownew: true
 
