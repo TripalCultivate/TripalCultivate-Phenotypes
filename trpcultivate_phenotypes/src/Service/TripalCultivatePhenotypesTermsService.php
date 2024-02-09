@@ -86,13 +86,18 @@ class TripalCultivatePhenotypesTermsService {
     // where each element is keyed by the configuration map value.
     $default_terms = $this->config->get('trpcultivate.default_terms.term_set');
 
-    foreach($default_terms as $i => $cv) {
-      foreach($cv['terms'] as $term_set) {
-        // Add the cv information of the term.
-        $term_set['cv'] = ['name' => $cv['name'], 'definition' => $cv['definition']];
-        // Access a term by configuration map value.
-        // ie: term['experiment_container']
-        $terms[ $term_set['config_map'] ] = $term_set;
+    // Terms are not available as configuration values until
+    // job to install terms has been executed. This value is null
+    // to start with.
+    if ($default_terms) {
+      foreach($default_terms as $i => $cv) {
+        foreach($cv['terms'] as $term_set) {
+          // Add the cv information of the term.
+          $term_set['cv'] = ['name' => $cv['name'], 'definition' => $cv['definition']];
+          // Access a term by configuration map value.
+          // ie: term['experiment_container']
+          $terms[ $term_set['config_map'] ] = $term_set;
+        }
       }
     }
 
@@ -188,9 +193,11 @@ class TripalCultivatePhenotypesTermsService {
     $id = 0;
     $term_key = trim($term_key);
 
-    $valid_term_keys = array_keys($this->terms);
-    if (!empty($term_key) && in_array($term_key, $valid_term_keys)) {
-      $id = $this->config->get($this->sysvar_terms . '.' . $term_key);
+    if ($term_key && $this->terms) {
+      $valid_term_keys = array_keys($this->terms);
+      if (!empty($term_key) && in_array($term_key, $valid_term_keys)) {
+        $id = $this->config->get($this->sysvar_terms . '.' . $term_key);
+      }
     }
 
     return $id;
@@ -214,7 +221,7 @@ class TripalCultivatePhenotypesTermsService {
   public function saveTermConfigValues($config_values) {
     $error = 0;
 
-    if (!empty($config_values) && is_array($config_values)) {
+    if (!empty($config_values) && is_array($config_values) && $this->terms) {
       $term_keys = array_keys($this->terms);
 
       foreach($config_values as $config => $value) {

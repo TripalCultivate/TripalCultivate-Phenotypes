@@ -86,4 +86,20 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   public function getValidatorScope() {
     return $this->pluginDefinition['validator_scope'];
   }
+
+  /**
+   * Traits, method and unit may be created/inserted through
+   * the phenotypic data importer using the configuration allow new.
+   * This method will fetch the value set for allow new configuration.
+   *
+   * @return boolean
+   *   True, allow trait, method and unit detected in data importer to be created. False will trigger
+   *   validation error and will not permit creation of terms.
+   */
+  public function getConfigAllowNew() {
+    $allownew = \Drupal::config('trpcultivate_phenotypes.settings')
+      ->get('trpcultivate.phenotypes.ontology.allownew');
+
+    return $allownew;
+  }
 }
