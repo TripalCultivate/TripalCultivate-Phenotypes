@@ -3,15 +3,15 @@ on:
   push:
     branches:
       - 4.x
-      - g5.18-workflows
+
 jobs:
   grid-2B:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Run Automated testing
-        uses: tripal/test-tripal-action@v1.2
+        uses: tripal/test-tripal-action@v1.3
         with:
           directory-name: 'TripalCultivate-Phenotypes'
           modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'

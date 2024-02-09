@@ -19,6 +19,8 @@ class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {
   // Holds genus - ontology config names.
   private $genus_ontology;
 
+  protected $connection;
+
   /**
    * Modules to enabled
    *
@@ -42,8 +44,8 @@ class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Create a test schema.
-    $this->chado = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
+    $this->connection = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->connection);
 
     // Remove services from the container that were initialized before the above chado.
     $this->container->set('trpcultivate_phenotypes.genus_ontology', NULL);
@@ -51,7 +53,7 @@ class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {
 
     // Prepare by adding test records to genus and project.
     $project = 'Project - ' . uniqid();
-    $project_id = $this->chado->insert('1:project')
+    $project_id = $this->connection->insert('1:project')
       ->fields([
         'name' => $project,
         'description' => $project . ' : Description'
@@ -59,7 +61,7 @@ class ImporterFileGeneratorLinkTest extends ChadoTestBrowserBase {
       ->execute();
 
     $genus = 'Wild Genus ' . uniqid();
-    $this->chado->insert('1:organism')
+    $this->connection->insert('1:organism')
       ->fields([
         'genus' => $genus,
         'species' => 'Wild Species',
