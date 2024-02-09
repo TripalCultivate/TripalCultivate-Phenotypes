@@ -83,16 +83,16 @@ trpcultivate_phenotypes.settings:
                     data_collector:
                       type: integer
                       label: 'CV Term: Data collector'
-                    entry: 
+                    entry:
                       type: integer
                       label: 'CV Term: Phenotype entry number'
-                    genus: 
+                    genus:
                       type: integer
                       label: 'CV Term: Genus'
-                    location: 
+                    location:
                       type: integer
                       label: 'CV Term: Phenotyping experiment location'
-                    method: 
+                    method:
                       type: integer
                       label: 'CV Term: Phenotyping collection method'
                     name:
@@ -106,7 +106,7 @@ trpcultivate_phenotypes.settings:
                       label: 'CV Term: Unit - Method relationship'
                     method_to_trait_relationship_type:
                       type: integer
-                      label: 'CV Term: Method - Trait relationship'  
+                      label: 'CV Term: Method - Trait relationship'
                     experiment_replicate:
                       type: integer
                       label: 'CV Term: Phenotyping replicate'
@@ -116,9 +116,6 @@ trpcultivate_phenotypes.settings:
                     experiment_year:
                       type: integer
                       label: 'CV Term: Phenotyping year'
-                    additional_type:
-                      type: integer
-                      label: 'CV Term: Additional type - Qualitative or Quantitative'
                 cvdbon:
                   type: sequence
                   label: 'CV, DB and Ontology'
@@ -152,7 +149,7 @@ trpcultivate_phenotypes.settings:
         phenocollect:
           type: string
           label: 'Phenotypes Collect (Raw) Configuration'
-        
+
         # Tripal Phenotypes default ontology/term values.
         default_terms:
           type: config_entity
@@ -163,7 +160,7 @@ trpcultivate_phenotypes.settings:
               label: 'Set of cv and terms'
               sequence:
                 type: mapping
-                mapping: 
+                mapping:
                   name:
                     type: string
                     label: 'CV name'
