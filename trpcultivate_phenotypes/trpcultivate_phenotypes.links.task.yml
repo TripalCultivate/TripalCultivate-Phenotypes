@@ -15,6 +15,6 @@ trpcultivate_phenotypes.tab2:
 
 trpcultivate_phenotypes.tab3:
   title: 'Ontology Terms'
-  route_name: trpcultivate_phenotypes.settings_r
+  route_name: trpcultivate_phenotypes.settings_ontology
   base_route: trpcultivate_phenotypes.settings_r
   weight: 3    
