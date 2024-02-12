@@ -65,13 +65,13 @@ trpcultivate:
         entry: 0
         genus: 0
         location: 0
-        method: 0
         name: 0
         experiment_container: 0
         unit_to_method_relationship_type: 0
         method_to_trait_relationship_type: 0
+        trait_to_synonym_relationship_type: 0
+        unit_type: 0
         experiment_replicate: 0
-        unit: 0
         experiment_year: 0
       cvdbon:
       allownew: true
@@ -99,27 +99,11 @@ trpcultivate:
         definition: 'Units of Measurement Ontology.'
         terms:
           -
-            config_map: unit
+            config_map: unit_to_method_relationship_type
             id: UO:0000000
             name: unit
             definition: 'Unit of measurement'
             help_text: 'This term describes the relationship between your method and the unit with which it was measured.'
-      -
-        name: synonym_type
-        definition: 'A local vocabulary added for synonynm types.'
-        terms:
-          -
-            config_map: unit_to_method_relationship_type
-            id: internal:related
-            name: related
-            definition: 'Is related to.'
-            help_text: 'This term describes the relationship between your unit to method vocabulary term and the chosen equivalent crop ontology term.'
-          -
-            config_map: method_to_trait_relationship_type
-            id: internal:related
-            name: related
-            definition: 'Is related to.'
-            help_text: 'This term describes the relationship between your method to trait vocabulary term and the chosen equivalent crop ontology term.'
       -
         name: tripal_pub
         definition: 'Tripal Publication Ontology. A temporary ontology until a more formal appropriate ontology to be identified.'
@@ -135,11 +119,17 @@ trpcultivate:
         definition: 'NCI Thesaurus OBO Edition'
         terms:
           -
-            config_map: method
+            config_map: method_to_trait_relationship_type
             id: NCIT:C71460
             name: method
             definition: 'A means, manner of procedure, or systematic course of action that have to be performed in order to accomplish a particular goal.'
             help_text: 'This term describes the relationship between your trait vocabulary and the method with which the data was taken.'
+          -
+            config_map: trait_to_synonym_relationship_type
+            id: NCIT:C71887
+            name: Preferred Term
+            definition: 'A descriptive word or phrase selected as an authorized descriptor to represent a discrete concept.'
+            help_text: 'This term describes the relationship between your trait and a related term in a published ontology such as the Trait Ontology or a crop-specific ontology.'
           -
             config_map: location
             id: NCIT:C25341
@@ -180,3 +170,13 @@ trpcultivate:
             name: plot
             definition: 'A site within which an agricultural experimental process is conducted'
             help_text: 'Metadata tagged with this term indicates the plot number.'
+      -
+        name: schema
+        definition: 'Schema.org is sponsored by Google, Microsoft, Yahoo and Yandex. The vocabularies are developed by open community process.'
+        terms:
+          -
+            config_map: unit_type
+            id: schema:additionalType
+            name: additionalType
+            definition: 'Supplemental data type attached to a unit (ie. quantitative or qualitative).'
+            help_text: 'Metadata tagged with this term indicates the data type of a unit of measurement.'
