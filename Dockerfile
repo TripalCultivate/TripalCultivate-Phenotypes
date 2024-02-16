@@ -5,9 +5,22 @@ FROM tripalproject/tripaldocker:drupal${drupalversion}-php${phpversion}-pgsql13-
 ARG chadoschema='testchado'
 COPY . /var/www/drupal/web/modules/contrib/TripalCultivate-Phenotypes
 
+WORKDIR /var/www/drupal/web/themes
+
+## Download the Tripal Cultivate base theme
+RUN git clone https://github.com/TripalCultivate/TripalCultivate-Theme.git trpcultivatetheme
+
 WORKDIR /var/www/drupal/web/modules/contrib/TripalCultivate-Phenotypes
 
+## Complete Tripal install:
+##  - enable the theme we downloaded above + set it as default.
+##  - install and prepare chado
+##  - add content types: general + germplasm
+##  - enable our modules
+##  - run tripal jobs and clear cache
 RUN service postgresql restart \
+  && drush theme:enable trpcultivatetheme --yes \
+  && drush config-set system.theme default trpcultivatetheme \
   && drush trp-install-chado --schema-name=${chadoschema} \
   && drush trp-prep-chado --schema-name=${chadoschema} \
   && drush tripal:trp-import-types --username=drupaladmin --collection_id=general_chado \
