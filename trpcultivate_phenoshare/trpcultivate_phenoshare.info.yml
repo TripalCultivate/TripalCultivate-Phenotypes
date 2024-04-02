@@ -2,7 +2,7 @@ name: Phenotypic Data Sharing
 type: module
 description: Provides trait pages, downloads and visualization tools to facilitates sharing published phenotypic data with the public.
 package: "TripalCultivate: Phenotypes"
-core_version_requirement: ^9 || ^10
+core_version_requirement: ^10
 dependencies:
   - tripal
   - tripal_chado
