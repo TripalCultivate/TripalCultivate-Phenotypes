@@ -22,6 +22,11 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
   protected $importer;
 
   /**
+   * Chado connection
+   */
+  protected $connection;
+
+  /**
    * Saves details regarding the config.
    */
   protected array $cvdbon;

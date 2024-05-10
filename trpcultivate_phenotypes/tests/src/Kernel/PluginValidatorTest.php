@@ -15,6 +15,7 @@ use Drupal\file\Entity\File;
   * Test Tripal Cultivate Phenotypes Validator Plugin.
   *
   * @group trpcultivate_phenotypes
+  * @group validators
   */
 class PluginValidatorTest extends ChadoTestKernelBase {
   /**

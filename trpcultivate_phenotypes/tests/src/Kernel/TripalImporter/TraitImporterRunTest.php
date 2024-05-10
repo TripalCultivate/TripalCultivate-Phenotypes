@@ -9,6 +9,8 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
 /**
  * Tests the functionality of the Trait Importer.
+ * 
+ * @group traitImporter
  */
 class TraitImporterRunTest extends ChadoTestKernelBase {
 
@@ -20,6 +22,16 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   protected $importer;
+
+  /**
+   * Chado connection
+   */
+  protected $connection;
+
+  /**
+   * Config factory
+   */
+  protected $config_factory;
 
   /**
    * Saves details regarding the config.

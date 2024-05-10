@@ -30,6 +30,11 @@ class ValidTraitTest extends ChadoTestKernelBase {
    */
   protected $chado;
 
+  /**
+   * Config factory
+   */
+  protected $config;
+
   // Genus.
   private $genus;
 
