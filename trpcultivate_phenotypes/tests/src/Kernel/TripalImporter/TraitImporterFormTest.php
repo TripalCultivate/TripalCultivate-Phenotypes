@@ -9,6 +9,8 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
 /**
  * Tests the form + form-related functionality of the Trait Importer.
+ * 
+ * @group traitImporter
  */
 class TraitImporterFormTest extends ChadoTestKernelBase {
 
