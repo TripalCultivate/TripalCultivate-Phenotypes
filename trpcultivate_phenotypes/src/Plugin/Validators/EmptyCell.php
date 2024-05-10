@@ -135,18 +135,6 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
   
     // Close the file.
     fclose($handle);
-
-    // It seems the file has no data rows.
-    if (!$line_check) {
-      // Report validation result.
-      $validator_status = [
-        'title' => 'Column Headers have Values',
-        'status' => 'fail',
-        'details' => 'Data file has no data rows to process. Please upload a file and try again.'
-      ];
-
-      return $validator_status;
-    }
     
     // Prepare summary report.
     if (count($failed_rows) > 0) {

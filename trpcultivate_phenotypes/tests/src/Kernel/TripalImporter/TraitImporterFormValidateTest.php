@@ -97,7 +97,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'TRAIT IMPORT VALUES' => [
+        'FILE ROW' => [
           'status' => 'fail',
           'message' => 'no data rows',
         ]
@@ -114,7 +114,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'message' => 'Trait Description is/are missing in the file',
         ],
-        'TRAIT IMPORT VALUES' => ['status' => 'todo'],
+        'FILE ROW' => ['status' => 'todo'],
       ]
     ];
 
@@ -125,7 +125,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'TRAIT IMPORT VALUES' => [
+        'FILE ROW' => [
           'status' => 'fail',
           // Can't yet test the message here is it's a complicated structure.
         ]
