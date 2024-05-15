@@ -5,7 +5,7 @@
  * Kernel test of Validator Plugin.
  */
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
