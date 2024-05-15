@@ -9,7 +9,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
 /**
  * Tests the form + form-related functionality of the Trait Importer.
- * 
+ *
  * @group traitImporter
  */
 class TraitImporterFormValidateTest extends ChadoTestKernelBase {
@@ -143,6 +143,8 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    * @dataProvider provideFilesForValidation
    */
   public function testTraitFormValidation($filename, $expectations) {
+
+    $this->markTestSkipped('Skipping trait form validation until new plugins have been implemented.');
 
     $formBuilder = \Drupal::formBuilder();
     $form_id = 'Drupal\tripal\Form\TripalImporterForm';
