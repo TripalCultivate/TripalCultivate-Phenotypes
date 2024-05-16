@@ -64,10 +64,10 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   /**
    * Validates a single row in a file that is provided to an importer.
    *
-   * @param $row
-   *   Array, contents of the file's row where each value within a column is
+   * @param array $row_values
+   *   The contents of the file's row where each value within a cell is
    *   stored as an array element
-   * @param $context
+   * @param array $context
    *   An associative array containing the needed context, which is dependant
    *   on the validator.
    *   For example, instead of validating each cell by default, a validator may
@@ -80,7 +80,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
    */
-  public function validateRow();
+  public function validateRow($row_values, $context);
 
   /**
    * Traits, method and unit may be created/inserted through

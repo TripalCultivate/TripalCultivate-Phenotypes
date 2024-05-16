@@ -90,7 +90,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   /**
    * {@inheritdoc}
    */
-  public function validateRow() {
+  public function validateRow($row_values, $context) {
     $validator_status = [
       'title' => 'validateRow() not supported for this validator',
       'status' => 'fail',

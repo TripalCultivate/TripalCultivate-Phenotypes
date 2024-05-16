@@ -14,7 +14,7 @@ use Drupal\file\Entity\File;
 
 /**
  * Validate empty cells of an importer.
- * 
+ *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_empty_cell",
  *   validator_name = @Translation("Empty Cell Validator"),
@@ -25,7 +25,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) { 
+  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
@@ -41,6 +41,55 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
   }
 
   /**
+   * Validate the values within the cells of this row.
+   * @param array $row_values
+   *   The contents of the file's row where each value within a cell is
+   *   stored as an array element
+   * @param array $context
+   *   An associative array with the following key:
+   *   - indices => an array of indices corresponding to the cells in $row to act on
+   *
+   * @return array
+   *   An associative array with the following keys.
+   *   - title: string, section or title of the validation as it appears in the result window.
+   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
+   *   - details: details about the offending field/value.
+   */
+  public function validateRow($row_values, $context) {
+
+    // Set our status
+    $empty = FALSE;
+    // Iterate through our array of row values
+    foreach($row_values as $index => $cell) {
+      // Only validate the values in which their index is also within our
+      // context array of indices
+      if ($context[indices] == $index) {
+        // Check if our content is empty and report an error if it is
+        if (!isset($cell) || empty($cell)) {
+          $empty = TRUE;
+          array_push($failed_indices, $index);
+        }
+      }
+    }
+    // Check if empty values were found that should not be empty
+    if ($empty) {
+      $failed_list = implode(', ', $failed_indices);
+      $validator_status = [
+        'title' => 'Empty value found in required column(s)',
+        'status' => 'fail',
+        'details' => 'Empty valuess at index:' . $failed_list
+      ];
+    } else {
+      $validator_status = [
+        'title' => 'No empty values found in required column(s)',
+        'status' => 'pass',
+        'details' => ''
+      ];
+    }
+    return $validator_status;
+  }
+
+  /**
    * Validate items in the phenotypic data upload assets.
    *
    * @return array
@@ -48,7 +97,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *   - title: string, section or title of the validation as it appears in the result window.
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
-   * 
+   *
    *   NOTE: keep track of the line no to point user exactly which line failed.
    */
   public function validate() {
@@ -61,7 +110,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
 
     // Instructed to skip this validation. This will set this validator as upcoming or todo.
     // This happens when other prior validation failed and this validation could only proceed
-    // when input values in the failed validator have been rectified.  
+    // when input values in the failed validator have been rectified.
     if ($this->skip) {
       $validator_status['status'] = 'todo';
       return $validator_status;
@@ -71,7 +120,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     //   - Ensure that each column header has a value.
     $error_types = [
       'empty' => [
-        'key' => '#EMPTY', 
+        'key' => '#EMPTY',
         'info' => 'Empty values',
       ]
     ];
@@ -81,7 +130,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     // Open and read file in this uri.
     $file_uri = $file->getFileUri();
     $handle = fopen($file_uri, 'r');
-    
+
     // Line counter.
     $line_no = 0;
     // Line check - line that has value and is not empty.
@@ -105,17 +154,17 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
 
         // Header row is index 0.
         // Continue to data row. No need to use the headers in the file
-        // instead use the headers property from the importer.  
-     
+        // instead use the headers property from the importer.
+
         // Data rows.
         // On wards, line number starts at #1.
-        
+
         // Line split into individual data point.
         $data_columns = str_getcsv($line, "\t");
 
         // Sanitize every data in rows and columns.
         $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-        
+
         // Validate.
         // Empty value
         foreach($this->column_headers as $i => $header) {
@@ -125,21 +174,21 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
             $failed_rows[ $error_types['empty']['key'] ][ $line_no ][] = $header;
           }
         }
-        
+
         // Reset data.
         unset($data);
       }
 
       $line_no++;
-    } 
-  
+    }
+
     // Close the file.
     fclose($handle);
-    
+
     // Prepare summary report.
     if (count($failed_rows) > 0) {
       $line = [];
-      
+
       // Each error type, construct error message.
       foreach($error_types as $type => $error) {
         if (isset($failed_rows[ $error_types[ $type ]['key'] ])) {
@@ -161,7 +210,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
           }
         }
       }
-      
+
       // Report validation result.
       $validator_status = [
         'title' => 'Column Headers have Values',
