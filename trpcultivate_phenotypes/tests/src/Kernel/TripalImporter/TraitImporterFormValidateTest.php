@@ -31,12 +31,12 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
   /**
    * Saves details regarding the config.
    */
-  protected array $cvdbon;
+  protected $cvdbon;
 
   /**
    * The terms required by this module mapped to the cvterm_ids they are set to.
    */
-  protected array $terms;
+  protected $terms;
 
   protected $definitions = [
     'test-trait-importer' => [
