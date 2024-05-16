@@ -38,7 +38,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Load phenotypic data upload assets to validated.
-   * 
+   *
    * @param $project
    *   String, Project name/title - chado.project: name.
    * @param $genus
@@ -69,7 +69,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Get validator plugin validator_name definition annotation value.
-   * 
+   *
    * @return string
    *   The validator plugin name annotation definition value.
    */
@@ -79,12 +79,24 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Get validator plugin validator_scope definition annotation value.
-   * 
+   *
    * @return string
    *   The validator plugin scope annotation definition value.
    */
   public function getValidatorScope() {
     return $this->pluginDefinition['validator_scope'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateRow() {
+    $validator_status = [
+      'title' => 'validateRow() not supported for this validator',
+      'status' => 'fail',
+      'details' => 'The validator called does not implement validateRow().'
+    ];
+    return $validator_status;
   }
 
   /**
