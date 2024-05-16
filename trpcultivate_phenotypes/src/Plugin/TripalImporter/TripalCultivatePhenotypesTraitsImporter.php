@@ -223,8 +223,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $file = $form_state_values['file_upload'];
     $headers = array_keys($this->headers);
 
-    //$scopes = ['GENUS', 'FILE', 'HEADERS', 'TRAIT IMPORT VALUES'];
-    $scopes = ['GENUS', 'FILE', 'HEADERS', 'FILE ROW'];
+    $scopes = ['GENUS', 'FILE', 'HEADERS', 'TRAIT IMPORT VALUES'];
+    //$scopes = ['GENUS', 'FILE', 'HEADERS', 'FILE ROW'];
 
     // Array to hold all validation result for each level.
     // Each result is keyed by the scope.
