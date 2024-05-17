@@ -132,6 +132,31 @@ class FileRowScopeTest extends ChadoTestKernelBase {
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided a mixture of 3 empty and 3 non-empty cells to check.");
     $this->assertStringEndsWith(': 1, 3, 5', $validation_status['details'], "Empty cell validation details did not contain the indices of the empty cells.");
+
+    // Error cases
+    // Provide too many indices
+    $context['indices'] = [ 0, 1, 2, 3, 4, 5, 6, 7 ];
+    $exception_caught = FALSE;
+    try {
+      $validation_status = $instance->validateRow($file_row, $context);
+    }
+    catch ( \Exception $e ) {
+      $exception_caught = TRUE;
+    }
+    $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in too many indices compared to number of cells in the row.');
+    $this->assertStringContainsString('Too many indices were provided (8) compared to the number of cells in the provided row (6)', $e->getMessage(), "Did not get the expected exception message when providing 8 indices compared to 6 values.");
+
+    // Provide invalid indices
+    $context['indices'] = [ 1, -4, 77 ];
+    $exception_caught = FALSE;
+    try {
+      $validation_status = $instance->validateRow($file_row, $context);
+    }
+    catch ( \Exception $e ) {
+      $exception_caught = TRUE;
+    }
+    $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in invalid indices.');
+    $this->assertStringContainsString('One or more of the indices provided (-4, 77) is not valid when compared to the indices of the provided row', $e->getMessage(), "Did not get the expected exception message when providing 2 different invalid indices.");
   }
 
   /**

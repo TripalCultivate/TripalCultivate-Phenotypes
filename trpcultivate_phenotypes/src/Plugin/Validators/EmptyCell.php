@@ -57,6 +57,27 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    */
   public function validateRow($row_values, $context) {
 
+    // Check our inputs - does our indices array in $context make sense?
+    // First get the potential range by looking at $row_values
+    $num_values = count($row_values);
+    // Count our indices array
+    $num_indices = count($context['indices']);
+    if($num_indices > $num_values) {
+      throw new \Exception(
+        t('Too many indices were provided (@indices) compared to the number of cells in the provided row (@values)', ['@indices' => $num_indices, '@values' => $num_values])
+      );
+    }
+
+    // Pull out just the keys from $row_values and compare with the indices in $context
+    $row_keys = array_keys($row_values);
+    $result = array_diff($context['indices'], $row_keys);
+    if($result) {
+      $invalid_indices = implode(', ', $result);
+      throw new \Exception(
+        t('One or more of the indices provided (@invalid) is not valid when compared to the indices of the provided row', ['@invalid' => $invalid_indices])
+      );
+    }
+
     $empty = FALSE;
     $failed_indices = [];
     // Iterate through our array of row values
