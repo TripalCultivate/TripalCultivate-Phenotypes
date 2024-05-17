@@ -86,6 +86,45 @@ class FileRowScopeTest extends ChadoTestKernelBase {
 
     // A list of invalid inputs
     $invalid_inputs = ['Collective', 'Type', ' '];
+
+    // Simulates a row within the Trait Importer
+    $file_row = [
+      'My trait',
+      'My trait description',
+      'My method',
+      'My method description',
+      'My unit',
+      'Quantitative'
+    ];
+
+    // Case #1: Check for a valid value in a single column
+    $expected_status = 'pass';
+    $context['indices'] = [ 5 ];
+    $context['valid_values'] = [ 'qualitative', 'quantitative' ];
+    $validation_status = $instance->validateRow($file_row, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to pass when provided a cell with a valid value in the list.");
+
+    // Case #2: Check for an invalid value in a single column
+    $expected_status = 'fail';
+    $context['indices'] = [ 2 ];
+    $context['valid_values'] = [ 'qualitative', 'quantitative' ];
+    $validation_status = $instance->validateRow($file_row, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to fail when provided a cell with a value not in the provided list.");
+
+    // // Case #3: Provide a list of indices that includes 1 cell that is empty
+    // $expected_status = 'fail';
+    // $context['indices'] = [ 0, 1, 4 ];
+    // $validation_status = $instance->validateRow($file_row, $context);
+    // $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided a mixture of 1 empty and 2 non-empty cells to check.");
+    // $this->assertStringEndsWith(': 1', $validation_status['details'], "Empty cell validation details did not contain the index of the empty cell.");
+
+    // // Case #4: Provide a list of indices for the entire row (3 empty cells)
+    // $expected_status = 'fail';
+    // $context['indices'] = [ 0, 1, 2, 3, 4, 5 ];
+    // $validation_status = $instance->validateRow($file_row, $context);
+    // $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided a mixture of 3 empty and 3 non-empty cells to check.");
+    // $this->assertStringEndsWith(': 1, 3, 5', $validation_status['details'], "Empty cell validation details did not contain the indices of the empty cells.");
+
   }
 
   /**

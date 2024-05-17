@@ -64,13 +64,16 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
 
     $valid = TRUE;
     $failed_indices = [];
+    // Convert our array of valid values to lower case for accurate comparison
+    $valid_values_lwr = array_map('strtolower', $context['valid_values']);
+
     // Iterate through our array of row values
     foreach($row_values as $index => $cell) {
       // Only validate the values in which their index is also within our
       // context array of indices
       if (in_array($index, $context['indices'])) {
         // Check if our cell value is within the valid_values array
-        if (!in_array($cell, $context['valid_values'])) {
+        if (!in_array(strtolower($cell), $valid_values_lwr)) {
           $valid = FALSE;
           array_push($failed_indices, $index);
         }
