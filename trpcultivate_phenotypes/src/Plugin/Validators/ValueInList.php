@@ -62,8 +62,38 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
     // Check our inputs - will throw an exception if there's a problem
     $this->checkIndices($row_values, $context['indices']);
 
-
-
+    $valid = TRUE;
+    $failed_indices = [];
+    // Iterate through our array of row values
+    foreach($row_values as $index => $cell) {
+      // Only validate the values in which their index is also within our
+      // context array of indices
+      if (in_array($index, $context['indices'])) {
+        // Check if our cell value is within the valid_values array
+        if (!in_array($cell, $context['valid_values'])) {
+          $valid = FALSE;
+          array_push($failed_indices, $index);
+        }
+      }
+    }
+    // Check if any values were invalid
+    if (!$valid) {
+      $failed_list = implode(', ', $failed_indices);
+      $validator_status = [
+        'title' => 'Invalid value(s) found in required column(s)',
+        'status' => 'fail',
+        'details' => 'Invalid value(s) at index: ' . $failed_list
+      ];
+    } else {
+      $passed_list = implode(', ', $context['indices']);
+      $valid_values = implode(', ', $context['valid_values']);
+      $validator_status = [
+        'title' => 'Values in required column(s) were valid',
+        'status' => 'pass',
+        'details' => 'Value at index ' . $passed_list . ' was one of: ' . $valid_values . '.'
+      ];
+    }
+    return $validator_status;
   }
 
   /**
