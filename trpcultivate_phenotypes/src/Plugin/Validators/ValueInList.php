@@ -41,6 +41,32 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
   }
 
   /**
+   * Validate the values within the cells of this row.
+   * @param array $row_values
+   *   The contents of the file's row where each value within a cell is
+   *   stored as an array element
+   * @param array $context
+   *   An associative array with the following key:
+   *   - indices => an array of indices corresponding to the cells in $row to act on
+   *   - valid_values => an array of values that are allowed within the cell(s) located
+   *     at indices in $context['indices']
+   *
+   * @return array
+   *   An associative array with the following keys.
+   *   - title: string, section or title of the validation as it appears in the result window.
+   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
+   *   - details: details about the offending field/value.
+   */
+  public function validateRow($row_values, $context) {
+
+    // Check our inputs - will throw an exception if there's a problem
+    $this->checkIndices($row_values, $context['indices']);
+
+
+
+  }
+
+  /**
    * Validate items in the phenotypic data upload assets.
    *
    * @return array

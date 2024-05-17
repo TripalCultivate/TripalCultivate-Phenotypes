@@ -72,6 +72,24 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   public function validateRow($row_values, $context);
 
   /**
+   * Given an array of values (that represents a single row in an input file),
+   * check that the list in $indices is within the range of keys in $row_values.
+   *
+   * @param array $row_values
+   *   The contents of the file's row where each value within a cell is
+   *   stored as an array element
+   * @param array $indices
+   *   A list of indices which correspond to the columns in the row for
+   *   which the validator should act on.
+   *
+   * @throws
+   *   - An exception if $indices has more values than $row_values
+   *   - An exception if any of the indices in $indices is out of bounds
+   *     of the keys for $row_values
+   */
+  public function checkIndices($row_values, $indices);
+
+  /**
    * Traits, method and unit may be created/inserted through
    * the phenotypic data importer using the configuration allow new.
    * This method will fetch the value set for allow new configuration.
