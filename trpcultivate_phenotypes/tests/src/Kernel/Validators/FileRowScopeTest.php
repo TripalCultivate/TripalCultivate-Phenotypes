@@ -73,12 +73,12 @@ class FileRowScopeTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test Trait Type Column Plugin Validator.
+   * Test Value In List Plugin Validator.
    */
-  public function testTraitTypeColumnPluginValidator() {
+  public function testValueInListPluginValidator() {
 
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_trait_type_column';
+    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // A list of valid inputs

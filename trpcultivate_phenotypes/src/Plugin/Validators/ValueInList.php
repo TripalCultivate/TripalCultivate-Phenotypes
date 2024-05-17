@@ -13,19 +13,19 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\Entity\File;
 
 /**
- * Validate the values of the "Type" column of the Traits Importer.
- * 
+ * Validate that column only contains a set list of values.
+ *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_trait_type_column",
- *   validator_name = @Translation("Trait Type Column Validator"),
+ *   id = "trpcultivate_phenotypes_validator_value_in_list",
+ *   validator_name = @Translation("Value In List Validator"),
  *   validator_scope = "FILE ROW",
  * )
  */
-class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class ValueInList extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) { 
+  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
@@ -48,7 +48,7 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
    *   - title: string, section or title of the validation as it appears in the result window.
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
-   * 
+   *
    *   NOTE: keep track of the line no to point user exactly which line failed.
    */
   public function validate() {
@@ -61,7 +61,7 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
 
     // Instructed to skip this validation. This will set this validator as upcoming or todo.
     // This happens when other prior validation failed and this validation could only proceed
-    // when input values in the failed validator have been rectified.  
+    // when input values in the failed validator have been rectified.
     if ($this->skip) {
       $validator_status['status'] = 'todo';
       return $validator_status;
@@ -69,12 +69,12 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
 
     // Values:
     //   - Column type value is either Quantitative or Qualitative.
-    
+
     $error_types = [
       'unexpected' => [
         'key' => '#UNEXPECTED',
         'info' => 'Unexpected Type (Qualitative or Quantitative only)',
-      ] 
+      ]
     ];
 
     // Load file object.
@@ -82,7 +82,7 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
     // Open and read file in this uri.
     $file_uri = $file->getFileUri();
     $handle = fopen($file_uri, 'r');
-    
+
     // Line counter.
     $line_no = 0;
     // Line check - line that has value and is not empty.
@@ -106,17 +106,17 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
 
         // Header row is index 0.
         // Continue to data row. No need to use the headers in the file
-        // instead use the headers property from the importer.  
-     
+        // instead use the headers property from the importer.
+
         // Data rows.
         // On wards, line number starts at #1.
-        
+
         // Line split into individual data point.
         $data_columns = str_getcsv($line, "\t");
 
         // Sanitize every data in rows and columns.
         $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-        
+
         // Validate.
 
         // Empty and unexpected value.
@@ -125,7 +125,7 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
             // Has value. Check for unexpected values.
             if ($header == 'Type') {
               $type = strtolower($data[ $i ]);
-              
+
               if (!in_array($type, ['qualitative', 'quantitative'])) {
                 // Unexpected value in Type column.
                 $failed_rows[ $error_types['unexpected']['key'] ]['Trait'][] = $line_no;
@@ -133,21 +133,21 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
             }
           }
         }
-        
+
         // Reset data.
         unset($data);
       }
 
       $line_no++;
-    } 
-  
+    }
+
     // Close the file.
     fclose($handle);
 
     // Prepare summary report.
     if (count($failed_rows) > 0) {
       $line = [];
-      
+
       // Each error type, construct error message.
       foreach($error_types as $type => $error) {
         if (isset($failed_rows[ $error_types[ $type ]['key'] ])) {
@@ -169,7 +169,7 @@ class TraitTypeColumn extends TripalCultivatePhenotypesValidatorBase implements 
           }
         }
       }
-      
+
       // Report validation result.
       $validator_status = [
         'title' => 'Column Headers have Values',
