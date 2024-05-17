@@ -104,7 +104,15 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    */
   public function checkIndices($row_values, $indices) {
     // Does our indices array make sense?
-    // First get the potential range by looking at $row_values
+
+    // Report if the indices array is empty
+    if (!$indices) {
+      throw new \Exception(
+        t('An empty indices array was provided.')
+      );
+    }
+
+    // Get the potential range by looking at $row_values
     $num_values = count($row_values);
     // Count our indices array
     $num_indices = count($indices);

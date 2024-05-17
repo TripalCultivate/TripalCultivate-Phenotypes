@@ -83,6 +83,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *   which the validator should act on.
    *
    * @throws
+   *   - An exception if $indices is an empty array
    *   - An exception if $indices has more values than $row_values
    *   - An exception if any of the indices in $indices is out of bounds
    *     of the keys for $row_values
