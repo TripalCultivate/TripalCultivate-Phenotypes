@@ -103,6 +103,7 @@ class FileRowScopeTest extends ChadoTestKernelBase {
     $context['valid_values'] = [ 'qualitative', 'quantitative' ];
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to pass when provided a cell with a valid value in the list.");
+    $this->assertStringContainsString('Value at index 5 was one of:', $validation_status['details'], "Value in list validation details did not report that index 5 contained a valid value.");
 
     // Case #2: Check for an invalid value in a single column
     $expected_status = 'fail';
@@ -110,21 +111,24 @@ class FileRowScopeTest extends ChadoTestKernelBase {
     $context['valid_values'] = [ 'qualitative', 'quantitative' ];
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to fail when provided a cell with a value not in the provided list.");
+    $this->assertStringEndsWith(': 2', $validation_status['details'], "Value in list validation details did not contain the index of the cell with an invalid value.");
 
-    // // Case #3: Provide a list of indices that includes 1 cell that is empty
-    // $expected_status = 'fail';
-    // $context['indices'] = [ 0, 1, 4 ];
-    // $validation_status = $instance->validateRow($file_row, $context);
-    // $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided a mixture of 1 empty and 2 non-empty cells to check.");
-    // $this->assertStringEndsWith(': 1', $validation_status['details'], "Empty cell validation details did not contain the index of the empty cell.");
+    // Case #3: Check for a valid value in multiple columns
+    $expected_status = 'pass';
+    $context['indices'] = [ 0, 2, 4 ];
+    $context['valid_values'] = [ 'my trait', 'my method', 'my unit' ];
+    $validation_status = $instance->validateRow($file_row, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to pass when provided a cell with a valid value in the list.");
+    $this->assertStringContainsString('Value at index 0, 2, 4 was one of:', $validation_status['details'], "Value in list validation details did not report that indices 0, 2, 4 all contained a valid value.");
 
-    // // Case #4: Provide a list of indices for the entire row (3 empty cells)
-    // $expected_status = 'fail';
-    // $context['indices'] = [ 0, 1, 2, 3, 4, 5 ];
-    // $validation_status = $instance->validateRow($file_row, $context);
-    // $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided a mixture of 3 empty and 3 non-empty cells to check.");
-    // $this->assertStringEndsWith(': 1, 3, 5', $validation_status['details'], "Empty cell validation details did not contain the indices of the empty cells.");
-
+    // Case #4: Check for 1 column with a valid value, 1 with invalid value
+    // All uppercase for good measure :P
+    $expected_status = 'fail';
+    $context['indices'] = [ 0, 3 ];
+    $context['valid_values'] = [ 'MY TRAIT DESCRIPTION', 'MY METHOD DESCRIPTION' ];
+    $validation_status = $instance->validateRow($file_row, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to fail when provided 2 cells; 1 with with valid input and 1 invalid.");
+    $this->assertStringEndsWith(': 0', $validation_status['details'], "Value in list validation details did not contain the index of the cell with an invalid value.");
   }
 
   /**
