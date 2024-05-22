@@ -26,7 +26,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
   /**
    * A nested array of already validated values
    */
-  protected $unique_columns;
+  protected $unique_columns = [];
 
   /**
    * Constructor.
@@ -66,11 +66,25 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // Check our inputs - will throw an exception if there's a problem
     $this->checkIndices($row_values, $context['indices']);
 
-    // Check for the combination of the values in our indices against our
-    // $unique_columns array
-    if $unique_columns[] {
-
+    // Iterate through our array of row values and build our nested array
+    // This is our record of how many of these combinations we have
+    // (This will always be 1 because the point is to check for duplicates)
+    $count = 1;
+    foreach(array_reverse($context['indices']) as $index) {
+      $dynamic_array = [$row_values[$index] => $count];
+      $count = $dynamic_array;
     }
+
+    // Now check for the presence of our array within our global array
+    if(empty($this->unique_columns)) {
+      //$result = array_intersect_assoc($dynamic_array, $unique_columns);
+      $unique_columns = $dynamic_array;
+      return TRUE;
+    }
+
+    // Check at the database level too
+
+    // Finally, if not seen before, add to the global array
   }
 
   /**

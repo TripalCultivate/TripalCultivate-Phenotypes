@@ -179,5 +179,28 @@ class FileRowScopeTest extends ChadoTestKernelBase {
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
+
+    $file_row = [
+      'My trait',
+      '',
+      'My method',
+      '',
+      'My unit',
+      ''
+    ];
+
+    $context['indices'] = [ 0, 2, 4 ];
+    $validation_status = $instance->validateRow($file_row, $context);
+
+    $file_row = [
+      'My trait',
+      '',
+      'My method 2',
+      '',
+      'My unit 2',
+      ''
+    ];
+
+    $validation_status = $instance->validateRow($file_row, $context);
   }
 }
