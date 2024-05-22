@@ -89,6 +89,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Qualitative'
     ];
 
+    // Try with a nested array of indices
+    $context['indices'] = ['one' => 1, 'two' => 2, 'three' => 3];
+    $validation_status = $instance->validateRow($file_row, $context);
+
     // Error cases
     // Provide an empty array of indices
     $context['indices'] = [];
@@ -101,7 +105,6 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in an empty array of indices.');
     $this->assertStringContainsString('An empty indices array was provided.', $e->getMessage(), "Did not get the expected exception message when providing an empty array of indices.");
-
 
     // Provide too many indices
     $context['indices'] = [ 0, 1, 2, 3, 4, 5, 6, 7 ];

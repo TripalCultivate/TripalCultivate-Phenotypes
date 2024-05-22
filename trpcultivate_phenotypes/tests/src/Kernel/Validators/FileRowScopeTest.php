@@ -189,7 +189,7 @@ class FileRowScopeTest extends ChadoTestKernelBase {
       ''
     ];
 
-    $context['indices'] = [ 0, 2, 4 ];
+    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
     $validation_status = $instance->validateRow($file_row, $context);
 
     $file_row = [

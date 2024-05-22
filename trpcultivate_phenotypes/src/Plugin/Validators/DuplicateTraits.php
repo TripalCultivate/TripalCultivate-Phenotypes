@@ -66,20 +66,23 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // Check our inputs - will throw an exception if there's a problem
     $this->checkIndices($row_values, $context['indices']);
 
-    // Iterate through our array of row values and build our nested array
-    // This is our record of how many of these combinations we have
-    // (This will always be 1 because the point is to check for duplicates)
-    $count = 1;
-    foreach(array_reverse($context['indices']) as $index) {
-      $dynamic_array = [$row_values[$index] => $count];
-      $count = $dynamic_array;
-    }
+    // Grab our trait, method and unit values from the $row_values array
+    // using the indices stores in our $context array
+    $trait = strtolower($row_values[$context['indices']['trait']]);
+    $method = strtolower($row_values[$context['indices']['method']]);
+    $unit = strtolower($row_values[$context['indices']['unit']]);
 
     // Now check for the presence of our array within our global array
-    if(empty($this->unique_columns)) {
-      //$result = array_intersect_assoc($dynamic_array, $unique_columns);
-      $unique_columns = $dynamic_array;
-      return TRUE;
+    if (!empty($this->unique_columns)) {
+      if ($this->unique_columns[$trait]) {
+        if ($this->unique_columns[$method]) {
+          if ($this->unique_columns[$unit]) {
+            // Then we've found a duplicate
+
+          }
+        }
+      }
+
     }
 
     // Check at the database level too
