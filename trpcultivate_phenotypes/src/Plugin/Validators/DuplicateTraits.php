@@ -24,7 +24,9 @@ use Drupal\file\Entity\File;
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
-   * A nested array of already validated values
+   * A nested array of already validated values forming the unique trait name +
+   *   method name + unit combinations that have been encountered by this
+   *   validator so far within the input file
    */
   protected $unique_traits = [];
 
@@ -67,25 +69,32 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     $this->checkIndices($row_values, $context['indices']);
 
     // Grab our trait, method and unit values from the $row_values array
-    // using the indices stores in our $context array
+    // using the indices stored in our $context array
+    // We need to ensure that each array key we expect in $context['indices']
+    // exists, otherwise throw an exception
+    if (!isset($context['indices']['trait'])) {
+      throw new \Exception(t('The trait name (key: trait) was not set in the $context[\'indices\'] array'));
+    }
+    if (!isset($context['indices']['method'])) {
+       throw new \Exception(t('The method name (key: method) was not set in the $context[\'indices\'] array'));
+    }
+    if (!isset($context['indices']['unit'])) {
+       throw new \Exception(t('The unit (key: unit) was not set in the $context[\'indices\'] array'));
+    }
     $trait = strtolower($row_values[$context['indices']['trait']]);
     $method = strtolower($row_values[$context['indices']['method']]);
     $unit = strtolower($row_values[$context['indices']['unit']]);
 
     // Now check for the presence of our array within our global array
     if (!empty($this->unique_traits)) {
-      if ($this->unique_traits[$trait]) {
-        if ($this->unique_traits[$trait][$method]) {
-          if ($this->unique_traits[$trait][$method][$unit]) {
-            // Then we've found a duplicate
-            $validator_status = [
-              'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
-              'status' => 'fail',
-              'details' => 'A duplicate trait was found within the input file'
-            ];
-            return $validator_status;
-          }
-        }
+      if (isset($this->unique_traits[$trait][$method][$unit])) {
+        // Then we've found a duplicate
+        $validator_status = [
+          'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
+          'status' => 'fail',
+          'details' => 'A duplicate trait was found within the input file'
+        ];
+        return $validator_status;
       }
     }
 
@@ -93,6 +102,28 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     //$trait_query =
 
     // Finally, if not seen before, add to the global array
+    $this->unique_traits[$trait][$method][$unit] = 1;
+
+    $validator_status = [
+      'title' => 'Unique Trait Name + Method Short Name + Unit combination',
+      'status' => 'pass',
+      'details' => 'Confirmed that the current trait being validated is unique.'
+    ];
+    //print_r($this->unique_traits);
+
+    return $validator_status;
+  }
+
+  /**
+   * Getter for the $unique_traits array.
+   *
+   * @return $unique_traits
+   *   - The array of unique trait name + method name + unit combinations
+   *     that have been encountered by this validator so far within the input
+   *     file
+   */
+  public function getUniqueTraits() {
+    return $this->unique_traits;
   }
 
   /**
