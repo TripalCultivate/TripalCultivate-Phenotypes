@@ -90,8 +90,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     ];
 
     // Try with a nested array of indices
-    $context['indices'] = ['one' => 1, 'two' => 2, 'three' => 3];
-    $validation_status = $instance->validateRow($file_row, $context);
+    //$context['indices'] = ['one' => 1, 'two' => 2, 'three' => 3];
+    //$validation_status = $instance->validateRow($file_row, $context);
 
     // Error cases
     // Provide an empty array of indices

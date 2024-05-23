@@ -26,7 +26,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
   /**
    * A nested array of already validated values
    */
-  protected $unique_columns = [];
+  protected $unique_traits = [];
 
   /**
    * Constructor.
@@ -73,19 +73,24 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     $unit = strtolower($row_values[$context['indices']['unit']]);
 
     // Now check for the presence of our array within our global array
-    if (!empty($this->unique_columns)) {
-      if ($this->unique_columns[$trait]) {
-        if ($this->unique_columns[$method]) {
-          if ($this->unique_columns[$unit]) {
+    if (!empty($this->unique_traits)) {
+      if ($this->unique_traits[$trait]) {
+        if ($this->unique_traits[$trait][$method]) {
+          if ($this->unique_traits[$trait][$method][$unit]) {
             // Then we've found a duplicate
-
+            $validator_status = [
+              'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
+              'status' => 'fail',
+              'details' => 'A duplicate trait was found within the input file'
+            ];
+            return $validator_status;
           }
         }
       }
-
     }
 
-    // Check at the database level too
+    // There are no duplicates in our file so far, now check at the database level
+    //$trait_query =
 
     // Finally, if not seen before, add to the global array
   }
