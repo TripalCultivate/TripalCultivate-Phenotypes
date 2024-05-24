@@ -72,9 +72,11 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test Duplicate Traits Plugin Validator.
+   * Test Duplicate Traits Plugin Validator at the file level
+   * -- ONLY tests with the context of traits that are being imported and
+   *    compared to other traits that exist within the same input file
    */
-  public function testDuplicateTraitsPluginValidator() {
+  public function testValidatorDuplicateTraitsFile() {
 
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
@@ -151,6 +153,37 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo('my trait', 'my method', 'my unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #3.');
 
+  }
+
+  /**
+   * Test Duplicate Traits Plugin Validator at the database
+   * -- ONLY tests with the context of traits that are being imported and
+   *    compared to other traits that exist in the database
+   */
+  public function testValidatorDuplicateTraitsDatabase() {
+
+    // Create a plugin instance for this validator
+    $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Simulates a row within the Trait Importer
+    $file_row = [
+      'My trait',
+      'My trait description',
+      'My method',
+      'My method description',
+      'My unit',
+      'Quantitative'
+    ];
+
+    // Default case: Enter a single row and check against an empty database
+
+
+    // Case #1: Enter a trait into the database and then try to validate the
+    // same trait details from a row in a input file
+
+    // Case #2: Validate trait details where trait name and method name already
+    // exist in the database, but unit is unique
   }
 
   /*

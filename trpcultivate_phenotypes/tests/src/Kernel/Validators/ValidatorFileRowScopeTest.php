@@ -75,7 +75,7 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
   /**
    * Test Value In List Plugin Validator.
    */
-  public function testValueInListPluginValidator() {
+  public function testValidatorValueInList() {
 
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
@@ -134,7 +134,7 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
   /**
    * Test Empty Cell Plugin Validator.
    */
-  public function testEmptyCellPluginValidator() {
+  public function testValidatorEmptyCell() {
 
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_empty_cell';

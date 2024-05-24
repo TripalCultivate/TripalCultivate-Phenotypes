@@ -73,7 +73,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   /**
    * Test the checkIndices() function in the Validator Base class
    */
-  public function testCheckIndicesPluginValidatorBase() {
+  public function testValidatorBaseCheckIndices() {
 
     // Create a plugin instance for any validator that uses this function
     $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
