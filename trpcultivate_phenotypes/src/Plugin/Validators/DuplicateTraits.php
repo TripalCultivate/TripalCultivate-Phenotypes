@@ -99,7 +99,27 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     }
 
     // There are no duplicates in our file so far, now check at the database level
-    //$trait_query =
+    // Grab our traits service
+    $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+    $trait_record = $service_traits->getTrait(['name' => $trait]);
+    if ($trait_record) {
+      // If trait already exists, next check for method
+      //print_r($trait_record);
+      $method_record = $service_traits->getTraitMethod(['name' => $trait]);
+      if ($method_record) {
+        // Lastly, check for unit
+        $unit_record = $service_traits->getMethodUnit($method_record['id']);
+        if ($unit_record) {
+          // Duplicate found
+          $validator_status = [
+            'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
+            'status' => 'fail',
+            'details' => 'A duplicate trait was found within the database'
+          ];
+          return $validator_status;
+        }
+      }
+    }
 
     // Finally, if not seen before, add to the global array
     $this->unique_traits[$trait][$method][$unit] = 1;

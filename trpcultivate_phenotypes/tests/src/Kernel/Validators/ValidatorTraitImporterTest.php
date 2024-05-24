@@ -10,6 +10,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\file\Entity\File;
+use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that are specific to
@@ -19,6 +20,9 @@ use Drupal\file\Entity\File;
   * @group validators
   */
 class ValidatorTraitImporterTest extends ChadoTestKernelBase {
+
+  use PhenotypeImporterTestTrait;
+
   /**
    * Plugin Manager service.
    */
@@ -29,7 +33,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
    *
    * @var ChadoConnection
    */
-  protected $chado;
+  protected $connection;
 
   /**
    * Configuration
@@ -37,6 +41,16 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
    * @var config_entity
    */
   private $config;
+
+  /**
+   * Saves details regarding the config.
+   */
+  protected $cvdbon;
+
+  /**
+   * The terms required by this module mapped to the cvterm_ids they are set to.
+   */
+  protected $terms;
 
     /**
    * Modules to enable.
@@ -60,12 +74,12 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+//    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by our service.
-    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
+    $this->connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->connection);
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
@@ -166,21 +180,59 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
-    // Simulates a row within the Trait Importer
-    $file_row = [
-      'My trait',
-      'My trait description',
-      'My method',
-      'My method description',
-      'My unit',
-      'Quantitative'
+    $genus = 'Tripalus';
+    // Create our organism and configure it.
+    $organism_id = $this->connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'databasica',
+      ])
+      ->execute();
+    $this->assertIsNumeric($organism_id,
+      "We were not able to create an organism for testing.");
+    $this->cvdbon = $this->setOntologyConfig($genus);
+    $this->terms = $this->setTermConfig();
+
+    // Grab our traits service
+    $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+    $service_traits->setTraitGenus($genus);
+
+    // Simulates a row in the input file for the Trait Importer
+    // with the column headers as keys
+    $file_row_with_keys = [
+      'Trait Name' => 'My trait',
+      'Trait Description' => 'My trait description',
+      'Method Short Name' => 'My method',
+      'Collection Method' => 'My method description',
+      'Unit' => 'My unit',
+      'Type' => 'Quantitative'
     ];
 
-    // Default case: Enter a single row and check against an empty database
+    // Create a simplified array without assigning the column headers as keys
+    // for use with our validator directly
+    $file_row = array_values($file_row_with_keys);
 
+    // Default case: Validate a single row and check against an empty database
+    $expected_status = 'pass';
+    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
+    $validation_status = $instance->validateRow($file_row, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate and an empty database.");
+    // Verify this trait isn't in the database
+    $my_trait_id = $service_traits->getTrait(['name' => 'My trait']);
+    $expected_trait_id = 0;
+    $this->assertEquals($expected_trait_id, $my_trait_id, "Duplicate Trait validation did not fail, yet a trait ID was queried from the database for the same trait name.");
 
     // Case #1: Enter a trait into the database and then try to validate the
-    // same trait details from a row in a input file
+    // same trait details
+
+    // Inserts our trait into the database, and returns the IDs for each of
+    // trait, method, unit in an array
+    // @TODO: Change this to use the test Trait ("Trait" in the testing sense,
+    // not phenotypic) once it's been developed.
+    $combo_ids = $service_traits->insertTrait($file_row_with_keys);
+
+
+    //print_r($combo_ids);
 
     // Case #2: Validate trait details where trait name and method name already
     // exist in the database, but unit is unique
