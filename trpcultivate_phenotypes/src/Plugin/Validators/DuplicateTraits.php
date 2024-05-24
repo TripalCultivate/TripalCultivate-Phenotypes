@@ -104,11 +104,10 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     $trait_record = $service_traits->getTrait(['name' => $trait]);
     if ($trait_record) {
       // If trait already exists, next check for method
-      //print_r($trait_record);
       $method_record = $service_traits->getTraitMethod(['name' => $trait]);
       if ($method_record) {
         // Lastly, check for unit
-        $unit_record = $service_traits->getMethodUnit($method_record['id']);
+        $unit_record = $service_traits->getMethodUnit($method_record->cvterm_id);
         if ($unit_record) {
           // Duplicate found
           $validator_status = [

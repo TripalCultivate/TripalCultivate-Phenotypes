@@ -224,18 +224,39 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Case #1: Enter a trait into the database and then try to validate the
     // same trait details
-
-    // Inserts our trait into the database, and returns the IDs for each of
-    // trait, method, unit in an array
+    // NOTE: insertTrait returns the IDs for each of trait, method, unit in an array
     // @TODO: Change this to use the test Trait ("Trait" in the testing sense,
     // not phenotypic) once it's been developed.
     $combo_ids = $service_traits->insertTrait($file_row_with_keys);
-
-
-    //print_r($combo_ids);
+    $my_trait_record = $service_traits->getTrait(['name' => 'My trait']);
+    $expected_trait_id = $combo_ids['trait'];
+    $this->assertEquals($expected_trait_id, $my_trait_record->cvterm_id, "The trait ID returned from inserting into the database and the trait ID that was queried for the same trait name do not match.");
+    // Now that the trait is confirmed to be in the database, our validator should
+    // return a fail status when trying to validate the same trait again
+    $expected_status = 'fail';
+    $validation_status = $instance->validateRow($file_row, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided a row of values for which there already exists a trait+method+unit combo in the database.");
 
     // Case #2: Validate trait details where trait name and method name already
     // exist in the database, but unit is unique
+    $file_row_2_with_keys = [
+      'Trait Name' => 'My trait',
+      'Trait Description' => 'My trait description',
+      'Method Short Name' => 'My method',
+      'Collection Method' => 'My method description',
+      'Unit' => 'My unit 2',
+      'Type' => 'Quantitative'
+    ];
+
+    // Create a simplified array without assigning the column headers as keys
+    // for use with our validator directly
+    $file_row_2 = array_values($file_row_with_keys);
+
+    $combo_ids = $service_traits->insertTrait($file_row_2_with_keys);
+    //$my_trait_record = $service_traits->getTrait(['name' => 'My trait']);
+    //$my_method_record = $service_traits->getTraitMethod(['name' => 'My trait']);
+    //$my_unit_2_record = $service_traits->getMethodUnit($my_method_record->cvterm_id);
+
   }
 
   /*
