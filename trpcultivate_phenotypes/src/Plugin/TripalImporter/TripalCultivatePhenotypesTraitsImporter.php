@@ -230,6 +230,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Each result is keyed by the scope.
     $validation = [];
 
+    // ************************************************************************
+    // @TODO: Break up this foreach loop to handle each scope differently.
+    // Could approach this by iterating through the scopes 'GENUS', 'FILE', and
+    // 'HEADERS' and then separately processing the file line by line and feeding
+    // it to each of the EmptyCell, DuplicateTraits and ValueInList validators
+    // ************************************************************************
     foreach($scopes as $scope) {
       // Create instance of the scope-specific plugin and perform validation.
       $validator = $manager->getValidatorIdWithScope($scope);
