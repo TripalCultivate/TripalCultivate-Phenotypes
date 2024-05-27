@@ -239,6 +239,10 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Case #2: Validate trait details where trait name and method name already
     // exist in the database, but unit is unique
+
+    // @TODO: Finish this test once the getter methods have been fixed to grab
+    // more than one record. See: Issue #78
+
     $file_row_2_with_keys = [
       'Trait Name' => 'My trait',
       'Trait Description' => 'My trait description',
@@ -252,7 +256,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // for use with our validator directly
     $file_row_2 = array_values($file_row_with_keys);
 
-    $combo_ids = $service_traits->insertTrait($file_row_2_with_keys);
+    //$combo_ids = $service_traits->insertTrait($file_row_2_with_keys);
     //$my_trait_record = $service_traits->getTrait(['name' => 'My trait']);
     //$my_method_record = $service_traits->getTraitMethod(['name' => 'My trait']);
     //$my_unit_2_record = $service_traits->getMethodUnit($my_method_record->cvterm_id);

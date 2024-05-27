@@ -100,6 +100,13 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
 
     // There are no duplicates in our file so far, now check at the database level
     // Grab our traits service
+    // *************************************************************************
+    // * @TODO: The following code assumes only one record at a time is returned
+    // * by each of the getter methods, but in reality we want to accomodate multiple
+    // * potential methods for a trait, and multiple units for a method. Thus,
+    // * each result will need to be iterated through to find the right one if this
+    // * is a duplicate. Issue #78 should address this in the getter functions
+    // *************************************************************************
     $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
     $trait_record = $service_traits->getTrait(['name' => $trait]);
     if ($trait_record) {
