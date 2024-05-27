@@ -103,7 +103,6 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    * {@inheritdoc}
    */
   public function checkIndices($row_values, $indices) {
-    // Does our indices array make sense?
 
     // Report if the indices array is empty
     if (!$indices) {

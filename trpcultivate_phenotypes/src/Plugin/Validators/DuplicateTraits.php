@@ -55,7 +55,10 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   stored as an array element
    * @param array $context
    *   An associative array with the following keys:
-   *   - indices => an array of indices corresponding to the cells in $row_values to act on
+   *   - indices => an associative array with the following keys:
+   *     - 'trait': int, the index of the trait name column in $row_values
+   *     - 'method': int, the index of the method name column in $row_values
+   *     - 'unit': int, the index of the unit column in $row_values
    *
    * @return array
    *   An associative array with the following keys:
