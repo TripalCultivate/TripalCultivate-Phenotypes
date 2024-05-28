@@ -369,10 +369,10 @@ class TripalCultivatePhenotypesTraitsService {
       return 0;
     }
 
-    $unit = 0;
+    $units = [];
 
     // Get unit.
-    $sql = "SELECT object_id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
+    $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
 
     // Query values.
     $args = [
@@ -381,16 +381,20 @@ class TripalCultivatePhenotypesTraitsService {
     ];
 
     // Query unit.
-    $unit_id = $this->chado->query($sql, $args)
-      ->fetchField();
+    $unit_ids = $this->chado->query($sql, $args);
+    $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id AND cv_id = :c_id LIMIT 1";
 
-    if ($unit_id) {
-      $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id AND cv_id = :c_id LIMIT 1";
-      $unit = $this->chado->query($sql, [':id' => $unit_id, ':c_id' => $genus_config['unit']['id']])
+    foreach($unit_ids as $unit_id) {
+      // Resolve the unit id.
+      $unit = $this->chado->query($sql, [':id' => $unit_id->id, ':c_id' => $genus_config['unit']['id']])
         ->fetchObject();
-    }
 
-    return $unit;
+      if ($unit) {
+        $units[] = $unit;
+      }
+    }
+    
+    return count($units) > 0 ? $units : 0;
   }
 
   /**
