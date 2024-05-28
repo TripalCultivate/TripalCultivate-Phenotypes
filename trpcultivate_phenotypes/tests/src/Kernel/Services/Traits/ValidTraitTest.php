@@ -244,55 +244,92 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Now bring these together into the array of values
     // requested by the insertTrait() method.
-    $trait = [
-      'Trait Name' => $trait_name,
-      'Trait Description' => $trait_name  . ' Description',
-      'Method Short Name' => $method_name . '-SName',
-      'Collection Method' => $method_name . ' - Pull from ground',
-      'Unit' => $unit_name,
-      'Type' => 'Quantitative'
+    $method_short_name = $method_name . '-SName';
+    $method_of_collection = $method_name . ' - Pull from ground';
+
+    $traits = [
+      [
+        'Trait Name' => $trait_name,
+        'Trait Description' => $trait_name  . ' Description',
+        'Method Short Name' => $method_short_name,
+        'Collection Method' => $method_of_collection,
+        'Unit' => $unit_name,
+        'Type' => 'Quantitative'
+      ],
+      
+      // Test trait for re-using method short name.
+      // The getter of unit for a method, for the method short name above
+      // should now return the units: UnitABCxxxxx and AnotherUnit.
+      [
+        'Trait Name' => 'Re-using Method',
+        'Trait Description' => 'This is re-using the method MethodABC',
+        'Method Short Name' => $method_short_name,    // Same as above.
+        'Collection Method' => $method_of_collection, // Same as above.
+        'Unit' => 'AnotherUnit',
+        'Type' => 'Quantitative'
+      ]
     ];
+    
+    // This will create the following traits:
+    // TraitABC 
+    //   description: TraitABC Description,
+    //   method short name: MethodABC-SName
+    //   collection method: MethodABC -  Pull from ground
+    //   unit: UnitABC
+    //   type: Quantitative
+    // 
+    // Re-using Method 
+    //   description: This is re-using the method MethodABC,
+    //   method short name: MethodABC-SName
+    //   collection method: MethodABC -  Pull from ground
+    //   unit: AnotherUnit
+    //   type: Quantitative
+
 
     // Set genus to use by the traits service.
-    $this->service_traits->setTraitGenus($this->genus);
+    $this->service_traits->setTraitGenus($this->genus);    
+    $method_id = 0;
+
     // Save the trait.
-    $trait_assets = $this->service_traits->insertTrait($trait);
+    foreach($traits as $i => $trait) {
+      $trait_assets = $this->service_traits->insertTrait($trait);
+      
+      // Test trait service.
+      $trait_id = $trait_assets['trait'];
+      $trait_name = $trait['Trait Name'];
+  
+      // Get trait by id.
+      $t = $this->service_traits->getTrait(['id' => $trait_id]);
+      $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait id).');
 
-    // Test get trait.
+      // Get trait by name.
+      $t = $this->service_traits->getTrait(['name' => $trait_name]);
+      $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait name).');
 
-    $trait_id = $trait_assets['trait'];
-    $trait_name = $trait['Trait Name'];
+      // Test get trait method.
+      $method_name = $trait['Method Short Name'];
 
-    // Get trait by id.
-    $t = $this->service_traits->getTrait(['id' => $trait_id]);
-    $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait id).');
+      // Get trait method by trait id.
+      $m = $this->service_traits->getTraitMethod(['id' => $trait_id]);
+      $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait id).');
 
-    // Get trait by name.
-    $t = $this->service_traits->getTrait(['name' => $trait_name]);
-    $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait name).');
+      // Get trait method by trait name.
+      $m = $this->service_traits->getTraitMethod(['name' => $trait_name]);
+      $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait name).');
 
-    // Test get trait method.
-    $method_name = $trait['Method Short Name'];
+      // Units - UnitABC and AnotherUnit.
+      $method_id = $method_id = $m[0]->cvterm_id;
+      $u = $this->service_traits->getMethodUnit($method_id);
 
-    // Get trait method by trait id.
-    $m = $this->service_traits->getTraitMethod(['id' => $trait_id]);
-    $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait id).');
-
-    // Get trait method by trait name.
-    $m = $this->service_traits->getTraitMethod(['name' => $trait_name]);
-    $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait name).');
-    $method_id = $m[0]->cvterm_id;
-
-    // Test get trait method unit.
-
-    $unit_name = $trait['Unit'];
-    $u = $this->service_traits->getMethodUnit($method_id);
-    $this->assertEquals($unit_name, $u->name, 'Trait method unit not found.');
-    $unit_id = $u->cvterm_id;
-
-    // Test get unit data type.
-    $data_type = $trait['Type'];
-    $dt = $this->service_traits->getMethodUnitDataType($unit_id);
-    $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
+      foreach($u as $unit) {
+        $this->assertContains($u->name, [$traits[0]['Unit'], $traits[1]['Unit']], 'Unexpected unit name ' . $unit . ' for method: ' . $method_short_name);
+      
+        // Test get unit data type.
+        $unit_id = $u->cvterm_id;
+        $data_type = $trait['Type'];
+        $dt = $this->service_traits->getMethodUnitDataType($unit_id);
+        $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
+      }
+    }
   }
 }
