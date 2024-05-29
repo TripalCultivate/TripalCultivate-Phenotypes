@@ -422,78 +422,86 @@ class TripalCultivatePhenotypesTraitsService {
   /**
    * Get trait, method and unit combination.
    * 
-   * @param $trait_name
-   *   String, the trait name.
-   * @param $method_short_name
-   *   String, the method short name.
-   * @param $unit_name
-   *   String, the unit name.
+   * @param string|int $trait
+   *   A string value is the trait name, whereas an integer value is the trait id number.
+   * @param string|int $method
+   *   A string value is the trait method short name, whereas an integer value is the method id number.
+   * @param string|int $unit
+   *   A string value is the method unit name, whereas an integer value is the unit id number.
    * 
    * @return array
    *   An associative array where the keys are trait, method and unit and the values
    *   are the cvterm records for each key.
    * 
    *   null if any one of trait, method or unit did not return any record.
+   * 
+   * @dependencies
+   *   getTrait(), getTraitMethod(), getMethodUnit() and getMethodUnitDataType().
    */
-  public function getTraitMethodUnitCombo($trait_name, $method_short_name, $unit_name) {
-    if ($trait_name && $method_short_name && $unit_name) {
+  public function getTraitMethodUnitCombo(string|int $trait, string|int $method, string|int $unit) {
+    if ($trait && $method && $unit) {
       // Trait:
-      $arr_trait = ['name' => $trait_name];
-      $trait = $this->getTrait($arr_trait);
+      $key = (is_string($trait)) ? 'name' : 'id';
+      $arr_trait = [$key => $trait];
+      $trait_val = $this->getTrait($arr_trait);
       
       if (!$trait) {
         return null;
       }
       
       // Method:
-      $method = null;
+      $method_val = null;
       if ($trait) {
         $trait_methods = $this->getTraitMethod($arr_trait);
 
         if ($trait_methods) {
+          $key = (is_string($method)) ? 'name' : 'cvterm_id';
+
           foreach($trait_methods as $method_obj) {
-            if ($method_obj->name == $method_short_name) {
-              $method = $method_obj;
+            if ($method_obj->{$key} == $method) {
+              $method_val = $method_obj;
               break;
             }
           }
 
-          if (!$method) {
+          if (!$method_val) {
             return null;
           }
         }
       }
 
       // Unit:
-      $unit = null;
-      if ($method) {
-        $method_id = $method->cvterm_id;
+      $unit_val = null;
+      if ($method_val) {
+        $method_id = $method_val->cvterm_id;
         $method_units = $this->getMethodUnit($method_id);
         
         if ($method_units) {
+          $key = (is_string($unit)) ? 'name' : 'cvterm_id';
+
           foreach($method_units as $unit_obj) {
-            if ($unit_obj->name == $unit_name) {
-              $unit = $unit_obj;
+            if ($unit_obj->{$key} == $unit) {
+              $unit_val = $unit_obj;
               break;
             }
           }
         }
         
-        if (!$unit) {
+        if (!$unit_val) {
           return null;
         }
 
         // Append unit data type to the unit data object.
-        $unit_id = $unit->cvterm_id;
+        $unit_id = $unit_val->cvterm_id;
         $unit_data_type = $this->getMethodUnitDataType($unit_id);
-        $unit->{'data_type'} = $unit_data_type;
+        $unit_val->{'data_type'} = $unit_data_type;
       }
       
 
       return [
-        'trait' => $trait,
-        'method' => $method,
-        'unit'  => $unit
+        'trait' => $trait_val,
+        'method' => $method_val,
+        'unit'  => $unit_val
       ];
     }
   }

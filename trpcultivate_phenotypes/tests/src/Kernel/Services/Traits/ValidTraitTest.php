@@ -332,4 +332,31 @@ class ValidTraitTest extends ChadoTestKernelBase {
       }
     }
   }
+
+  /**
+   * Test that we can retrieve a trait we just inserted by providing
+   * trait, method and unit combination, of which each can either be the id or name.
+   */
+  public function testTraitsServiceComboGetters() {
+    // Set genus to use by the traits service.
+    $this->service_traits->setTraitGenus($this->genus);    
+    
+    // Generate some fake combination.
+    $trait = [
+      'trait' => 'Trait Name Combo' . uniqid(),
+      'method' => 'Method Name Combo' . uniqid(),
+      'unit' => 'Unit Name Combo' . uniqid(),
+    ];
+
+    $combo = [
+      'Trait Name' => $trait['trait'],
+      'Trait Description' => 'A trait name combo',
+      'Method Short Name' => $trait['method'],    
+      'Collection Method' => 'A trait method collection method', 
+      'Unit' => $trait['unit'],
+      'Type' => 'Quantitative'
+    ];
+
+    $trait_assets = $this->service_traits->insertTrait($combo);
+  }
 }
