@@ -418,4 +418,83 @@ class TripalCultivatePhenotypesTraitsService {
 
     return $data_type ?? 0;
   }
+
+  /**
+   * Get trait, method and unit combination.
+   * 
+   * @param $trait_name
+   *   String, the trait name.
+   * @param $method_short_name
+   *   String, the method short name.
+   * @param $unit_name
+   *   String, the unit name.
+   * 
+   * @return array
+   *   An associative array where the keys are trait, method and unit and the values
+   *   are the cvterm records for each key.
+   * 
+   *   null if any one of trait, method or unit did not return any record.
+   */
+  public function getTraitMethodUnitCombo($trait_name, $method_short_name, $unit_name) {
+    if ($trait_name && $method_short_name && $unit_name) {
+      // Trait:
+      $arr_trait = ['name' => $trait_name];
+      $trait = $this->getTrait($arr_trait);
+      
+      if (!$trait) {
+        return null;
+      }
+      
+      // Method:
+      $method = null;
+      if ($trait) {
+        $trait_methods = $this->getTraitMethod($arr_trait);
+
+        if ($trait_methods) {
+          foreach($trait_methods as $method_obj) {
+            if ($method_obj->name == $method_short_name) {
+              $method = $method_obj;
+              break;
+            }
+          }
+
+          if (!$method) {
+            return null;
+          }
+        }
+      }
+
+      // Unit:
+      $unit = null;
+      if ($method) {
+        $method_id = $method->cvterm_id;
+        $method_units = $this->getMethodUnit($method_id);
+        
+        if ($method_units) {
+          foreach($method_units as $unit_obj) {
+            if ($unit_obj->name == $unit_name) {
+              $unit = $unit_obj;
+              break;
+            }
+          }
+        }
+        
+        if (!$unit) {
+          return null;
+        }
+
+        // Append unit data type to the unit data object.
+        $unit_id = $unit->cvterm_id;
+        $unit_data_type = $this->getMethodUnitDataType($unit_id);
+        $unit->{'data_type'} = $unit_data_type;
+      }
+      
+
+      return [
+        'trait' => $trait,
+        'method' => $method,
+        'unit'  => $unit
+      ];
+    }
+  }
 }
