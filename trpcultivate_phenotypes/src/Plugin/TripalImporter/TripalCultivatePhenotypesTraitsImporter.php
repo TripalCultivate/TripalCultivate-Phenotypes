@@ -16,10 +16,9 @@ use Drupal\Core\Url;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 /**
- * Tripal Cultivate Phenotypes - Share Importer.
+ * Tripal Cultivate Phenotypes - Traits Importer.
  *
- * Focused on phenotypic data which has already been published or which is ready
- * to be freely shared.
+ * An importer for traits with a defined method and unit.
  *
  * @TripalImporter(
  *   id = "trpcultivate-phenotypes-traits-importer",
@@ -220,11 +219,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // instruct validators Project + Genus that relations project-genus can be ignored.
     $project = 0;
     $genus = $form_state_values['genus'];
-    $file = $form_state_values['file_upload'];
+    $file_id = $form_state_values['file_upload'];
     $headers = array_keys($this->headers);
 
-    $scopes = ['GENUS', 'FILE', 'HEADERS', 'TRAIT IMPORT VALUES'];
-    //$scopes = ['GENUS', 'FILE', 'HEADERS', 'FILE ROW'];
+    // For each of the scopes that pertain to before validating the data rows of
+    // a file
+    $pre_data_scopes = ['GENUS', 'FILE', 'HEADERS'];
 
     // Array to hold all validation result for each level.
     // Each result is keyed by the scope.
@@ -236,7 +236,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // 'HEADERS' and then separately processing the file line by line and feeding
     // it to each of the EmptyCell, DuplicateTraits and ValueInList validators
     // ************************************************************************
-    foreach($scopes as $scope) {
+    foreach($pre_data_scopes as $scope) {
       // Create instance of the scope-specific plugin and perform validation.
       $validator = $manager->getValidatorIdWithScope($scope);
       $instance = $manager->createInstance($validator);
@@ -245,7 +245,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $skip = ($failed_validator > 0) ? 1 : 0;
 
       // Load values.
-      $instance->loadAssets($project, $genus, $file, $headers, $skip);
+      $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
 
       // Perform required level validation.
       $validation[ $scope ] = $instance->validate();
@@ -254,6 +254,38 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       if ($validation[ $scope ]['status'] == 'fail') {
         $failed_validator++;
       }
+    }
+
+    // The 'FILE ROW' scope
+    // Open the file so we can iterate through the rows
+    $file = File::load($file_id);
+    // Open and read file in this uri.
+    $file_uri = $file->getFileUri();
+    $handle = fopen($file_uri, 'r');
+
+    // Line counter.
+    $line_no = 0;
+    // Line check - line that has value and is not empty.
+    $line_check = 0;
+    // Array to hold all failed line, sorted by error type.
+    $failed_rows = [];
+    // Count each time a trait is process. This will be used
+    // to check for any duplicate trait name in the same genus.
+    $trait_count = [];
+
+
+    // Begin column and row validation.
+    while(!feof($handle)) {
+      // Current row.
+      $line = fgets($handle);
+
+      if ($line_no > 0 && !empty(trim($line))) {
+        $line_check++;
+      }
+
+      // Skip the header for now, since it has been addressed in its
+      // own 'HEADERS' scope above
+      $skip_header = str_getcsv($line, "\t");
     }
 
     // Save all validation results in Drupal storage to be used by

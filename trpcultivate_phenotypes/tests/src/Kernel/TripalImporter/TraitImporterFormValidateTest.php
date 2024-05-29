@@ -96,11 +96,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       [
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass'],
-        'FILE ROW' => [
-          'status' => 'fail',
-          'message' => 'no data rows',
-        ]
+        'HEADERS' => ['status' => 'pass']
       ]
     ];
 
@@ -113,8 +109,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'HEADERS' => [
           'status' => 'fail',
           'message' => 'Trait Description is/are missing in the file',
-        ],
-        'FILE ROW' => ['status' => 'todo'],
+        ]
       ]
     ];
 
@@ -124,11 +119,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       [
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass'],
-        'FILE ROW' => [
-          'status' => 'fail',
-          // Can't yet test the message here is it's a complicated structure.
-        ]
+        'HEADERS' => ['status' => 'pass']
       ]
     ];
 
@@ -143,8 +134,6 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    * @dataProvider provideFilesForValidation
    */
   public function testTraitFormValidation($filename, $expectations) {
-
-    $this->markTestSkipped('Skipping trait form validation until new plugins have been implemented.');
 
     $formBuilder = \Drupal::formBuilder();
     $form_id = 'Drupal\tripal\Form\TripalImporterForm';
