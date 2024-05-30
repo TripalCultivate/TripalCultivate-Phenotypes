@@ -220,6 +220,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $project = 0;
     $genus = $form_state_values['genus'];
     $file_id = $form_state_values['file_upload'];
+
+    // Make the header columns into a simplified array where the header names
+    // are the values
     $headers = array_keys($this->headers);
 
     // For each of the scopes that pertain to before validating the data rows of
@@ -273,19 +276,49 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // to check for any duplicate trait name in the same genus.
     $trait_count = [];
 
+    // Take our implified headers array and flip the array keys and values
+    // Now our header names are they keys and the value is the index of the column
+    // For example: [Trait Name] => 0
+    $header_flip = array_flip($headers);
 
     // Begin column and row validation.
     while(!feof($handle)) {
       // Current row.
       $line = fgets($handle);
 
+      // Skip the header for now, since it has been addressed in its own
+      // 'HEADERS' scope above
+      // Also skip any empty lines
       if ($line_no > 0 && !empty(trim($line))) {
         $line_check++;
-      }
 
-      // Skip the header for now, since it has been addressed in its
-      // own 'HEADERS' scope above
-      $skip_header = str_getcsv($line, "\t");
+        // Split line into an array
+        $data_row = str_getcsv($line, "\t");
+
+        // Validate for empty values
+        // Data columns NOT permitted to be empty are:
+        // 'Trait Name'
+        // 'Method Short Name'
+        // 'Unit'
+        // 'Type'
+        $check_for_empty['indices'] = array_filter($header_flip, function($column) {
+          return $column == 'Trait Name' ||
+            $column == 'Method Short Name' ||
+            $column == 'Unit' ||
+            $column == 'Type';
+        }, ARRAY_FILTER_USE_KEY);
+        $validator_id = 'trpcultivate_phenotypes_validator_empty_cell';
+        $instance = $manager->createInstance($validator_id);
+        $validation['empty_cell'] = $instance->validateRow($data_row, $check_for_empty);
+
+        //print_r($validation['empty_cell']['status']);
+        // Validate for the "Data Type" column to contain one of:
+        // Quantitative or Qualitative
+
+        // Validate for duplicate traits - checks the combination of "Trait Name",
+        // "Method Short Name" and "Unit".
+      }
+      $line_no++;
     }
 
     // Save all validation results in Drupal storage to be used by
