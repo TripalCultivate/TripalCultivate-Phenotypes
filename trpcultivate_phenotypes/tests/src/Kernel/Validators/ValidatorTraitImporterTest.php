@@ -108,7 +108,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Default case: Enter a single row of data
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate.");
     $unique_traits = $instance->getUniqueTraits();
@@ -120,7 +120,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to fail when passed in a duplicate trait name + method + unit combination.");
 
     // Case #2: Provide an incorrect key to $context['indices']
-    $context['indices'] = [ 'trait' => 0, 'method name' => 2, 'unit' => 3 ];
+    $context['indices'] = [ 'Trait Name' => 0, 'method name' => 2, 'Unit' => 3 ];
     $exception_caught = FALSE;
     try {
       $validation_status = $instance->validateRow($file_row, $context);
@@ -129,7 +129,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
       $exception_caught = TRUE;
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in the wrong index key "method name" to $context[\'indices\'].');
-    $this->assertStringContainsString('The method name (key: method) was not set', $e->getMessage(), "Did not get the expected exception message when providing the wrong index key \"method name\".");
+    $this->assertStringContainsString('The method name (key: Method Short Name) was not set', $e->getMessage(), "Did not get the expected exception message when providing the wrong index key \"method name\".");
 
     // Case #3: Enter a second unique row and check our global $unique_traits array
     // Note: unit is at a different index
@@ -143,7 +143,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     ];
 
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 5 ];
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 5 ];
     $validation_status = $instance->validateRow($file_row_2, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #2 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
@@ -161,7 +161,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     ];
 
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
     $validation_status = $instance->validateRow($file_row_3, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #3 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
@@ -214,7 +214,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Default case: Validate a single row and check against an empty database
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate and an empty database.");
     // Verify this trait isn't in the database

@@ -75,18 +75,18 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // using the indices stored in our $context array
     // We need to ensure that each array key we expect in $context['indices']
     // exists, otherwise throw an exception
-    if (!isset($context['indices']['trait'])) {
-      throw new \Exception(t('The trait name (key: trait) was not set in the $context[\'indices\'] array'));
+    if (!isset($context['indices']['Trait Name'])) {
+      throw new \Exception(t('The trait name (key: Trait Name) was not set in the $context[\'indices\'] array'));
     }
-    if (!isset($context['indices']['method'])) {
-       throw new \Exception(t('The method name (key: method) was not set in the $context[\'indices\'] array'));
+    if (!isset($context['indices']['Method Short Name'])) {
+       throw new \Exception(t('The method name (key: Method Short Name) was not set in the $context[\'indices\'] array'));
     }
-    if (!isset($context['indices']['unit'])) {
-       throw new \Exception(t('The unit (key: unit) was not set in the $context[\'indices\'] array'));
+    if (!isset($context['indices']['Unit'])) {
+       throw new \Exception(t('The unit (key: Unit) was not set in the $context[\'indices\'] array'));
     }
-    $trait = strtolower($row_values[$context['indices']['trait']]);
-    $method = strtolower($row_values[$context['indices']['method']]);
-    $unit = strtolower($row_values[$context['indices']['unit']]);
+    $trait = strtolower($row_values[$context['indices']['Trait Name']]);
+    $method = strtolower($row_values[$context['indices']['Method Short Name']]);
+    $unit = strtolower($row_values[$context['indices']['Unit']]);
 
     // Now check for the presence of our array within our global array
     if (!empty($this->unique_traits)) {

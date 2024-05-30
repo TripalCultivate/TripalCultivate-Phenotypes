@@ -295,9 +295,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Split line into an array
         $data_row = str_getcsv($line, "\t");
 
-        // *****************************
-        // * Validate for empty values
-        // *****************************
+        /******************************
+         * Validate for Empty Values in columns that are required
+         ******************************/
         $check_for_empty['indices'] = [
           'Trait Name' => $header_index['Trait Name'],
           'Method Short Name' => $header_index['Method Short Name'],
@@ -311,10 +311,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
         //print_r($validation['empty_cell']['status']);
 
-        // ******************************
-        // * Validate for the "Data Type" column to contain one of:
-        // * Quantitative or Qualitative
-        // ******************************
+        /******************************
+         * Validate for the "Data Type" column to contain one of:
+         * Quantitative or Qualitative
+         ******************************/
         $check_for_data_type['indices'] = ['Type' => $header_index['Type']];
         $check_for_data_type['valid_values'] = ['Quantitative', 'Qualitative'];
 
@@ -324,9 +324,22 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
         //print_r($validation['valid_data_type']['status']);
 
+        /*******************************
+         * Validate for Duplicate Traits
+         * This will check that the combination of "Trait Name",
+         * "Method Short Name" and "Unit" are unique
+         *******************************/
+        $check_for_duplicate_traits['indices'] = [
+          'Trait Name' => $header_index['Trait Name'],
+          'Method Short Name' => $header_index['Method Short Name'],
+          'Unit' => $header_index['Unit']
+        ];
 
-        // Validate for duplicate traits - checks the combination of "Trait Name",
-        // "Method Short Name" and "Unit".
+        $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
+        $instance = $manager->createInstance($validator_id);
+        $validation['duplicate_traits'] = $instance->validateRow($data_row, $check_for_duplicate_traits);
+
+        //print_r($validation['duplicate_traits']['status']);
       }
       $line_no++;
     }
