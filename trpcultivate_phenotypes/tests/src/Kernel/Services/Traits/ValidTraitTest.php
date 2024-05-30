@@ -322,10 +322,10 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $u = $this->service_traits->getMethodUnit($method_id);
 
       foreach($u as $unit) {
-        $this->assertContains($u->name, [$traits[0]['Unit'], $traits[1]['Unit']], 'Unexpected unit name ' . $unit . ' for method: ' . $method_short_name);
+        $this->assertContains($unit->name, [$traits[0]['Unit'], $traits[1]['Unit']], 'Unexpected unit name ' . $unit->name . ' for method: ' . $method_short_name);
       
         // Test get unit data type.
-        $unit_id = $u->cvterm_id;
+        $unit_id = $unit->cvterm_id;
         $data_type = $trait['Type'];
         $dt = $this->service_traits->getMethodUnitDataType($unit_id);
         $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
@@ -358,5 +358,50 @@ class ValidTraitTest extends ChadoTestKernelBase {
     ];
 
     $trait_assets = $this->service_traits->insertTrait($combo);
+
+    // Ids.
+    $trait_id = $trait_assets['trait'];
+    $method_id = $trait_assets['method'];
+    $unit_id = $trait_assets['unit'];
+
+    // No found and error.
+    $test_missing_param = [
+      ['', $method_id, $unit_id],  // No trait.
+      [$trait_id, '', $unit_id],   // No Method
+      [$trait_id, $method_id, ''], // No Unit.
+      ['', '', ''], // All (string)
+      [0, 0, 0], // All (id)
+      ['Not Found Trait', $method_id, $unit_id], // Non-existent trait (mix string and id).
+      [$trait_id, 'Not found method', $unit_id], // Non-existent method (mix string and id).
+      [$trait_id, $method_id, 'Not found unit'], // Non-existent unit (mix string and id).
+    ];
+
+    foreach($test_missing_param as $test) {
+      $trait_val  = $test[0];
+      $method_val = $test[1];
+      $unit_val   = $test[2];
+
+      $combo = $this->service_traits->getTraitMethodUnitCombo($trait_val, $method_val, $unit_val);
+      $this->assertEquals($combo, 0, 'Combo getter must return 0 on empty parameter or non-existent record.');
+    }
+    
+    unset($combo);
+    // All parameters as id number (integer).
+    $combo = $this->service_traits->getTraitMethodUnitCombo($trait_id, $method_id, $unit_id);
+    $this->assertEquals($combo['trait']->name, $trait['trait'], 'Trait name does not match expected trait name.');
+    $this->assertEquals($combo['method']->name, $trait['method'], 'Trait name does not match expected method name.');
+    $this->assertEquals($combo['unit']->name, $trait['unit'], 'Trait name does not match expected unit name.');
+
+    // All parameters as name (string).
+    $combo = $this->service_traits->getTraitMethodUnitCombo($trait['trait'], $trait['method'], $trait['unit']);
+    $this->assertEquals($combo['trait']->name, $trait['trait'], 'Trait name does not match expected trait name.');
+    $this->assertEquals($combo['method']->name, $trait['method'], 'Trait name does not match expected method name.');
+    $this->assertEquals($combo['unit']->name, $trait['unit'], 'Trait name does not match expected unit name.');
+
+    // Mix type parameters (string and integer).
+    $combo = $this->service_traits->getTraitMethodUnitCombo($trait_id, $trait['method'],  $unit_id);
+    $this->assertEquals($combo['trait']->name, $trait['trait'], 'Trait name does not match expected trait name.');
+    $this->assertEquals($combo['method']->name, $trait['method'], 'Trait name does not match expected method name.');
+    $this->assertEquals($combo['unit']->name, $trait['unit'], 'Trait name does not match expected unit name.');
   }
 }
