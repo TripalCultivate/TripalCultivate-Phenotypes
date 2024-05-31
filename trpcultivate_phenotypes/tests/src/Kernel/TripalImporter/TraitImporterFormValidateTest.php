@@ -91,6 +91,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     $senarios = [];
 
     // Contains correct header but no data
+    // Never reaches the validators for file row since file content is empty
     $senarios[] = [
       'correct_header_no_data.tsv',
       [
@@ -109,7 +110,8 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'HEADERS' => [
           'status' => 'fail',
           'message' => 'Trait Description is/are missing in the file',
-        ]
+        ],
+        'empty_cell' => ['status' => 'pass']
       ]
     ];
 
@@ -119,7 +121,8 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       [
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass']
+        'HEADERS' => ['status' => 'pass'],
+        'empty_cell' => ['status' => 'pass']
       ]
     ];
 
@@ -181,11 +184,13 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     }
     $this->assertCount(0, $form_validation_messages,
       "We should not have any form state errors but instead we have: " . implode(" AND ", $helpful_output));
-
     // Confirm that there is a validation window open
     $this->assertArrayHasKey('validation_result', $form,
       "We expected a validation failure reported via our plugin setup but it's not showing up in the form.");
     $validation_element_data = $form['validation_result']['#data']['validation_result'];
+
+    //print_r($validation_element_data);
+
     // Now check our expectations are met.
     foreach ($expectations as $validation_plugin => $expected) {
       $this->assertEquals($expected['status'], $validation_element_data[$validation_plugin]['status'],
