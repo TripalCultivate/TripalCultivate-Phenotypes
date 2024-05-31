@@ -288,7 +288,6 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set genus to use by the traits service.
     $this->service_traits->setTraitGenus($this->genus);    
-    $method_id = 0;
 
     // Save the trait.
     foreach($traits as $i => $trait) {
@@ -318,7 +317,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait name).');
 
       // Units - UnitABC and AnotherUnit.
-      $method_id = $method_id = $m[0]->cvterm_id;
+      $method_id = $m[0]->cvterm_id;
       $u = $this->service_traits->getMethodUnit($method_id);
 
       foreach($u as $unit) {
