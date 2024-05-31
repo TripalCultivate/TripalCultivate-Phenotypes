@@ -442,7 +442,7 @@ class TripalCultivatePhenotypesTraitsService {
     // Make sure that each parameter has a valid value.
     foreach([$trait, $method, $unit] as $param) {
       if (empty($param) || $param <= 0) {
-        return 0;
+        throw \Exception('The trait, method and unit passed into getTraitMethodUnitCombo() is required; however, one of them was empty.');
       }
     }
 
