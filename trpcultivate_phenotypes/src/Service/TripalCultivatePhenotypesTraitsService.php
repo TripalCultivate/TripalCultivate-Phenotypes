@@ -77,8 +77,8 @@ class TripalCultivatePhenotypesTraitsService {
       $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
 
       // Resolve each configuration entry id number to names.
-      $cv_sql = "SELECT name FROM {1:cv} WHERE cv_id = :id LIMIT 1";
-      $db_sql = "SELECT name FROM {1:db} WHERE db_id = :id LIMIT 1";
+      $cv_sql = "SELECT name FROM {1:cv} WHERE cv_id = :id";
+      $db_sql = "SELECT name FROM {1:db} WHERE db_id = :id";
 
       foreach($genus_config as $config => $value) {
         if ($value > 0) {
@@ -87,13 +87,13 @@ class TripalCultivatePhenotypesTraitsService {
           if ($config == 'database') {
             // DB configuration.
             $name = $this->chado->query($db_sql, [':id' => $value])
-            ->fetchField();
+              ->fetchField();
           }
           else {
             // CV configuration.
             // Configurations: traits, method, unit and crop_ontology.
             $name = $this->chado->query($cv_sql, [':id' => $value])
-            ->fetchField();
+              ->fetchField();
           }
 
           if ($name) {
@@ -145,7 +145,8 @@ class TripalCultivatePhenotypesTraitsService {
     $genus_config = $this->config;
 
     if (!$genus_config) {
-      return 0;
+      throw new \Exception(t('No genus has been set. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
+        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
     }
 
     // Query term.
@@ -189,7 +190,11 @@ class TripalCultivatePhenotypesTraitsService {
         $ins = chado_insert_cvterm($rec, [], $schema);
         if (!$ins) {
           // Could not insert cvterm.
-          $this->logger->error('Error. Could not insert unit @key.', ['@key' => $values['name']]);
+          $this->logger->error('Error. Failed to insert term @type : @term.', 
+            ['@type' => $type, '@term' => $values['name']], 
+            ['drupal_set_message' => TRUE]
+          );
+          throw new \Exception(t('A database error occurred while inserting a term.'));
         }
 
         $arr_trait[ $type ]['id'] = $ins->cvterm_id;
@@ -222,13 +227,21 @@ class TripalCultivatePhenotypesTraitsService {
         ->fetchField();
 
       if (!$exists) {
-        $this->chado->insert('1:cvterm_relationship')
+        $ins_rel = $this->chado->insert('1:cvterm_relationship')
           ->fields([
             'subject_id' => $subject,
             'type_id' => $rel,
             'object_id' => $object
           ])
           ->execute();
+        
+        if (!$ins_rel) {
+          $this->logger->error('Error. Failed to create term relationship @type : subject id - @subject object id - @object.', 
+            ['@type' => $type, '@subject' => $subject, '@object' => $object], 
+            ['drupal_set_message' => TRUE]
+          );
+          throw new \Exception(t('A database error occurred while inserting a term relationship.'));
+        }
       }
     }
 
@@ -238,13 +251,18 @@ class TripalCultivatePhenotypesTraitsService {
       ->fetchField();
 
     if (!$data_type) {
-      $this->chado->insert('1:cvtermprop')
+      $ins_type = $this->chado->insert('1:cvtermprop')
         ->fields([
           'cvterm_id' => $arr_trait['unit']['id'],
           'type_id' => $this->terms['unit_type'],
           'value' => $trait['Type']
         ])
         ->execute();
+
+      if (!$ins_type) {
+        $this->logger->error('Error. Failed to insert unit data type @unit : @data_type.', ['@unit' => $type, '@data_type' => $trait['Unit']], ['drupal_set_message' => TRUE]);
+        throw new \Exception(t('A database error occurred while inserting a unit data type.'));
+      }
     }
 
     // Return record id created.
@@ -255,18 +273,13 @@ class TripalCultivatePhenotypesTraitsService {
         'unit'  => $arr_trait['unit']['id']
       ];
     }
-    else {
-      return 0;
-    }
   }
 
   /**
    * Get trait.
    *
-   * @param array $trait
-   *   Key:
-   *     id - get trait by id number (cvterm_id) or
-   *     name - get trait by name (cvterm.name).
+   * @param string|int $trait
+   *   A string value is the trait name, whereas an integer value is the trait id number.
    *
    * @return object
    *   Matching record/line in cvterm table.
@@ -275,20 +288,21 @@ class TripalCultivatePhenotypesTraitsService {
     // Configuration settings of the genus.
     $genus_config = $this->config;
 
-    if (!isset($genus_config['trait']['id'])) {
-      // Genus is not configured.
-      return 0;
+    if (!$genus_config) {
+      throw new \Exception(t('Genus is not configured. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
+        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
     }
 
     $sql = "SELECT cvterm.* FROM {1:cvterm} LEFT JOIN {1:cv} USING (cv_id)
       WHERE cvterm.%s = :value AND cv.cv_id = :id";
 
-    $field = isset($trait['id']) ? 'cvterm_id' : 'name';
+    $field = (is_numeric($trait)) ? 'cvterm_id' : 'name';
+    $value = ($field == 'cvterm_id') ? (int) $trait : $trait;
     $sql = sprintf($sql, $field);
 
     // Query values.
     $args = [
-      ':value' => $trait['id'] ?? $trait['name'],
+      ':value' => $value,
       ':id' => $genus_config['trait']['id']
     ];
 
@@ -296,30 +310,33 @@ class TripalCultivatePhenotypesTraitsService {
     $trait = $this->chado->query($sql, $args)
       ->fetchObject();
 
-    return $trait ?? 0;
+    return (isset($trait->cvterm_id) && $trait->cvterm_id > 0) ? $trait : 0;
   }
 
   /**
    * Get trait method.
    *
-   * @param array $trait
-   *   Key:
-   *     id - get method by trait id number (cvterm_id) or
-   *     name - get method by trait name (cvterm.name).
+   * @param string|int $trait
+   *   A string value is the trait name, whereas an integer value is the trait id number.
    *
    * @return object
    *   Matching record/line in cvterm table (method).
+   * 
+   * @dependencies
+   *   getTrait()
    */
   public function getTraitMethod($trait) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
 
-    if (!isset($genus_config['method']['id']) && $this->terms['method_to_trait_relationship_type'] <= 0) {
-      // Not configured genus and term.
-      return 0;
+    if (!$genus_config) {
+      throw new \Exception(t('Genus is not configured. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
+        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
     }
 
     $methods = [];
+
+    $trait = (is_numeric($trait)) ? (int) $trait : $trait;
     $trait = $this->getTrait($trait);
 
     if ($trait) {
@@ -333,21 +350,23 @@ class TripalCultivatePhenotypesTraitsService {
       ];
 
       // Query method/s
-      $method_ids = $this->chado->query($sql, $args);
-      $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id AND cv_id = :c_id LIMIT 1";
-
-      foreach($method_ids as $method_id) {
-        // Resolve the method id.
-        $method = $this->chado->query($sql, [':id' => $method_id->id, ':c_id' => $genus_config['method']['id']])
-          ->fetchObject();
-
-        if ($method) {
-          $methods[] = $method;
-        }
+      $method_ids = $this->chado->query($sql, $args)
+        ->fetchCol();
+      
+      if (count($method_ids) < 1) {
+        // Nothing to return, trait has no methods.
+        return 0;
+      }
+      else {
+        $methods = $this->chado->query(
+          "SELECT * FROM {1:cvterm} WHERE cvterm_id IN (:ids[])", 
+          [':ids[]' => array_values($method_ids)]
+        )
+          ->fetchAll();
       }
     }
 
-    return count($methods) > 0 ? $methods : 0;
+    return $methods;
   }
 
   /**
@@ -364,9 +383,9 @@ class TripalCultivatePhenotypesTraitsService {
     // Configuration settings of the genus.
     $genus_config = $this->config;
 
-    if (!isset($genus_config['unit']['id']) && $this->terms['unit_to_method_relationship_type'] <= 0) {
-      // Not configured genus and term.
-      return 0;
+    if (!$genus_config) {
+      throw new \Exception(t('No genus has been set. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
+        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
     }
 
     $units = [];
