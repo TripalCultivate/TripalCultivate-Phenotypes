@@ -111,7 +111,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'message' => 'Trait Description is/are missing in the file',
         ],
-        'empty_cell' => ['status' => 'pass']
+        'empty_cell' => ['status' => 'pass'],
+        'valid_data_type' => ['status' => 'pass'],
+        'duplicate_traits' => ['status' => 'pass']
       ]
     ];
 
@@ -122,7 +124,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'empty_cell' => ['status' => 'pass']
+        'empty_cell' => ['status' => 'pass'],
+        'valid_data_type' => ['status' => 'pass'],
+        'duplicate_traits' => ['status' => 'fail']
       ]
     ];
 
@@ -176,7 +180,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     // Check that we did validation.
     $this->assertTrue($form_state->isValidationComplete(),
       "We expect the form state to have been updated to indicate that validation is complete.");
-    //   Looking for form validation errors
+    // Looking for form validation errors
     $form_validation_messages = $form_state->getErrors();
     $helpful_output = [];
     foreach ($form_validation_messages as $element => $markup) {

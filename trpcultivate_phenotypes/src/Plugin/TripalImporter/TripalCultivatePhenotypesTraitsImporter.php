@@ -308,6 +308,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $validator_id = 'trpcultivate_phenotypes_validator_empty_cell';
         $instance = $manager->createInstance($validator_id);
         $validation['empty_cell'] = $instance->validateRow($data_row, $check_for_empty);
+        if('fail' == $validation['empty_cell']['status']) {
+          $validation['empty_cell']['failed_lines'] = $line_no;
+          $failed_validator++;
+        }
 
         //print_r($validation['empty_cell']['status']);
 
@@ -321,7 +325,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
         $instance = $manager->createInstance($validator_id);
         $validation['valid_data_type'] = $instance->validateRow($data_row, $check_for_data_type);
-
+        if('fail' == $validation['valid_data_type']['status']) {
+          $validation['valid_data_type']['failed_lines'] = $line_no;
+          $failed_validator++;
+        }
         //print_r($validation['valid_data_type']['status']);
 
         /*******************************
@@ -338,10 +345,23 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
         $instance = $manager->createInstance($validator_id);
         $validation['duplicate_traits'] = $instance->validateRow($data_row, $check_for_duplicate_traits);
-
-        //print_r($validation['duplicate_traits']['status']);
+        if('fail' == $validation['duplicate_traits']['status']) {
+          $validation['duplicate_traits']['failed_lines'] = $line_no;
+          $failed_validator++;
+        }
+        //print "Validating Row: " . print_r($data_row, TRUE) . " and the result is: " . print_r($validation['duplicate_traits'], TRUE);
       }
       $line_no++;
+    }
+
+    // For each validator, check if 'failed_lines' has been set. If so, format the
+    // validation message and set the status to 'fail'.
+    if (isset($validation['duplicate_traits']['failed_lines'])) {
+      $validator_status = [
+        'title' => 'Identical Trait Name + Method Short Name + Unit combination found',
+        'status' => 'fail',
+        'details' => 'Confirmed that trait(s) on the following lines are duplicates: .'
+      ];
     }
 
     // Save all validation results in Drupal storage to be used by
