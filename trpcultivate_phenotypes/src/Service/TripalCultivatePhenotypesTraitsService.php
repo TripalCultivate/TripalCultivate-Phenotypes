@@ -150,8 +150,8 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     // Query term.
-    $sql = "SELECT cvterm_id FROM {1:cvterm} INNER JOIN {1:cv} USING (cv_id)
-      WHERE cvterm.name = :value AND cv.cv_id = :id LIMIT 1";
+    $sql = "SELECT cvterm_id AS id FROM {1:cvterm} INNER JOIN {1:cv} USING (cv_id)
+      WHERE cvterm.name = :value AND cv.cv_id = :id";
 
     // TRAIT, METHOD and UNIT data array.
     $arr_trait = [
@@ -171,13 +171,23 @@ class TripalCultivatePhenotypesTraitsService {
 
     // Create trait.
     foreach($arr_trait as $type => $values) {
-      // Check if a record exists in the same Genus.
       $value = ($type == 'method') ? $values['description'] : $values['name'];
       $id = $this->chado->query($sql, [':value' => $value, ':id' => $genus_config[ $type ]['id']])
-        ->fetchField();
+        ->fetchAll();
+
+      if (count($id) > 1) {
+        // Check if a record exists in the same Genus. If the term already existed,
+        // the query should only return one record for it to be re-used.
+        // Anything more than 1 should trigger an error (duplicate) to admin.
+        $this->logger->error('Error. Failed to insert term @type : @term. Term has multiple copies in @cv.', 
+          ['@type' => $type, '@term' => $values['name'], '@cv' => $genus_config[ $type ]['name']], 
+          ['drupal_set_message' => TRUE]
+        );
+        throw new \Exception(t('A database error occurred while inserting a term.'));
+      }
 
       if ($id) {
-        $arr_trait[ $type ]['id'] = $id;
+        $arr_trait[ $type ]['id'] = $id[0]->id;
       }
       else {
         $rec = [
@@ -279,48 +289,66 @@ class TripalCultivatePhenotypesTraitsService {
    * Get trait.
    *
    * @param string|int $trait
-   *   A string value is the trait name, whereas an integer value is the trait id number.
+   *   A string value is the trait name (cvterm.name), whereas an integer value 
+   *   is the trait id number (cvterm.cvterm_id).
    *
    * @return object
-   *   Matching record/line in cvterm table.
+   *   Matching record/line in cvterm table or 0 if trait record Was not found.
    */
   public function getTrait($trait) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
-
     if (!$genus_config) {
-      throw new \Exception(t('Genus is not configured. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
-        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
+      // Genus not set.
+      throw new \Exception(t('No genus has been set. See setting a genus in the Traits Service.'));
+    }
+    
+    // Parameter check.
+    if (empty($trait) || (is_numeric($trait) && (int) $trait < 0)) {
+      // Not a valid parameter trait value (0, null or an empty string).
+      throw new \Exception(t('Not a valid trait value provided. Trait getter expects a string trait name or an integer trait id.'));
+    }
+    
+    // Query trait.
+    if (is_numeric($trait)) {
+      // Trait id number.
+      $trait_rec = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE cvterm_id = :value",
+        [':value' => (int) $trait]
+      )
+        ->fetchAll();
+    }
+    else {
+      // Trait name.
+      $trait_rec = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE name = :value AND cv_id = :cv",
+        [':value' => $trait, ':cv' => $genus_config['trait']['id']]
+      )
+        ->fetchAll();
+      
+      if (count($trait_rec) > 1) {
+        // Trait appears to have copies in the cv:trait the genus is configured.
+        $this->logger->error(
+          'Error. Failed to retrieve trait : @trait in cv : @cv. Multiple copies of the same term found in the CV', 
+          ['@trait' => $trait, '@cv' => $genus_config['method']['name']], 
+          ['drupal_set_message' => TRUE]
+        );
+        throw new \Exception(t('A duplicate term error occurred while retrieving a trait.'));
+      }
     }
 
-    $sql = "SELECT cvterm.* FROM {1:cvterm} LEFT JOIN {1:cv} USING (cv_id)
-      WHERE cvterm.%s = :value AND cv.cv_id = :id";
-
-    $field = (is_numeric($trait)) ? 'cvterm_id' : 'name';
-    $value = ($field == 'cvterm_id') ? (int) $trait : $trait;
-    $sql = sprintf($sql, $field);
-
-    // Query values.
-    $args = [
-      ':value' => $value,
-      ':id' => $genus_config['trait']['id']
-    ];
-
-    // Query.
-    $trait = $this->chado->query($sql, $args)
-      ->fetchObject();
-
-    return (isset($trait->cvterm_id) && $trait->cvterm_id > 0) ? $trait : 0;
+    return ($trait_rec) ? reset($trait_rec) : 0;
   }
 
   /**
    * Get trait method.
    *
    * @param string|int $trait
-   *   A string value is the trait name, whereas an integer value is the trait id number.
+   *   A string value is the trait name (cvterm.name), whereas an integer value 
+   *   is the trait id number (cvterm.cvterm_id).
    *
    * @return object
-   *   Matching record/line in cvterm table (method).
+   *   Matching record/line in cvterm table (method) or 0 if trait/method record was not found.
    * 
    * @dependencies
    *   getTrait()
@@ -328,115 +356,265 @@ class TripalCultivatePhenotypesTraitsService {
   public function getTraitMethod($trait) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
-
     if (!$genus_config) {
-      throw new \Exception(t('Genus is not configured. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
+      // Genus not set.
+      throw new \Exception(t('No genus has been set. See setting a genus in the Traits Service.'));
+    }
+
+    if (!$this->terms['method_to_trait_relationship_type']) {
+      // Method configuration (trait-method relationship) term is not set.
+      throw new \Exception(t('The term used to create trait - method relationship is not configured. To configure, got to @url and set the term Method.',
         ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
     }
-
-    $methods = [];
-
-    $trait = (is_numeric($trait)) ? (int) $trait : $trait;
-    $trait = $this->getTrait($trait);
-
-    if ($trait) {
-      // Get the method.
-      $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
-
-      // Query values.
-      $args = [
-        ':s_id' => (int) $trait->cvterm_id,
-        ':t_id' => $this->terms['method_to_trait_relationship_type']
-      ];
-
-      // Query method/s
-      $method_ids = $this->chado->query($sql, $args)
-        ->fetchCol();
-      
-      if (count($method_ids) < 1) {
-        // Nothing to return, trait has no methods.
-        return 0;
-      }
-      else {
-        $methods = $this->chado->query(
-          "SELECT * FROM {1:cvterm} WHERE cvterm_id IN (:ids[])", 
-          [':ids[]' => array_values($method_ids)]
-        )
-          ->fetchAll();
-      }
+    
+    // Parameter check.
+    if (empty($trait) || (is_numeric($trait) && (int) $trait < 0)) {
+      // Not a valid parameter trait value (0, null or an empty string).
+      throw new \Exception(t('Not a valid trait value provided. Trait method getter expects a string trait name or an integer trait id.'));
     }
 
-    return $methods;
+    // Query methods.
+    $trait_param = (is_numeric($trait)) ? (int) $trait : $trait;
+    $trait_rec = $this->getTrait($trait_param);
+
+    if (!$trait_rec) {
+      // Trait was not found.
+      return 0;
+    }
+     
+    // Inspect the relationship table where the trait has a trait - method relationship.
+    $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
+
+    $args = [
+      ':s_id' => (int) $trait_rec->cvterm_id,
+      ':t_id' => $this->terms['method_to_trait_relationship_type']
+    ];
+
+    $method_ids = $this->chado->query($sql, $args)
+      ->fetchCol();
+
+    if (count($method_ids) > 0) {
+      // Has methods.
+      $methods = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE cvterm_id IN (:ids[])", 
+        [':ids[]' => array_values($method_ids)]
+      )
+        ->fetchAll();
+    }
+    
+    // If there is just one item in the result, simplify the array so
+    // no need to to index zero to access the one and only record.
+    if (count($methods) == 1) {
+      $methods = reset($methods);
+    }
+
+    return ($methods) ? $methods : 0;
   }
 
   /**
-   * Get trait method unit and unit data type.
+   * Get trait method unit.
    *
-   * @param integer $method_id
-   *   Method id number (method cvterm id).
+   * @param string|int $method
+   *   A string value is the method name (cvterm.name), whereas an integer value 
+   *   is the method id number (cvterm.cvterm_id).
    *
    * @return object
-   *   Matching record/line in cvterm table (unit) and
-   *   unit data type.
+   *   Matching record/line in cvterm table (unit) or 0 if method/unit record was not found.
    */
-  public function getMethodUnit($method_id) {
+  public function getMethodUnit($method) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
-
     if (!$genus_config) {
-      throw new \Exception(t('No genus has been set. To configure a genus, go to @url and set the controlled vocabularies associated with a genus.',
-        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
+      // Genus not set.
+      throw new \Exception(t('No genus has been set. See setting a genus in the Traits Service.'));
     }
 
-    $units = [];
+    if (!$this->terms['unit_to_method_relationship_type']) {
+      // Unit configuration (method-unit relationship) term is not set.
+      throw new \Exception(t('The term used to create method - unit relationship is not configured. To configure, got to @url and set the term Unit.',
+        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
+    }
+    
+    // Parameter check.
+    if (empty($method) || (is_numeric($method) && (int) $method < 0)) {
+      // Not a valid parameter method value (0, null or an empty string).
+      throw new \Exception(t('Not a valid method value provided. Method unit getter expects a string method name or an integer method id.'));
+    }
+    
+    // Query trait method.
+    if (is_numeric($method)) {
+      // Method id number.
+      $method_rec = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE cvterm_id = :value",
+        [':value' => (int) $method]
+      )
+        ->fetchAll();
+    }
+    else {
+      // Method name.
+      $method_rec = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE name = :value AND cv_id = :cv",
+        [':value' => $method, ':cv' => $genus_config['method']['id']]
+      )
+        ->fetchAll();
+      
+      if (count($method_rec) > 1) {
+        // Method appears to have copies in the cv:method the genus is configured.
+        $this->logger->error(
+          'Error. Failed to retrieve method : @method in cv : @cv. Multiple copies of the same term found in the CV', 
+          ['@trait' => $method, '@cv' => $genus_config['method']['name']], 
+          ['drupal_set_message' => TRUE]
+        );
+        throw new \Exception(t('A duplicate term error occurred while retrieving a method.'));
+      }
+    }
 
-    // Get unit.
+    if (!$method_rec) {
+      // Method was not found.
+      return 0;
+    }
+    
+    // Query method units.
+    $method_rec = reset($method_rec);
+    $method_id = $method_rec->cvterm_id;
+    
+    $units = [];
+    
+    // Inspect the relationship table where method has a method - unit relationship.
     $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
 
-    // Query values.
     $args = [
       ':s_id' => (int) $method_id,
       ':t_id' => $this->terms['unit_to_method_relationship_type']
     ];
 
-    // Query unit.
-    $unit_ids = $this->chado->query($sql, $args);
-    $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id AND cv_id = :c_id LIMIT 1";
+    $unit_ids = $this->chado->query($sql, $args)
+      ->fetchCol();
+    
+    if (count($unit_ids) > 0) {
+      // Has units.
+      $units = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE cvterm_id IN (:ids[])",
+        [':ids[]' => array_values($unit_ids)]
+      )
+        ->fetchAll();
+    }
 
-    foreach($unit_ids as $unit_id) {
-      // Resolve the unit id.
-      $unit = $this->chado->query($sql, [':id' => $unit_id->id, ':c_id' => $genus_config['unit']['id']])
-        ->fetchObject();
-
-      if ($unit) {
-        $units[] = $unit;
-      }
+    // If there is just one item in the result, simplify the array so
+    // no need to to index zero to access the one and only record.
+    if (count($units) == 1) {
+      $units = reset($units);
     }
     
-    return count($units) > 0 ? $units : 0;
+    return ($units) ? $units : 0;
   }
 
   /**
    * Get Trait Method Unit data type.
-   *
-   * @param integer $unit_id
-   *   Method unit id number (unit cvterm id).
+   * 
+   * @param string|int $unit
+   *   A string value is the unit name (cvterm.name), whereas an integer value 
+   *   is the unit id number (cvterm.cvterm_id).
    *
    * @return string
-   *   The data type of the unit, either quantitative or qualitative. False if not set.
+   *   The data type of the unit, either quantitative or qualitative or 0 when the unit record was not found 
+   *   and was not set a data type.
    */
-  public function getMethodUnitDataType($unit_id) {
-    if ($this->terms['unit_type'] <= 0 && !$unit_id) {
-      // Not configured term and no method id provided.
+  public function getMethodUnitDataType($unit) {
+    // Configuration settings of the genus.
+    $genus_config = $this->config;
+    if (!$genus_config) {
+      // Genus not set.
+      throw new \Exception(t('No genus has been set. See setting a genus in the Traits Service.'));
+    }
+
+    if (!$this->terms['unit_type']) {
+      // AdditionalType configuration (unit - data type relationship) term is not set.
+      throw new \Exception(t('The term used to create unit - data type relationship is not configured. To configure, got to @url and set the term AdditionalType.',
+        ['@url' => \Drupal\Core\Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]));
+    }
+    
+    // Parameter check.
+    if (empty($unit) || (is_numeric($unit) && (int) $unit < 0)) {
+      // Not a valid parameter method value (0, null or an empty string).
+      throw new \Exception(t('Not a valid unit value provided. Unit data type getter expects a string unit name or an integer unit id.'));
+    }
+
+    // Query method unit.
+    if (is_numeric($unit)) {
+      // Unit id number.
+      $unit_rec = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE cvterm_id = :value",
+        [':value' => (int) $unit]
+      )
+        ->fetchAll();
+    }
+    else {
+      // Unit name.
+      $unit_rec = $this->chado->query(
+        "SELECT * FROM {1:cvterm} WHERE name = :value AND cv_id = :cv",
+        [':value' => $unit, ':cv' => $genus_config['unit']['id']]
+      )
+        ->fetchAll();
+      
+      if (count($unit_rec) > 1) {
+        // Unit appears to have copies in the cv:unit the genus is configured.
+        $this->logger->error(
+          'Error. Failed to retrieve unit : @unit in cv : @cv. Multiple copies of the same term found in the CV', 
+          ['@unit' => $unit, '@cv' => $genus_config['unit']['name']], 
+          ['drupal_set_message' => TRUE]
+        );
+        throw new \Exception(t('A duplicate term error occurred while retrieving a unit.'));
+      }
+    }
+    
+    if(!$unit_rec) {
+      // Unit was not found.
       return 0;
     }
 
-    $sql = "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->chado->query($sql, [':c_id' => $unit_id, ':t_id' => $this->terms['unit_type']])
-      ->fetchField();
+    $unit_id = $unit_rec->cvterm_id;
 
-    return $data_type ?? 0;
+    $sql = "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id";
+    $data_type = $this->chado->query($sql, [':c_id' => $unit_id, ':t_id' => $this->terms['unit_type']])
+      ->fetchAll();
+    
+    if (count($data_type) > 1) {
+      // Unit appears to multiple data types.
+      $this->logger->error(
+        'Error. Failed to retrieve data type for unit : @unit in cv : @cv. Multiple data types found', 
+        ['@unit' => $unit, '@cv' => $genus_config['unit']['name']], 
+        ['drupal_set_message' => TRUE]
+      );
+      throw new \Exception(t('A multiple data type error occurred while retrieving a unit data type.'));
+    }
+
+    return ($data_type) ? reset($data_type) : 0;
   }
+
+
+
+
+
+
+  
+
+
+
+
+
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+  
 
   /**
    * Get trait, method and unit combination.
