@@ -295,6 +295,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Split line into an array
         $data_row = str_getcsv($line, "\t");
 
+        $filerow_validators = [
+          'empty_cell' => [
+            'validator_id' => 'trpcultivate_phenotypes_validator_empty_cell',
+            'indices' => [
+              'Trait Name' => $header_index['Trait Name'],
+              'Method Short Name' => $header_index['Method Short Name'],
+              'Unit' => $header_index['Unit'],
+              'Type' => $header_index['Type']
+            ]
+          ]
+        ];
+
         /******************************
          * Validate for Empty Values in columns that are required
          ******************************/
