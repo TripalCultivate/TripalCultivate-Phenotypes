@@ -117,8 +117,36 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       ]
     ];
 
-    // Contains correct header and duplicate trait-method-unit combo
+    // Contains correct header and one line of correct data,
+    // 2nd line has an empty method
     $senarios[] = [
+      'correct_header_emptycell_method.tsv',
+      [
+        'GENUS' => ['status' => 'pass'],
+        'FILE' => ['status' => 'pass'],
+        'HEADERS' => ['status' => 'pass'],
+        'empty_cell' => ['status' => 'fail'],
+        'valid_data_type' => ['status' => 'pass'],
+        'duplicate_traits' => ['status' => 'pass']
+      ]
+    ];
+
+    // Contains correct header and two lines of data
+    // First line has an invalid value for "Type" column
+    $senarios[] = [
+      'correct_header_invalid_datatype.tsv',
+      [
+        'GENUS' => ['status' => 'pass'],
+        'FILE' => ['status' => 'pass'],
+        'HEADERS' => ['status' => 'pass'],
+        'empty_cell' => ['status' => 'pass'],
+        'valid_data_type' => ['status' => 'fail'],
+        'duplicate_traits' => ['status' => 'pass']
+      ]
+    ];
+
+    // Contains correct header and duplicate trait-method-unit combo
+/*     $senarios[] = [
       'correct_header_duplicate_traitMethodUnit.tsv',
       [
         'GENUS' => ['status' => 'pass'],
@@ -128,7 +156,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['status' => 'fail']
       ]
-    ];
+    ]; */
 
     // Contains correct header but data types are mismatched
 

@@ -309,7 +309,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $instance = $manager->createInstance($validator_id);
         $validation['empty_cell'] = $instance->validateRow($data_row, $check_for_empty);
         if('fail' == $validation['empty_cell']['status']) {
-          $validation['empty_cell']['failed_lines'] = $line_no;
+          $failed_status['empty_cell']['failed_lines'] = $line_no;
           $failed_validator++;
         }
 
@@ -326,7 +326,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $instance = $manager->createInstance($validator_id);
         $validation['valid_data_type'] = $instance->validateRow($data_row, $check_for_data_type);
         if('fail' == $validation['valid_data_type']['status']) {
-          $validation['valid_data_type']['failed_lines'] = $line_no;
+          $failed_status['valid_data_type']['failed_lines'] = $line_no;
           $failed_validator++;
         }
         //print_r($validation['valid_data_type']['status']);
@@ -346,7 +346,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $instance = $manager->createInstance($validator_id);
         $validation['duplicate_traits'] = $instance->validateRow($data_row, $check_for_duplicate_traits);
         if('fail' == $validation['duplicate_traits']['status']) {
-          $validation['duplicate_traits']['failed_lines'] = $line_no;
+          $failed_status['duplicate_traits']['failed_lines'] = $line_no;
           $failed_validator++;
         }
         //print "Validating Row: " . print_r($data_row, TRUE) . " and the result is: " . print_r($validation['duplicate_traits'], TRUE);
@@ -356,8 +356,22 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // For each validator, check if 'failed_lines' has been set. If so, format the
     // validation message and set the status to 'fail'.
-    if (isset($validation['duplicate_traits']['failed_lines'])) {
-      $validator_status = [
+    if (isset($failed_status['empty_cell'])) {
+      $validation['empty_cell'] = [
+        'title' => 'Required columns were found to be empty',
+        'status' => 'fail',
+        'details' => ''
+      ];
+    }
+    if (isset($failed_status['valid_data_type'])) {
+      $validation['valid_data_type'] = [
+        'title' => 'Value in column "type" was not one of "Quantitative" or "Qualitative"',
+        'status' => 'fail',
+        'details' => '.'
+      ];
+    }
+    if (isset($failed_status['duplicate_traits'])) {
+      $validation['duplicate_traits'] = [
         'title' => 'Identical Trait Name + Method Short Name + Unit combination found',
         'status' => 'fail',
         'details' => 'Confirmed that trait(s) on the following lines are duplicates: .'
