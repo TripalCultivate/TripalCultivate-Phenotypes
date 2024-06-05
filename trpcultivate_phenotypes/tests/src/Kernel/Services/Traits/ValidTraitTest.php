@@ -243,99 +243,174 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * Test that we can retrieve a trait we just inserted.
    */
   public function testTraitsServiceGetters() {
+    // Set the genus.
+    $this->service_traits->setTraitGenus($this->genus); 
+    
+    // Test Data.
+    // Keys.
+    $keys = [
+      'trait' => 'Trait Name',
+      'method' => 'Method Short Name',
+      'unit' => 'Unit'
+    ];
 
-    // Generate some fake/unique names.
-    $trait_name  = 'TraitABC'  . uniqid();
-    $method_name = 'MethodABC' . uniqid();
-    $unit_name   = 'UnitABC'   . uniqid();
-
-    // Now bring these together into the array of values
-    // requested by the insertTrait() method.
-    $method_short_name = $method_name . '-SName';
-    $method_of_collection = $method_name . ' - Pull from ground';
-
-    $traits = [
+    $test_combo = [
       [
-        'Trait Name' => $trait_name,
-        'Trait Description' => $trait_name  . ' Description',
-        'Method Short Name' => $method_short_name,
-        'Collection Method' => $method_of_collection,
-        'Unit' => $unit_name,
-        'Type' => 'Quantitative'
+        $keys['trait']  => 'A Trait', // A
+        $keys['method'] => 'A Method',
+        $keys['unit']   => 'A Unit'
       ],
-      
-      // Test trait for re-using method short name.
-      // The getter of unit for a method, for the method short name above
-      // should now return the units: UnitABCxxxxx and AnotherUnit.
+
+      // This is trait A Trait
+      // New method
+      // Re-use C Unit
       [
-        'Trait Name' => 'Re-using Method',
-        'Trait Description' => 'This is re-using the method MethodABC',
-        'Method Short Name' => $method_short_name,    // Same as above.
-        'Collection Method' => $method_of_collection, // Same as above.
-        'Unit' => 'AnotherUnit',
-        'Type' => 'Quantitative'
+        $keys['trait']  => 'A Trait',  // A
+        $keys['method'] => 'B Method',
+        $keys['unit']   => 'A Unit',
+      ],
+
+      // This is trait A Trait
+      // New Method
+      // Re-use C Unit
+      [
+        $keys['trait']  => 'A Trait',  // A
+        $keys['method'] => 'C Method',
+        $keys['unit']   => 'A Unit'
+      ],
+
+      // This is trait A Trait
+      // Re-use B Method
+      // New Unit
+      [
+        $keys['trait']  => 'A Trait',  // A
+        $keys['method'] => 'B Method',
+        $keys['unit']   => 'B Unit'
+      ],
+
+      // This is trait A Trait
+      // Re-use B Method
+      // New Unit
+      [
+        $keys['trait']  => 'A Trait',  // A
+        $keys['method'] => 'B Method',
+        $keys['unit']   => 'C Unit'
+      ],
+
+      // This is new trait B Trait
+      // Re-use B Method
+      // Re-use A Unit
+      [
+        $keys['trait']  => 'B Trait',  // B
+        $keys['method'] => 'B Method',
+        $keys['unit']   => 'A Unit'
+      ],
+
+      // This is trait B Trait
+      // Re-use B Method
+      // New Unit
+      [
+        $keys['trait']  => 'B Trait',  // B
+        $keys['method'] => 'B Method',
+        $keys['unit']   => 'D Unit'
+      ],
+
+      // This is trait B Trait
+      // New method
+      // Re-use C Unit
+      [
+        $keys['trait']  => 'B Trait',  // B
+        $keys['method'] => 'C Method',
+        $keys['unit']   => 'C Unit'
+      ],
+
+      // This is trait C Trait
+      // New method
+      // New Unit
+      // Use to test when single item in the result, the array is simplified.
+      [
+        $keys['trait']  => 'C Trait',  // C
+        $keys['method'] => 'D Method',
+        $keys['unit']   => 'E Unit'
       ]
     ];
+
+    // Summary:
+    // A Trait has 3 methods - A, B, C Method
+    // B Trait has 2 methods - B and C Method
+    // C Trait has 1 method - C Method
+    // A Method has 1 unit - A Unit
+    // B Method has 4 units - A, B, C, and D Unit
+    // C Method has 1 unit - C Unit
+
+    // Construct trait asset array.
+    foreach($test_combo as $i => $combo) {
+      $data_type = ($i % 2 == 0) ? 'Qualitative' : 'Quantitative'; 
+
+      $ins_trait = [ 
+        'Trait Name' => $combo['Trait Name'],
+        'Trait Description' => $combo['Trait Name']  . ' Description',
+        'Method Short Name' => $combo['Method Short Name'],
+        'Collection Method' => $combo['Method Short Name'] . ' Collection Method',
+        'Unit' => $combo['Unit'],
+        'Type' => $data_type
+      ];
+
+      // Set genus to use by the traits service.
+      $trait_assets = $this->service_traits->insertTrait($ins_trait);
+      // Check trait assets got inserted.
+      $trait_combo = $this->service_traits->getTraitMethodUnitCombo($combo['Trait Name'], $combo['Method Short Name'], $combo['Unit']);
+      
+      // Trait.
+      $this->assertEquals($trait_assets['trait'], $trait_combo['trait']->cvterm_id, 'Test trait was not inserted.');
+      // Method.
+      $this->assertEquals($trait_assets['method'], $trait_combo['method']->cvterm_id, 'Test trait was not inserted.');
+      // Unit.
+      $this->assertEquals($trait_assets['unit'], $trait_combo['unit']->cvterm_id, 'Test trait was not inserted.');
+    }
     
-    // This will create the following traits:
-    // TraitABC 
-    //   description: TraitABC Description,
-    //   method short name: MethodABC-SName
-    //   collection method: MethodABC -  Pull from ground
-    //   unit: UnitABC
-    //   type: Quantitative
-    // 
-    // Re-using Method 
-    //   description: This is re-using the method MethodABC,
-    //   method short name: MethodABC-SName
-    //   collection method: MethodABC -  Pull from ground
-    //   unit: AnotherUnit
-    //   type: Quantitative
+    // At this point all traits should be in, test the relationships, connections and all.
+    foreach($test_combo as $combo) {
+      // Retrieve the trait.
+      // By string.
+      $t = $this->service_traits->getTrait($combo['Trait Name']);
+      $trait_id = (int) $t->cvterm_id;
+      $this->assertNotEquals($trait_id, 0, 'Failed to fetch the trait (by string trait name).');
 
+      // By id number.
+      $t = $this->service_traits->getTrait($trait_id);
+      $trait_id = (int) $t->cvterm_id;
+      $this->assertNotEquals($trait_id, 0, 'Failed to fetch the trait (by integer trait id).');
+    }
 
-    // Set genus to use by the traits service.
-    $this->service_traits->setTraitGenus($this->genus);    
-
-    // Save the trait.
-    foreach($traits as $i => $trait) {
-      $trait_assets = $this->service_traits->insertTrait($trait);
-      
-      // Test trait service.
-      $trait_id = $trait_assets['trait'];
-      $trait_name = $trait['Trait Name'];
-  
-      // Get trait by id.
-      $t = $this->service_traits->getTrait(['id' => $trait_id]);
-      $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait id).');
-
-      // Get trait by name.
-      $t = $this->service_traits->getTrait(['name' => $trait_name]);
-      $this->assertEquals($trait_name, $t->name, 'Trait not found (by trait name).');
-
-      // Test get trait method.
-      $method_name = $trait['Method Short Name'];
-
-      // Get trait method by trait id.
-      $m = $this->service_traits->getTraitMethod(['id' => $trait_id]);
-      $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait id).');
-
-      // Get trait method by trait name.
-      $m = $this->service_traits->getTraitMethod(['name' => $trait_name]);
-      $this->assertEquals($method_name, $m[0]->name, 'Trait method not found (by trait name).');
-
-      // Units - UnitABC and AnotherUnit.
-      $method_id = $m[0]->cvterm_id;
-      $u = $this->service_traits->getMethodUnit($method_id);
-
-      foreach($u as $unit) {
-        $this->assertContains($unit->name, [$traits[0]['Unit'], $traits[1]['Unit']], 'Unexpected unit name ' . $unit->name . ' for method: ' . $method_short_name);
-      
-        // Test get unit data type.
-        $unit_id = $unit->cvterm_id;
-        $data_type = $trait['Type'];
-        $dt = $this->service_traits->getMethodUnitDataType($unit_id);
-        $this->assertEquals($data_type, $dt, 'Trait method unit data type does not match expected.');
+    // Base on the test data summary, test the case.
+    // A Trait has 3 methods - A, B, C Method.
+    // By string method name.
+    $m_s = $this->service_traits->getTraitMethod('A Trait');
+    foreach(['A', 'B', 'C'] as $expected) {
+      $a_found = FALSE;
+      foreach($m_s as $a_m) {
+        if ($a_m->name == $expected . ' Method') {
+          $a_found = TRUE;
+        }
       }
+
+      $this->assertTrue($a_found, 'A method for the test trait is missing (get by string method name).');
+    }
+
+    // Test by trait id.
+    $a_trait = $this->service_traits->getTrait('A Trait');
+    $a_trait_id = (int) $a_trait->cvterm_id;
+    $m_i = $this->service_traits->getTraitMethod($a_trait_id);
+    foreach(['A', 'B', 'C'] as $expected) {
+      $a_found = FALSE;
+      foreach($m_i as $a_m) {
+        if ($a_m->name == $expected . ' Method') {
+          $a_found = TRUE;
+        }
+      }
+
+      $this->assertTrue($a_found, 'A method for the test trait is missing (get by integer method id).');
     }
   }
 
@@ -370,27 +445,57 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $method_id = $trait_assets['method'];
     $unit_id = $trait_assets['unit'];
 
-    // No found and error.
+    // Invalid parameter error. For all 3 trait asset - trait, method and unit
+    // No 0, empty string or negative number.
     $test_missing_param = [
-      ['', $method_id, $unit_id],  // No trait.
-      [$trait_id, '', $unit_id],   // No Method
-      [$trait_id, $method_id, ''], // No Unit.
-      ['', '', ''], // All (string)
-      [0, 0, 0], // All (id)
-      ['Not Found Trait', $method_id, $unit_id], // Non-existent trait (mix string and id).
-      [$trait_id, 'Not found method', $unit_id], // Non-existent method (mix string and id).
-      [$trait_id, $method_id, 'Not found unit'], // Non-existent unit (mix string and id).
+      ['', $method_id, $unit_id], 
+      [$trait_id, '', $unit_id],  
+      [$trait_id, $method_id, ''],
+      ['', '', ''], 
+      [0, $method_id, $unit_id],
+      [$trait_id, 0, $unit_id],
+      [$trait_id, $method_id, 0],
+      [0, 0, 0], 
+      [-1, $method_id, $unit_id],
+      [$trait_id, -1, $unit_id],
+      [$trait_id, $method_id, -1],
+      [-1, -1, -1]
     ];
 
     foreach($test_missing_param as $test) {
       $trait_val  = $test[0];
       $method_val = $test[1];
       $unit_val   = $test[2];
+      
+      $exception_caught  = FALSE;
+      $exception_message = '';
+      try {
+        $this->service_traits->getTraitMethodUnitCombo($trait_val, $method_val, $unit_val);
+      }
+      catch (\Exception $e) {
+        $exception_caught = TRUE;
+        $exception_message = $e->getMessage();
+      }
+
+      $this->assertMatchesRegularExpression('/Not a valid (trait|method|unit) key value provided/', $exception_message, 'Invalid parameter error message does not match expected error.');
+    }
+
+    // Not found.
+    $test_not_found = [
+      ['Not found trait', $method_id, $unit_id],
+      [$trait_id, 'Not found method', $unit_id],
+      [$trait_id, $method_id, 'Not found unit']
+    ];
+
+    foreach($test_not_found as $test) {
+      $trait_val  = $test[0];
+      $method_val = $test[1];
+      $unit_val   = $test[2];
 
       $combo = $this->service_traits->getTraitMethodUnitCombo($trait_val, $method_val, $unit_val);
-      $this->assertEquals($combo, 0, 'Combo getter must return 0 on empty parameter or non-existent record.');
+      $this->assertEquals($combo, 0, 'Combo getter must return 0 on non-existent record.');
     }
-    
+
     unset($combo);
     // All parameters as id number (integer).
     $combo = $this->service_traits->getTraitMethodUnitCombo($trait_id, $method_id, $unit_id);
