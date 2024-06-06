@@ -109,7 +109,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => [
           'status' => 'fail',
-          'message' => 'Trait Description is/are missing in the file',
+          'details' => 'Trait Description is/are missing in the file',
         ],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
@@ -125,7 +125,10 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'empty_cell' => ['status' => 'fail'],
+        'empty_cell' => [
+          'status' => 'fail',
+          'details' => 'One or more required columns was empty at row #: 2'
+        ],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['status' => 'pass']
       ]
@@ -140,7 +143,10 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
-        'valid_data_type' => ['status' => 'fail'],
+        'valid_data_type' => [
+          'status' => 'fail',
+          'details' => 'Column "type" violates required values at row #: 1'
+        ],
         'duplicate_traits' => ['status' => 'pass']
       ]
     ];
@@ -154,7 +160,10 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
-        'duplicate_traits' => ['status' => 'fail']
+        'duplicate_traits' => [
+          'status' => 'fail',
+          'details' => 'Traits that already exist in the input file or in the database were detected at row #: 2'
+          ]
       ]
     ];
 
@@ -221,14 +230,12 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       "We expected a validation failure reported via our plugin setup but it's not showing up in the form.");
     $validation_element_data = $form['validation_result']['#data']['validation_result'];
 
-    //print_r($validation_element_data);
-
     // Now check our expectations are met.
     foreach ($expectations as $validation_plugin => $expected) {
       $this->assertEquals($expected['status'], $validation_element_data[$validation_plugin]['status'],
         "We expected the form validation element to indicate the $validation_plugin plugin had the specified status.");
-      if (array_key_exists('message', $expected)) {
-        $this->assertStringContainsString($expected['message'], $validation_element_data[$validation_plugin]['details'],
+      if (array_key_exists('details', $expected)) {
+        $this->assertStringContainsString($expected['details'], $validation_element_data[$validation_plugin]['details'],
           "We expected the details for $validation_plugin to include a specific string but it did not.");
       }
     }
