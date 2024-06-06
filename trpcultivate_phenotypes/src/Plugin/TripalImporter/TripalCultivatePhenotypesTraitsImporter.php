@@ -271,18 +271,31 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $filerow_validators = [
       'empty_cell' => [
         'validator_id' => 'trpcultivate_phenotypes_validator_empty_cell',
-        'indices' => [
-          'Trait Name' => $header_index['Trait Name'],
-          'Method Short Name' => $header_index['Method Short Name'],
-          'Unit' => $header_index['Unit'],
-          'Type' => $header_index['Type']
+        'context' => [
+          'indices' => [
+            'Trait Name' => $header_index['Trait Name'],
+            'Method Short Name' => $header_index['Method Short Name'],
+            'Unit' => $header_index['Unit'],
+            'Type' => $header_index['Type']
+          ]
         ]
       ],
       'valid_data_type' => [
-        'validator_id' => 'trpcultivate_phenotypes_validator_value_in_list'
+        'validator_id' => 'trpcultivate_phenotypes_validator_value_in_list',
+        'context' => [
+          'indices' => [ 'Type' => $header_index['Type'] ],
+          'valid_values' => ['Quantitative', 'Qualitative']
+        ]
       ],
       'duplicate_traits' => [
-        'validator_id' => 'trpcultivate_phenotypes_validator_duplicate_traits'
+        'validator_id' => 'trpcultivate_phenotypes_validator_duplicate_traits',
+        'context' => [
+          'indices' => [
+            'Trait Name' => $header_index['Trait Name'],
+            'Method Short Name' => $header_index['Method Short Name'],
+            'Unit' => $header_index['Unit']
+          ]
+        ]
       ]
     ];
 
@@ -316,7 +329,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Skip the header for now, since it has been addressed in its own
       // 'HEADERS' scope above. Also skip any empty lines
       if ($line_no > 0 && !empty(trim($line))) {
-        $line_check++;
 
         // Split line into an array
         $data_row = str_getcsv($line, "\t");
@@ -324,14 +336,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         /******************************
          * Validate for Empty Values in columns that are required
          ******************************/
-        $check_for_empty['indices'] = [
-          'Trait Name' => $header_index['Trait Name'],
-          'Method Short Name' => $header_index['Method Short Name'],
-          'Unit' => $header_index['Unit'],
-          'Type' => $header_index['Type']
-        ];
-
-        $validation['empty_cell'] = $instances['empty_cell']->validateRow($data_row, $check_for_empty);
+        $validation['empty_cell'] = $instances['empty_cell']->validateRow($data_row, $filerow_validators['empty_cell']['context']);
         if('fail' == $validation['empty_cell']['status']) {
           $failed_status['empty_cell']['failed_lines'] = $line_no;
           $failed_validator++;
@@ -341,10 +346,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
          * Validate for the "Data Type" column to contain one of:
          * Quantitative or Qualitative
          ******************************/
-        $check_for_data_type['indices'] = ['Type' => $header_index['Type']];
-        $check_for_data_type['valid_values'] = ['Quantitative', 'Qualitative'];
-
-        $validation['valid_data_type'] = $instances['valid_data_type']->validateRow($data_row, $check_for_data_type);
+        $validation['valid_data_type'] = $instances['valid_data_type']->validateRow($data_row, $filerow_validators['valid_data_type']['context']);
         if('fail' == $validation['valid_data_type']['status']) {
           $failed_status['valid_data_type']['failed_lines'] = $line_no;
           $failed_validator++;
@@ -355,13 +357,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
          * This will check that the combination of "Trait Name",
          * "Method Short Name" and "Unit" are unique
          *******************************/
-        $check_for_duplicate_traits['indices'] = [
-          'Trait Name' => $header_index['Trait Name'],
-          'Method Short Name' => $header_index['Method Short Name'],
-          'Unit' => $header_index['Unit']
-        ];
-
-        $validation['duplicate_traits'] = $instances['duplicate_traits']->validateRow($data_row, $check_for_duplicate_traits);
+        $validation['duplicate_traits'] = $instances['duplicate_traits']->validateRow($data_row, $filerow_validators['duplicate_traits']['context']);
         if('fail' == $validation['duplicate_traits']['status']) {
           $failed_status['duplicate_traits']['failed_lines'] = $line_no;
           $failed_validator++;
