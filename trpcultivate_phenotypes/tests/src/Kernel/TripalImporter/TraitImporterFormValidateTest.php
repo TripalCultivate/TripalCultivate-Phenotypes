@@ -90,7 +90,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
   public function provideFilesForValidation() {
     $senarios = [];
 
-    // Contains correct header but no data
+    // #0: Contains correct header but no data
     // Never reaches the validators for file row since file content is empty
     $senarios[] = [
       'correct_header_no_data.tsv',
@@ -101,7 +101,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       ]
     ];
 
-    // Contains incorrect header and one line of correct data
+    // #1: Contains incorrect header and one line of correct data
     $senarios[] = [
       'incorrect_header_with_data.tsv',
       [
@@ -117,7 +117,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       ]
     ];
 
-    // Contains correct header and one line of correct data,
+    // #2: Contains correct header and one line of correct data,
     // 2nd line has an empty method
     $senarios[] = [
       'correct_header_emptycell_method.tsv',
@@ -131,7 +131,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       ]
     ];
 
-    // Contains correct header and two lines of data
+    // #3: Contains correct header and two lines of data
     // First line has an invalid value for "Type" column
     $senarios[] = [
       'correct_header_invalid_datatype.tsv',
@@ -145,8 +145,8 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       ]
     ];
 
-    // Contains correct header and duplicate trait-method-unit combo
-/*     $senarios[] = [
+    // #4: Contains correct header and duplicate trait-method-unit combo
+     $senarios[] = [
       'correct_header_duplicate_traitMethodUnit.tsv',
       [
         'GENUS' => ['status' => 'pass'],
@@ -156,7 +156,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['status' => 'fail']
       ]
-    ]; */
+    ];
 
     // Contains correct header but data types are mismatched
 

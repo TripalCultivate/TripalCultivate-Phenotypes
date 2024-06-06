@@ -259,7 +259,39 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       }
     }
 
+    // Take our simplified headers array and flip the array keys and values
+    // This is the format that the validators will expect to know which indices
+    // in the row of data to act on
+    // For example: ['Trait Name'] => 0
+    $header_index = array_flip($headers);
+
     // The 'FILE ROW' scope
+    // Here we define and create instances for the validators used for each
+    // row of the input file
+    $filerow_validators = [
+      'empty_cell' => [
+        'validator_id' => 'trpcultivate_phenotypes_validator_empty_cell',
+        'indices' => [
+          'Trait Name' => $header_index['Trait Name'],
+          'Method Short Name' => $header_index['Method Short Name'],
+          'Unit' => $header_index['Unit'],
+          'Type' => $header_index['Type']
+        ]
+      ],
+      'valid_data_type' => [
+        'validator_id' => 'trpcultivate_phenotypes_validator_value_in_list'
+      ],
+      'duplicate_traits' => [
+        'validator_id' => 'trpcultivate_phenotypes_validator_duplicate_traits'
+      ]
+    ];
+
+    $instances = [];
+
+    foreach ($filerow_validators as $validator_name => $validator) {
+      $instances[$validator_name] = $manager->createInstance($validator['validator_id']);
+    }
+
     // Open the file so we can iterate through the rows
     $file = File::load($file_id);
     // Open and read file in this uri.
@@ -276,12 +308,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // to check for any duplicate trait name in the same genus.
     $trait_count = [];
 
-    // Take our simplified headers array and flip the array keys and values
-    // This is the format that the validators will expect to know which indices
-    // in the row of data to act on
-    // For example: ['Trait Name'] => 0
-    $header_index = array_flip($headers);
-
     // Begin column and row validation.
     while(!feof($handle)) {
       // Current row.
@@ -295,18 +321,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Split line into an array
         $data_row = str_getcsv($line, "\t");
 
-        $filerow_validators = [
-          'empty_cell' => [
-            'validator_id' => 'trpcultivate_phenotypes_validator_empty_cell',
-            'indices' => [
-              'Trait Name' => $header_index['Trait Name'],
-              'Method Short Name' => $header_index['Method Short Name'],
-              'Unit' => $header_index['Unit'],
-              'Type' => $header_index['Type']
-            ]
-          ]
-        ];
-
         /******************************
          * Validate for Empty Values in columns that are required
          ******************************/
@@ -317,15 +331,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           'Type' => $header_index['Type']
         ];
 
-        $validator_id = 'trpcultivate_phenotypes_validator_empty_cell';
-        $instance = $manager->createInstance($validator_id);
-        $validation['empty_cell'] = $instance->validateRow($data_row, $check_for_empty);
+        $validation['empty_cell'] = $instances['empty_cell']->validateRow($data_row, $check_for_empty);
         if('fail' == $validation['empty_cell']['status']) {
           $failed_status['empty_cell']['failed_lines'] = $line_no;
           $failed_validator++;
         }
-
-        //print_r($validation['empty_cell']['status']);
 
         /******************************
          * Validate for the "Data Type" column to contain one of:
@@ -334,14 +344,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $check_for_data_type['indices'] = ['Type' => $header_index['Type']];
         $check_for_data_type['valid_values'] = ['Quantitative', 'Qualitative'];
 
-        $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
-        $instance = $manager->createInstance($validator_id);
-        $validation['valid_data_type'] = $instance->validateRow($data_row, $check_for_data_type);
+        $validation['valid_data_type'] = $instances['valid_data_type']->validateRow($data_row, $check_for_data_type);
         if('fail' == $validation['valid_data_type']['status']) {
           $failed_status['valid_data_type']['failed_lines'] = $line_no;
           $failed_validator++;
         }
-        //print_r($validation['valid_data_type']['status']);
 
         /*******************************
          * Validate for Duplicate Traits
@@ -354,14 +361,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           'Unit' => $header_index['Unit']
         ];
 
-        $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
-        $instance = $manager->createInstance($validator_id);
-        $validation['duplicate_traits'] = $instance->validateRow($data_row, $check_for_duplicate_traits);
+        $validation['duplicate_traits'] = $instances['duplicate_traits']->validateRow($data_row, $check_for_duplicate_traits);
         if('fail' == $validation['duplicate_traits']['status']) {
           $failed_status['duplicate_traits']['failed_lines'] = $line_no;
           $failed_validator++;
         }
-        //print "Validating Row: " . print_r($data_row, TRUE) . " and the result is: " . print_r($validation['duplicate_traits'], TRUE);
       }
       $line_no++;
     }
