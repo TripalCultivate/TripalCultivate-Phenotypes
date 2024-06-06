@@ -313,13 +313,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // Line counter.
     $line_no = 0;
-    // Line check - line that has value and is not empty.
-    $line_check = 0;
-    // Array to hold all failed line, sorted by error type.
-    $failed_rows = [];
-    // Count each time a trait is process. This will be used
-    // to check for any duplicate trait name in the same genus.
-    $trait_count = [];
 
     // Begin column and row validation.
     while(!feof($handle)) {
@@ -333,34 +326,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Split line into an array
         $data_row = str_getcsv($line, "\t");
 
-        /******************************
-         * Validate for Empty Values in columns that are required
-         ******************************/
-        $validation['empty_cell'] = $instances['empty_cell']->validateRow($data_row, $filerow_validators['empty_cell']['context']);
-        if('fail' == $validation['empty_cell']['status']) {
-          $failed_status['empty_cell']['failed_lines'] = $line_no;
-          $failed_validator++;
-        }
-
-        /******************************
-         * Validate for the "Data Type" column to contain one of:
-         * Quantitative or Qualitative
-         ******************************/
-        $validation['valid_data_type'] = $instances['valid_data_type']->validateRow($data_row, $filerow_validators['valid_data_type']['context']);
-        if('fail' == $validation['valid_data_type']['status']) {
-          $failed_status['valid_data_type']['failed_lines'] = $line_no;
-          $failed_validator++;
-        }
-
-        /*******************************
-         * Validate for Duplicate Traits
-         * This will check that the combination of "Trait Name",
-         * "Method Short Name" and "Unit" are unique
-         *******************************/
-        $validation['duplicate_traits'] = $instances['duplicate_traits']->validateRow($data_row, $filerow_validators['duplicate_traits']['context']);
-        if('fail' == $validation['duplicate_traits']['status']) {
-          $failed_status['duplicate_traits']['failed_lines'] = $line_no;
-          $failed_validator++;
+        foreach($filerow_validators as $validator_name => $validator) {
+          $validation[$validator_name] = $instances[$validator_name]->validateRow($data_row, $validator['context']);
+          if('fail' == $validation[$validator_name]['status']) {
+            $failed_status[$validator_name]['failed_lines'] = $line_no;
+            $failed_validator++;
+          }
         }
       }
       $line_no++;
