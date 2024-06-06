@@ -335,8 +335,9 @@ class TripalCultivatePhenotypesTraitsService {
    *   A string value is the trait name (cvterm.name), whereas an integer value 
    *   is the trait id number (cvterm.cvterm_id).
    *
-   * @return object
-   *   Matching record/line in cvterm table (method) or 0 if trait/method record was not found.
+   * @return array
+   *   All matching records (object) in an array. 0 if no methods were found.
+   *   If there is only one result (method) returned access the value using index 0. 
    * 
    * @dependencies
    *   getTraitAsset()
@@ -368,12 +369,6 @@ class TripalCultivatePhenotypesTraitsService {
       )
         ->fetchAll();
     }
-    
-    // If there is just one item in the result, simplify the array so
-    // no need to to index zero to access the one and only record.
-    if (count($methods) == 1) {
-      $methods = reset($methods);
-    }
 
     return ($methods) ? $methods : 0;
   }
@@ -385,8 +380,9 @@ class TripalCultivatePhenotypesTraitsService {
    *   A string value is the method name (cvterm.name), whereas an integer value 
    *   is the method id number (cvterm.cvterm_id).
    *
-   * @return object
-   *   Matching record/line in cvterm table (unit) or 0 if method/unit record was not found.
+   * @return array
+   *   All matching records (object) in an array. 0 if no units were found.
+   *   If there is only one result (unit) returned access the value using index 0. 
    */
   public function getMethodUnit($method) {
     $method_rec = $this->getTraitAsset($method, 'method');
@@ -414,12 +410,6 @@ class TripalCultivatePhenotypesTraitsService {
         [':ids[]' => array_values($unit_ids)]
       )
         ->fetchAll();
-    }
-
-    // If there is just one item in the result, simplify the array so
-    // no need to to index zero to access the one and only record.
-    if (count($units) == 1) {
-      $units = reset($units);
     }
     
     return ($units) ? $units : 0;
@@ -564,6 +554,14 @@ class TripalCultivatePhenotypesTraitsService {
         [':value' => (int) $key]
       )
         ->fetchAll();
+
+      if ($asset_rec && (int) $asset_rec[0]->cv_id != $genus_config[ $type ]['id']) {
+        // The id number seems to be of a trait asset that is outside of
+        // the cv: asset type (trait, method or unit) the genus was configured.
+        throw new \Exception(t('The requested trait asset @type : id @key CV value does not match the CV the genus was configured.',
+          ['@type' => $type, '@key' => $key]
+        ));
+      }
     }
     else {
       // Asses parameter key is the name.
@@ -573,7 +571,7 @@ class TripalCultivatePhenotypesTraitsService {
       )
         ->fetchAll();
       
-      if (count($asset_rec) > 1) {
+      if ($asset_rec && count($asset_rec) > 1) {
         // Trait asset name requested appears to have copies in the cv: asset type (trait, method or unit) the genus was configured.
         // Log error for admin to resolve.
         $this->logger->error(
