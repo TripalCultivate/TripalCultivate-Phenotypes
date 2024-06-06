@@ -163,7 +163,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'duplicate_traits' => [
           'status' => 'fail',
           'details' => 'Traits that already exist in the input file or in the database were detected at row #: 2'
-          ]
+        ]
       ]
     ];
 
