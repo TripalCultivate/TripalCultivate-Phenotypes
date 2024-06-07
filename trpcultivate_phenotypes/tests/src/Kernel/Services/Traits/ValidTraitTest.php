@@ -244,8 +244,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
    */
   public function testTraitsServiceGetters() {
     // Set the genus.
-    $this->service_traits->setTraitGenus($this->genus); 
-    
+    $this->service_traits->setTraitGenus($this->genus);
+
     // Test Data.
     // Keys.
     $keys = [
@@ -345,14 +345,14 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Construct trait asset array.
     foreach($test_combo as $i => $combo) {
-      $data_type = ($i % 2 == 0) ? 'Qualitative' : 'Quantitative'; 
-      
+      $data_type = ($i % 2 == 0) ? 'Qualitative' : 'Quantitative';
+
       // Force E Unit to be Quantitative for the test.
       if ($combo['Unit'] == 'E Unit') {
         $data_type = 'Quantitative';
       }
 
-      $ins_trait = [ 
+      $ins_trait = [
         'Trait Name' => $combo['Trait Name'],
         'Trait Description' => $combo['Trait Name']  . ' Description',
         'Method Short Name' => $combo['Method Short Name'],
@@ -366,20 +366,20 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $trait_assets = $this->service_traits->insertTrait($ins_trait);
       // Check trait assets got inserted.
       $trait_combo = $this->service_traits->getTraitMethodUnitCombo($combo['Trait Name'], $combo['Method Short Name'], $combo['Unit']);
-      
+
       // Trait.
-      $this->assertEquals($trait_assets['trait'], $trait_combo['trait']->cvterm_id, 
+      $this->assertEquals($trait_assets['trait'], $trait_combo['trait']->cvterm_id,
         'Test trait '. $combo['Trait Name'] .' was not inserted.');
       // Method.
-      $this->assertEquals($trait_assets['method'], $trait_combo['method']->cvterm_id, 
+      $this->assertEquals($trait_assets['method'], $trait_combo['method']->cvterm_id,
         'Test ' . $combo['Method Short Name'] . ' was not inserted.');
       // Unit.
-      $this->assertEquals($trait_assets['unit'], $trait_combo['unit']->cvterm_id, 
+      $this->assertEquals($trait_assets['unit'], $trait_combo['unit']->cvterm_id,
         'Test unit ' . $combo['Unit'] . ' was not inserted.');
     }
-    
+
     // At this point, all traits should be in, test the relationships, connections and all.
-    
+
     // Test nothing got inserted more than once and re-using a trait asset meant
     // that it just referenced existing asset and not creating another copy
     // in the same cv the genus is configured.
@@ -391,7 +391,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     foreach($reuse_test as $asset => $name) {
       $exception_message = '';
-      
+
       try {
         // Use string trait asset name as parameter.
         $this->service_traits->getTraitAsset($name, $asset);
@@ -401,11 +401,11 @@ class ValidTraitTest extends ChadoTestKernelBase {
         // of the same name in the same cv the genus is configured.
         $exception_message = $e->getMessage();
       }
-      
+
       $this->assertEmpty($exception_message, 'Test trait asset ' . $asset . ':' . $name . ' was inserted more than once.');
     }
-    
-    // Test that any trait asset can be retrieved either by using 
+
+    // Test that any trait asset can be retrieved either by using
     // name or id number as parameter using getTraitAsset() method.
 
     // Test that by using id number and the id provided is an id for a trait asset that belongs
@@ -420,15 +420,15 @@ class ValidTraitTest extends ChadoTestKernelBase {
     catch (Exception $e) {
       $exception_message = $e->getMessage();
     }
-    
-    $this->assertMatchesRegularExpression('/The requested trait asset (trait|method|unit)/', $exception_message, 
+
+    $this->assertMatchesRegularExpression('/The requested trait asset (trait|method|unit)/', $exception_message,
       'Trait asset id provided returned an asset not in the cv the genus was configured.');
     */
 
     foreach($test_combo as $combo) {
       foreach($keys as $key => $title) {
         // Each combo, retrieve assets - trait, method and unit.
-        
+
         // By string parameter.
         $asset = $this->service_traits->getTraitAsset($combo[ $title ], $key);
         $asset_bystring_id = (int) $asset->cvterm_id;
@@ -438,10 +438,10 @@ class ValidTraitTest extends ChadoTestKernelBase {
         $asset = $this->service_traits->getTraitAsset($asset_bystring_id, $key);
         $asset_byinteger_id = (int) $asset->cvterm_id;
         $this->assertNotEquals($asset_byinteger_id, 0, 'Failed to fetch trait asset' . $key . ' : ' . $combo[ $title ] . ' (by integer id parameter).');
-    
+
         // Either cases both should match.
-        $this->assertEquals($asset_bystring_id, $asset_byinteger_id, 
-          'Trait id returned by trait asset getter with string and integer parameters do not match.');      
+        $this->assertEquals($asset_bystring_id, $asset_byinteger_id,
+          'Trait id returned by trait asset getter with string and integer parameters do not match.');
       }
     }
 
@@ -449,24 +449,24 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // to getTrait() method.
     foreach($test_combo as $combo) {
       $name_key = 'Trait Name';
-      
+
       // By string parameter.
       $trait = $this->service_traits->getTrait($combo[ $name_key ]);
       $trait_id = (int) $trait->cvterm_id;
       $this->assertNotEquals($trait->cvterm_id, 0, 'Failed to fetch trait ' .  $combo[ $name_key ] . ' (by trait name parameter).');
-      
+
       // By id number parameter.
       $trait = $this->service_traits->getTrait($trait->cvterm_id);
       $this->assertNotEquals($trait->cvterm_id, 0, 'Failed to fetch trait ' .  $combo[ $name_key ] . ' (by trait id parameter).');
-    
+
       // Either cases both should match.
-      $this->assertEquals($trait_id, (int) $trait->cvterm_id, 
-        'Trait id returned by trait getter with string and integer parameters do not match.'); 
+      $this->assertEquals($trait_id, (int) $trait->cvterm_id,
+        'Trait id returned by trait getter with string and integer parameters do not match.');
     }
 
     // Test get trait method using trait name or trait id as parameter
     // to getTraitMethod() method.
-    
+
     // Based on the summary of traits assets above, test the following.
     // 1. A Trait has 3 methods - A, B, C Method.
     // 2. C Trait has 1 method - D Method.
@@ -476,12 +476,12 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Assert that in both cases, the returned set of methods was the same.
     // Then proceed to assert that methods returned are the expected methods.
-    $this->assertEquals($a_trait_methods_byname, $a_trait_methods_byid, 
+    $this->assertEquals($a_trait_methods_byname, $a_trait_methods_byid,
       'A Trait methods returned by methods getter with name and id as parameter do not match.');
 
     // 3 methods in the set?
     $methods_count = count($a_trait_methods_byid);
-    $this->assertEquals($methods_count, 3, 'A Trait methods returned by methods getter does not match expected count (3).'); 
+    $this->assertEquals($methods_count, 3, 'A Trait methods returned by methods getter does not match expected count (3).');
 
     foreach(['A', 'B', 'C'] as $expected) {
       $method_name = $expected . ' Method';
@@ -496,20 +496,20 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
       $this->assertTrue($a_found, 'The method ' . $method_name . ' was not found in the trait methods.');
     }
-    
+
     // The same steps for C Trait.
     $c_trait_methods_byname = $this->service_traits->getTraitMethod('C Trait');
     $c_trait = $this->service_traits->getTraitAsset('C Trait', 'trait');
     $c_trait_methods_byid   = $this->service_traits->getTraitMethod($c_trait->cvterm_id);
-    
-    $this->assertEquals($c_trait_methods_byname, $c_trait_methods_byid, 
+
+    $this->assertEquals($c_trait_methods_byname, $c_trait_methods_byid,
       'C Trait methods returned by methods getter with name and id as parameter do not match.');
-    
+
     $methods_count = count($c_trait_methods_byid);
-    $this->assertEquals($methods_count, 1, 'C Trait methods returned by methods getter does not match expected count (1).'); 
-    
+    $this->assertEquals($methods_count, 1, 'C Trait methods returned by methods getter does not match expected count (1).');
+
     $this->assertEquals($c_trait_methods_byid[0]->name, 'D Method', 'The method D Method was not found in the trait methods.');
-    
+
     // Test get unit method using method name or method id as parameter
     // to getMethodUnit() method.
 
@@ -521,9 +521,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $b_method = $this->service_traits->getTraitAsset('B Method', 'method');
     $b_method_units_byid   = $this->service_traits->getMethodUnit($b_method->cvterm_id);
 
-    $this->assertEquals($b_method_units_byname, $b_method_units_byid, 
+    $this->assertEquals($b_method_units_byname, $b_method_units_byid,
       'B Method units returned by units getter with name and id as parameter do not match.');
-    
+
     $units_count = count($b_method_units_byid);
     $this->assertEquals($units_count, 4, 'B Method units returned by units getter does not match expected count (4).');
 
@@ -546,7 +546,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $d_method = $this->service_traits->getTraitAsset('D Method', 'method');
     $d_method_units_byid   = $this->service_traits->getMethodUnit($d_method->cvterm_id);
 
-    $this->assertEquals($d_method_units_byname, $d_method_units_byid, 
+    $this->assertEquals($d_method_units_byname, $d_method_units_byid,
       'D Method units returned by units getter with name and id as parameter do not match.');
 
     $units_count = count($d_method_units_byid);
@@ -562,11 +562,11 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $e_unit_type_byid   = $this->service_traits->getMethodUnitDataType($e_unit->cvterm_id);
 
     // Assert that in both cases, the returned data types were the same.
-    $this->assertEquals($e_unit_type_byname, $e_unit_type_byid, 
+    $this->assertEquals($e_unit_type_byname, $e_unit_type_byid,
       'E Unit data type returned by unit type getter with name and id as parameter do not match.');
-    
+
     // Is it Quantitative?
-    $this->assertEquals($e_unit_type_byid, 'Quantitative', 
+    $this->assertEquals($e_unit_type_byid, 'Quantitative',
       'E Unit data type returned by unit type getter does not match expected data type (Quantitative).');
   }
 
@@ -576,8 +576,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
    */
   public function testTraitsServiceComboGetters() {
     // Set genus to use by the traits service.
-    $this->service_traits->setTraitGenus($this->genus);    
-    
+    $this->service_traits->setTraitGenus($this->genus);
+
     // Generate some fake combination.
     $trait = [
       'trait' => 'Trait Name Combo' . uniqid(),
@@ -588,8 +588,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $combo = [
       'Trait Name' => $trait['trait'],
       'Trait Description' => 'A trait name combo',
-      'Method Short Name' => $trait['method'],    
-      'Collection Method' => 'A trait method collection method', 
+      'Method Short Name' => $trait['method'],
+      'Collection Method' => 'A trait method collection method',
       'Unit' => $trait['unit'],
       'Type' => 'Quantitative'
     ];
@@ -604,14 +604,14 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Invalid parameter error. For all 3 trait asset - trait, method and unit
     // No 0, empty string or negative number.
     $test_missing_param = [
-      ['', $method_id, $unit_id], 
-      [$trait_id, '', $unit_id],  
+      ['', $method_id, $unit_id],
+      [$trait_id, '', $unit_id],
       [$trait_id, $method_id, ''],
-      ['', '', ''], 
+      ['', '', ''],
       [0, $method_id, $unit_id],
       [$trait_id, 0, $unit_id],
       [$trait_id, $method_id, 0],
-      [0, 0, 0], 
+      [0, 0, 0],
       [-1, $method_id, $unit_id],
       [$trait_id, -1, $unit_id],
       [$trait_id, $method_id, -1],
@@ -622,7 +622,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $trait_val  = $test[0];
       $method_val = $test[1];
       $unit_val   = $test[2];
-      
+
       $exception_caught  = FALSE;
       $exception_message = '';
       try {

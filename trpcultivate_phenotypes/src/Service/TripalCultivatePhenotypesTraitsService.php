@@ -80,19 +80,19 @@ class TripalCultivatePhenotypesTraitsService {
         $not_set[] = $config_key;
       }
     }
-    
+
     if ($not_set) {
       $terms_not_set = implode(', ', $not_set);
-      throw new \Exception(t('Term(s) [@term] used to create trait asset relationships was not configured. 
+      throw new \Exception(t('Term(s) [@term] used to create trait asset relationships was not configured.
         To configure terms, go to @url and set the controlled vocabulary associated with the term.',
         ['@term' => $terms_not_set, '@url' => Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]
       ));
     }
-    
+
     // Genus configuration:
     // Fetch all configured genus (active genus).
     $active_genus = $this->service_genus_ontology->getConfiguredGenusList();
-    
+
     if ($active_genus && in_array($genus, $active_genus)) {
       $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
 
@@ -159,7 +159,7 @@ class TripalCultivatePhenotypesTraitsService {
    * @return
    *   An array with the following keys where each value is the id of new cvterm:
    *   trait, method, unit.
-   * 
+   *
    * @dependencies
    *   getTraitAsset(), getMethodUnitDataType().
    */
@@ -169,7 +169,7 @@ class TripalCultivatePhenotypesTraitsService {
     if (!$genus_config) {
       // Genus not set.
       throw new \Exception(t('No genus has been set. See setting a genus in the Traits Service and make sure to
-        use a configured genus. To configure a genus or see all configured genus, go to @url.', 
+        use a configured genus. To configure a genus or see all configured genus, go to @url.',
         ['@url' => Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]
       ));
     }
@@ -194,7 +194,7 @@ class TripalCultivatePhenotypesTraitsService {
     foreach($arr_trait as $type => $values) {
       // Inspect cvterm to see if the trait asset already existed.
       $trait_asset_rec = $this->getTraitAsset($values['name'], $type);
-      
+
       if ($trait_asset_rec) {
         // Trait asset found, reference the record and re-use.
         $arr_trait[ $type ]['id'] = $trait_asset_rec->cvterm_id;
@@ -211,8 +211,8 @@ class TripalCultivatePhenotypesTraitsService {
         $ins = chado_insert_cvterm($rec, [], $schema);
         if (!$ins) {
           // Could not insert cvterm.
-          $this->logger->error('Error. Failed to insert term @type : @term.', 
-            ['@type' => $type, '@term' => $values['name']], 
+          $this->logger->error('Error. Failed to insert term @type : @term.',
+            ['@type' => $type, '@term' => $values['name']],
             ['drupal_set_message' => TRUE]
           );
           throw new \Exception(t('A database error occurred while inserting a term.'));
@@ -234,7 +234,7 @@ class TripalCultivatePhenotypesTraitsService {
         $subject = $arr_trait['trait']['id'];
         $object  = $arr_trait['method']['id'];
 
-        // Fetch all method(s) linked to the trait.  
+        // Fetch all method(s) linked to the trait.
         $asset_rec = $this->getTraitMethod($subject);
       }
       else {
@@ -270,10 +270,10 @@ class TripalCultivatePhenotypesTraitsService {
             'object_id' => $object
           ])
           ->execute();
-        
+
         if (!$ins_rel) {
-          $this->logger->error('Error. Failed to create term relationship @type : subject id - @subject object id - @object.', 
-            ['@type' => $type, '@subject' => $subject, '@object' => $object], 
+          $this->logger->error('Error. Failed to create term relationship @type : subject id - @subject object id - @object.',
+            ['@type' => $type, '@subject' => $subject, '@object' => $object],
             ['drupal_set_message' => TRUE]
           );
           throw new \Exception(t('A database error occurred while inserting a term relationship.'));
@@ -293,7 +293,7 @@ class TripalCultivatePhenotypesTraitsService {
         ->execute();
 
       if (!$ins_type) {
-        $this->logger->error('Error. Failed to insert unit data type @unit : @data_type.', 
+        $this->logger->error('Error. Failed to insert unit data type @unit : @data_type.',
           ['@unit' => $type, '@data_type' => $trait['Unit']], ['drupal_set_message' => TRUE]
         );
         throw new \Exception(t('A database error occurred while inserting a unit data type.'));
@@ -314,12 +314,12 @@ class TripalCultivatePhenotypesTraitsService {
    * Get trait.
    *
    * @param string|int $trait
-   *   A string value is the trait name (cvterm.name), whereas an integer value 
+   *   A string value is the trait name (cvterm.name), whereas an integer value
    *   is the trait id number (cvterm.cvterm_id).
    *
    * @return object
    *   Matching record/line in cvterm table or 0 if trait record Was not found.
-   * 
+   *
    * @dependencies
    *   getTraitAsset()
    */
@@ -332,13 +332,13 @@ class TripalCultivatePhenotypesTraitsService {
    * Get trait method.
    *
    * @param string|int $trait
-   *   A string value is the trait name (cvterm.name), whereas an integer value 
+   *   A string value is the trait name (cvterm.name), whereas an integer value
    *   is the trait id number (cvterm.cvterm_id).
    *
    * @return array
    *   All matching records (object) in an array. 0 if no methods were found.
-   *   If there is only one result (method) returned access the value using index 0. 
-   * 
+   *   If there is only one result (method) returned access the value using index 0.
+   *
    * @dependencies
    *   getTraitAsset()
    */
@@ -348,7 +348,7 @@ class TripalCultivatePhenotypesTraitsService {
       // Trait was not found.
       return 0;
     }
-     
+
     // Inspect the relationship table where the trait has a trait - method relationship.
     $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
 
@@ -364,7 +364,7 @@ class TripalCultivatePhenotypesTraitsService {
     if (count($method_ids) > 0) {
       // Has methods.
       $methods = $this->chado->query(
-        "SELECT * FROM {1:cvterm} WHERE cvterm_id IN (:ids[])", 
+        "SELECT * FROM {1:cvterm} WHERE cvterm_id IN (:ids[])",
         [':ids[]' => array_values($method_ids)]
       )
         ->fetchAll();
@@ -377,12 +377,12 @@ class TripalCultivatePhenotypesTraitsService {
    * Get trait method unit.
    *
    * @param string|int $method
-   *   A string value is the method name (cvterm.name), whereas an integer value 
+   *   A string value is the method name (cvterm.name), whereas an integer value
    *   is the method id number (cvterm.cvterm_id).
    *
    * @return array
    *   All matching records (object) in an array. 0 if no units were found.
-   *   If there is only one result (unit) returned access the value using index 0. 
+   *   If there is only one result (unit) returned access the value using index 0.
    */
   public function getMethodUnit($method) {
     $method_rec = $this->getTraitAsset($method, 'method');
@@ -390,7 +390,7 @@ class TripalCultivatePhenotypesTraitsService {
       // Method was not found.
       return 0;
     }
-    
+
     // Inspect the relationship table where method has a method - unit relationship.
     $sql = "SELECT object_id AS id FROM {1:cvterm_relationship} WHERE subject_id = :s_id AND type_id = :t_id";
 
@@ -401,8 +401,8 @@ class TripalCultivatePhenotypesTraitsService {
 
     $unit_ids = $this->chado->query($sql, $args)
       ->fetchCol();
-   
-    $units = [];  
+
+    $units = [];
     if (count($unit_ids) > 0) {
       // Has units.
       $units = $this->chado->query(
@@ -411,19 +411,19 @@ class TripalCultivatePhenotypesTraitsService {
       )
         ->fetchAll();
     }
-    
+
     return ($units) ? $units : 0;
   }
 
   /**
    * Get Trait Method Unit data type.
-   * 
+   *
    * @param string|int $unit
-   *   A string value is the unit name (cvterm.name), whereas an integer value 
+   *   A string value is the unit name (cvterm.name), whereas an integer value
    *   is the unit id number (cvterm.cvterm_id).
    *
    * @return string
-   *   The data type of the unit, either quantitative or qualitative or 0 when the unit record was not found 
+   *   The data type of the unit, either quantitative or qualitative or 0 when the unit record was not found
    *   and was not set a data type.
    */
   public function getMethodUnitDataType($unit) {
@@ -432,23 +432,23 @@ class TripalCultivatePhenotypesTraitsService {
       // Unit was not found.
       return 0;
     }
-    
+
     // Inspect the relationship table where unit has a unit - data type relationship.
     $sql = "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id";
-    
+
     $args = [
-      ':c_id' => $unit_rec->cvterm_id, 
+      ':c_id' => $unit_rec->cvterm_id,
       ':t_id' => $this->terms['unit_type']
     ];
-    
+
     $data_type = $this->chado->query($sql, $args)
       ->fetchCol();
-    
+
     if (count($data_type) > 1) {
       // Unit appears to multiple data types.
       $this->logger->error(
-        'Error. Failed to retrieve data type for unit : @unit in cv : @cv. Multiple data types found for the same unit.', 
-        ['@unit' => $unit, '@cv' => $genus_config['unit']['name']], 
+        'Error. Failed to retrieve data type for unit : @unit in cv : @cv. Multiple data types found for the same unit.',
+        ['@unit' => $unit, '@cv' => $genus_config['unit']['name']],
         ['drupal_set_message' => TRUE]
       );
       throw new \Exception(t('A multiple data type error occurred while retrieving a unit data type.'));
@@ -459,20 +459,20 @@ class TripalCultivatePhenotypesTraitsService {
 
   /**
    * Get trait, method and unit combination.
-   * 
+   *
    * @param string|int $trait
    *   A string value is the trait name, whereas an integer value is the trait id number.
    * @param string|int $method
    *   A string value is the trait method short name, whereas an integer value is the method id number.
    * @param string|int $unit
    *   A string value is the method unit name, whereas an integer value is the unit id number.
-   * 
+   *
    * @return array
    *   An associative array where the keys are trait, method and unit and the values
    *   are the cvterm records for each key.
-   * 
+   *
    *   0 if any one of trait, method or unit did not return any record.
-   * 
+   *
    * @dependencies
    *   getTraitAsset(), getMethodUnitDataType().
    */
@@ -482,7 +482,7 @@ class TripalCultivatePhenotypesTraitsService {
     if (!$trait_rec) {
       return 0;
     }
-    
+
     // Method.
     $method_rec = $this->getTraitAsset($method, 'method');
     if (!$method_rec) {
@@ -499,7 +499,7 @@ class TripalCultivatePhenotypesTraitsService {
     $unit_id = $unit_rec->cvterm_id;
     $unit_data_type = $this->getMethodUnitDataType($unit_id);
     $unit_rec->{'data_type'} = $unit_data_type;
-        
+
     return [
       'trait' => $trait_rec,
       'method' => $method_rec,
@@ -509,13 +509,13 @@ class TripalCultivatePhenotypesTraitsService {
 
   /**
    * Get trait asset - trait, method or unit.
-   * 
+   *
    * @param string|int $key
-   *   A string value is the name (cvterm.name), whereas an integer value 
+   *   A string value is the name (cvterm.name), whereas an integer value
    *   is the id number (cvterm.cvterm_id).
    * @param string $type
    *   trait, method or unit asset type. Trait is the default.
-   * 
+   *
    * @return object
    *   Trait asset record object or 0 if not found.
    */
@@ -525,7 +525,7 @@ class TripalCultivatePhenotypesTraitsService {
     if (!$genus_config) {
       // Genus not set.
       throw new \Exception(t('No genus has been set. See setting a genus in the Traits Service and make sure to
-        use a configured genus. To configure a genus or see all configured genus, go to @url.', 
+        use a configured genus. To configure a genus or see all configured genus, go to @url.',
         ['@url' => Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()]
       ));
     }
@@ -533,14 +533,14 @@ class TripalCultivatePhenotypesTraitsService {
     // Parameter check.
     if (!in_array($type, ['trait', 'method', 'unit'])) {
       // Not a valid parameter asset type value..
-      throw new \Exception(t('Not a valid trait asset type value provided. Trait asset getter expects type to be the 
+      throw new \Exception(t('Not a valid trait asset type value provided. Trait asset getter expects type to be the
         string trait, method or unit.'
-      ));   
+      ));
     }
 
     if (empty($key) || (is_numeric($key) && (int) $key < 0)) {
       // Not a valid asset key value (0, negative values or an empty string).
-      throw new \Exception(t('Not a valid @type key value provided. The trait asset getter expects a string name or 
+      throw new \Exception(t('Not a valid @type key value provided. The trait asset getter expects a string name or
         an integer id key value.', ['@type' => $type]
       ));
     }
@@ -570,13 +570,13 @@ class TripalCultivatePhenotypesTraitsService {
         [':value' => $key, ':cv' => $genus_config[ $type ]['id']]
       )
         ->fetchAll();
-      
+
       if ($asset_rec && count($asset_rec) > 1) {
         // Trait asset name requested appears to have copies in the cv: asset type (trait, method or unit) the genus was configured.
         // Log error for admin to resolve.
         $this->logger->error(
-          'Error. Failed to retrieve @type : @key in cv : @cv. Multiple copies of the same term found in the CV', 
-          ['@type' => $type, '@key' => $key, '@cv' => $genus_config[ $type ]['name']], 
+          'Error. Failed to retrieve @type : @key in cv : @cv. Multiple copies of the same term found in the CV',
+          ['@type' => $type, '@key' => $key, '@cv' => $genus_config[ $type ]['name']],
           ['drupal_set_message' => TRUE]
         );
         throw new \Exception(t('A duplicate term error occurred while retrieving a trait asset.'));
