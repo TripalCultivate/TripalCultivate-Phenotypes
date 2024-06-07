@@ -382,7 +382,10 @@ class TripalCultivatePhenotypesTraitsService {
    *
    * @return array
    *   All matching records (object) in an array. 0 if no units were found.
-   *   If there is only one result (unit) returned access the value using index 0. 
+   *   If there is only one result (unit) returned access the value using index 0.
+   *
+   * @dependencies
+   *   getTraitAsset()
    */
   public function getMethodUnit($method) {
     $method_rec = $this->getTraitAsset($method, 'method');
@@ -425,6 +428,9 @@ class TripalCultivatePhenotypesTraitsService {
    * @return string
    *   The data type of the unit, either quantitative or qualitative or 0 when the unit record was not found 
    *   and was not set a data type.
+   *
+   * @dependencies
+   *   getTraitAsset()
    */
   public function getMethodUnitDataType($unit) {
     $unit_rec = $this->getTraitAsset($unit, 'unit');

@@ -396,7 +396,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
         // Use string trait asset name as parameter.
         $this->service_traits->getTraitAsset($name, $asset);
       }
-      catch (Exception $e) {
+      catch (\Exception $e) {
         // The getter will throw an exception when it detected multiple copies
         // of the same name in the same cv the genus is configured.
         $exception_message = $e->getMessage();
@@ -412,18 +412,16 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // to a cv not the cv set for the genus.
 
     // term null with id 1 not in the genus.
-    /* Does not seem to catch and would kill the tests.
     $exception_message = '';
     try {
-      $this->service_traits->getTraitAsset(1, 'trait');
+      $temp = $this->service_traits->getTraitAsset(1, 'trait');
     }
-    catch (Exception $e) {
+    catch (\Exception $e) {
       $exception_message = $e->getMessage();
     }
     
-    $this->assertMatchesRegularExpression('/The requested trait asset (trait|method|unit)/', $exception_message, 
+    $this->assertEquals('The requested trait asset trait : id 1 CV value does not match the CV the genus was configured.', $exception_message, 
       'Trait asset id provided returned an asset not in the cv the genus was configured.');
-    */
 
     foreach($test_combo as $combo) {
       foreach($keys as $key => $title) {
