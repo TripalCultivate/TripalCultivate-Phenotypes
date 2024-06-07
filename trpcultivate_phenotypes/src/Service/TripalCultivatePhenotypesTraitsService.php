@@ -308,7 +308,8 @@ class TripalCultivatePhenotypesTraitsService {
    *   getPhenoCvterm()
    */
   public function getTrait($trait) {
-    $trait_rec = $this->getPhenoCvterm($trait, 'trait');
+    // Since the trait is simply a cvterm, we can use our helper method to retrieve it.
+    $trait_rec = $this->getTraitAsset($trait, 'trait');
     return $trait_rec;
   }
 
