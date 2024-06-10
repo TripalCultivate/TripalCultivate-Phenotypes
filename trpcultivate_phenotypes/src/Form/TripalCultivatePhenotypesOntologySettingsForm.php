@@ -367,6 +367,7 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     foreach($this->config_vars['ontology'] as $genus => $vars) {
       $var_set_ctr = 0;
       $fld_names = [];
+      $trait_cv_values = [];
 
       foreach($vars as $i => $config) {
         // Crop ontology is an optional field.
@@ -377,6 +378,12 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
         $fld_names[ $i ] = $genus . '_' . $config;
         if ((int) $form_state->getValue($fld_names[$i]) > 0) {
           $var_set_ctr++;
+        }
+
+        // Get the cv values set for trait, method and unit to
+        // check if each is a unique cv id.
+        if (in_array($config, ['trait', 'method', 'unit'])) {
+          $trait_cv_values[] = (int) $form_state->getValue($fld_names[ $i ]);
         }
       }
 
@@ -389,6 +396,14 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
             $form_state->setErrorByName($field, $this->t('Error: could not save form. Required field
               (GENUS: FIELD) @fld is empty.', [ '@fld' => str_replace('_', ' ', $field) ]));
           }
+        }
+
+        // Unique cv for trait, method and unit.
+        if ($trait_cv_values && count($trait_cv_values) != count(array_unique($trait_cv_values))) {
+          // A cv was re-used in the same genus.
+          $form_state->setErrorByName($field, $this->t('Error: Controlled Vocabulary (CV) value for Trait, Method and Unit must have unique values in GENUS: @genus.',
+            ['@genus' => ucfirst($genus)]
+          ));
         }
       }
     }
