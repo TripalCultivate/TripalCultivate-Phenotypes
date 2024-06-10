@@ -8,7 +8,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-// use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
 /**
  * Tests that a valid trait/method/unit combination can be inserted/retrieved.
@@ -18,7 +18,7 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
  * @group traits
  */
 class ValidTraitTest extends ChadoTestKernelBase {
-  // use PhenotypeImporterTestTrait;
+  use PhenotypeImporterTestTrait;
 
   /**
    * Plugin Manager service.
@@ -66,13 +66,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * CV and DB's configured for this genus.
    * NOTE: We will create these in the setUp.
    */
-  protected array $genus_ontology_config = [
-    'trait' => NULL,
-    'unit'   => NULL,
-    'method'  => NULL,
-    'database' => NULL,
-    'crop_ontology' => NULL
-  ];
+  protected array $cvdbon;
 
   /**
    * {@inheritdoc}
@@ -83,53 +77,24 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    // Test Chado database.
-    // Create a test chado instance and then set it in the container for use by our service.
-    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
-    // Remove services from the container that were initialized before the above chado.
-    $this->container->set('trpcultivate_phenotypes.genus_ontology', NULL);
-    $this->container->set('trpcultivate_phenotypes.terms', NULL);
+    // Open connection to Chado
+		$this->connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
-    // Install module configuration.
+    // Install module configuration/settings.
     $this->installConfig(['trpcultivate_phenotypes']);
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-
-    // Set ontology terms in the configuration used by the terms service.
-    foreach($this->terms as $config_key => $cvterm_id) {
-      $this->config->set('trpcultivate.phenotypes.ontology.terms.' . $config_key, $cvterm_id);
-    }
     
-    // Create an chado organism genus.
-    // This will be configured below to become the active genus.
-    $genus = 'Tripalus';
-    $this->genus = $genus;
-    $organism_id = $this->chado->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'Wild Species',
-      ])
-      ->execute();
-    $this->assertIsNumeric($organism_id,
-      "We were unable to create the organism record in chado.");
-
-    // Create Genus Ontology configuration.
-    // First create a cv or db for each...
-    $config_name = str_replace(' ', '_', strtolower($genus));
-    foreach ($this->genus_ontology_config as $key => $id) {
-      $name = $genus . ' ' . $key;
-      $table = ($key == 'database') ? '1:db' : '1:cv';
-      $id = $this->chado->insert($table)->fields(['name' => $name])->execute();
-      $this->assertIsNumeric($id,
-        "Unable to create a record in '$table' for $key where name = '$name'");
-      $this->genus_ontology_config[$key] = $id;
-    }
-
-    // Then save the configuration set to the new ids.
-    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $this->genus_ontology_config);
-
-    // Set the traits service.
-    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+    // Configure the module.
+    $this->genus = 'Tripalus';
+    $organism_id = $this->connection->insert('1:organism')
+    ->fields([
+      'genus' => $this->genus,
+      'species' => 'databasica',
+    ])
+    ->execute();
+    
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
+    $this->cvdbon = $this->setOntologyConfig($this->genus);
+    $this->terms = $this->setTermConfig();
 
     // Install required dependencies - T3 legacy functions.
     $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
@@ -138,6 +103,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'tripal_chado.variables.api.php',
       'tripal_chado.schema.api.php'
     ];
+
     if ($handle = opendir($tripal_chado_path)) {
       while (false !== ($file = readdir($handle))) {
         if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
@@ -147,13 +113,15 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
       closedir($handle);
     }
+
+    // Set the traits service.
+    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
   }
 
   /**
    * Tests that inserting a trait/method/unit populates the database as we expect.
    */
   public function testTraitsServiceDatabaseExpectations() {
-
     // Generate some fake/unique names.
     $trait_name  = 'TraitABC'  . uniqid();
     $method_name = 'MethodABC' . uniqid();
@@ -172,6 +140,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set genus to use by the traits service.
     $this->service_traits->setTraitGenus($this->genus);
+
     // Save the trait.
     $trait_assets = $this->service_traits->insertTrait($trait);
 
@@ -180,13 +149,14 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     foreach($trait_assets as $type => $value) {
       // Retrieve the cvterm with the cvterm_di returned by the service.
-      $rec = $this->chado->query($sql, [':id' => $value])
+      $rec = $this->connection->query($sql, [':id' => $value])
         ->fetchObject();
       $this->assertIsObject($rec,
         "We were unable to retrieve the $type record from chado based on the cvterm_id $value provided by the service.");
-
+      
+    
       // The was configured in setUp and is keyed by the type.
-      $expected_cv = $this->genus_ontology_config[$type];
+      $expected_cv = $this->cvdbon[$type]['cv_id'];
       // Ensure it was inserted into the correct cv the genus is configured for.
       $this->assertEquals($expected_cv, $rec->cv_id,
         "Failed to insert $type into cv genus is configured.");
@@ -209,7 +179,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // for the term we choose but is the same order as in AP.
     // Expected "Measured with ruler" is "Method" of "Plant Height"
     // but is currently saved as "Plant Height" is "Method" of "Measured with ruler"
-    $rec = $this->chado->query($sql, [
+    $rec = $this->connection->query($sql, [
       ':s_id' => $trait_assets['trait'],
       ':t_id' => $this->terms['method_to_trait_relationship_type'],
       ':o_id' => $trait_assets['method']
@@ -222,7 +192,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // for the term we choose but is the same order as in AP.
     // Expected "cm" is "Unit" of "Measured with Ruler"
     // but it is currently saved as "Measures with ruler" is "Unit" of "cm"
-    $rec = $this->chado->query($sql, [
+    $rec = $this->connection->query($sql, [
       ':s_id' => $trait_assets['method'],
       ':t_id' => $this->terms['unit_to_method_relationship_type'],
       ':o_id' => $trait_assets['unit']
@@ -232,14 +202,13 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Test unit data type.
     $sql = "SELECT cvtermprop_id, value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->chado->query($sql, [
+    $data_type = $this->connection->query($sql, [
       ':c_id' => $trait_assets['unit'],
       ':t_id' => $this->terms['unit_type'],
       ])->fetchObject();
 
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
-
   }
 
   /**
