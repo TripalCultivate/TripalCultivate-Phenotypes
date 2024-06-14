@@ -8,7 +8,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\tripal\Services\TripalLogger;
+use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
 /**
  * Tests that a valid trait/method/unit combination can be inserted/retrieved.
@@ -18,6 +18,8 @@ use Drupal\tripal\Services\TripalLogger;
  * @group traits
  */
 class ValidTraitTest extends ChadoTestKernelBase {
+  use PhenotypeImporterTestTrait;
+
   /**
    * Plugin Manager service.
    */
@@ -64,13 +66,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * CV and DB's configured for this genus.
    * NOTE: We will create these in the setUp.
    */
-  protected $genus_ontology_config = [
-    'trait' => NULL,
-    'unit'   => NULL,
-    'method'  => NULL,
-    'database' => NULL,
-    'crop_ontology' => NULL
-  ];
+  protected array $cvdbon;
 
   /**
    * {@inheritdoc}
@@ -81,52 +77,24 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    // Test Chado database.
-    // Create a test chado instance and then set it in the container for use by our service.
-    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
-    // Remove services from the container that were initialized before the above chado.
-    $this->container->set('trpcultivate_phenotypes.genus_ontology', NULL);
-    $this->container->set('trpcultivate_phenotypes.terms', NULL);
+    // Open connection to Chado
+		$this->connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
-    // Install module configuration.
+    // Install module configuration/settings.
     $this->installConfig(['trpcultivate_phenotypes']);
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
-    // Set ontology terms in the configuration used by the terms service.
-    foreach($this->terms as $config_key => $cvterm_id) {
-      $this->config->set('trpcultivate.phenotypes.ontology.terms.' . $config_key, $cvterm_id);
-    }
+    // Configure the module.
+    $this->genus = 'Tripalus';
+    $organism_id = $this->connection->insert('1:organism')
+    ->fields([
+      'genus' => $this->genus,
+      'species' => 'databasica',
+    ])
+    ->execute();
 
-    // Create an chado organism genus.
-    // This will be configured below to become the active genus.
-    $genus = 'Wild Genus ' . uniqid();
-    $this->genus = $genus;
-    $organism_id = $this->chado->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'Wild Species',
-      ])
-      ->execute();
-    $this->assertIsNumeric($organism_id,
-      "We were unable to create the organism record in chado.");
-
-    // Create Genus Ontology configuration.
-    // First create a cv or db for each...
-    $config_name = str_replace(' ', '_', strtolower($genus));
-    foreach ($this->genus_ontology_config as $key => $id) {
-      $name = $genus . ' ' . $key;
-      $table = ($key == 'database') ? '1:db' : '1:cv';
-      $id = $this->chado->insert($table)->fields(['name' => $name])->execute();
-      $this->assertIsNumeric($id,
-        "Unable to create a record in '$table' for $key where name = '$name'");
-      $this->genus_ontology_config[$key] = $id;
-    }
-    // Then save the configuration set to the new ids.
-    $this->config->set('trpcultivate.phenotypes.ontology.cvdbon.' . $config_name, $this->genus_ontology_config);
-
-    // Set the traits service.
-    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
+    $this->cvdbon = $this->setOntologyConfig($this->genus);
+    $this->terms = $this->setTermConfig();
 
     // Install required dependencies - T3 legacy functions.
     $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
@@ -135,6 +103,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'tripal_chado.variables.api.php',
       'tripal_chado.schema.api.php'
     ];
+
     if ($handle = opendir($tripal_chado_path)) {
       while (false !== ($file = readdir($handle))) {
         if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
@@ -144,13 +113,15 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
       closedir($handle);
     }
+
+    // Set the traits service.
+    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
   }
 
   /**
    * Tests that inserting a trait/method/unit populates the database as we expect.
    */
   public function testTraitsServiceDatabaseExpectations() {
-
     // Generate some fake/unique names.
     $trait_name  = 'TraitABC'  . uniqid();
     $method_name = 'MethodABC' . uniqid();
@@ -169,6 +140,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set genus to use by the traits service.
     $this->service_traits->setTraitGenus($this->genus);
+
     // Save the trait.
     $trait_assets = $this->service_traits->insertTrait($trait);
 
@@ -177,13 +149,14 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     foreach($trait_assets as $type => $value) {
       // Retrieve the cvterm with the cvterm_di returned by the service.
-      $rec = $this->chado->query($sql, [':id' => $value])
+      $rec = $this->connection->query($sql, [':id' => $value])
         ->fetchObject();
       $this->assertIsObject($rec,
         "We were unable to retrieve the $type record from chado based on the cvterm_id $value provided by the service.");
 
+
       // The was configured in setUp and is keyed by the type.
-      $expected_cv = $this->genus_ontology_config[$type];
+      $expected_cv = $this->cvdbon[$type]['cv_id'];
       // Ensure it was inserted into the correct cv the genus is configured for.
       $this->assertEquals($expected_cv, $rec->cv_id,
         "Failed to insert $type into cv genus is configured.");
@@ -206,7 +179,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // for the term we choose but is the same order as in AP.
     // Expected "Measured with ruler" is "Method" of "Plant Height"
     // but is currently saved as "Plant Height" is "Method" of "Measured with ruler"
-    $rec = $this->chado->query($sql, [
+    $rec = $this->connection->query($sql, [
       ':s_id' => $trait_assets['trait'],
       ':t_id' => $this->terms['method_to_trait_relationship_type'],
       ':o_id' => $trait_assets['method']
@@ -219,7 +192,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // for the term we choose but is the same order as in AP.
     // Expected "cm" is "Unit" of "Measured with Ruler"
     // but it is currently saved as "Measures with ruler" is "Unit" of "cm"
-    $rec = $this->chado->query($sql, [
+    $rec = $this->connection->query($sql, [
       ':s_id' => $trait_assets['method'],
       ':t_id' => $this->terms['unit_to_method_relationship_type'],
       ':o_id' => $trait_assets['unit']
@@ -229,14 +202,13 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Test unit data type.
     $sql = "SELECT cvtermprop_id, value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->chado->query($sql, [
+    $data_type = $this->connection->query($sql, [
       ':c_id' => $trait_assets['unit'],
       ':t_id' => $this->terms['unit_type'],
       ])->fetchObject();
 
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
-
   }
 
   /**
@@ -344,6 +316,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // D Method has 1 unit - E Unit
 
     // Construct trait asset array.
+    $expected_cvterms = [];
+
     foreach($test_combo as $i => $combo) {
       $data_type = ($i % 2 == 0) ? 'Qualitative' : 'Quantitative';
 
@@ -364,6 +338,12 @@ class ValidTraitTest extends ChadoTestKernelBase {
       // Set genus to use by the traits service.
       // This method will return the inserted cvterm ids.
       $trait_assets = $this->service_traits->insertTrait($ins_trait);
+
+      // Track the ids.
+      $expected_cvterms[ $combo['Trait Name'] ] = $trait_assets['trait'];
+      $expected_cvterms[ $combo['Method Short Name'] ] = $trait_assets['method'];
+      $expected_cvterms[ $combo['Unit'] ] = $trait_assets['unit'];
+
       // Check trait assets got inserted.
       $trait_combo = $this->service_traits->getTraitMethodUnitCombo($combo['Trait Name'], $combo['Method Short Name'], $combo['Unit']);
 
@@ -383,65 +363,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Test nothing got inserted more than once and re-using a trait asset meant
     // that it just referenced existing asset and not creating another copy
     // in the same cv the genus is configured.
-    $reuse_test = [
-      'trait' => 'A Trait',   // Re-used 5x
-      'method' => 'B Method', // Re-used 5x
-      'unit' => 'C Unit'      // Re-used 2x
-    ];
-
-    foreach($reuse_test as $asset => $name) {
-      $exception_message = '';
-
-      try {
-        // Use string trait asset name as parameter.
-        $this->service_traits->getTraitAsset($name, $asset);
-      }
-      catch (\Exception $e) {
-        // The getter will throw an exception when it detected multiple copies
-        // of the same name in the same cv the genus is configured.
-        $exception_message = $e->getMessage();
-      }
-
-      $this->assertEmpty($exception_message, 'Test trait asset ' . $asset . ':' . $name . ' was inserted more than once.');
-    }
-
-    // Test that any trait asset can be retrieved either by using
-    // name or id number as parameter using getTraitAsset() method.
-
-    // Test that by using id number and the id provided is an id for a trait asset that belongs
-    // to a cv not the cv set for the genus.
-
-    // term null with id 1 not in the genus.
-    $exception_message = '';
-    try {
-      $temp = $this->service_traits->getTraitAsset(1, 'trait');
-    }
-    catch (\Exception $e) {
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertEquals('The requested trait asset trait : id 1 CV value does not match the CV the genus was configured.', $exception_message,
-      'Trait asset id provided returned an asset not in the cv the genus was configured.');
-
-    foreach($test_combo as $combo) {
-      foreach($keys as $key => $title) {
-        // Each combo, retrieve assets - trait, method and unit.
-
-        // By string parameter.
-        $asset = $this->service_traits->getTraitAsset($combo[ $title ], $key);
-        $asset_bystring_id = (int) $asset->cvterm_id;
-        $this->assertNotEquals($asset_bystring_id, 0, 'Failed to fetch trait asset' . $key . ' : ' . $combo[ $title ] . ' (by string name parameter).');
-
-        // By id number parameter.
-        $asset = $this->service_traits->getTraitAsset($asset_bystring_id, $key);
-        $asset_byinteger_id = (int) $asset->cvterm_id;
-        $this->assertNotEquals($asset_byinteger_id, 0, 'Failed to fetch trait asset' . $key . ' : ' . $combo[ $title ] . ' (by integer id parameter).');
-
-        // Either cases both should match.
-        $this->assertEquals($asset_bystring_id, $asset_byinteger_id,
-          'Trait id returned by trait asset getter with string and integer parameters do not match.');
-      }
-    }
+    // A Trait was re-used 5x, test that there is only one inserted.
+    $a_trait = $trait = $this->service_traits->getTrait('A Trait');
+    $this->assertEquals($a_trait->cvterm_id, $expected_cvterms['A Trait'], 'A Trait has duplicate values');
 
     // Test get trait using trait name or trait id number as parameter
     // to getTrait() method.
@@ -460,6 +384,10 @@ class ValidTraitTest extends ChadoTestKernelBase {
       // Either cases both should match.
       $this->assertEquals($trait_id, (int) $trait->cvterm_id,
         'Trait id returned by trait getter with string and integer parameters do not match.');
+
+      // Id number is the id number that got created by the insert method.
+      $this->assertEquals($trait_id, $expected_cvterms[ $combo['Trait Name'] ],
+        'Trait id returned by trait getter does not match the trait id inserted.');
     }
 
     // Test get trait method using trait name or trait id as parameter
@@ -469,8 +397,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // 1. A Trait has 3 methods - A, B, C Method.
     // 2. C Trait has 1 method - D Method.
     $a_trait_methods_byname = $this->service_traits->getTraitMethod('A Trait');
-    $a_trait = $this->service_traits->getTraitAsset('A Trait', 'trait');
-    $a_trait_methods_byid   = $this->service_traits->getTraitMethod($a_trait->cvterm_id);
+    $a_trait = $expected_cvterms['A Trait'];
+    $a_trait_methods_byid   = $this->service_traits->getTraitMethod($a_trait);
 
     // Assert that in both cases, the returned set of methods was the same.
     // Then proceed to assert that methods returned are the expected methods.
@@ -478,8 +406,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'A Trait methods returned by methods getter with name and id as parameter do not match.');
 
     // 3 methods in the set?
-    $methods_count = count($a_trait_methods_byid);
-    $this->assertEquals($methods_count, 3, 'A Trait methods returned by methods getter does not match expected count (3).');
+    $this->assertCount(3, $a_trait_methods_byid, 'A Trait methods returned by methods getter does not match expected count (3).');
 
     foreach(['A', 'B', 'C'] as $expected) {
       $method_name = $expected . ' Method';
@@ -497,14 +424,13 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // The same steps for C Trait.
     $c_trait_methods_byname = $this->service_traits->getTraitMethod('C Trait');
-    $c_trait = $this->service_traits->getTraitAsset('C Trait', 'trait');
-    $c_trait_methods_byid   = $this->service_traits->getTraitMethod($c_trait->cvterm_id);
+    $c_trait = $expected_cvterms['C Trait'];
+    $c_trait_methods_byid   = $this->service_traits->getTraitMethod($c_trait);
 
     $this->assertEquals($c_trait_methods_byname, $c_trait_methods_byid,
       'C Trait methods returned by methods getter with name and id as parameter do not match.');
 
-    $methods_count = count($c_trait_methods_byid);
-    $this->assertEquals($methods_count, 1, 'C Trait methods returned by methods getter does not match expected count (1).');
+    $this->assertCount(1, $c_trait_methods_byid, 'C Trait methods returned by methods getter does not match expected count (1).');
 
     $this->assertEquals($c_trait_methods_byid[0]->name, 'D Method', 'The method D Method was not found in the trait methods.');
 
@@ -516,14 +442,13 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // D Method has 1 unit - E Unit
 
     $b_method_units_byname = $this->service_traits->getMethodUnit('B Method');
-    $b_method = $this->service_traits->getTraitAsset('B Method', 'method');
-    $b_method_units_byid   = $this->service_traits->getMethodUnit($b_method->cvterm_id);
+    $b_method = $expected_cvterms['B Method'];
+    $b_method_units_byid   = $this->service_traits->getMethodUnit($b_method);
 
     $this->assertEquals($b_method_units_byname, $b_method_units_byid,
       'B Method units returned by units getter with name and id as parameter do not match.');
 
-    $units_count = count($b_method_units_byid);
-    $this->assertEquals($units_count, 4, 'B Method units returned by units getter does not match expected count (4).');
+    $this->assertCount(4, $b_method_units_byid, 'B Method units returned by units getter does not match expected count (4).');
 
     foreach(['A', 'B', 'C', 'D'] as $expected) {
       $unit_name = $expected . ' Unit';
@@ -541,14 +466,13 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // The same steps for D Method.
     $d_method_units_byname = $this->service_traits->getMethodUnit('D Method');
-    $d_method = $this->service_traits->getTraitAsset('D Method', 'method');
-    $d_method_units_byid   = $this->service_traits->getMethodUnit($d_method->cvterm_id);
+    $d_method = $expected_cvterms['D Method'];
+    $d_method_units_byid   = $this->service_traits->getMethodUnit($d_method);
 
     $this->assertEquals($d_method_units_byname, $d_method_units_byid,
       'D Method units returned by units getter with name and id as parameter do not match.');
 
-    $units_count = count($d_method_units_byid);
-    $this->assertEquals($units_count, 1, 'D Method units returned by units getter does not match expected count (1).');
+    $this->assertCount(1, $d_method_units_byid, 'D Method units returned by units getter does not match expected count (1).');
 
     $this->assertEquals($d_method_units_byid[0]->name, 'E Unit', 'The unit E Unit was not found in the method units.');
 
@@ -556,8 +480,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // to getMethodUnitDataType() method.
     // From the trait asset insert test, E Unit was set to Qualitative data type.
     $e_unit_type_byname = $this->service_traits->getMethodUnitDataType('E Unit');
-    $e_unit = $this->service_traits->getTraitAsset('E Unit', 'unit');
-    $e_unit_type_byid   = $this->service_traits->getMethodUnitDataType($e_unit->cvterm_id);
+    $e_unit = $expected_cvterms['E Unit'];
+    $e_unit_type_byid   = $this->service_traits->getMethodUnitDataType($e_unit);
 
     // Assert that in both cases, the returned data types were the same.
     $this->assertEquals($e_unit_type_byname, $e_unit_type_byid,
@@ -647,7 +571,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $unit_val   = $test[2];
 
       $combo = $this->service_traits->getTraitMethodUnitCombo($trait_val, $method_val, $unit_val);
-      $this->assertEquals($combo, 0, 'Combo getter must return 0 on non-existent record.');
+      $this->assertEquals($combo, [], 'Combo getter must return an empty array on non-existent record.');
     }
 
     unset($combo);
@@ -671,5 +595,18 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Check that the unit has extra property data type.
     $this->assertEquals($combo['unit']->data_type, 'Quantitative', 'Unit data_type property value does not match expected type (Quantitative).');
+
+    // All 3 parameters to the method is a unit term.
+    // Unit exists but not in the Trait CV the genus is configured.
+    $exception_message = '';
+    try {
+      $this->service_traits->getTraitMethodUnitCombo($unit_id, $unit_id, $unit_id);
+    }
+    catch (\Exception $e) {
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertMatchesRegularExpression('/CV value does not match the CV the genus was configured/',
+      $exception_message, 'Combo getter failed parameter (all parameter a unit id) does not match the expected exception error message.');
   }
 }
