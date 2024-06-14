@@ -52,6 +52,11 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
    */
   protected $terms;
 
+  /**
+   * Traits service
+   */
+  protected $service_traits;
+
     /**
    * Modules to enable.
    */
@@ -83,6 +88,23 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+
+    $genus = 'Tripalus';
+    // Create our organism and configure it.
+    $organism_id = $this->connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'databasica',
+      ])
+      ->execute();
+    $this->assertIsNumeric($organism_id,
+      "We were not able to create an organism for testing.");
+    $this->cvdbon = $this->setOntologyConfig($genus);
+    $this->terms = $this->setTermConfig();
+
+    // Grab our traits service
+    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+    $this->service_traits->setTraitGenus($genus);
   }
 
   /**
@@ -180,23 +202,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
-    $genus = 'Tripalus';
-    // Create our organism and configure it.
-    $organism_id = $this->connection->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'databasica',
-      ])
-      ->execute();
-    $this->assertIsNumeric($organism_id,
-      "We were not able to create an organism for testing.");
-    $this->cvdbon = $this->setOntologyConfig($genus);
-    $this->terms = $this->setTermConfig();
-
-    // Grab our traits service
-    $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $service_traits->setTraitGenus($genus);
-
     // Simulates a row in the input file for the Trait Importer
     // with the column headers as keys
     $file_row_with_keys = [
@@ -218,7 +223,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate and an empty database.");
     // Verify this trait isn't in the database
-    $my_trait_id = $service_traits->getTrait(['name' => 'My trait']);
+    $my_trait_id = $this->service_traits->getTrait('My trait');
     $expected_trait_id = 0;
     $this->assertEquals($expected_trait_id, $my_trait_id, "Duplicate Trait validation did not fail, yet a trait ID was queried from the database for the same trait name.");
 
@@ -227,8 +232,8 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // NOTE: insertTrait returns the IDs for each of trait, method, unit in an array
     // @TODO: Change this to use the test Trait ("Trait" in the testing sense,
     // not phenotypic) once it's been developed.
-    $combo_ids = $service_traits->insertTrait($file_row_with_keys);
-    $my_trait_record = $service_traits->getTrait(['name' => 'My trait']);
+    $combo_ids = $this->service_traits->insertTrait($file_row_with_keys);
+    $my_trait_record = $this->service_traits->getTrait('My trait');
     $expected_trait_id = $combo_ids['trait'];
     $this->assertEquals($expected_trait_id, $my_trait_record->cvterm_id, "The trait ID returned from inserting into the database and the trait ID that was queried for the same trait name do not match.");
     // Now that the trait is confirmed to be in the database, our validator should
@@ -239,10 +244,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Case #2: Validate trait details where trait name and method name already
     // exist in the database, but unit is unique
-
-    // @TODO: Finish this test once the getter methods have been fixed to grab
-    // more than one record. See: Issue #78
-
     $file_row_2_with_keys = [
       'Trait Name' => 'My trait',
       'Trait Description' => 'My trait description',
@@ -255,12 +256,17 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Create a simplified array without assigning the column headers as keys
     // for use with our validator directly
     $file_row_2 = array_values($file_row_with_keys);
-
-    //$combo_ids = $service_traits->insertTrait($file_row_2_with_keys);
-    //$my_trait_record = $service_traits->getTrait(['name' => 'My trait']);
-    //$my_method_record = $service_traits->getTraitMethod(['name' => 'My trait']);
-    //$my_unit_2_record = $service_traits->getMethodUnit($my_method_record->cvterm_id);
-
+    $expected_status = 'pass';
+    $validation_status = $instance->validateRow($file_row_2, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the second row of values to validate the situation where trait and method are in the database but the unit is not.");
+    // Verify this combo does not exist in the database yet
+    //$my_trait_2_record = $this->service_traits->getTraitMethodUnitCombo('My trait', 'My method', 'My unit 2');
+    //$expected_trait_id = 0;
+    //$this->assertEquals($expected_trait_id, $my_trait_2_record, "Duplicate Trait validation did not fail, yet a trait ID was queried from the database for the same trait name.");
+    //$combo_ids = $this->service_traits->insertTrait($file_row_2_with_keys);
+    //foreach ($combo_ids as $key => $expected_cvterm_id) {
+    //  $this->assertEquals($expected_cvterm_id, $my_trait_record[$key]->cvterm_id, "")
+    //}
   }
 
   /*

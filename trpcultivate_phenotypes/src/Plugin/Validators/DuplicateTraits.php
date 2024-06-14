@@ -111,10 +111,10 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // * is a duplicate. Issue #78 should address this in the getter functions
     // *************************************************************************
     $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $trait_record = $service_traits->getTrait(['name' => $trait]);
+    $trait_record = $service_traits->getTrait($trait);
     if ($trait_record) {
       // If trait already exists, next check for method
-      $method_record = $service_traits->getTraitMethod(['name' => $trait]);
+      $method_record = $service_traits->getTraitMethod($trait);
       if ($method_record) {
         // Lastly, check for unit
         $unit_record = $service_traits->getMethodUnit($method_record->cvterm_id);
