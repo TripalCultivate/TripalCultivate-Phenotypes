@@ -84,9 +84,9 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     if (!isset($context['indices']['unit'])) {
        throw new \Exception(t('The unit (key: unit) was not set in the $context[\'indices\'] array'));
     }
-    $trait = strtolower($row_values[$context['indices']['trait']]);
-    $method = strtolower($row_values[$context['indices']['method']]);
-    $unit = strtolower($row_values[$context['indices']['unit']]);
+    $trait = $row_values[$context['indices']['trait']];
+    $method = $row_values[$context['indices']['method']];
+    $unit = $row_values[$context['indices']['unit']];
 
     // Now check for the presence of our array within our global array
     if (!empty($this->unique_traits)) {
@@ -103,36 +103,25 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
 
     // There are no duplicates in our file so far, now check at the database level
     // Grab our traits service
-    // *************************************************************************
-    // * @TODO: The following code assumes only one record at a time is returned
-    // * by each of the getter methods, but in reality we want to accomodate multiple
-    // * potential methods for a trait, and multiple units for a method. Thus,
-    // * each result will need to be iterated through to find the right one if this
-    // * is a duplicate. Issue #78 should address this in the getter functions
-    // *************************************************************************
     $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $trait_record = $service_traits->getTrait($trait);
-    if ($trait_record) {
-      // If trait already exists, next check for method
-      $method_record = $service_traits->getTraitMethod($trait);
-      if ($method_record) {
-        // Lastly, check for unit
-        $unit_record = $service_traits->getMethodUnit($method_record->cvterm_id);
-        if ($unit_record) {
-          // Duplicate found
-          $validator_status = [
-            'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
-            'status' => 'fail',
-            'details' => 'A duplicate trait was found within the database'
-          ];
-          return $validator_status;
-        }
-      }
+    $trait_combo = $service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
+
+    //print("Trait combo: ");
+    //print_r($trait_combo);
+    if (!empty($trait_combo)) {
+      // Duplicate found
+      $validator_status = [
+        'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
+        'status' => 'fail',
+        'details' => 'The combination of ' . $trait . ', ' . $method . ', and ' . $unit . ' is already found in the database.'
+      ];
+      return $validator_status;
     }
 
     // Finally, if not seen before, add to the global array
     $this->unique_traits[$trait][$method][$unit] = 1;
 
+    // Then set the status to pass
     $validator_status = [
       'title' => 'Unique Trait Name + Method Short Name + Unit combination',
       'status' => 'pass',
