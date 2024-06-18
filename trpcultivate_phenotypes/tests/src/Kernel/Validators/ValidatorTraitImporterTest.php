@@ -134,7 +134,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validation_status = $instance->validateRow($file_row, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate.");
     $unique_traits = $instance->getUniqueTraits();
-    $this->assertArrayHasUniqueCombo('my trait', 'my method', 'my unit', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #1.');
+    $this->assertArrayHasUniqueCombo('My trait', 'My method', 'My unit', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #1.');
 
     // Case #1: Re-renter the same details of the default case, should fail since it's a duplicate of the previous row
     $expected_status = 'fail';
@@ -169,7 +169,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validation_status = $instance->validateRow($file_row_2, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #2 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
-    $this->assertArrayHasUniqueCombo('my trait 2', 'my method 2', 'my unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #2.');
+    $this->assertArrayHasUniqueCombo('My trait 2', 'My method 2', 'My unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #2.');
 
     // Case #4: Enter a third row that has same trait name and method name as row #1, and same unit as row #2.
     // Technically this combo is considered unique and should pass
@@ -187,7 +187,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validation_status = $instance->validateRow($file_row_3, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #3 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
-    $this->assertArrayHasUniqueCombo('my trait', 'my method', 'my unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #3.');
+    $this->assertArrayHasUniqueCombo('My trait', 'My method', 'My unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #3.');
 
   }
 
