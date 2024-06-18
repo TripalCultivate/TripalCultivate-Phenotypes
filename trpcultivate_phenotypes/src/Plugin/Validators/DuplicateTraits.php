@@ -84,6 +84,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     if (!isset($context['indices']['unit'])) {
        throw new \Exception(t('The unit (key: unit) was not set in the $context[\'indices\'] array'));
     }
+
     $trait = $row_values[$context['indices']['trait']];
     $method = $row_values[$context['indices']['method']];
     $unit = $row_values[$context['indices']['unit']];
@@ -106,8 +107,6 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
     $trait_combo = $service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
 
-    //print("Trait combo: ");
-    //print_r($trait_combo);
     if (!empty($trait_combo)) {
       // Duplicate found
       $validator_status = [
@@ -127,7 +126,6 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
       'status' => 'pass',
       'details' => 'Confirmed that the current trait being validated is unique.'
     ];
-    //print_r($this->unique_traits);
 
     return $validator_status;
   }
