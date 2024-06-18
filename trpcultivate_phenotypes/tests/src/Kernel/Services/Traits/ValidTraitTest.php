@@ -82,7 +82,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Install module configuration/settings.
     $this->installConfig(['trpcultivate_phenotypes']);
-    
+
     // Configure the module.
     $this->genus = 'Tripalus';
     $organism_id = $this->connection->insert('1:organism')
@@ -91,7 +91,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'species' => 'databasica',
     ])
     ->execute();
-    
+
     $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
     $this->cvdbon = $this->setOntologyConfig($this->genus);
     $this->terms = $this->setTermConfig();
@@ -153,8 +153,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
         ->fetchObject();
       $this->assertIsObject($rec,
         "We were unable to retrieve the $type record from chado based on the cvterm_id $value provided by the service.");
-      
-    
+
+
       // The was configured in setUp and is keyed by the type.
       $expected_cv = $this->cvdbon[$type]['cv_id'];
       // Ensure it was inserted into the correct cv the genus is configured for.
@@ -338,7 +338,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       // Set genus to use by the traits service.
       // This method will return the inserted cvterm ids.
       $trait_assets = $this->service_traits->insertTrait($ins_trait);
-      
+
       // Track the ids.
       $expected_cvterms[ $combo['Trait Name'] ] = $trait_assets['trait'];
       $expected_cvterms[ $combo['Method Short Name'] ] = $trait_assets['method'];
@@ -384,7 +384,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       // Either cases both should match.
       $this->assertEquals($trait_id, (int) $trait->cvterm_id,
         'Trait id returned by trait getter with string and integer parameters do not match.');
-      
+
       // Id number is the id number that got created by the insert method.
       $this->assertEquals($trait_id, $expected_cvterms[ $combo['Trait Name'] ],
         'Trait id returned by trait getter does not match the trait id inserted.');
@@ -571,7 +571,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $unit_val   = $test[2];
 
       $combo = $this->service_traits->getTraitMethodUnitCombo($trait_val, $method_val, $unit_val);
-      $this->assertEquals($combo, [], 'Combo getter must return an empty array on non-existent record.');
+      $this->assertEquals($combo, NULL, 'The combo getter should have returned null for a non existent combo.');
     }
 
     unset($combo);
@@ -595,7 +595,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Check that the unit has extra property data type.
     $this->assertEquals($combo['unit']->data_type, 'Quantitative', 'Unit data_type property value does not match expected type (Quantitative).');
-    
+
     // All 3 parameters to the method is a unit term.
     // Unit exists but not in the Trait CV the genus is configured.
     $exception_message = '';
@@ -605,8 +605,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
     catch (\Exception $e) {
       $exception_message = $e->getMessage();
     }
-    
-    $this->assertMatchesRegularExpression('/CV value does not match the CV the genus was configured/', 
+
+    $this->assertMatchesRegularExpression('/CV value does not match the CV the genus was configured/',
       $exception_message, 'Combo getter failed parameter (all parameter a unit id) does not match the expected exception error message.');
   }
 }
