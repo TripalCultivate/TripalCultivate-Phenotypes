@@ -591,7 +591,8 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
 
-    // Query trait asset.
+    // If we are given an integer then assume it is the cvterm_id...
+    $asset_rec = NULL;
     if (is_numeric($key)) {
       // Asset parameter key is the id number.
       $asset_rec = $this->chado->query(
@@ -608,7 +609,10 @@ class TripalCultivatePhenotypesTraitsService {
         ));
       }
     }
-    else {
+
+    // If the key provided is a string OR if there was no matching cvterm_id
+    // then assume we are given the term name...
+    if (!$asset_rec) {
       // Asses parameter key is the name.
       $asset_rec = $this->chado->query(
         "SELECT * FROM {1:cvterm} WHERE name = :value AND cv_id = :cv",
