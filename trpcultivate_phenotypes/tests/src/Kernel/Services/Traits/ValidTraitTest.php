@@ -30,7 +30,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
    *
    * @var ChadoConnection
    */
-  protected $chado;
+  protected $connection;
 
   /**
    * Configuration
