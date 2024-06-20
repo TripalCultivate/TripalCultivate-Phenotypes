@@ -151,6 +151,32 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     $values_genusontology = [];
 
+    // Test setting the same cv value for trait, method and unit in the same
+    // genus will trigger an error.
+    $j = 0;
+    foreach($genus_ontology as $genus => $vars) {
+      foreach($vars as $i => $config) {
+        $fld_name = $genus . '_' . $config;
+        // Test if each genus has a trait, unit, method, db and crop ontology field.
+        $session->fieldExists($fld_name);
+
+        if ($config == 'database') {
+          $set_val = $test_db_id[ $j ];
+          $j++;
+        }
+        else {
+          // Same cv.
+          $set_val = $test_cv_id[ 0 ];
+        }
+
+        $values_genusontology[ $fld_name ] = $set_val;
+      }
+    }
+
+    // Update default values.
+    $this->submitForm($values_genusontology, 'Save configuration');
+    $session->pageTextContains('Error: Controlled Vocabulary (CV) value for Trait, Method and Unit must have unique values');
+
     $j = 0;
     foreach($genus_ontology as $genus => $vars) {
       foreach($vars as $i => $config) {

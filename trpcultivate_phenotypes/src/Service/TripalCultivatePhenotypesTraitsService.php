@@ -60,12 +60,18 @@ class TripalCultivatePhenotypesTraitsService {
    * Set the genus configuration values to which all
    * methods will use to restrict any trait data operations.
    *
-   * @param $genus
-   *   String, a specific genus to reference in genus ontology configurations.
+   * @param string $genus
+   *   A specific genus to reference in genus ontology configurations.
    *
    * @return void
+   *
+   * @throws \Exception
+   *   And exception is thrown by this method if
+   *    - the terms used by this module are not configured
+   *    - the genus is not configured for use with phenotypes
+   *    - the genus does not exist in the chado organism table in the default chado instance.
    */
-  public function setTraitGenus($genus) {
+  public function setTraitGenus(string $genus) {
     // For this setter to work both Genus and Terms configuration must be configured.
     // Term configuration:
     $not_set = [];
@@ -142,23 +148,27 @@ class TripalCultivatePhenotypesTraitsService {
    *     (e.g. measured 5 plants from the plot and then averaged them.)
    *   - Unit: the full word describing the unit used in the method (e.g. centimeters)
    *   - Type: Quantitative or Qualitative.
-   * @param object $schema
-   *   Tripal DBX Chado Connection object
-   *
-   * @see Header property and Trait Importer.
-   * NOTE:
-   *   - Tripal Importer Plugin loading of file is performed using database transaction.
-   *   - Although Genus is collected in the Importer form, It is not saved as part of the terms/traits.
-   *     Genus functions as a pointer to which CV to save the terms as set in the Genus-ontology configuration.
+   * @param string $schema
+   *   The name of the schema that the terms are expected to live in. This is
+   *   passed to the legacy chado_insert_cvterm() and if NULL, the default
+   *   chado instance will be used.
    *
    * @return
    *   An array with the following keys where each value is the id of new cvterm:
    *   trait, method, unit.
    *
+   * @throws \Exception
+   *   An exception is thrown if
+   *    - the genus/terms are not configured
+   *    - the Trait Name, Method Short Name or Unit are not a non-empty string
+   *    - the Trait Name, Method Short Name or Unit are not unique
+   *    - chado_insert_cvterm() fails to insert the term
+   *    - we fail to insert a relationship or the unit type.
+   *
    * @dependencies
    *   getPhenoCvterm(), getMethodUnitDataType().
    */
-  public function insertTrait($trait, $schema = NULL) {
+  public function insertTrait(array $trait, string $schema = NULL) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
     if (!$genus_config) {
@@ -258,7 +268,7 @@ class TripalCultivatePhenotypesTraitsService {
           ->execute();
 
         if (!$ins_rel) {
-          throw new \Exception(t('A database error occurred while inserting a term relationship. 
+          throw new \Exception(t('A database error occurred while inserting a term relationship.
             Failed to create term relationship @type : subject id - @subject object id - @object.',
             ['@type' => $type, '@subject' => $subject, '@object' => $object]
           ));
@@ -302,7 +312,15 @@ class TripalCultivatePhenotypesTraitsService {
    *   is the trait id number (cvterm.cvterm_id).
    *
    * @return object
-   *   Matching record/line in cvterm table or 0 if trait record Was not found.
+   *   Matching record (cvterm object) if the trait exists.
+   *   NULL if trait was not found.
+   *
+   * @throws \Exception
+   *   An exception is thrown by getPhenoCvterm() if any of the following apply
+   *   to the trait parameter.
+   *    - the genus/terms are not configured
+   *    - the key is not either a positive integer or a non-empty string.
+   *    - more than one cvterm was returned
    *
    * @dependencies
    *   getPhenoCvterm()
@@ -321,8 +339,16 @@ class TripalCultivatePhenotypesTraitsService {
    *   is the trait id number (cvterm.cvterm_id).
    *
    * @return array
-   *   All matching records (object) in an array. An empty array if no methods were found.
-   *   If there is only one result (method) returned access the value using index 0.
+   *   All matching records (cvterm object) in an array.
+   *   Empty array if there are no methods for this trait or if the trait doesn't exist.
+   *   If there is only one result (unit) returned access the value using index 0.
+   *
+   * @throws \Exception
+   *   An exception is thrown by getPhenoCvterm() if any of the following apply
+   *   to the trait parameter.
+   *    - the genus/terms are not configured
+   *    - the key is not either a positive integer or a non-empty string.
+   *    - more than one cvterm was returned
    *
    * @dependencies
    *   getPhenoCvterm()
@@ -366,8 +392,16 @@ class TripalCultivatePhenotypesTraitsService {
    *   is the method id number (cvterm.cvterm_id).
    *
    * @return array
-   *   All matching records (object) in an array. 0 if no units were found.
+   *   All matching records (cvterm object) in an array.
+   *   Empty array if there are no units for this method or if the method doesn't exist.
    *   If there is only one result (unit) returned access the value using index 0.
+   *
+   * @throws \Exception
+   *   An exception is thrown by getPhenoCvterm() if any of the following apply
+   *   to the method parameter.
+   *    - the genus/terms are not configured
+   *    - the key is not either a positive integer or a non-empty string.
+   *    - more than one cvterm was returned
    *
    * @dependencies
    *   getPhenoCvterm()
@@ -411,8 +445,16 @@ class TripalCultivatePhenotypesTraitsService {
    *   is the unit id number (cvterm.cvterm_id).
    *
    * @return string
-   *   The data type of the unit, either quantitative or qualitative or 0 when the unit record was not found
-   *   and was not set a data type.
+   *   The data type of the unit, either quantitative or qualitative.
+   *   NULL if the unit doesn't exist or there was no data type set for it.
+   *
+   * @throws \Exception
+   *   This method throws an exception if multiple data types are set for the given unit.
+   *   An exception is thrown by getPhenoCvterm() if any of the following apply
+   *   to the unit parameter.
+   *    - the genus/terms are not configured
+   *    - the key is not either a positive integer or a non-empty string.
+   *    - more than one cvterm was returned
    *
    * @dependencies
    *   getPhenoCvterm()
@@ -421,7 +463,7 @@ class TripalCultivatePhenotypesTraitsService {
     $unit_rec = $this->getPhenoCvterm($unit, 'unit');
     if (!$unit_rec) {
       // Unit was not found.
-      return 0;
+      return NULL;
     }
 
     // Inspect the relationship table where unit has a unit - data type relationship.
@@ -437,13 +479,13 @@ class TripalCultivatePhenotypesTraitsService {
 
     if (count($data_type) > 1) {
       // Unit appears to have multiple data types.
-      throw new \Exception(t('A multiple data type error occurred while retrieving a unit data type. 
+      throw new \Exception(t('A multiple data type error occurred while retrieving a unit data type.
         Failed to retrieve data type for unit : @unit in cv : @cv. Multiple data types found for the same unit.',
         ['@unit' => $unit, '@cv' => $genus_config['unit']['name']]
       ));
     }
 
-    return ($data_type) ? reset($data_type) : 0;
+    return ($data_type) ? reset($data_type) : NULL;
   }
 
   /**
@@ -459,8 +501,14 @@ class TripalCultivatePhenotypesTraitsService {
    * @return array
    *   An associative array where the keys are trait, method and unit and the values
    *   are the cvterm records for each key.
+   *   NULL if any one of trait, method or unit did not return any record.
    *
-   *   0 if any one of trait, method or unit did not return any record.
+   * @throws \Exception
+   *   An exception is thrown by getPhenoCvterm() if any of the following apply
+   *   to the trait, method or unit parameters.
+   *    - the genus/terms are not configured
+   *    - the key is not either a positive integer or a non-empty string.
+   *    - more than one cvterm was returned
    *
    * @dependencies
    *   getPhenoCvterm(), getMethodUnitDataType().
@@ -469,19 +517,19 @@ class TripalCultivatePhenotypesTraitsService {
     // Trait.
     $trait_rec = $this->getPhenoCvterm($trait, 'trait');
     if (!$trait_rec) {
-      return [];
+      return NULL;
     }
 
     // Method.
     $method_rec = $this->getPhenoCvterm($method, 'method');
     if (!$method_rec) {
-      return [];
+      return NULL;
     }
 
     // Unit.
     $unit_rec = $this->getPhenoCvterm($unit, 'unit');
     if (!$unit_rec) {
-      return [];
+      return NULL;
     }
 
     // Append unit data type to the unit data object.
@@ -506,7 +554,15 @@ class TripalCultivatePhenotypesTraitsService {
    *   trait, method or unit type. Trait is the default.
    *
    * @return object
-   *   A trait, method or unit cvterm object.
+   *   A cvterm object representing the trait, method or unit. If no cvterm is
+   *   found then NULL is returned.
+   *
+   * @throws \Exception
+   *   An exception is thrown by getPhenoCvterm() if
+   *    - the genus/terms are not configured
+   *    - the type is not one of 'trait', 'method' or 'unit'
+   *    - the key is not either a positive integer or a non-empty string.
+   *    - more than one cvterm was returned
    */
   protected function getPhenoCvterm($key, $type = 'trait') {
     // Configuration check.
@@ -527,7 +583,7 @@ class TripalCultivatePhenotypesTraitsService {
       ));
     }
 
-    if (empty($key) || (is_numeric($key) && (int) $key < 0)) {
+    if (empty($key) || (is_numeric($key) && (int) $key < 0) || (!is_numeric($key) && !is_string($key))) {
       // Not a valid asset key value (0, negative values or an empty string).
       throw new \Exception(t('Not a valid @type key value provided. The trait asset getter expects a string name or
         an integer id key value.', ['@type' => $type]
@@ -535,7 +591,8 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
 
-    // Query trait asset.
+    // If we are given an integer then assume it is the cvterm_id...
+    $asset_rec = NULL;
     if (is_numeric($key)) {
       // Asset parameter key is the id number.
       $asset_rec = $this->chado->query(
@@ -552,7 +609,10 @@ class TripalCultivatePhenotypesTraitsService {
         ));
       }
     }
-    else {
+
+    // If the key provided is a string OR if there was no matching cvterm_id
+    // then assume we are given the term name...
+    if (!$asset_rec) {
       // Asses parameter key is the name.
       $asset_rec = $this->chado->query(
         "SELECT * FROM {1:cvterm} WHERE name = :value AND cv_id = :cv",
@@ -563,7 +623,7 @@ class TripalCultivatePhenotypesTraitsService {
       if ($asset_rec && count($asset_rec) > 1) {
         // Trait asset name requested appears to have copies in the cv: asset type (trait, method or unit) the genus was configured.
         // Log error for admin to resolve.
-        throw new \Exception(t('A duplicate term error occurred while retrieving a trait asset. 
+        throw new \Exception(t('A duplicate term error occurred while retrieving a trait asset.
           Failed to retrieve @type : @key in cv : @cv. Multiple copies of the same term found in the CV',
           ['@type' => $type, '@key' => $key, '@cv' => $genus_config[ $type ]['name']]
         ));
@@ -571,8 +631,8 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     if(!$asset_rec) {
-      // Trait asset was not found.
-      return 0;
+      // cvterm was not found.
+      return NULL;
     }
 
     return reset($asset_rec);

@@ -30,7 +30,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
    *
    * @var ChadoConnection
    */
-  protected $chado;
+  protected $connection;
 
   /**
    * Configuration
@@ -571,7 +571,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $unit_val   = $test[2];
 
       $combo = $this->service_traits->getTraitMethodUnitCombo($trait_val, $method_val, $unit_val);
-      $this->assertEquals($combo, [], 'Combo getter must return an empty array on non-existent record.');
+      $this->assertEquals($combo, NULL, 'The combo getter should have returned null for a non existent combo.');
     }
 
     unset($combo);
