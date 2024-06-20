@@ -583,7 +583,7 @@ class TripalCultivatePhenotypesTraitsService {
       ));
     }
 
-    if (empty($key) || (is_numeric($key) && (int) $key < 0)) {
+    if (empty($key) || (is_numeric($key) && (int) $key < 0) || (!is_numeric($key) && !is_string($key))) {
       // Not a valid asset key value (0, negative values or an empty string).
       throw new \Exception(t('Not a valid @type key value provided. The trait asset getter expects a string name or
         an integer id key value.', ['@type' => $type]
