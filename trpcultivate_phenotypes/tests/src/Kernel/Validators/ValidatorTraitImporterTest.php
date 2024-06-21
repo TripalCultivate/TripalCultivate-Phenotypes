@@ -260,16 +260,16 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
       'Unit' => 'My unit 2',
       'Type' => 'Quantitative'
     ];
-
     $file_row_2 = array_values($file_row_case_2);
+
     $expected_status = 'pass';
     $validation_status = $instance->validateRow($file_row_2, $context);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the second row of values to validate the situation where trait and method are in the database but the unit is not.");
-    // Verify this combo does not exist in the database yet
-    $my_trait_2_record = $this->service_traits->getTraitMethodUnitCombo('My trait', 'My method', 'My unit 2'); // Currently returns an empty array
-    $expected_trait_id = 0;
-    //$this->assertEquals($expected_trait_id, $my_trait_2_record['trait']['id'], "Duplicate Trait validation did not fail, yet a trait ID was queried from the database for the same trait name.");
 
+    // Verify this combo does not exist in the database yet
+    $my_trait_2_record = $this->service_traits->getTraitMethodUnitCombo('My trait 1', 'My method 1', 'My unit 2');
+    $expected_trait_record = null; // The getTraitMethodUnitCombo method is expected to return null
+    $this->assertEquals($expected_trait_record, $my_trait_2_record, "Duplicate Trait validation did not fail, yet a trait ID was queried from the database for the same trait name.");
   }
 
   /*
