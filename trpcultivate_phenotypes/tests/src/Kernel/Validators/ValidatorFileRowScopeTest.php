@@ -81,12 +81,6 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
     $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
-    // A list of valid inputs
-    $valid_inputs = ['Quantitative', 'Qualitative'];
-
-    // A list of invalid inputs
-    $invalid_inputs = ['Collective', 'Type', ' '];
-
     // Simulates a row within the Trait Importer
     $file_row = [
       'My trait',
