@@ -33,14 +33,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
   protected $connection;
 
   /**
-   * Configuration
+   * Configuration Factory
    *
    * @var config_entity
-   */
-  protected $config;
-
-  /**
-   * Config factory
    */
   protected $config;
 
