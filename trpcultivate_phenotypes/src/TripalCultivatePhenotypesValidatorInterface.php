@@ -79,8 +79,8 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element
    * @param array $indices
-   *   A list of indices which correspond to the columns in the row for
-   *   which the validator should act on.
+   *   A one dimensional array of indices which correspond to which indices in
+   *   $row_values the validator instance should act on.
    *
    * @throws
    *   - An exception if $indices is an empty array

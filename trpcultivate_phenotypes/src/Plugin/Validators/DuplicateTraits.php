@@ -7,10 +7,10 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
+use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\file\Entity\File;
 
 /**
  * Validate duplicate traits within a file
@@ -31,10 +31,17 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
   protected $unique_traits = [];
 
   /**
+   * Traits Service
+   */
+  protected $service_traits;
+
+  /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, TripalCultivatePhenotypesTraitsService $service_traits) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+
+    $this->service_traits = $service_traits;
   }
 
   /**
@@ -44,7 +51,8 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     return new static(
       $configuration,
       $plugin_id,
-      $plugin_definition
+      $plugin_definition,
+      $container->get('trpcultivate_phenotypes.traits')
     );
   }
 
@@ -104,8 +112,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
 
     // There are no duplicates in our file so far, now check at the database level
     // Grab our traits service
-    $service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $trait_combo = $service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
+    $trait_combo = $this->service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
 
     if (!empty($trait_combo)) {
       // Duplicate found

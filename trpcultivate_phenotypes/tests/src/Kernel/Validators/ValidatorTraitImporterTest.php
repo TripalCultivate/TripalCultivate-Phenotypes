@@ -8,8 +8,6 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\tripal\Services\TripalLogger;
-use Drupal\file\Entity\File;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
  /**
@@ -79,7 +77,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
-//    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by our service.

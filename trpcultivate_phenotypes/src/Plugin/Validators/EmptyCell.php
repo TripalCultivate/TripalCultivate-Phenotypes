@@ -10,7 +10,6 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\file\Entity\File;
 
 /**
  * Validate empty cells of an importer.

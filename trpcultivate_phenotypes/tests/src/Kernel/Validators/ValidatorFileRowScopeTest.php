@@ -8,8 +8,8 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\tripal\Services\TripalLogger;
-use Drupal\file\Entity\File;
+//use Drupal\tripal\Services\TripalLogger;
+//use Drupal\file\Entity\File;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that apply to a single row

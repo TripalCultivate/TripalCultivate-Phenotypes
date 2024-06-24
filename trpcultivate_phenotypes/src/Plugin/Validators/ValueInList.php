@@ -10,7 +10,6 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\file\Entity\File;
 
 /**
  * Validate that column only contains a set list of values.
@@ -47,9 +46,9 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
    *   stored as an array element
    * @param array $context
    *   An associative array with the following key:
-   *   - indices => an array of indices corresponding to the cells in $row to act on
+   *   - indices => an array of indices corresponding to the cells in $row_values to act on
    *   - valid_values => an array of values that are allowed within the cell(s) located
-   *     at indices in $context['indices']
+   *     at the indices specified in $context['indices']
    *
    * @return array
    *   An associative array with the following keys.
