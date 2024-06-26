@@ -63,7 +63,12 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
 
     $valid = TRUE;
     $failed_indices = [];
-    // Convert our array of valid values to lower case for accurate comparison
+    // Keep track if we find a value that is the same but the wrong case (for
+    // example, all caps was used when only title case is valid). This flag will
+    // contribute to our error case reporting.
+    $wrong_case = FALSE;
+    // Convert our array of valid values to lower case for case insensitive
+    // comparison
     $valid_values_lwr = array_map('strtolower', $context['valid_values']);
 
     // Iterate through our array of row values
@@ -72,7 +77,11 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
       // context array of indices
       if (in_array($index, $context['indices'])) {
         // Check if our cell value is within the valid_values array
-        if (!in_array(strtolower($cell), $valid_values_lwr)) {
+        if (!in_array($cell, $context['valid_values'])) {
+          if (in_array(strtolower($cell), $valid_values_lwr)) {
+            // We technically have a match, but the case doesn't match the valid value
+            $wrong_case = TRUE;
+          }
           $valid = FALSE;
           array_push($failed_indices, $index);
         }
@@ -82,10 +91,13 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
     if (!$valid) {
       $failed_list = implode(', ', $failed_indices);
       $validator_status = [
-        'title' => 'Invalid value(s) found in required column(s)',
+        'title' => 'Invalid value(s) in required column(s)',
         'status' => 'fail',
         'details' => 'Invalid value(s) at index: ' . $failed_list
       ];
+      if ($wrong_case) {
+        $validator_status['title'] .= ' with >=1 case insensitive match';
+      }
     } else {
       $passed_list = implode(', ', $context['indices']);
       $valid_values = implode(', ', $context['valid_values']);
