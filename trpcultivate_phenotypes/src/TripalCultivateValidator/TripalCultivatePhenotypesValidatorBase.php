@@ -5,34 +5,85 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator;
 use Drupal\Component\Plugin\PluginBase;
 
 abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
+
+  /**
+   * Get validator plugin validator_name definition annotation value.
+   *
+   * @return string
+   *   The validator plugin name annotation definition value.
+   */
+  public function getValidatorName() {
+    return $this->pluginDefinition['validator_name'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateMetadata(array $form_values) {
+    $plugin_name = $this->getValidatorName();
+    throw \Exception("Method validateMetadata from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateFile(string $filename, int $fid) {
+    $plugin_name = $this->getValidatorName();
+    throw \Exception("Method validateFile from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateRow(array $form_values) {
+    $plugin_name = $this->getValidatorName();
+    throw \Exception("Method validateRow from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+  }
+
+  /**
+   * {@inheritdoc}
+   * @deprecated Remove in issue #91
+   */
+  public function validate() {
+    $plugin_name = $this->getValidatorName();
+    throw \Exception("Method validate from base class called for $plugin_name. This method is being deprecated and should be upgraded to validateMetadata(), validateFile() or validateRow().");
+  }
+
   /**
    * Project name/title.
+   * @deprecated Remove in issue #91
    */
   public $project;
 
   /**
    * Genus.
+   * @deprecated Remove in issue #91
    */
   public $genus;
 
   /**
    * Drupal File ID Number.
+   * @deprecated Remove in issue #91
    */
   public $file_id;
 
   /**
    * Required column headers as defined in the importer.
+   * @deprecated Remove in issue #91
    */
   public $column_headers;
 
   /**
    * Skip flag, indicate validator not to execute validation logic and
    * set the validator as upcoming or todo.
+   * @deprecated Remove in issue #91
    */
   public $skip;
 
   /**
    * Load phenotypic data upload assets to validated.
+   *
+   * @deprecated Remove in issue #91
    *
    * @param $project
    *   String, Project name/title - chado.project: name.
@@ -63,17 +114,9 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   }
 
   /**
-   * Get validator plugin validator_name definition annotation value.
-   *
-   * @return string
-   *   The validator plugin name annotation definition value.
-   */
-  public function getValidatorName() {
-    return $this->pluginDefinition['validator_name'];
-  }
-
-  /**
    * Get validator plugin validator_scope definition annotation value.
+   *
+   * @deprecated Remove in issue #91
    *
    * @return string
    *   The validator plugin scope annotation definition value.
