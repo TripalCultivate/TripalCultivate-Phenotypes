@@ -7,7 +7,7 @@
  * @see Plugin manager in src\TripalCultivatePhenotypesValidatorManager.php
  */
 
-namespace Drupal\trpcultivate_phenotypes\Annotation;
+namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\Annotation;
 
 use Drupal\Component\Annotation\Plugin;
 
