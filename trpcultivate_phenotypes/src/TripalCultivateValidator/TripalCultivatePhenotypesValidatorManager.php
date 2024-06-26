@@ -26,14 +26,14 @@ class TripalCultivatePhenotypesValidatorManager extends DefaultPluginManager {
       'Plugin/Validators',
       $namespaces,
       $module_handler,
-      'Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorInterface',
-      'Drupal\trpcultivate_phenotypes\Annotation\TripalCultivatePhenotypesValidator'
+      'Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorInterface',
+      'Drupal\trpcultivate_phenotypes\TripalCultivateValidator\Annotation\TripalCultivatePhenotypesValidator'
     );
 
     // NOTES:
     // Instance of validator in Drupal/trpcultivate_phenotypes/Plugin/Validator.
-    // Each instance is an implementation of Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorInterface.
-    // Use annotations defined by Drupal\trpcultivate_phenotypes\Annotation\TripalCultivatePhenotypesValidator.
+    // Each instance is an implementation of Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorInterface.
+    // Use annotations defined by Drupal\trpcultivate_phenotypes\TripalCultivateValidator\Annotation\TripalCultivatePhenotypesValidator.
 
     // This is the hook name to alter information in this plugin.
     $this->alterInfo('trpcultivate_phenotypes_validators_info');

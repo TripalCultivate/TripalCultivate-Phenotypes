@@ -7,7 +7,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -16,7 +16,7 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
 /**
  * Validate Genus.
- * 
+ *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_genus",
  *   validator_name = @Translation("Genus Validator"),
@@ -37,16 +37,16 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, 
+  public function __construct(array $configuration, $plugin_id, $plugin_definition,
     TripalCultivatePhenotypesGenusProjectService $service_genus_project,
-    TripalCultivatePhenotypesGenusOntologyService $service_genus_ontology) { 
-    
+    TripalCultivatePhenotypesGenusOntologyService $service_genus_ontology) {
+
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    
+
     $this->service_genus_project = $service_genus_project;
     $this->service_genus_ontology = $service_genus_ontology;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -79,7 +79,7 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
 
     // Instructed to skip this validation. This will set this validator as upcoming or todo.
     // This happens when other prior validation failed and this validation could only proceed
-    // when input values in the failed validator have been rectified.  
+    // when input values in the failed validator have been rectified.
     if ($this->skip) {
       $validator_status['status'] = 'todo';
       return $validator_status;
@@ -95,7 +95,7 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
       $validator_status['details'] = 'Genus field is empty. Please enter a value and try again.';
     }
     else {
-      // Test if the genus is an active genus. This will at the same time 
+      // Test if the genus is an active genus. This will at the same time
       // confirm that it exists in organism table.
       $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($this->genus);
       if (!$genus_config) {
@@ -108,12 +108,12 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
           // Genus exits, but not configured.
           $validator_status['status']  = 'fail';
           $validator_status['details'] = 'Genus is not configured. Please enter a value and try again.';
-        }        
+        }
       }
-      
+
       // This check should factor in the status of the project entered to see
       // if that project has genus set or not. The former should check if they match
-      // and the latter should allow so that further in the process will create 
+      // and the latter should allow so that further in the process will create
       // the project-genus relationship.
 
       // Additional check if genus is pared with project, ensure that
@@ -129,7 +129,7 @@ class Genus extends TripalCultivatePhenotypesValidatorBase implements ContainerF
         }
       }
     }
-    
+
     return $validator_status;
   }
 }

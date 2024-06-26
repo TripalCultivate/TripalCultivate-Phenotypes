@@ -2,8 +2,8 @@
 
 /**
  * @file
- * Contains \Drupal\trpcultivate_phenotypes\Annotation\TripalCultivatePhenotypesValidator.
- * 
+ * Contains \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\Annotation\TripalCultivatePhenotypesValidator.
+ *
  * @see Plugin manager in src\TripalCultivatePhenotypesValidatorManager.php
  */
 
@@ -13,23 +13,23 @@ use Drupal\Component\Annotation\Plugin;
 
 /**
  * Defines a data validator annotation object.
- * 
+ *
  * @see Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorManager
- * @see Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorInterface
- * 
+ * @see Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorInterface
+ *
  * @Annotation
  */
 class TripalCultivatePhenotypesValidator extends Plugin {
   /**
    * The validator plugin ID.
-   * 
+   *
    * @var string.
    */
   public $id;
 
   /**
    * The validator human-readable name.
-   * 
+   *
    * @var string.
    */
   public $validator_name;
@@ -37,7 +37,7 @@ class TripalCultivatePhenotypesValidator extends Plugin {
   /**
    * The scope a validator will perform a check
    * ie. FILE level check, Project/Genus level check or Data Values level check.
-   * 
+   *
    * @var string.
    */
   public $validator_scope;
