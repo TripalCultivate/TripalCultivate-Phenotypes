@@ -8,8 +8,6 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-//use Drupal\tripal\Services\TripalLogger;
-//use Drupal\file\Entity\File;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that apply to a single row
@@ -135,13 +133,14 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Simulates a row within the Trait Importer
+    // Includes 3 types of empty cells
     $file_row = [
       'My trait',
-      '',
+      '',  // No whitespace
       'My method',
-      '',
+      ' ', // Single whitespace
       'My unit',
-      ''
+      '  ' // Double whitespace
     ];
 
     // Case #1: Provide a list of indices for cells that are not empty

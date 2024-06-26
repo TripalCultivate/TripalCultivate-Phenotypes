@@ -46,7 +46,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *   stored as an array element
    * @param array $context
    *   An associative array with the following key:
-   *   - indices => an array of indices corresponding to the cells in $row to act on
+   *   - indices => an array of indices corresponding to the cells in $row_values to act on
    *
    * @return array
    *   An associative array with the following keys.
@@ -66,6 +66,8 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
       // Only validate the values in which their index is also within our
       // context array of indices
       if (in_array($index, $context['indices'])) {
+        // First trim the contents of our cell in case we have whitespace
+        $cell = trim($cell);
         // Check if our content is empty and report an error if it is
         if (!isset($cell) || empty($cell)) {
           $empty = TRUE;
