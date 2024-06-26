@@ -1,11 +1,6 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\TripalCultivatePhenotypes\TripalCultivatePhenotypesValidatorBase.
- */
-
-namespace Drupal\trpcultivate_phenotypes;
+namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator;
 
 use Drupal\Component\Plugin\PluginBase;
 
@@ -38,7 +33,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Load phenotypic data upload assets to validated.
-   * 
+   *
    * @param $project
    *   String, Project name/title - chado.project: name.
    * @param $genus
@@ -69,7 +64,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Get validator plugin validator_name definition annotation value.
-   * 
+   *
    * @return string
    *   The validator plugin name annotation definition value.
    */
@@ -79,7 +74,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Get validator plugin validator_scope definition annotation value.
-   * 
+   *
    * @return string
    *   The validator plugin scope annotation definition value.
    */
