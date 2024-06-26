@@ -35,7 +35,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    */
   private $config;
 
-    /**
+  /**
    * Modules to enable.
    */
   protected static $modules = [
@@ -87,11 +87,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Qualitative'
     ];
 
-    // Try with a nested array of indices
-    //$context['indices'] = ['one' => 1, 'two' => 2, 'three' => 3];
-    //$validation_status = $instance->validateRow($file_row, $context);
+    // ERROR CASES
 
-    // Error cases
     // Provide an empty array of indices
     $context['indices'] = [];
     $exception_caught = FALSE;
