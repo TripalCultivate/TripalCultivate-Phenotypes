@@ -17,6 +17,34 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   }
 
   /**
+   * Returns the input types supported by this validator.
+   * These are defined in the class annotation docblock.
+   *
+   * @return array
+   *   The inputTypes supported by this validator.
+   */
+  public function getSupportedInputTypes() {
+    return $this->pluginDefinition['inputTypes'];
+  }
+
+  /**
+   * Confirms whether the given inputType is supported by this validator.
+   *
+   * @param string $input_type
+   *   The input type to check.
+   * @return boolean
+   *   True if the input type is supported and false otherwise.
+   */
+  public function checkInputTypeSupported(string $input_type) {
+    $supported_types = $this->getSupportedInputTypes();
+
+    if (in_array($input_type, $supported_types)) {
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function validateMetadata(array $form_values) {

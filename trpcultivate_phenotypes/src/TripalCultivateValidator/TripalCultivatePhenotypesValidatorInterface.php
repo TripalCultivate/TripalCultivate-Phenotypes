@@ -17,6 +17,25 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   public function getValidatorName();
 
   /**
+   * Returns the input types supported by this validator.
+   * These are defined in the class annotation docblock.
+   *
+   * @return array
+   *   The inputTypes supported by this validator.
+   */
+  public function getSupportedInputTypes();
+
+  /**
+   * Confirms whether the given inputType is supported by this validator.
+   *
+   * @param string $input_type
+   *   The input type to check.
+   * @return boolean
+   *   True if the input type is supported and false otherwise.
+   */
+  public function checkInputTypeSupported(string $input_type);
+
+  /**
    * Validates the metadata associated with an importer.
    *
    * This should never validate the file even though it will likely be passed in
