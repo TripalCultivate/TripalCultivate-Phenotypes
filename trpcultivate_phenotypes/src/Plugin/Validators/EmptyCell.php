@@ -41,6 +41,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
 
   /**
    * Validate the values within the cells of this row.
+   *
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element
@@ -56,7 +57,8 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    */
   public function validateRow($row_values, $context) {
 
-    // Check our inputs - will throw an exception if there's a problem
+    // Check the indices provided are valid in the context of the row.
+    // Will throw an exception if there's a problem
     $this->checkIndices($row_values, $context['indices']);
 
     $empty = FALSE;

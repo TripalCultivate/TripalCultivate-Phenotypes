@@ -37,7 +37,7 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
    */
   private $config;
 
-    /**
+  /**
    * Modules to enable.
    */
   protected static $modules = [

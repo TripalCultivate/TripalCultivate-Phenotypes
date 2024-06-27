@@ -26,7 +26,13 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
   /**
    * A nested array of already validated values forming the unique trait name +
    *   method name + unit combinations that have been encountered by this
-   *   validator so far within the input file
+   *   validator so far within the input file. More specifically,
+   *   - TRAIT-NAME: array of methods associated with this trait.
+   *     - METHOD-NAME: array of units associated with this trait-method combo
+   *       - UNIT-NAME: 1 (indicates this full trait-method-unit combo exists)
+   *
+   *   NOTE: All capital words are intended to be replaced by the actual full
+   *   name of the term.
    */
   protected $unique_traits = [];
 
@@ -58,6 +64,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
 
   /**
    * Validate the values within the cells of this row.
+   *
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element
@@ -76,7 +83,11 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    */
   public function validateRow($row_values, $context) {
 
-    // Check our inputs - will throw an exception if there's a problem
+    // Check the indices provided are valid in the context of the row.
+    // Will throw an exception if there's a problem.
+    // Typically checkIndices() doesn't take an associative array but
+    // because it checks the values not the keys, it will work in this
+    // case as well.
     $this->checkIndices($row_values, $context['indices']);
 
     // Grab our trait, method and unit values from the $row_values array
@@ -141,7 +152,13 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * Getter for the $unique_traits array.
    *
    * @return $unique_traits
-   *   - The array of unique trait name + method name + unit combinations
+   *   The array of unique trait name + method name + unit combinations.
+   *   More specifically, the array is as follows with capitalized words replaced 
+   *   by the term name.
+   *   - TRAIT-NAME: array of methods associated with this trait.
+   *     - METHOD-NAME: array of units associated with this trait-method combo
+   *       - UNIT-NAME: 1 (indicates this full trait-method-unit combo exists)
+
    *     that have been encountered by this validator so far within the input
    *     file
    */
