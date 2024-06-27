@@ -9,7 +9,7 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -153,7 +153,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *
    * @return $unique_traits
    *   The array of unique trait name + method name + unit combinations.
-   *   More specifically, the array is as follows with capitalized words replaced 
+   *   More specifically, the array is as follows with capitalized words replaced
    *   by the term name.
    *   - TRAIT-NAME: array of methods associated with this trait.
    *     - METHOD-NAME: array of units associated with this trait-method combo
