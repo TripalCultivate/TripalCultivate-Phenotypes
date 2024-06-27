@@ -519,7 +519,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    */
   public function testTraitImportValuePluginValidator() {
 
-    $this->markTestSkipped();
+    $this->markTestSkipped('Skipping this test until it can be replaced by the new validators testing.');
     $scope = 'FILE ROW';
     $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
     $instance = $this->plugin_manager->createInstance($validator);
