@@ -108,43 +108,63 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     $method = $row_values[$context['indices']['method']];
     $unit = $row_values[$context['indices']['unit']];
 
+    // Set our flags for tracking database and input file duplicates
+    $duplicate_in_file = FALSE;
+    $duplicate_in_db = FALSE;
+
     // Now check for the presence of our array within our global array
+    // ie. has this trait combination been seen in this input file before?
     if (!empty($this->unique_traits)) {
       if (isset($this->unique_traits[$trait][$method][$unit])) {
         // Then we've found a duplicate
+        $duplicate_in_file = TRUE;
+      }
+    }
+
+    // Check if our trait combo exists at the database level
+    // Grab our traits service
+    $trait_combo = $this->service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
+    if (!empty($trait_combo)) {
+      // Duplicate found
+      $duplicate_in_db = TRUE;
+    }
+
+    // Finally, add to the global array as a row we've now seen
+    $this->unique_traits[$trait][$method][$unit] = 1;
+
+    // Then set the status of the validation
+    if($duplicate_in_file) {
+      if ($duplicate_in_db) {
+        // This row is a duplicate of another row AND in the database
+        $validator_status = [
+          'title' => 'Duplicate trait combo in file + database',
+          'status' => 'fail',
+          'details' => 'A duplicate trait was found within both the input file and the database.'
+        ];
+      }
+      else {
         $validator_status = [
           'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
           'status' => 'fail',
           'details' => 'A duplicate trait was found within the input file'
         ];
-        return $validator_status;
       }
     }
-
-    // There are no duplicates in our file so far, now check at the database level
-    // Grab our traits service
-    $trait_combo = $this->service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
-
-    if (!empty($trait_combo)) {
-      // Duplicate found
+    else if ($duplicate_in_db) {
       $validator_status = [
         'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
         'status' => 'fail',
         'details' => 'The combination of ' . $trait . ', ' . $method . ', and ' . $unit . ' is already found in the database.'
       ];
-      return $validator_status;
     }
-
-    // Finally, if not seen before, add to the global array
-    $this->unique_traits[$trait][$method][$unit] = 1;
-
-    // Then set the status to pass
-    $validator_status = [
-      'title' => 'Unique Trait Name + Method Short Name + Unit combination',
-      'status' => 'pass',
-      'details' => 'Confirmed that the current trait being validated is unique.'
-    ];
-
+    // If not seen before in the file or in the database, then set the validation to pass
+    else {
+      $validator_status = [
+        'title' => 'Unique Trait Name + Method Short Name + Unit combination',
+        'status' => 'pass',
+        'details' => 'Confirmed that the current trait being validated is unique.'
+      ];
+    }
     return $validator_status;
   }
 
@@ -152,15 +172,13 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * Getter for the $unique_traits array.
    *
    * @return $unique_traits
-   *   The array of unique trait name + method name + unit combinations.
-   *   More specifically, the array is as follows with capitalized words replaced 
+   *   The array of unique trait name + method name + unit combinations that
+   *   have been encountered by this validator so far within the input file
+   *   More specifically, the array is as follows with capitalized words replaced
    *   by the term name.
    *   - TRAIT-NAME: array of methods associated with this trait.
    *     - METHOD-NAME: array of units associated with this trait-method combo
    *       - UNIT-NAME: 1 (indicates this full trait-method-unit combo exists)
-
-   *     that have been encountered by this validator so far within the input
-   *     file
    */
   public function getUniqueTraits() {
     return $this->unique_traits;
