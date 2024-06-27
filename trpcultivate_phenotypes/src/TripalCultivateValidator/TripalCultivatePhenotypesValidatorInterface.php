@@ -113,6 +113,25 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   public function validateRow(array $form_values);
 
   /**
+   * Given an array of values (that represents a single row in an input file),
+   * check that the list in $indices is within the range of keys in $row_values.
+   *
+   * @param array $row_values
+   *   The contents of the file's row where each value within a cell is
+   *   stored as an array element
+   * @param array $indices
+   *   A one dimensional array of indices which correspond to which indices in
+   *   $row_values the validator instance should act on.
+   *
+   * @throws
+   *   - An exception if $indices is an empty array
+   *   - An exception if $indices has more values than $row_values
+   *   - An exception if any of the indices in $indices is out of bounds
+   *     of the keys for $row_values
+   */
+  public function checkIndices($row_values, $indices);
+
+  /**
    * Return the scope of the validator.
    *
    * @deprecated Remove in issue #91
