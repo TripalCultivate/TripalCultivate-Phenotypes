@@ -267,6 +267,34 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $my_trait_2_record = $this->service_traits->getTraitMethodUnitCombo('My trait 1', 'My method 1', 'My unit 2');
     $expected_trait_record = null; // The getTraitMethodUnitCombo method is expected to return null
     $this->assertEquals($expected_trait_record, $my_trait_2_record, "Duplicate Trait validation did not fail, yet a trait ID was queried from the database for the same trait name.");
+
+    // Case #3: Validate where a trait + method + unit combo is duplicated in
+    // BOTH the database level and the file level
+    $file_row_case_3 = [
+      'Trait Name' => 'My trait 3',
+      'Trait Description' => 'My trait description',
+      'Method Short Name' => 'My method 3',
+      'Collection Method' => 'My method description',
+      'Unit' => 'My unit 3',
+      'Type' => 'Quantitative'
+    ];
+    $file_row_3 = array_values($file_row_case_3);
+
+    $combo_ids_3 = $this->service_traits->insertTrait($file_row_case_3);
+    $expected_status = 'fail';
+    $validation_status = $instance->validateRow($file_row_3, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided the third row of values to validate where trait + method + unit already exist in the database.");
+    // Check that we are getting the right error code for a database duplicate
+    $this->assertStringEndsWith('is already found in the database.', $validation_status['details'], 'Duplicate Trait validation did not report that there was a duplicate in the database when validating the third row.');
+
+    // Now try validating a row with the exact same values as the previous one
+    $file_row_4 = $file_row_3;
+
+    $expected_status = 'fail';
+    $validation_status = $instance->validateRow($file_row_4, $context);
+    $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided the fourth row of values to validate where trait + method + unit was in the previous row AND exists in the database.");
+    $this->assertStringEndsWith('within both the input file and the database.', $validation_status['details'], 'Duplicate Trait validation did not report that there was a duplicate in the file AND the database when validating the fourth row.');
+
   }
 
   /*
