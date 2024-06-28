@@ -8,8 +8,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\tripal\Services\TripalLogger;
-use Drupal\file\Entity\File;
+use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Base functions
@@ -37,7 +36,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    */
   private $config;
 
-    /**
+  /**
    * Modules to enable.
    */
   protected static $modules = [
@@ -89,11 +88,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Qualitative'
     ];
 
-    // Try with a nested array of indices
-    //$context['indices'] = ['one' => 1, 'two' => 2, 'three' => 3];
-    //$validation_status = $instance->validateRow($file_row, $context);
+    // ERROR CASES
 
-    // Error cases
     // Provide an empty array of indices
     $context['indices'] = [];
     $exception_caught = FALSE;
@@ -129,5 +125,188 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in invalid indices.');
     $this->assertStringContainsString('One or more of the indices provided (-4, 77) is not valid when compared to the indices of the provided row', $e->getMessage(), "Did not get the expected exception message when providing 2 different invalid indices.");
+  }
+
+  /**
+   * Test the basic getters: getValidatorName() and getConfigAllowNew().
+   */
+  public function testBasicValidatorGetters() {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'inputTypes' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Check that we can get the name of the validator we requested above.
+    // NOTE: this is the validator_name in the annotation.
+    $expected_name = $plugin_definition['validator_name'];
+    $returned_name = $instance->getValidatorName();
+    $this->assertEquals($expected_name, $returned_name,
+      "We did not recieve the name we expected when using getValidatorName() for $validator_id validator.");
+
+    // Check that we are able to get the configuration for allowing new traits.
+    // NOTE: this is set by the admin in the ontology config form and doesn't
+    // change between importers.
+    $expected_allownew = TRUE;
+    $returned_allownew = $instance->getConfigAllowNew();
+    $this->assertEquals($expected_allownew, $returned_allownew,
+      "We did not get the status for Allowing New configuration that we expected through the $validator_id validator.");
+  }
+
+  /**
+   * Test the input type focused getters: getSupportedInputTypes()
+   * + checkInputTypeSupported().
+   */
+  public function testInputTypeValidatorGetters() {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'inputTypes' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Check that we can get the supported inputTypes for this validator.
+    // NOTE: use assertEqualsCanonicalizing so that order of arrays does NOT matter.
+    $expected_inputTypes = ['data-row', 'header-row'];
+    $returned_inputTypes = $instance->getSupportedInputTypes();
+    $this->assertEqualsCanonicalizing($expected_inputTypes, $returned_inputTypes,
+      "We did not get the expected input types for $validator_id validator when using getSupportedInputTypes().");
+
+    // Check that we rightly get told the data-row is a supported input type.
+    $dataRow_supported = $instance->checkInputTypeSupported('data-row');
+    $this->assertTrue($dataRow_supported,
+      "The data-row input type should be supported by $validator_id validator but checkInputTypeSupported() doesn't confirm this.");
+
+    // Check that we rightly get told the data-row is a supported input type.
+    $metadata_supported = $instance->checkInputTypeSupported('metadata');
+    $this->assertFalse(
+      $metadata_supported,
+      "The metadata input type should NOT be supported by $validator_id validator but checkInputTypeSupported() doesn't confirm this."
+    );
+
+    // Check with an invalid inputType.
+    $invalid_supported = $instance->checkInputTypeSupported('SARAH');
+    $this->assertFalse(
+      $invalid_supported,
+      "The SARAH input type is invalid and thus should NOT be supported by $validator_id validator but checkInputTypeSupported() doesn't confirm this."
+    );
+  }
+
+  /**
+   * Test the validate methods: validateMetadata(), validateFile(), validateRow(), validate().
+   *
+   * NOTE: These should all thrown an exception in the base class.
+   */
+  public function testValidatorValidateMethods() {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'inputTypes' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Tests Base Class validateMetadata().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $form_values = ['genus' => 'Fred', 'project_id' => 123];
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateMetadata() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateMetadata() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateMetadata()"
+    );
+
+    // Tests Base Class validateFile().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $filename = 'public://does_not_exist.txt';
+      $fid = 123;
+      $instance->validateFile($filename, $fid);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateFile() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateFile() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateFile()"
+    );
+
+    // Tests Base Class validateRow().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
+      $context = [];
+      $instance->validateRow($row_values, $context);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateRow() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateRow() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateRow()"
+    );
+
+    // Tests Base Class validate().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $instance->validate();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validate() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validate() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validate()"
+    );
   }
 }

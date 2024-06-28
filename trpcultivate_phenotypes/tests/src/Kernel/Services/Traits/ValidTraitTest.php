@@ -55,7 +55,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * Term config key to cvterm_id mapping.
    * Note: we just grabbed some random cvterm_ids that we know for sure exist.
    */
-  protected $terms = [
+  protected array $terms = [
     'method_to_trait_relationship_type' => 100,
     'unit_to_method_relationship_type' => 200,
     'trait_to_synonym_relationship_type' => 300,

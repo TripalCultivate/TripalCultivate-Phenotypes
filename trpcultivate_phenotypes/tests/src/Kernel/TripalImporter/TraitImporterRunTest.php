@@ -36,12 +36,12 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
   /**
    * Saves details regarding the config.
    */
-  protected $cvdbon;
+  protected array $cvdbon;
 
   /**
    * The terms required by this module mapped to the cvterm_ids they are set to.
    */
-  protected $terms;
+  protected array $terms;
 
   protected $definitions = [
     'test-trait-importer' => [
