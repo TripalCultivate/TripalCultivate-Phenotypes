@@ -52,8 +52,8 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of the items that failed validation. For example,
-   *      if this validator validates a number of indicies are not empty then
+   *  - 'failedItems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indices are not empty, then
    *      this will be an array of indices that were empty.
    *  The old style keys we are deprecating are:
    *  - title: the title of the validation (shown both when passes or fails).
@@ -78,8 +78,8 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of the items that failed validation. For example,
-   *      if this validator validates a number of indicies are not empty then
+   *  - 'failedItems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indices are not empty, then
    *      this will be an array of indices that were empty.
    *  The old style keys we are deprecating are:
    *  - title: the title of the validation (shown both when passes or fails).
@@ -109,8 +109,8 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of the items that failed validation. For example,
-   *      if this validator validates a number of indicies are not empty then
+   *  - 'failedItems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indices are not empty, then
    *      this will be an array of indices that were empty.
    *  The old style keys we are deprecating are:
    *  - title: the title of the validation (shown both when passes or fails).
