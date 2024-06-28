@@ -49,7 +49,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    */
   public function validateMetadata(array $form_values) {
     $plugin_name = $this->getValidatorName();
-    throw \Exception("Method validateMetadata from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+    throw new \Exception("Method validateMetadata() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
   }
 
   /**
@@ -57,7 +57,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    */
   public function validateFile(string $filename, int $fid) {
     $plugin_name = $this->getValidatorName();
-    throw \Exception("Method validateFile from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+    throw new \Exception("Method validateFile() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
   }
 
   /**
@@ -65,7 +65,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    */
   public function validateRow(array $row_values, array $context) {
     $plugin_name = $this->getValidatorName();
-    throw \Exception("Method validateRow from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+    throw new \Exception("Method validateRow() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
   }
 
   /**
@@ -74,7 +74,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    */
   public function validate() {
     $plugin_name = $this->getValidatorName();
-    throw \Exception("Method validate from base class called for $plugin_name. This method is being deprecated and should be upgraded to validateMetadata(), validateFile() or validateRow().");
+    throw new \Exception("Method validate() from base class called for $plugin_name. This method is being deprecated and should be upgraded to validateMetadata(), validateFile() or validateRow().");
   }
 
   /**
