@@ -172,7 +172,8 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * Getter for the $unique_traits array.
    *
    * @return $unique_traits
-   *   The array of unique trait name + method name + unit combinations.
+   *   The array of unique trait name + method name + unit combinations that
+   *   have been encountered by this validator so far within the input file
    *   More specifically, the array is as follows with capitalized words replaced
    *   by the term name.
    *   - TRAIT-NAME: array of methods associated with this trait.
