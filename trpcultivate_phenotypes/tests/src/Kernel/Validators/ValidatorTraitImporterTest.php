@@ -9,6 +9,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that are specific to
@@ -31,7 +32,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
    *
    * @var ChadoConnection
    */
-  protected $connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Configuration
@@ -80,15 +81,15 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by our service.
-    $this->connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->connection);
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
     $genus = 'Tripalus';
     // Create our organism and configure it.
-    $organism_id = $this->connection->insert('1:organism')
+    $organism_id = $this->chado_connection->insert('1:organism')
       ->fields([
         'genus' => $genus,
         'species' => 'databasica',

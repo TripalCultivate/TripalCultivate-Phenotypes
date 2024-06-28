@@ -9,6 +9,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
  * Tests that a valid trait/method/unit combination can be inserted/retrieved.
@@ -30,7 +31,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
    *
    * @var ChadoConnection
    */
-  protected $connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Configuration
@@ -78,14 +79,14 @@ class ValidTraitTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Open connection to Chado
-		$this->connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+		$this->chado_connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
     // Install module configuration/settings.
     $this->installConfig(['trpcultivate_phenotypes']);
 
     // Configure the module.
     $this->genus = 'Tripalus';
-    $organism_id = $this->connection->insert('1:organism')
+    $organism_id = $this->chado_connection->insert('1:organism')
     ->fields([
       'genus' => $this->genus,
       'species' => 'databasica',
@@ -149,7 +150,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     foreach($trait_assets as $type => $value) {
       // Retrieve the cvterm with the cvterm_di returned by the service.
-      $rec = $this->connection->query($sql, [':id' => $value])
+      $rec = $this->chado_connection->query($sql, [':id' => $value])
         ->fetchObject();
       $this->assertIsObject($rec,
         "We were unable to retrieve the $type record from chado based on the cvterm_id $value provided by the service.");
@@ -179,7 +180,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // for the term we choose but is the same order as in AP.
     // Expected "Measured with ruler" is "Method" of "Plant Height"
     // but is currently saved as "Plant Height" is "Method" of "Measured with ruler"
-    $rec = $this->connection->query($sql, [
+    $rec = $this->chado_connection->query($sql, [
       ':s_id' => $trait_assets['trait'],
       ':t_id' => $this->terms['method_to_trait_relationship_type'],
       ':o_id' => $trait_assets['method']
@@ -192,7 +193,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // for the term we choose but is the same order as in AP.
     // Expected "cm" is "Unit" of "Measured with Ruler"
     // but it is currently saved as "Measures with ruler" is "Unit" of "cm"
-    $rec = $this->connection->query($sql, [
+    $rec = $this->chado_connection->query($sql, [
       ':s_id' => $trait_assets['method'],
       ':t_id' => $this->terms['unit_to_method_relationship_type'],
       ':o_id' => $trait_assets['unit']
@@ -202,7 +203,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Test unit data type.
     $sql = "SELECT cvtermprop_id, value FROM {1:cvtermprop} WHERE cvterm_id = :c_id AND type_id = :t_id LIMIT 1";
-    $data_type = $this->connection->query($sql, [
+    $data_type = $this->chado_connection->query($sql, [
       ':c_id' => $trait_assets['unit'],
       ':t_id' => $this->terms['unit_type'],
       ])->fetchObject();

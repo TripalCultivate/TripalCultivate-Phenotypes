@@ -6,6 +6,7 @@ use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
  * Tests the functionality of the Trait Importer.
@@ -24,9 +25,11 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
   protected $importer;
 
   /**
-   * Chado connection
+   * Tripal DBX Chado Connection object
+   *
+   * @var ChadoConnection
    */
-  protected $connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Config factory
@@ -72,7 +75,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
 		// Open connection to Chado
-		$this->connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+		$this->chado_connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
@@ -106,7 +109,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     $container->set('tripal.logger', $mock_logger);
 
     // Create our organism and configure it.
-    $organism_id = $this->connection->insert('1:organism')
+    $organism_id = $this->chado_connection->insert('1:organism')
       ->fields([
         'genus' => 'Tripalus',
         'species' => 'databasica',
@@ -123,7 +126,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
       [],
       'trpcultivate-phenotypes-traits-importer',
       $this->definitions,
-      $this->connection
+      $this->chado_connection
     );
 
   }
