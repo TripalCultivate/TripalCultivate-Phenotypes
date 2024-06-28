@@ -112,11 +112,12 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
    *  - 'failedIems': an array of the items that failed validation. For example,
-   *      if this validator validates a number of indicies are not empty then
-   *      this will be an array of indices that were empty or if this validator
-   *      checks that a number of indices have values in a specific list then
-   *      this array would use the index as the key and the value the column
-   *      actually had that was not in the list for each failed column.
+   *      if this validator validates that a number of indicies are not emptya then
+   *      this will be an array of indices that were empty. Another example is
+   *      that if this validator checks that a number of indices have values in
+   *      a specific list, then this array would use the index as the key and
+   *      the value the column actually had that was not in the list for each
+   *      failed column.
    *  The old style keys we are deprecating are:
    *  - title: the title of the validation (shown both when passes or fails).
    *  - details: string describing the failure to users with failed items embedded.
