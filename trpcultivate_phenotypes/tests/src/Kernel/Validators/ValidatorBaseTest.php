@@ -125,4 +125,78 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in invalid indices.');
     $this->assertStringContainsString('One or more of the indices provided (-4, 77) is not valid when compared to the indices of the provided row', $e->getMessage(), "Did not get the expected exception message when providing 2 different invalid indices.");
   }
+
+  /**
+   * Test the basic getters: getValidatorName() and getConfigAllowNew().
+   */
+  public function testBasicValidatorGetters() {
+
+    // Create a plugin instance for any validator.
+    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Check that we can get the name of the validator we requested above.
+    // NOTE: this is the validator_name in the annotation.
+    $expected_name = 'Value In List Validator';
+    $returned_name = $instance->getValidatorName();
+    $this->assertEquals($expected_name, $returned_name,
+      "We did not recieve the name we expected when using getValidatorName() for $validator_id validator.");
+
+    // Check that we are able to get the configuration for allowing new traits.
+    // NOTE: this is set by the admin in the ontology config form and doesn't
+    // change between importers.
+    $expected_allownew = TRUE;
+    $returned_allownew = $instance->getConfigAllowNew();
+    $this->assertEquals($expected_allownew, $returned_allownew,
+      "We did not get the status for Allowing New configuration that we expected through the $validator_id validator.");
+  }
+
+  /**
+   * Test the input type focused getters: getSupportedInputTypes()
+   * + checkInputTypeSupported().
+   */
+  public function testInputTypeValidatorGetters() {
+
+    // Create a plugin instance for any validator.
+    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Check that we can get the supported inputTypes for this validator.
+    // NOTE: use assertEqualsCanonicalizing so that order of arrays does NOT matter.
+    $expected_inputTypes = ['data-row', 'header-row'];
+    $returned_inputTypes = $instance->getSupportedInputTypes();
+    $this->assertEqualsCanonicalizing($expected_inputTypes, $returned_inputTypes,
+      "We did not get the expected input types for $validator_id validator when using getSupportedInputTypes().");
+
+    // Check that we rightly get told the data-row is a supported input type.
+    $dataRow_supported = $instance->checkInputTypeSupported('data-row');
+    $this->assertTrue($dataRow_supported,
+      "The data-row input type should be supported by $validator_id validator but checkInputTypeSupported() doesn't confirm this.");
+
+    // Check that we rightly get told the data-row is a supported input type.
+    $metadata_supported = $instance->checkInputTypeSupported('metadata');
+    $this->assertFalse(
+      $metadata_supported,
+      "The metadata input type should NOT be supported by $validator_id validator but checkInputTypeSupported() doesn't confirm this."
+    );
+
+    // Check with an invalid inputType.
+    $invalid_supported = $instance->checkInputTypeSupported('SARAH');
+    $this->assertFalse(
+      $invalid_supported,
+      "The SARAH input type is invalid and thus should NOT be supported by $validator_id validator but checkInputTypeSupported() doesn't confirm this."
+    );
+  }
+
+  /**
+   * Test the validate methods: validateMetadata(), validateFile(), validateRow(), validate().
+   *
+   * NOTE: These should all thrown an exception in the base class.
+   */
+  public function testValidatorValidateMethods() {
+
+
+    $this->markTestIncomplete();
+
+  }
 }
