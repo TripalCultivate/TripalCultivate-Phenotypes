@@ -20,7 +20,7 @@ trait GenusConfigured {
    *
    * @var TripalCultivatePhenotypesGenusOntologyService
    */
-  protected TripalCultivatePhenotypesGenusOntologyService $service_GenusOntology;
+  protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -45,10 +45,10 @@ trait GenusConfigured {
   public function setConfiguredGenus(string $genus) {
 
     // Check we have the services we need.
-    if (!isset($service_GenusOntology)) {
-      throw new \Exception('The GenusConfigured Trait needs the Genus ontology (trpcultivate_phenotypes.genus_ontology) service injected via the create() and set to $this->service_GenusOntology in the constructor.');
+    if (!isset($this->service_PhenoGenusOntology)) {
+      throw new \Exception('The GenusConfigured Trait needs the Genus ontology (trpcultivate_phenotypes.genus_ontology) service injected via the create() and set to $this->service_PhenoGenusOntology in the constructor.');
     }
-    if (!isset($chado_connection)) {
+    if (!isset($this->chado_connection)) {
       throw new \Exception('The GenusConfigured Trait needs an instance of ChadoConnection (tripal_chado.database) injected via the create() and set to $this->chado_connection.');
     }
 
@@ -56,13 +56,13 @@ trait GenusConfigured {
     $query = $this->chado_connection->select('1:organism', 'o')
       ->fields('o', ['organism_id'])
       ->condition('o.genus', $genus);
-    $exists = $query->fetchObject();
+    $exists = $query->execute()->fetchObject();
     if (!is_object($exists)) {
       throw new \Exception("The genus '$genus' does not exist in chado and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
     }
 
     // Check that the genus is configured + get that configuration while we are at it.
-    $configuration_values = $service_GenusOntology->getGenusOntologyConfigValues($genus);
+    $configuration_values = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
     if (!is_array($configuration_values) OR empty($configuration_values)) {
       throw new \Exception("The genus '$genus' is not configured and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
     }
