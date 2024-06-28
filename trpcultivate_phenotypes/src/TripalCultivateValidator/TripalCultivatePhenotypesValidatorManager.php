@@ -43,6 +43,8 @@ class TripalCultivatePhenotypesValidatorManager extends DefaultPluginManager {
   /**
    * Retrieve validator implementation with a specific scope.
    *
+   * @deprecated Remove in issue #91
+   *
    * @param string $scope
    *   The validator_scope you are interested in.
    *

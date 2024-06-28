@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "trpcultivate_phenotypes_validator_value_in_list",
  *   validator_name = @Translation("Value In List Validator"),
  *   validator_scope = "FILE ROW",
- *   inputTypes = {"header-row", "data-row"}
+ *   input_types = {"header-row", "data-row"}
  * )
  */
 class ValueInList extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {

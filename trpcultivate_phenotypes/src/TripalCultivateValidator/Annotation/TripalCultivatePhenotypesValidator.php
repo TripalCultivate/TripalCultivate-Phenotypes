@@ -50,9 +50,9 @@ class TripalCultivatePhenotypesValidator extends Plugin {
    * This should be one or more of the following:
    *  - metadata: for validating the form values of the importer not including the file.
    *  - file: for validating the file object but not it's contents.
-   *  - header-row: for validating the the first row in the file.
+   *  - header-row: for validating the first row in the file.
    *  - data-row: for validating all data rows in the file.
    */
-  public array $inputTypes;
+  public array $input_types;
 
 }
