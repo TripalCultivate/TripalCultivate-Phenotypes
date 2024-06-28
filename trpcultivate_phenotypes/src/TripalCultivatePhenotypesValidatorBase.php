@@ -38,7 +38,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Load phenotypic data upload assets to validated.
-   * 
+   *
    * @param $project
    *   String, Project name/title - chado.project: name.
    * @param $genus
@@ -69,7 +69,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Get validator plugin validator_name definition annotation value.
-   * 
+   *
    * @return string
    *   The validator plugin name annotation definition value.
    */
@@ -79,12 +79,57 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * Get validator plugin validator_scope definition annotation value.
-   * 
+   *
    * @return string
    *   The validator plugin scope annotation definition value.
    */
   public function getValidatorScope() {
     return $this->pluginDefinition['validator_scope'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateRow($row_values, $context) {
+    $validator_status = [
+      'title' => 'validateRow() not supported for this validator',
+      'status' => 'fail',
+      'details' => 'The validator called does not implement validateRow().'
+    ];
+    return $validator_status;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function checkIndices($row_values, $indices) {
+
+    // Report if the indices array is empty
+    if (!$indices) {
+      throw new \Exception(
+        t('An empty indices array was provided.')
+      );
+    }
+
+    // Get the potential range by looking at $row_values
+    $num_values = count($row_values);
+    // Count our indices array
+    $num_indices = count($indices);
+    if($num_indices > $num_values) {
+      throw new \Exception(
+        t('Too many indices were provided (@indices) compared to the number of cells in the provided row (@values)', ['@indices' => $num_indices, '@values' => $num_values])
+      );
+    }
+
+    // Pull out just the keys from $row_values and compare with $indices
+    $row_keys = array_keys($row_values);
+    $result = array_diff($indices, $row_keys);
+    if($result) {
+      $invalid_indices = implode(', ', $result);
+      throw new \Exception(
+        t('One or more of the indices provided (@invalid) is not valid when compared to the indices of the provided row', ['@invalid' => $invalid_indices])
+      );
+    }
   }
 
   /**

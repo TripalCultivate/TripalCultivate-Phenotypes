@@ -5,7 +5,7 @@
  * Kernel test of Validator Plugin.
  */
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal\Services\TripalLogger;
@@ -15,6 +15,7 @@ use Drupal\file\Entity\File;
   * Test Tripal Cultivate Phenotypes Validator Plugin.
   *
   * @group trpcultivate_phenotypes
+  * @group validators
   */
 class PluginValidatorTest extends ChadoTestKernelBase {
   /**
@@ -236,7 +237,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       if (!empty($prop['file'])) {
         $fileuri = $file->getFileUri();
 
-        $path_to_fixtures = __DIR__ . '/../Fixtures/';
+        $path_to_fixtures = __DIR__ . '/../../Fixtures/';
         $full_path = $path_to_fixtures . $prop['file'];
         $this->assertFileIsReadable($full_path,
           "Unable to setup FILE ". $id . " because cannot access Fixture file at $full_path.");
@@ -517,7 +518,9 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    * Test TRAIT IMPORT VALUES Plugin Validator.
    */
   public function testTraitImportValuePluginValidator() {
-    $scope = 'TRAIT IMPORT VALUES';
+
+    $this->markTestSkipped('Skipping this test until it can be replaced by the new validators testing.');
+    $scope = 'FILE ROW';
     $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
     $instance = $this->plugin_manager->createInstance($validator);
     $assets = $this->assets;
@@ -526,7 +529,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $file_id = $this->test_files['file-6']['ID'];
     $file = File::load($file_id);
     $file_uri = $file->getFileUri();
-    
+
     // Trait importer required column headers.
     $assets_header = [
       'Trait Name',
@@ -541,7 +544,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'Trait 1',
       '"Trait 1 Description"',
       'method-1',
-      '"Pull from the ground"',  
+      '"Pull from the ground"',
       'cm',
       'Quantitative'
     ];
@@ -557,7 +560,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
 
-    
+
     // FAIL:
     $status = 'fail';
 
@@ -565,7 +568,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $values = [
       'Trait 1',
       '',
-      '',  
+      '',
       '"Trait 1 First Method"',
       '',
       'Quantitative'
@@ -583,7 +586,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'Trait 1',
       '"Trait 1 Description"',
       'method-1',
-      '"Pull from the ground"',  
+      '"Pull from the ground"',
       'cm',
       'Collective' // Quantitative or Qualitative only.
     ];
@@ -600,7 +603,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
       'Trait 1',
       '"Trait 1 Description"',
       'method-1',
-      '"Pull from the ground"',  
+      '"Pull from the ground"',
       'cm',
       'Qualitative'
     ];
