@@ -57,6 +57,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      then this array should be keyed by the form element key and the value
    *      match that provided by the user input in form_values.
    *  The old style keys we are deprecating are:
+   *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
    *  - details: string describing the failure to users with failed items embedded.
    *  - status: one of 'pass' or 'fail'
@@ -84,6 +85,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      this array might contain the permissions the file actually had that
    *      did not match what was expected.
    *  The old style keys we are deprecating are:
+   *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
    *  - details: string describing the failure to users with failed items embedded.
    *  - status: one of 'pass' or 'fail'
@@ -119,6 +121,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      the value the column actually had that was not in the list for each
    *      failed column.
    *  The old style keys we are deprecating are:
+   *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
    *  - details: string describing the failure to users with failed items embedded.
    *  - status: one of 'pass' or 'fail'
