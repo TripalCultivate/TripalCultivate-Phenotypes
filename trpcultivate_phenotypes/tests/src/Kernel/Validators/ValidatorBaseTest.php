@@ -8,6 +8,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Base functions
@@ -131,13 +132,22 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    */
   public function testBasicValidatorGetters() {
 
-    // Create a plugin instance for any validator.
-    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'inputTypes' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
 
     // Check that we can get the name of the validator we requested above.
     // NOTE: this is the validator_name in the annotation.
-    $expected_name = 'Value In List Validator';
+    $expected_name = $plugin_definition['validator_name'];
     $returned_name = $instance->getValidatorName();
     $this->assertEquals($expected_name, $returned_name,
       "We did not recieve the name we expected when using getValidatorName() for $validator_id validator.");
@@ -157,9 +167,18 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    */
   public function testInputTypeValidatorGetters() {
 
-    // Create a plugin instance for any validator.
-    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'inputTypes' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
 
     // Check that we can get the supported inputTypes for this validator.
     // NOTE: use assertEqualsCanonicalizing so that order of arrays does NOT matter.
@@ -195,8 +214,99 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    */
   public function testValidatorValidateMethods() {
 
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'inputTypes' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
 
-    $this->markTestIncomplete();
+    // Tests Base Class validateMetadata().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $form_values = ['genus' => 'Fred', 'project_id' => 123];
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateMetadata() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateMetadata() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateMetadata()"
+    );
 
+    // Tests Base Class validateFile().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $filename = 'public://does_not_exist.txt';
+      $fid = 123;
+      $instance->validateFile($filename, $fid);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateFile() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateFile() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateFile()"
+    );
+
+    // Tests Base Class validateRow().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
+      $context = [];
+      $instance->validateRow($row_values, $context);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateRow() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateRow() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateRow()"
+    );
+
+    // Tests Base Class validate().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $instance->validate();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validate() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validate() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validate()"
+    );
   }
 }
