@@ -7,12 +7,12 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
 /**
  * Validate Project.
- * 
+ *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_project",
  *   validator_name = @Translation("Project Validator"),
@@ -39,7 +39,7 @@ class Project extends TripalCultivatePhenotypesValidatorBase {
 
     // Instructed to skip this validation. This will set this validator as upcoming or todo.
     // This happens when other prior validation failed and this validation could only proceed
-    // when input values have been rectified.  
+    // when input values have been rectified.
     if ($this->skip) {
       $validator_status['status'] = 'todo';
       return $validator_status;
@@ -56,7 +56,7 @@ class Project extends TripalCultivatePhenotypesValidatorBase {
     else {
       // Has a project, check if it existed in chado.projects table.
       $project_id = ChadoProjectAutocompleteController::getProjectId($this->project);
-      
+
       if (!$project_id) {
         $validator_status['status']  = 'fail';
         $validator_status['details'] = 'Project/Experiment does not exist. Please enter a value and try again.';

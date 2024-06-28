@@ -7,7 +7,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -18,6 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   id = "trpcultivate_phenotypes_validator_value_in_list",
  *   validator_name = @Translation("Value In List Validator"),
  *   validator_scope = "FILE ROW",
+ *   input_types = {"header-row", "data-row"}
  * )
  */
 class ValueInList extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {

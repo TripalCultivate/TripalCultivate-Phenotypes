@@ -7,14 +7,14 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\Entity\File;
 
 /**
  * Validate Data Values of Traits Importer.
- * 
+ *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_traits_values",
  *   validator_name = @Translation("Traits Importer Values Validator"),
@@ -25,7 +25,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) { 
+  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
@@ -48,7 +48,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
    *   - title: string, section or title of the validation as it appears in the result window.
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
-   * 
+   *
    *   NOTE: keep track of the line no to point user exactly which line failed.
    */
   public function validate() {
@@ -61,7 +61,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
 
     // Instructed to skip this validation. This will set this validator as upcoming or todo.
     // This happens when other prior validation failed and this validation could only proceed
-    // when input values in the failed validator have been rectified.  
+    // when input values in the failed validator have been rectified.
     if ($this->skip) {
       $validator_status['status'] = 'todo';
       return $validator_status;
@@ -71,10 +71,10 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
     //   - Ensure that each column header has a value.
     //   - Column type value is either Quantitative or Qualitative.
     //   - No duplicate trait name + method short name and unit in the same Genus (data file).
-    
+
     $error_types = [
       'empty' => [
-        'key' => '#EMPTY', 
+        'key' => '#EMPTY',
         'info' => 'Empty values',
       ],
       'duplicate' => [
@@ -84,7 +84,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
       'unexpected' => [
         'key' => '#UNEXPECTED',
         'info' => 'Unexpected Type (Qualitative or Quantitative only)',
-      ] 
+      ]
     ];
 
     // Load file object.
@@ -92,7 +92,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
     // Open and read file in this uri.
     $file_uri = $file->getFileUri();
     $handle = fopen($file_uri, 'r');
-    
+
     // Line counter.
     $line_no = 0;
     // Line check - line that has value and is not empty.
@@ -116,35 +116,35 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
 
         // Header row is index 0.
         // Continue to data row. No need to use the headers in the file
-        // instead use the headers property from the importer.  
-     
+        // instead use the headers property from the importer.
+
         // Data rows.
         // On wards, line number starts at #1.
-        
+
         // Line split into individual data point.
         $data_columns = str_getcsv($line, "\t");
 
         // Sanitize every data in rows and columns.
         $data = array_map(function($col) { return isset($col) ? trim(str_replace(['"','\''], '', $col)) : ''; }, $data_columns);
-        
+
         // Validate.
         // Duplicate names.
         $unique_cols = '';
-        if (isset($data[ $header_key['Trait Name'] ]) 
-            && isset($data[ $header_key['Method Short Name'] ]) 
+        if (isset($data[ $header_key['Trait Name'] ])
+            && isset($data[ $header_key['Method Short Name'] ])
             && isset($data[ $header_key['Unit'] ])) {
 
-          $unique_cols = $data[ $header_key['Trait Name'] ] . ' - ' 
-            . $data[ $header_key['Method Short Name'] ] . ' - ' 
+          $unique_cols = $data[ $header_key['Trait Name'] ] . ' - '
+            . $data[ $header_key['Method Short Name'] ] . ' - '
             . $data[ $header_key['Unit'] ];
-          
+
           if (!in_array($unique_cols, array_keys($trait_count))) {
             $trait_count[ $unique_cols ] = [];
           }
         }
 
         // Record the line number trait names (combination) is used.
-        // No need to track the column header as it is the combination of 
+        // No need to track the column header as it is the combination of
         // Trait Name + Method Short Name and Unit.
         if ($unique_cols) {
           $trait_count[ $unique_cols ][] = $line_no;
@@ -166,7 +166,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
             // Has value. Check for unexpected values.
             if ($header == 'Type') {
               $type = strtolower($data[ $i ]);
-              
+
               if (!in_array($type, ['qualitative', 'quantitative'])) {
                 // Unexpected value in Type column.
                 $failed_rows[ $error_types['unexpected']['key'] ]['Trait'][] = $line_no;
@@ -174,14 +174,14 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
             }
           }
         }
-        
+
         // Reset data.
         unset($data);
       }
 
       $line_no++;
-    } 
-  
+    }
+
     // Close the file.
     fclose($handle);
 
@@ -196,11 +196,11 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
 
       return $validator_status;
     }
-    
+
     // Prepare summary report.
     if (count($failed_rows) > 0) {
       $line = [];
-      
+
       // Each error type, construct error message.
       foreach($error_types as $type => $error) {
         if (isset($failed_rows[ $error_types[ $type ]['key'] ])) {
@@ -222,7 +222,7 @@ class TraitImportValues extends TripalCultivatePhenotypesValidatorBase implement
           }
         }
       }
-      
+
       // Report validation result.
       $validator_status = [
         'title' => 'Column Headers have Values',
