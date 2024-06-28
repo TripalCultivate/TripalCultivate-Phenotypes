@@ -21,10 +21,10 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    * These are defined in the class annotation docblock.
    *
    * @return array
-   *   The inputTypes supported by this validator.
+   *   The input types supported by this validator.
    */
   public function getSupportedInputTypes() {
-    return $this->pluginDefinition['inputTypes'];
+    return $this->pluginDefinition['input_types'];
   }
 
   /**

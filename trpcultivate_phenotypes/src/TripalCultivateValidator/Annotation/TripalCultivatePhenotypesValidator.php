@@ -53,6 +53,6 @@ class TripalCultivatePhenotypesValidator extends Plugin {
    *  - header-row: for validating the first row in the file.
    *  - data-row: for validating all data rows in the file.
    */
-  public array $inputTypes;
+  public array $input_types;
 
 }

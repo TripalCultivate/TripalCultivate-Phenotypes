@@ -137,7 +137,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $plugin_definition = [
       'id' => $validator_id,
       'validator_name' => 'Basically Base Validator',
-      'inputTypes' => ['header-row', 'data-row'],
+      'input_types' => ['header-row', 'data-row'],
     ];
     $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
     $this->assertIsObject(
@@ -172,7 +172,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $plugin_definition = [
       'id' => $validator_id,
       'validator_name' => 'Basically Base Validator',
-      'inputTypes' => ['header-row', 'data-row'],
+      'input_types' => ['header-row', 'data-row'],
     ];
     $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
     $this->assertIsObject(
@@ -180,11 +180,11 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       "Unable to create fake_basically_base validator instance to test the base class."
     );
 
-    // Check that we can get the supported inputTypes for this validator.
+    // Check that we can get the supported input types for this validator.
     // NOTE: use assertEqualsCanonicalizing so that order of arrays does NOT matter.
-    $expected_inputTypes = ['data-row', 'header-row'];
-    $returned_inputTypes = $instance->getSupportedInputTypes();
-    $this->assertEqualsCanonicalizing($expected_inputTypes, $returned_inputTypes,
+    $expected_input_types = ['data-row', 'header-row'];
+    $returned_input_types = $instance->getSupportedInputTypes();
+    $this->assertEqualsCanonicalizing($expected_input_types, $returned_input_types,
       "We did not get the expected input types for $validator_id validator when using getSupportedInputTypes().");
 
     // Check that we rightly get told the data-row is a supported input type.
@@ -219,7 +219,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $plugin_definition = [
       'id' => $validator_id,
       'validator_name' => 'Basically Base Validator',
-      'inputTypes' => ['header-row', 'data-row'],
+      'input_types' => ['header-row', 'data-row'],
     ];
     $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
     $this->assertIsObject(

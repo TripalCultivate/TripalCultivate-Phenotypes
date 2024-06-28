@@ -21,7 +21,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    * These are defined in the class annotation docblock.
    *
    * @return array
-   *   The inputTypes supported by this validator.
+   *   The input types supported by this validator.
    */
   public function getSupportedInputTypes();
 

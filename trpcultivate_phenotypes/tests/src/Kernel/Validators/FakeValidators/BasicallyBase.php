@@ -11,7 +11,7 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePheno
  * @TripalCultivatePhenotypesValidator(
  * id = "fake_basically_base",
  * validator_name = @Translation("Basically Base Validator"),
- * inputTypes = {"header-row", "data-row"}
+ * input_types = {"header-row", "data-row"}
  * )
  */
 class BasicallyBase extends TripalCultivatePhenotypesValidatorBase {
