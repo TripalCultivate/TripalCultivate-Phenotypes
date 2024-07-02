@@ -70,10 +70,11 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   stored as an array element
    * @param array $context
    *   An associative array with the following keys:
-   *   - indices => an associative array with the following keys:
-   *     - 'trait': int, the index of the trait name column in $row_values
-   *     - 'method': int, the index of the method name column in $row_values
-   *     - 'unit': int, the index of the unit column in $row_values
+   *   - indices => an associative array with the following keys, which are
+   *                column headers of required columns for the Traits Importer:
+   *     - 'Trait Name': int, the index of the trait name column in $row_values
+   *     - 'Method Short Name': int, the index of the method name column in $row_values
+   *     - 'Unit': int, the index of the unit column in $row_values
    *
    * @return array
    *   An associative array with the following keys:
@@ -104,9 +105,9 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
        throw new \Exception(t('The unit (key: Unit) was not set in the $context[\'indices\'] array'));
     }
 
-    $trait = $row_values[$context['indices']['trait']];
-    $method = $row_values[$context['indices']['method']];
-    $unit = $row_values[$context['indices']['unit']];
+    $trait = $row_values[$context['indices']['Trait Name']];
+    $method = $row_values[$context['indices']['Method Short Name']];
+    $unit = $row_values[$context['indices']['Unit']];
 
     // Set our flags for tracking database and input file duplicates
     $duplicate_in_file = FALSE;
