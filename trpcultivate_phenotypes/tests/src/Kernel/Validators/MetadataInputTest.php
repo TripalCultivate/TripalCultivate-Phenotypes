@@ -9,6 +9,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\Core\Form\FormState;
 
  /**
   * Tests Tripal Cultivate Phenotypes Metadata Validator Plugins.
@@ -57,10 +58,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
         'species' => 'databasica',
       ])
       ->execute();
-    $this->assertIsNumeric($organism_id,
-      "We were not able to create an organism for testing.");
-    $this->cvdbon = $this->setOntologyConfig($genus);
-    $this->terms = $this->setTermConfig();
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
+    $this->setOntologyConfig($genus);
+    $this->setTermConfig();
   }
 
   /**
@@ -71,9 +71,32 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $validator_id = 'trpcultivate_phenotypes_validator_genus_exists';
     $instance = $this->plugin_manager->createInstance($validator_id);
     
-    $form_values = ['genus' => '1'];
+    // The validator expects the form values entered into the form elements
+    // through the $form_state.
+    
+    // This would have been a form that has been submitted.
+    $form_state = new FormState();
 
-    $validation_status = $instance->validateMetadata($form_values);
-    //print_r($validation_status);
-  }
+
+    // Test passing the $form_state.
+
+    // Test passing $form_state values that does not contain expected field: genus.
+
+    // Test passing $form_state values with a genus field but genus does not exits.
+  
+    // Test passing $form_state values with a genus field but genus was not configured.
+    
+    // A valid $form_state values: with genus that existed and was configured.
+    
+    // Create a form element name/key genus in the $form_state.
+  
+    $form_state->setValues(['genus' => 'Tripalus']);
+
+
+    // This is an important step before passing values to the plugin.
+    $form_values = $form_state->getValues();
+    $validation_status = $instance->validateMetadata($form_state);
+
+    print_r($validation_status);
+}
 }

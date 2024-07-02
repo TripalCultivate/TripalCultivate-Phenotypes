@@ -7,7 +7,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
-use Drupal\trpcultivate_phenotypes\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -17,14 +17,15 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_genus_exists",
- *   validator_name = @Translation("Genus Exists Validator"),
+ *   validator_name = @Translation("Genus Exists and Configured Validator"),
+ *   input_types = {"metadata"}
  * )
  */
 class genusExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
    * Genus Ontology Service;
    */
-  protected $service_genus_ontology;
+  protected $service_PhenoGenusOntology;
 
   /**
    * Constructor.
@@ -35,7 +36,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     
     // Genus ontology service.
-    $this->service_genus_ontology = $service_genus_ontology;
+    $this->service_PhenoGenusOntology = $service_genus_ontology;
   }
 
   /**
@@ -58,7 +59,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
    *   Each form element value can be accessed using the field element key
    *   ie. field name/key genus - $form_values['genus'].
    * 
-   *   This array is the result of the $form_state->getValues() call.
+   *   This array is the result of calling $form_state->getValues().
    *
    * @return array
    *   An associative array with the following keys.
@@ -70,25 +71,32 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     // This genus validator assumes that a field with name/key genus was
     // implemented in the Importer form.
     $expected_field_key = 'genus';
-    
-    // Validator response values.
-    $valid = TRUE;
-    $failed_item = '';
-
-    if (!array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception(t('Failed to locate genus field element. genusExists validator expects a form field element name genus.'));
+  
+    // An object was given as parameter to this method.
+    if (is_object($form_values)) {
+      throw new \Exception(t('Unexpected object type parameter was passed to genusExists validator.'));
     }
     
+    // Failed to locate the expected field element.
+    if (is_array($form_values) && !array_key_exists($expected_field_key, $form_values)) {
+      throw new \Exception(t('Failed to locate genus field element. genusExists validator expects a form field element name genus.'));
+    }
+  
+    // Validator response values.
+    $valid = TRUE;
+    $failed_items = '';
+    
+    // Genus.
     $genus = trim($form_values[ $expected_field_key ]);
 
     // This method has now curated all genus available in the organism table,
     // both configured and non-configured genus.
-    $genus_config = $this->service_genus_ontology->getGenusOntologyConfigValues($genus);
+    $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
     
     if (!$genus_config) {
       // The genus provided does not exist.
       $valid = FALSE;
-      $failed_item = $genus . ' (Not found)';
+      $failed_items = $genus . ' (Not found)';
     }
     else {
       // The genus provided does exist, test that it was
@@ -97,14 +105,14 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
       if ($genus_config['trait'] <= 0) {
         // Not configured genus.
         $valid = FALSE;
-        $failed_item = $genus . ' (Not configured)';
+        $failed_items = $genus . ' (Not configured)';
       }
     }
     
     return [
       'case' => 'Genus exists and is configured with phenotypes',
       'valid' => $valid,
-      'failedItem' => $failed_item
+      'failedItems' => $failed_items
     ];
   }
 }
