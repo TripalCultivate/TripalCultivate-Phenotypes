@@ -21,6 +21,11 @@ class MetadataInputTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
+   * A genus that exists and is configured. 
+   */
+  protected $test_genus;
+
+  /**
    * Modules to enable.
    */
   protected static $modules = [
@@ -58,8 +63,27 @@ class MetadataInputTest extends ChadoTestKernelBase {
         'species' => 'databasica',
       ])
       ->execute();
-    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
-    $this->setOntologyConfig($genus);
+
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (configured).');
+    $this->test_genus['configured'] = $genus;
+    $this->setOntologyConfig($this->test_genus['configured']);
+
+    // Create another organism but create a configuration item
+    // where the cv for trait is set to 0 - not configured.
+    $genus = 'notconfiggenus';
+    $organism_id = $this->connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'databasica',
+      ])
+    ->execute();
+
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (not configured).');
+    $this->test_genus['not-configured'] = $genus;
+    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
+      ->set('trpcultivate.phenotypes.ontology.cvdbon.' . $this->test_genus['not-configured'], ['trait' => 0]);
+    
+    // Set terms configuration.
     $this->setTermConfig();
   }
 
@@ -74,29 +98,83 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // The validator expects the form values entered into the form elements
     // through the $form_state.
     
+    // Create form fields and set value.
     // This would have been a form that has been submitted.
     $form_state = new FormState();
+    // A random field.
+    $form_state->setValues(['project' => uniqid()]);
 
+    // Test items that will throw exception:
+    // 1. Passing object or the entire $form_state.
+    // 2. Failed to implement a form field element with genus name/key.
 
     // Test passing the $form_state.
+    $exception_caught  = FALSE;        
+    try {
+      $instance->validateMetadata($form_state);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+    }
+    
+    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to genus metadata validator.');
+    $this->assertStringContainsString('Unexpected object type was passed', $e->getMessage(), 
+      'Expected exception message does not match message when passing $form_state to genus metadata validator.');
+    
+    
+    // No genus field.
+    $form_values = $form_state->getValues();
 
-    // Test passing $form_state values that does not contain expected field: genus.
+    $exception_caught  = FALSE;        
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no genus form field was implemented.');
+    $this->assertStringContainsString('Failed to locate genus field element', $e->getMessage(), 
+      'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
+
+    // Other tests:
+    // Each test will test that genusExists generated the correct title, valid status and failed item.
+    // Failed item is the failed genus value. Additional failed information is attached
+    // whether the genus failed because it does not exist or not configured.
 
     // Test passing $form_state values with a genus field but genus does not exits.
-  
-    // Test passing $form_state values with a genus field but genus was not configured.
+    $genus = 'genus-' . uniqid();
+    $form_state->setValues(['genus' => $genus]);
+    $form_values = $form_state->getValues();  
+    $validation_status = $instance->validateMetadata($form_values);
     
-    // A valid $form_state values: with genus that existed and was configured.
+    $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
+      'Genus exists validator case title does not match expected title.');
+    $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
+    $this->assertStringContainsString('(Not found)', $validation_status['failedItems'],);
     
-    // Create a form element name/key genus in the $form_state.
-  
-    $form_state->setValues(['genus' => 'Tripalus']);
 
+    // Test passing $form_state values with a genus field but genus is not configured.
+    $genus = $this->test_genus['not-configured'];
+    $form_state->setValues(['genus' => $genus]);
+    $form_values = $form_state->getValues();  
+    $validation_status = $instance->validateMetadata($form_values);
+    
+    $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
+      'Genus exists validator case title does not match expected title.');
+    $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
+    $this->assertStringContainsString('(Not configured)', $validation_status['failedItems'],);
+    
 
-    // This is an important step before passing values to the plugin.
-    $form_values = $form_state->getValues();
-    $validation_status = $instance->validateMetadata($form_state);
+    // A valid genus - exists and is configured.
+    $genus = $this->test_genus['configured'];
+    $form_state->setValues(['genus' => $genus]);
+    $form_values = $form_state->getValues();  
+    $validation_status = $instance->validateMetadata($form_values);
 
-    print_r($validation_status);
-}
+    $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
+      'Genus exists validator case title does not match expected title.');
+    $this->assertTrue($validation_status['valid'], 'A valid genus must return a TRUE valid status.');
+    $this->assertEmpty($validation_status['failedItems'], 'A valid genus does not return a failed item value.');
+  }
 }

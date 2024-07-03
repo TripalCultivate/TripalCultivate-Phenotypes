@@ -64,8 +64,8 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
    * @return array
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
-   *     - valid: either TRUE or FALSE depending on if the data is valid or not.
-   *     - failedItems: the failed genus value provided. This is empty if the value was valid.
+   *     - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *     - failedItems: the failed genus value provided. This will be empty if the value was valid.
    */
   public function validateMetadata($form_values) {
     // This genus validator assumes that a field with name/key genus was
@@ -74,10 +74,10 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
   
     // An object was given as parameter to this method.
     if (is_object($form_values)) {
-      throw new \Exception(t('Unexpected object type parameter was passed to genusExists validator.'));
+      throw new \Exception(t('Unexpected object type was passed as parameter to genusExists validator.'));
     }
     
-    // Failed to locate the expected field element.
+    // Failed to locate the genus field element.
     if (is_array($form_values) && !array_key_exists($expected_field_key, $form_values)) {
       throw new \Exception(t('Failed to locate genus field element. genusExists validator expects a form field element name genus.'));
     }
@@ -92,7 +92,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     // This method has now curated all genus available in the organism table,
     // both configured and non-configured genus.
     $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
-    
+
     if (!$genus_config) {
       // The genus provided does not exist.
       $valid = FALSE;
@@ -100,9 +100,9 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     }
     else {
       // The genus provided does exist, test that it was
-      // fully configured, that is, a cv is set for trait, method and unit.
+      // fully configured, that is, a cv was set for trait configuration.
 
-      if ($genus_config['trait'] <= 0) {
+      if (empty($genus_config['trait']) || $genus_config['trait'] <= 0) {
         // Not configured genus.
         $valid = FALSE;
         $failed_items = $genus . ' (Not configured)';
