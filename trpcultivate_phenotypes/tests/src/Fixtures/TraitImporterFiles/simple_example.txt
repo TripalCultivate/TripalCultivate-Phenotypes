@@ -1,4 +1,4 @@
 Trait Name	Trait Description	Method Short Name	Collection Method	Unit	Type
-trait1	trait1 description	method1	Collect measurements for the trait by the best method possible.	unit1	quantitative
-trait2	trait2 description	method2	Collect measurements with a slightly less ideal method.	unit2	quantitative
-trait3	trait3 description	method3	Collect measurements haphazardly.	unit3	qualitative
+trait1	trait1 description	method1	Collect measurements for the trait by the best method possible.	unit1	Quantitative
+trait2	trait2 description	method2	Collect measurements with a slightly less ideal method.	unit2	Quantitative
+trait3	trait3 description	method3	Collect measurements haphazardly.	unit3	Qualitative
