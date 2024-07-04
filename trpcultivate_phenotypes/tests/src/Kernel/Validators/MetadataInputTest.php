@@ -138,8 +138,8 @@ class MetadataInputTest extends ChadoTestKernelBase {
       'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
 
     // Other tests:
-    // Each test will test that genusExists generated the correct title, valid status and failed item.
-    // Failed item is the failed genus value. Additional failed information is attached
+    // Each test will test that genusExists generated the correct case, valid status and failed item.
+    // Failed item is the failed genus value. Failed information is contained in the case
     // whether the genus failed because it does not exist or not configured.
 
     // Test passing $form_state values with a genus field but genus does not exits.
@@ -148,10 +148,10 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = $form_state->getValues();  
     $validation_status = $instance->validateMetadata($form_values);
     
-    $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
-      'Genus exists validator case title does not match expected title.');
+    $this->assertEquals('Genus does not exist', $validation_status['case'],
+      'Genus exists validator case title does not match expected title for non-existent genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
-    $this->assertStringContainsString('(Not found)', $validation_status['failedItems'],);
+    $this->assertStringContainsString($genus, $validation_status['failedItems'],);
     
 
     // Test passing $form_state values with a genus field but genus is not configured.
@@ -160,10 +160,10 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = $form_state->getValues();  
     $validation_status = $instance->validateMetadata($form_values);
     
-    $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
-      'Genus exists validator case title does not match expected title.');
+    $this->assertEquals('Genus exists but is not configured', $validation_status['case'],
+      'Genus exists validator case title does not match expected title for not configured genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
-    $this->assertStringContainsString('(Not configured)', $validation_status['failedItems'],);
+    $this->assertStringContainsString($genus, $validation_status['failedItems'],);
     
 
     // A valid genus - exists and is configured.
@@ -173,7 +173,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $validation_status = $instance->validateMetadata($form_values);
 
     $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
-      'Genus exists validator case title does not match expected title.');
+      'Genus exists validator case title does not match expected title for a valid genus.');
     $this->assertTrue($validation_status['valid'], 'A valid genus must return a TRUE valid status.');
     $this->assertEmpty($validation_status['failedItems'], 'A valid genus does not return a failed item value.');
   }

@@ -82,7 +82,8 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
       throw new \Exception(t('Failed to locate genus field element. genusExists validator expects a form field element name genus.'));
     }
   
-    // Validator response values.
+    // Validator response values for a valid genus value.
+    $case = 'Genus exists and is configured with phenotypes';
     $valid = TRUE;
     $failed_items = '';
     
@@ -95,8 +96,9 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
 
     if (!$genus_config) {
       // The genus provided does not exist.
+      $case = 'Genus does not exist';
       $valid = FALSE;
-      $failed_items = $genus . ' (Not found)';
+      $failed_items = $genus;
     }
     else {
       // The genus provided does exist, test that it was
@@ -104,13 +106,14 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
 
       if (empty($genus_config['trait']) || $genus_config['trait'] <= 0) {
         // Not configured genus.
+        $case = 'Genus exists but is not configured';
         $valid = FALSE;
-        $failed_items = $genus . ' (Not configured)';
+        $failed_items = $genus;
       }
     }
     
     return [
-      'case' => 'Genus exists and is configured with phenotypes',
+      'case' => $case,
       'valid' => $valid,
       'failedItems' => $failed_items
     ];
