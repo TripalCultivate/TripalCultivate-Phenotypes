@@ -38,11 +38,6 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
    */
   protected array $terms;
 
-  /**
-   * Traits service
-   */
-  protected $service_traits;
-
   protected $definitions = [
     'test-trait-importer' => [
       'id' => 'trpcultivate-phenotypes-traits-importer',
@@ -99,21 +94,16 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     $importer_label = 'Tripal Cultivate: Phenotypic Trait Importer';
 
     // Configure the module.
-    $genus = 'Tripalus';
     $organism_id = $this->connection->insert('1:organism')
       ->fields([
-        'genus' => $genus,
+        'genus' => 'Tripalus',
         'species' => 'databasica',
       ])
       ->execute();
     $this->assertIsNumeric($organism_id,
       "We were not able to create an organism for testing.");
-    $this->cvdbon = $this->setOntologyConfig($genus);
+    $this->cvdbon = $this->setOntologyConfig('Tripalus');
     $this->terms = $this->setTermConfig();
-
-    // Grab our traits service
-    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $this->service_traits->setTraitGenus($genus);
 
     // Build the form using the Drupal form builder.
     $form = \Drupal::formBuilder()->getForm(
@@ -182,21 +172,16 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
 	  $plugin_id = 'trpcultivate-phenotypes-traits-importer';
 
     // Configure the module.
-    $genus = 'Tripalus';
     $organism_id = $this->connection->insert('1:organism')
       ->fields([
-        'genus' => $genus,
+        'genus' => 'Tripalus',
         'species' => 'databasica',
       ])
       ->execute();
     $this->assertIsNumeric($organism_id,
       "We were not able to create an organism for testing.");
-    $this->cvdbon = $this->setOntologyConfig($genus);
+    $this->cvdbon = $this->setOntologyConfig('Tripalus');
     $this->terms = $this->setTermConfig();
-
-    // Grab our traits service
-    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $this->service_traits->setTraitGenus($genus);
 
     // Create a file to upload.
     $file = $this->createTestFile([
