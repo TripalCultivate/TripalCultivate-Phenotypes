@@ -38,11 +38,6 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    */
   protected array $terms;
 
-  /**
-   * Traits service
-   */
-  protected $service_traits;
-
   protected $definitions = [
     'test-trait-importer' => [
       'id' => 'trpcultivate-phenotypes-traits-importer',
@@ -201,10 +196,6 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     $this->cvdbon = $this->setOntologyConfig($genus);
     $this->terms = $this->setTermConfig();
 
-    // Grab our traits service
-    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $this->service_traits->setTraitGenus($genus);
-
     // Create a file to upload.
     $file = $this->createTestFile([
       'filename' => $filename,
@@ -214,7 +205,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     // Setup the form_state.
     $form_state = new \Drupal\Core\Form\FormState();
     $form_state->addBuildInfo('args', [$plugin_id]);
-    $form_state->setValue('genus', 'Tripalus');
+    $form_state->setValue('genus', $genus);
     $form_state->setValue('file_upload', $file->id());
 
     // Now try validation!
