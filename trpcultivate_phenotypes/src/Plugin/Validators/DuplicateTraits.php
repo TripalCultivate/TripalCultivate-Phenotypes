@@ -70,6 +70,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   stored as an array element
    * @param array $context
    *   An associative array with the following keys:
+   *   - genus => a string of the genus name
    *   - indices => an associative array with the following keys, which are
    *                column headers of required columns for the Traits Importer:
    *     - 'Trait Name': int, the index of the trait name column in $row_values
@@ -123,6 +124,8 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     }
 
     // Check if our trait combo exists at the database level
+    // First make sure to set our genus before getting our trait combo
+    $this->service_traits->setTraitGenus($context['genus']);
     // Grab our traits service
     $trait_combo = $this->service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
     if (!empty($trait_combo)) {

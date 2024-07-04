@@ -97,7 +97,10 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       [
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass']
+        'HEADERS' => ['status' => 'pass'],
+        'empty_cell' => ['status' => 'todo'],
+        'valid_data_type' => ['status' => 'todo'],
+        'duplicate_traits' => ['status' => 'todo']
       ]
     ];
 
@@ -111,9 +114,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Trait Description is/are missing in the file',
         ],
-        'empty_cell' => ['status' => 'pass'],
-        'valid_data_type' => ['status' => 'pass'],
-        'duplicate_traits' => ['status' => 'pass']
+        'empty_cell' => ['status' => 'todo'],
+        'valid_data_type' => ['status' => 'todo'],
+        'duplicate_traits' => ['status' => 'todo']
       ]
     ];
 

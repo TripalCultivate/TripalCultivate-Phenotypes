@@ -231,7 +231,39 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // Array to hold all validation result for each level.
     // Each result is keyed by the scope.
-    $validation = [];
+    // @TODO: This will not be hardcoded when issue #93 is resolved
+    $validation = [
+      'GENUS' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'FILE' => [
+        'title' => 'File is a valid tsv or txt',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'HEADERS' => [
+        'title' => 'File has all of the column headers expected',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'empty_cell' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'valid_data_type' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'duplicate_traits' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ]
+    ];
 
     // ************************************************************************
     // VALIDATORS THAT APPLY PRIOR TO ITERATING THROUGH EACH FILE ROW
@@ -255,106 +287,111 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $failed_validator++;
       }
     }
+    // Check if any of the pre_data_scope validators failed before moving on
+    // to validating the data rows in the file.
+    if ($failed_validator == 0) {
 
-    // Take our simplified headers array and flip the array keys and values
-    // This is the format that the validators will expect to know which indices
-    // in the row of data to act on
-    // For example: ['Trait Name'] => 0
-    $header_index = array_flip($headers);
+      // Take our simplified headers array and flip the array keys and values
+      // This is the format that the validators will expect to know which indices
+      // in the row of data to act on
+      // For example: ['Trait Name'] => 0
+      $header_index = array_flip($headers);
 
-    // ************************************************************************
-    // VALIDATORS THAT APPLY TO EACH FILE ROW
-    // ************************************************************************
-    // Here we define and create instances for the validators used for each
-    // row of the input file
-    $filerow_validators = [
-      'empty_cell' => [
-        'validator_id' => 'trpcultivate_phenotypes_validator_empty_cell',
-        'context' => [
-          'indices' => [
-            'Trait Name' => $header_index['Trait Name'],
-            'Method Short Name' => $header_index['Method Short Name'],
-            'Unit' => $header_index['Unit'],
-            'Type' => $header_index['Type']
-          ]
+      // ************************************************************************
+      // VALIDATORS THAT APPLY TO EACH FILE ROW
+      // ************************************************************************
+      // Here we define and create instances for the validators used for each
+      // row of the input file
+      $filerow_validators = [
+        'empty_cell' => [
+          'validator_id' => 'trpcultivate_phenotypes_validator_empty_cell',
+          'context' => [
+            'indices' => [
+              'Trait Name' => $header_index['Trait Name'],
+              'Method Short Name' => $header_index['Method Short Name'],
+              'Unit' => $header_index['Unit'],
+              'Type' => $header_index['Type']
+            ]
+          ],
+          'fail_title' => 'Required columns were found to be empty',
+          'fail_details' => 'One or more required columns was empty at row #: '
         ],
-        'fail_title' => 'Required columns were found to be empty',
-        'fail_details' => 'One or more required columns was empty at row #: '
-      ],
-      'valid_data_type' => [
-        'validator_id' => 'trpcultivate_phenotypes_validator_value_in_list',
-        'context' => [
-          'indices' => [ 'Type' => $header_index['Type'] ],
-          'valid_values' => ['Quantitative', 'Qualitative']
+        'valid_data_type' => [
+          'validator_id' => 'trpcultivate_phenotypes_validator_value_in_list',
+          'context' => [
+            'indices' => [ 'Type' => $header_index['Type'] ],
+            'valid_values' => ['Quantitative', 'Qualitative']
+          ],
+          'fail_title' => 'Value in column "type" was not one of "Quantitative" or "Qualitative"',
+          'fail_details' => 'Column "type" violates required values at row #: '
         ],
-        'fail_title' => 'Value in column "type" was not one of "Quantitative" or "Qualitative"',
-        'fail_details' => 'Column "type" violates required values at row #: '
-      ],
-      'duplicate_traits' => [
-        'validator_id' => 'trpcultivate_phenotypes_validator_duplicate_traits',
-        'context' => [
-          'indices' => [
-            'Trait Name' => $header_index['Trait Name'],
-            'Method Short Name' => $header_index['Method Short Name'],
-            'Unit' => $header_index['Unit']
-          ]
-        ],
-        'fail_title' => 'Identical Trait Name + Method Short Name + Unit combination found',
-        'fail_details' => 'Traits that already exist in the input file or in the database were detected at row #: '
-      ]
-    ];
+        'duplicate_traits' => [
+          'validator_id' => 'trpcultivate_phenotypes_validator_duplicate_traits',
+          'context' => [
+            'genus' => $genus,
+            'indices' => [
+              'Trait Name' => $header_index['Trait Name'],
+              'Method Short Name' => $header_index['Method Short Name'],
+              'Unit' => $header_index['Unit']
+            ]
+          ],
+          'fail_title' => 'Identical Trait Name + Method Short Name + Unit combination found',
+          'fail_details' => 'Traits that already exist in the input file or in the database were detected at row #: '
+        ]
+      ];
 
-    $instances = [];
-    // Create each plugin instance used at the file row level
-    foreach ($filerow_validators as $validator_name => $validator) {
-      $instances[$validator_name] = $manager->createInstance($validator['validator_id']);
-      // Set up an array for each validator to track the rows in which validation fails
-      $filerow_validators[$validator_name]['failed_rows'] = [];
-    }
+      $instances = [];
+      // Create each plugin instance used at the file row level
+      foreach ($filerow_validators as $validator_name => $validator) {
+        $instances[$validator_name] = $manager->createInstance($validator['validator_id']);
+        // Set up an array for each validator to track the rows in which validation fails
+        $filerow_validators[$validator_name]['failed_rows'] = [];
+      }
 
-    // Open the file so we can iterate through the rows
-    $file = File::load($file_id);
-    // Open and read file in this uri.
-    $file_uri = $file->getFileUri();
-    $handle = fopen($file_uri, 'r');
+      // Open the file so we can iterate through the rows
+      $file = File::load($file_id);
+      // Open and read file in this uri.
+      $file_uri = $file->getFileUri();
+      $handle = fopen($file_uri, 'r');
 
-    // Line counter.
-    $line_no = 0;
+      // Line counter.
+      $line_no = 0;
 
-    // Begin column and row validation.
-    while(!feof($handle)) {
-      // Current row.
-      $line = fgets($handle);
+      // Begin column and row validation.
+      while(!feof($handle)) {
+        // Current row.
+        $line = fgets($handle);
 
-      // Skip the header for now, since it has been addressed in its own
-      // 'HEADERS' scope above. Also skip any empty lines
-      if ($line_no > 0 && !empty(trim($line))) {
+        // Skip the header for now, since it has been addressed in its own
+        // 'HEADERS' scope above. Also skip any empty lines
+        if ($line_no > 0 && !empty(trim($line))) {
 
-        // Split line into an array
-        $data_row = str_getcsv($line, "\t");
+          // Split line into an array
+          $data_row = str_getcsv($line, "\t");
 
-        // Call each validator on this row of the file
-        foreach($filerow_validators as $validator_name => $validator) {
-          $validation[$validator_name] = $instances[$validator_name]->validateRow($data_row, $validator['context']);
-          // Keep track of the line number if validation failed
-          if('fail' == $validation[$validator_name]['status']) {
-            array_push($filerow_validators[$validator_name]['failed_rows'], $line_no);
-            $failed_validator++;
+          // Call each validator on this row of the file
+          foreach($filerow_validators as $validator_name => $validator) {
+            $validation[$validator_name] = $instances[$validator_name]->validateRow($data_row, $validator['context']);
+            // Keep track of the line number if validation failed
+            if('fail' == $validation[$validator_name]['status']) {
+              array_push($filerow_validators[$validator_name]['failed_rows'], $line_no);
+              $failed_validator++;
+            }
           }
         }
+        $line_no++;
       }
-      $line_no++;
-    }
 
-    // For each validator, check if 'failed_rows' has been tracking any row numbers.
-    // If so, format the validation message and set the status to 'fail'.
-    foreach($filerow_validators as $validator_name => $validator) {
-      if (!empty($validator['failed_rows'])) {
-        $validation[$validator_name] = [
-          'title' => $validator['fail_title'],
-          'status' => 'fail',
-          'details' => $validator['fail_details'] . implode(', ', $validator['failed_rows'])
-        ];
+      // For each validator, check if 'failed_rows' has been tracking any row numbers.
+      // If so, format the validation message and set the status to 'fail'.
+      foreach($filerow_validators as $validator_name => $validator) {
+        if (!empty($validator['failed_rows'])) {
+          $validation[$validator_name] = [
+            'title' => $validator['fail_title'],
+            'status' => 'fail',
+            'details' => $validator['fail_details'] . implode(', ', $validator['failed_rows'])
+          ];
+        }
       }
     }
 
