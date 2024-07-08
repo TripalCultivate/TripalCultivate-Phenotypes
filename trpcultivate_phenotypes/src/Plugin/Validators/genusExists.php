@@ -73,8 +73,8 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     $expected_field_key = 'genus';
   
     // An object was given as parameter to this method.
-    if (is_object($form_values)) {
-      throw new \Exception(t('Unexpected object type was passed as parameter to genusExists validator.'));
+    if (!is_array($form_values)) {
+      throw new \Exception(t('Unexpected @type type was passed as parameter to genusExists validator.', ['@type' => gettype($form_values)]));
     }
     
     // Failed to locate the genus field element.

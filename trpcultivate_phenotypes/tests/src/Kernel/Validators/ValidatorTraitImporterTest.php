@@ -141,14 +141,16 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Case #2: Provide an incorrect key to $context['indices']
     $context['indices'] = [ 'trait' => 0, 'method name' => 2, 'unit' => 3 ];
     $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $validation_status = $instance->validateRow($file_row, $context);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in the wrong index key "method name" to $context[\'indices\'].');
-    $this->assertStringContainsString('The method name (key: method) was not set', $e->getMessage(), "Did not get the expected exception message when providing the wrong index key \"method name\".");
+    $this->assertStringContainsString('The method name (key: method) was not set', $exception_message, "Did not get the expected exception message when providing the wrong index key \"method name\".");
 
     // Case #3: Enter a second unique row and check our global $unique_traits array
     // Note: unit is at a different index
