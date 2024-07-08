@@ -9,6 +9,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\Core\Form\FormState;
 
  /**
   * Tests Tripal Cultivate Phenotypes Metadata Validator Plugins.
@@ -67,8 +68,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->test_genus['configured'] = $genus;
     $this->setOntologyConfig($this->test_genus['configured']);
 
-    // Create another organism but create a configuration item
-    // where the cv for trait is set to 0 - not configured.
+    // Create another organism and not configure.
     $genus = 'notconfiggenus';
     $organism_id = $this->connection->insert('1:organism')
       ->fields([
@@ -79,8 +79,6 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (not configured).');
     $this->test_genus['not-configured'] = $genus;
-    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
-      ->set('trpcultivate.phenotypes.ontology.cvdbon.' . $this->test_genus['not-configured'], ['trait' => 0]);
     
     // Set terms configuration.
     $this->setTermConfig();
@@ -94,13 +92,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $validator_id = 'trpcultivate_phenotypes_validator_genus_exists';
     $instance = $this->plugin_manager->createInstance($validator_id);
     
+    // Test items that will throw exception:
+    // 1. Passing a string value.
+    // 2. Failed to implement a form field element with genus name/key.
+    // 3. Passing object or the entire $form_state.
+
+    // Test passing a string value.
     $form_values = 'Not a valid form values';
 
-    // Test items that will throw exception:
-    // 1. Passing object or the entire $form_state.
-    // 2. Failed to implement a form field element with genus name/key.
-
-    // Test passing the $form_state.
     $exception_caught  = FALSE;
     $exception_message = ''; 
     try {
@@ -112,10 +111,10 @@ class MetadataInputTest extends ChadoTestKernelBase {
     }
     
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to genus metadata validator.');
-    $this->assertStringContainsString('Unexpected ' . gettype($form_values) . ' type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected string type was passed', $exception_message, 
       'Expected exception message does not match message when passing $form_state to genus metadata validator.');
     
-    
+      
     // No genus field.
     $form_values = ['project_id' => 1111];
 
@@ -133,6 +132,27 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertStringContainsString('Failed to locate genus field element', $exception_message, 
       'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
 
+    
+    // A Drupal $form_state object.
+    $form_state = new FormState();
+    // A random field.
+    $form_state->setValues(['project' => uniqid()]);
+    
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_state);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message =  $e->getMessage();
+    }
+    
+    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to genus metadata validator.');
+    $this->assertStringContainsString('Unexpected object type was passed', $exception_message, 
+      'Expected exception message does not match message when passing $form_state to genus metadata validator.');
+    
+
     // Other tests:
     // Each test will test that genusExists generated the correct case, valid status and failed item.
     // Failed item is the failed genus value. Failed information is contained in the case
@@ -149,12 +169,12 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertStringContainsString($genus, $validation_status['failedItems'],);
     
 
-    // Genus is not configured.
+    // Genus exists but not configured/recognized by the module.
     $genus = $this->test_genus['not-configured'];
     $form_values = ['genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
     
-    $this->assertEquals('Genus exists but is not configured', $validation_status['case'],
+    $this->assertEquals('Genus does not exist', $validation_status['case'],
       'Genus exists validator case title does not match expected title for not configured genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
     $this->assertStringContainsString($genus, $validation_status['failedItems'],);
