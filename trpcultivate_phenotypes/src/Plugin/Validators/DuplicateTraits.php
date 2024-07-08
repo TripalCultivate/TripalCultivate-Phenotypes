@@ -24,6 +24,22 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
+   *   An associative array containing the needed context, which is dependant
+   *   on the validator. For example, instead of validating each cell by default,
+   *   a validator may need a list of indices which correspond to the columns in
+   *   the row for which the validator should act on.
+   *
+   *   This validator requires the following keys:
+   *   - genus => a string of the genus name
+   *   - indices => an associative array with the following keys, which are
+   *                column headers of required columns for the Traits Importer:
+   *     - 'Trait Name': int, the index of the trait name column in $row_values
+   *     - 'Method Short Name': int, the index of the method name column in $row_values
+   *     - 'Unit': int, the index of the unit column in $row_values
+   */
+  public $context = [];
+
+  /**
    * A nested array of already validated values forming the unique trait name +
    *   method name + unit combinations that have been encountered by this
    *   validator so far within the input file. More specifically,
@@ -68,14 +84,6 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element
-   * @param array $context
-   *   An associative array with the following keys:
-   *   - genus => a string of the genus name
-   *   - indices => an associative array with the following keys, which are
-   *                column headers of required columns for the Traits Importer:
-   *     - 'Trait Name': int, the index of the trait name column in $row_values
-   *     - 'Method Short Name': int, the index of the method name column in $row_values
-   *     - 'Unit': int, the index of the unit column in $row_values
    *
    * @return array
    *   An associative array with the following keys:
@@ -83,7 +91,10 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
    */
-  public function validateRow($row_values, $context) {
+  public function validateRow($row_values) {
+
+    // Set our context which was configured for this validator
+    $context = $this->context;
 
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem.
