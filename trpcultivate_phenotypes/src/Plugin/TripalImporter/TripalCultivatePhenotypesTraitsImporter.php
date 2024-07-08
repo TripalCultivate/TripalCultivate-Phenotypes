@@ -210,7 +210,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Counter, count number of validators that failed.
     $failed_validator = 0;
 
-    // Test validator plugin.
+    // Setup the plugin manager
     $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
     // Importer assets.
@@ -231,7 +231,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // Array to hold all validation result for each level.
     // Each result is keyed by the scope.
-    // @TODO: This will not be hardcoded when issue #93 is resolved
+    // @TODO: This will not be hardcoded when issue #85 is resolved (that
+    // implements using the configuration setters from issue #93)
     $validation = [
       'GENUS' => [
         'title' => 'Genus exists and/or matches the project/experiment',
@@ -344,6 +345,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Create each plugin instance used at the file row level
       foreach ($filerow_validators as $validator_name => $validator) {
         $instances[$validator_name] = $manager->createInstance($validator['validator_id']);
+        // Set the context for each validator
+        $instances[$validator_name]->context = $validator['context'];
         // Set up an array for each validator to track the rows in which validation fails
         $filerow_validators[$validator_name]['failed_rows'] = [];
       }
@@ -371,7 +374,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
           // Call each validator on this row of the file
           foreach($filerow_validators as $validator_name => $validator) {
-            $validation[$validator_name] = $instances[$validator_name]->validateRow($data_row, $validator['context']);
+            $validation[$validator_name] = $instances[$validator_name]->validateRow($data_row);
             // Keep track of the line number if validation failed
             if('fail' == $validation[$validator_name]['status']) {
               array_push($filerow_validators[$validator_name]['failed_rows'], $line_no);
