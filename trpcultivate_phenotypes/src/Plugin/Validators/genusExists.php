@@ -72,7 +72,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     // implemented in the Importer form.
     $expected_field_key = 'genus';
   
-    // An object was given as parameter to this method.
+    // Parameter passed to the method is not an array.
     if (!is_array($form_values)) {
       throw new \Exception(t('Unexpected @type type was passed as parameter to genusExists validator.', ['@type' => gettype($form_values)]));
     }
