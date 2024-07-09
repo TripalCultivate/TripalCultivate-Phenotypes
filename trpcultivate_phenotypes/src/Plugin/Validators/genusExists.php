@@ -23,7 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class genusExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
-   * Genus Ontology Service;
+   * Genus Ontology Service.
    */
   protected $service_PhenoGenusOntology;
 

@@ -315,4 +315,18 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertTrue($validation_status['valid'], 'A valid project must return a TRUE valid status.');
     $this->assertEmpty($validation_status['failedItems'], 'A valid project does not return a failed item value.');
   }
+
+  /**
+   * Test project and genus input - project exists and genus match the set genus of a project.
+   */
+  public function testProjectGenusInput() {
+    // Create a plugin instance for this validator
+    $validator_id = 'trpcultivate_phenotypes_validator_project_genus_match';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+  
+    // Test items that will throw exception:
+    // 1. Passing a string value.
+    // 2. Failed to implement a form field element with project and genus name/key.
+    // 3. Passing object or the entire $form_state.
+  }
 }

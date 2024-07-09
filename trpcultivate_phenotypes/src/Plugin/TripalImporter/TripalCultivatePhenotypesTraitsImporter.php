@@ -206,62 +206,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    * {@inheritdoc}
    */
   public function formValidate($form, &$form_state) {
-    $form_state_values = $form_state->getValues();
-
-    // Counter, count number of validators that failed.
-    $failed_validator = 0;
-
-    // Test validator plugin.
-    $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-
-    // Importer assets.
-    // All values will be accessible to every instance of the validator Plugin.
-    // This importer does not require a project and this variable is set to 0
-    // instruct validators Project + Genus that relations project-genus can be ignored.
-    $project = 0;
-    $genus = $form_state_values['genus'];
-    $file = $form_state_values['file_upload'];
-    $headers = array_keys($this->headers);
-
-    $scopes = ['GENUS', 'FILE', 'HEADERS', 'TRAIT IMPORT VALUES'];
-    //$scopes = ['GENUS', 'FILE', 'HEADERS', 'FILE ROW'];
-
-    // Array to hold all validation result for each level.
-    // Each result is keyed by the scope.
-    $validation = [];
-
-    foreach($scopes as $scope) {
-      // Create instance of the scope-specific plugin and perform validation.
-      $validator = $manager->getValidatorIdWithScope($scope);
-      $instance = $manager->createInstance($validator);
-
-      // Set other validation level to upcoming/todo if a validation failed.
-      $skip = ($failed_validator > 0) ? 1 : 0;
-
-      // Load values.
-      $instance->loadAssets($project, $genus, $file, $headers, $skip);
-
-      // Perform required level validation.
-      $validation[ $scope ] = $instance->validate();
-
-      // Inspect for any failed validation to halt the importer.
-      if ($validation[ $scope ]['status'] == 'fail') {
-        $failed_validator++;
-      }
-    }
-
-    // Save all validation results in Drupal storage to be used by
-    // validation window to create summary report.
-    $storage = $form_state->getStorage();
-    $storage[ $this->validation_result ] = $validation;
-    $form_state->setStorage($storage);
-
-    if ($failed_validator > 0) {
-      // There are issues in the submission and are detailed in the validation result window.
-      // Prevent this form from submitting and reload form with all the validation errors
-      // in the storage system.
-      $form_state->setRebuild(TRUE);
-    }
+    // Implement revised validator plugin here.
   }
 
   /**
