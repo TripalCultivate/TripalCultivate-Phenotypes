@@ -98,6 +98,137 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   }
 
   /**
+   * Configure all the validators this importer uses.
+   *
+   * @param array $form_values
+   *   An array of the importer form values provided to formValidate.
+   * @return array
+   *   A listing of configured validator objects first keyed by
+   *   their inputType. More specifically,
+   *   - [inputType]: and array of validator instances. Not an
+   *     associative array although the keys do indicate what
+   *     order they should be run in.
+   */
+  public function configureValidators($form_values) {
+
+    $validators = [];
+
+    // Setup the plugin manager
+    $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+
+    // Importer assets.
+    // All values will be accessible to every instance of the validator Plugin.
+    // This importer does not require a project and this variable is set to 0
+    // instruct validators Project + Genus that relations project-genus can be ignored.
+    $project = 0;
+    $genus = $form_values['genus'];
+    $file_id = $form_values['file_upload'];
+
+    // Make the header columns into a simplified array where the header names
+    // are the values
+    $headers = array_keys($this->headers);
+
+    // Take our simplified headers array and flip the array keys and values
+    // This is the format that the validators will expect to know which indices
+    // in the row of data to act on
+    // For example: ['Trait Name'] => 0
+    $header_index = array_flip($headers);
+
+    // Set $skip to 0 since no validation is being done within this method
+    $skip = 0;
+
+    // -----------------------------------------------------
+    // Metadata
+    // - Genus Exists
+    // @deprecated getValidatorIdWithScope in issue #91
+    $validator = $manager->getValidatorIdWithScope('GENUS');
+    $instance = $manager->createInstance($validator);
+    // @deprecated loadAssets in issue #93
+    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
+    // @TODO: Rename according to the new validator_id for scope 'GENUS'
+    $validators['metadata']['GENUS'] = $instance;
+
+    // - Genus matches the configured project
+    // @TODO: In a future PR, create instance for the genus-project validator
+    //        and configure it
+
+    // -----------------------------------------------------
+    // File level
+    // - File exists
+    // @deprecated getValidatorIdWithScope in issue #91
+    $validator = $manager->getValidatorIdWithScope('FILE');
+    $instance = $manager->createInstance($validator);
+    // @deprecated loadAssets in issue #93
+    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
+    // @TODO: Rename according to the new validator_id for scope 'FILE'
+    $validators['file']['FILE'] = $instance;
+
+    // -----------------------------------------------------
+    // Header Level
+    // - All header row cells are not empty.
+    $instance = $manager->createInstance('empty_cell');
+    $context['indices'] = [
+      $header_index['Trait Name'],
+      $header_index['Trait Description'],
+      $header_index['Method Short Name'],
+      $header_index['Collection Method'],
+      $header_index['Unit'],
+      $header_index['Type']
+    ];
+    $instance->context = $context;
+    $validators['header-row']['empty_cell'] = $instance;
+
+    // - All column headers match expected header format
+    // @deprecated getValidatorIdWithScope in issue #91
+    $validator = $manager->getValidatorIdWithScope('HEADERS');
+    $instance = $manager->createInstance($validator);
+    // @deprecated loadAssets in issue #93
+    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
+    // @TODO: Rename according to the new validator_id for scope 'HEADERS'
+    $validators['header-row']['HEADERS'] = $instance;
+
+    // -----------------------------------------------------
+    // Data Row Level
+    // - All data row cells in columns 0,2,4 are not empty
+    $instance = $manager->createInstance('empty_cell');
+    $context['indices'] = [
+      $header_index['Trait Name'],
+      $header_index['Method Short Name'],
+      $header_index['Unit'],
+      $header_index['Type']
+    ];
+    $instance->context = $context;
+    $validators['data-row']['empty_cell'] = $instance;
+
+    // - The column 'Type' is one of "Qualitative" and "Quantitative"
+    $instance = $manager->createInstance('valid_data_type');
+    $context['indices'] = [
+      $header_index['Type']
+    ];
+    $context['valid_values'] = [
+      'Quantitative',
+      'Qualitative'
+    ];
+    $instance->context = $context;
+    $validators['data-row']['valid_data_type'] = $instance;
+
+    // - The combiniation of Trait Name, Method Short Name and Unit is unique
+    $instance = $manager->createInstance('duplicate_traits');
+    $context['genus'] = $genus;
+    $context['indices'] = [
+      'Trait Name' => $header_index['Trait Name'],
+      'Method Short Name' => $header_index['Method Short Name'],
+      'Unit' => $header_index['Unit']
+    ];
+    $instance->context = $context;
+    $validators['data-row']['duplicate_traits'] = $instance;
+
+    $this->validatorObjects = $validators;
+
+    return $validators;
+  }
+
+  /**
    * Service setter method:
    * Set genus ontology configuration service.
    *
