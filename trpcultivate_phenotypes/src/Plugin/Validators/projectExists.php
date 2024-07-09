@@ -41,7 +41,7 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
   }
 
   /**
-   * Validate that project provided exists.
+   * Validate that project provided exists and configured.
    * 
    * @param array $form_values
    *   The values entered to any form field elements implemented by the importer.
@@ -68,10 +68,10 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
     
     // Failed to locate the project field element.
     if (is_array($form_values) && !array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception(t('Failed to locate project field element. projectExists validator expects a form field element name project.'));
+      throw new \Exception(t('Failed to locate project field element. projectExists validator expects a form field element name gproject.'));
     }
 
-    // Validator response values for a valid project value.
+    // Validator response values for a valid genus value.
     $case = 'Project exists';
     $valid = TRUE;
     $failed_items = '';
