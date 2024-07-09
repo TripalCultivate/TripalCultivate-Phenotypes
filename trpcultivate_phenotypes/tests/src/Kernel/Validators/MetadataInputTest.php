@@ -100,7 +100,22 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     $this->assertIsNumeric($project_id, 'We were not able to create a project for testing.');
     $this->test_project['name'] = $project;
-    $this->test_project['id'] = $project_id;    
+    $this->test_project['id'] = $project_id;
+    
+    
+    // Create a project - genus relationship.
+    \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
+      ->set('trpcultivate.phenotypes.ontology.terms.genus', 1);
+    
+    $project_prop = $this->connection->insert('1:projectprop')
+      ->fields([
+        'project_id' => $this->test_project['id'],
+        'type_id' => 1,
+        'value' => $this->test_genus['configured']
+      ])
+      ->execute();
+
+    $this->assertIsNumeric($project_prop, 'We were not able to create a project-genus property for testing.');
   }
 
   /**
@@ -185,7 +200,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertEquals('Genus does not exist', $validation_status['case'],
       'Genus exists validator case title does not match expected title for non-existent genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
-    $this->assertStringContainsString($genus, $validation_status['failedItems'],);
+    $this->assertStringContainsString($genus, $validation_status['failedItems'], 'Failed genus value is expected in failed items.');
     
 
     // Genus exists but not configured/recognized by the module.
@@ -196,7 +211,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertEquals('Genus does not exist', $validation_status['case'],
       'Genus exists validator case title does not match expected title for not configured genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
-    $this->assertStringContainsString($genus, $validation_status['failedItems'],);
+    $this->assertStringContainsString($genus, $validation_status['failedItems'], 'Failed genus value is expected in failed items.');
     
 
     // A valid genus - exists and is configured.
@@ -291,7 +306,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertEquals('Project does not exist', $validation_status['case'],
       'Project exists validator case title does not match expected title for non-existent project.');
     $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
-    $this->assertStringContainsString($project, $validation_status['failedItems'],);
+    $this->assertStringContainsString($project, $validation_status['failedItems'], 'Failed project value is expected in failed items.');
 
 
     // Project exists - by project id.
@@ -328,5 +343,107 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // 1. Passing a string value.
     // 2. Failed to implement a form field element with project and genus name/key.
     // 3. Passing object or the entire $form_state.
+
+    // Test passing a string value.
+    $form_values = 'Not a valid form values';
+
+    $exception_caught  = FALSE;
+    $exception_message = ''; 
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message =  $e->getMessage();
+    }
+    
+    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project genus match metadata validator.');
+    $this->assertStringContainsString('Unexpected string type was passed', $exception_message, 
+      'Expected exception message does not match message when passing $form_state to project genus match metadata validator.');
+    
+      
+    // No project field.
+    $form_values = ['genus' => 'Lens'];
+
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no project form field was implemented.');
+    $this->assertStringContainsString('Failed to locate project field element', $exception_message, 
+      'Expected exception message does not match message when importer failed to implement a form field element with the name/key project.');
+
+    
+    // No genus field.
+    $form_values = ['project' => 'Test Project'];
+
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no genus form field was implemented.');
+    $this->assertStringContainsString('Failed to locate genus field element', $exception_message, 
+      'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
+
+
+    // A Drupal $form_state object.
+    $form_state = new FormState();
+    // A random field.
+    $form_state->setValues(['project' => uniqid()]);
+    
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_state);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message =  $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project exists metadata validator.');
+    $this->assertStringContainsString('Unexpected object type was passed', $exception_message, 
+      'Expected exception message does not match message when passing $form_state to project exists metadata validator.');
+
+
+    // Other tests:
+    // Each test will test that projectGenusMatch generated the correct case, valid status and failed item.
+    // Failed item is the failed project/genus value. Failed information is contained in the case to indicate project and genus match.
+
+    // Test project does not exist.
+    $project = 'project-' . uniqid();
+    $genus = $this->test_genus['configured'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
+    
+    $this->assertEquals('Project does not exist', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for non-existent project.');
+    $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
+    $this->assertStringContainsString($project, $validation_status['failedItems'], 'Failed project value is expected in failed items.');
+
+    // Test project with genus set.
+    $project = $this->test_project['id'];
+    $genus = $this->test_genus['configured'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
+    
+    $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for a valid project+genus.');
+    $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
+    $this->assertEmpty($validation_status['failedItems'], 'A valid project+genus does not return a failed item value.');
   }
 }

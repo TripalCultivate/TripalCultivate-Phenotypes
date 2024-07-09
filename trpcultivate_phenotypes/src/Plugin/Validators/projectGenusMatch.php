@@ -9,6 +9,7 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
