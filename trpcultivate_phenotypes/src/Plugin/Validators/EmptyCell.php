@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate empty cells of an importer.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_empty_cell",
+ *   id = "empty_cell",
  *   validator_name = @Translation("Empty Cell Validator"),
  *   validator_scope = "FILE ROW",
  * )

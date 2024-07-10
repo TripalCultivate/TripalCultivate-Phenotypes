@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate duplicate traits within a file
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_duplicate_traits",
+ *   id = "duplicate_traits",
  *   validator_name = @Translation("Duplicate Traits Validator"),
  *   validator_scope = "FILE ROW",
  * )
