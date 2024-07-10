@@ -13,7 +13,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Validate that project exits.
+ * Validate that project exists.
  *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_project_exists",
@@ -41,7 +41,7 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
   }
 
   /**
-   * Validate that project provided exists and configured.
+   * Validate that project provided exists.
    * 
    * @param array $form_values
    *   The values entered to any form field elements implemented by the importer.
@@ -53,7 +53,7 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
    * @return array
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
-   *     - valid: either TRUE or FALSE depending on if the project value is valid or not.
+   *     - valid: either TRUE or FALSE depending on if the project value existed or not.
    *     - failedItems: the failed project value provided. This will be empty if the value was valid.
    */
   public function validateMetadata($form_values) {
@@ -68,10 +68,10 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
     
     // Failed to locate the project field element.
     if (is_array($form_values) && !array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception(t('Failed to locate project field element. projectExists validator expects a form field element name gproject.'));
+      throw new \Exception(t('Failed to locate project field element. projectExists validator expects a form field element name project.'));
     }
 
-    // Validator response values for a valid genus value.
+    // Validator response values for a valid project value (exists).
     $case = 'Project exists';
     $valid = TRUE;
     $failed_items = '';
@@ -82,17 +82,17 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
     // Determine what was provided to the project field: project id or name.
     if (is_numeric($project)) {
       // Value is integer. Project id was provided.
-      // Get the project name.
+      // Test project by looking up the id to retrieve the project name.
       $project_rec = ChadoProjectAutocompleteController::getProjectName((int) $project);  
     }
     else {
       // Value is string. Project name was provided.
-      // Get the project id.
+      // Test project by looking up the name to retrieve the project id.
       $project_rec = ChadoProjectAutocompleteController::getProjectId($project);   
     }
 
     if ($project_rec <= 0 || empty($project_rec)) {
-      // The project provided whether the name or project id, does not exist.
+      // The project provided, whether the name or project id, does not exist.
       $case = 'Project does not exist';
       $valid = FALSE;
       $failed_items = $project;
