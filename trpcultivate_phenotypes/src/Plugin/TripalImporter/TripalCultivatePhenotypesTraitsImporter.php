@@ -482,11 +482,15 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
             // Check for old style...
             if (!array_key_exists('status', $result) && ($result['status'] == 'fail')) {
               $failed_validator = TRUE;
+              // If the header row fails validation, break out of the while loop
+              // since we don't want to continue validating the data rows.
+              break 2;
               //$failures['header-row'][$key][$line_no] = $result['details'];
             }
             // Then new style.
             elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
               $failed_validator = TRUE;
+              break 2;
               //$failures['header-row'][$key][$line_no] = $result['failedItems'];
             }
           }
@@ -502,7 +506,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
             $result = $validator->validateRow($data_row);
-            $validation[$key] = $result;
+            $validation[$validator_name] = $result;
             // Check for old style...
             if (!array_key_exists('status', $result) && ($result['status'] == 'fail')) {
               $failed_validator = TRUE;
@@ -516,19 +520,19 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           }
         }
       }
-
-      // For each validator, check if 'failed_rows' has been tracking any row numbers.
-      // If so, format the validation message and set the status to 'fail'.
-      foreach($validators as $validator_name => $validator) {
-        if (!empty($validator['failed_rows'])) {
-          $validation[$validator_name] = [
-            'title' => $validator['fail_title'],
-            'status' => 'fail',
-            'details' => $validator['fail_details'] . implode(', ', $validator['failed_rows'])
-          ];
-        }
-      }
     }
+
+    // For each validator, check if the validation status failed.
+    // If so, format the validation message and set the status to 'fail'.
+    /*foreach($validators as $validator_name => $validator) {
+      if ($validation[$validator_name]['status'] == 'fail') {
+        $validation[$validator_name] = [
+          'title' => $validator['fail_title'],
+          'status' => 'fail',
+          'details' => $validator['fail_details'] . implode(', ', $validator['failed_rows'])
+        ];
+      }
+    }*/
 
     // Save all validation results in Drupal storage to be used by
     // validation window to create summary report.
