@@ -75,7 +75,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   public function testValidatorBaseCheckIndices() {
 
     // Create a plugin instance for any validator that uses this function
-    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
+    $validator_id = 'value_in_list';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Simulates a row within the Trait Importer

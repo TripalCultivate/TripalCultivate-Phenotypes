@@ -358,7 +358,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         'fail_title' => 'Required columns were found to be empty',
         'fail_details' => 'One or more required columns was empty at row #: '
       ],
-      'value_in_list' => [
+      'valid_data_type' => [
         'fail_title' => 'Value in column "type" was not one of "Quantitative" or "Qualitative"',
         'fail_details' => 'Column "type" violates required values at row #: '
       ],
@@ -414,14 +414,17 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     foreach ($validators['metadata'] as $key => $validator) {
       // @TODO: Update to use the validateMetadata() method
       $result = $validator->validate();
+      // $validation_results['metadata'][$key] = $result;
+      $validation[$key] = $result;
       // Check for old return style...
       if (!array_key_exists('status', $result) && ($result['status'] == 'fail')) {
         $failed_validator = TRUE;
-        $failures['metadata'][$key] = $result['details'];
+        //$failures['metadata'][$key] = $result['details'];
       }
       // Then new return style.
       elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-        $failures['metadata'][$key] = $result['failedItems'];
+        $failed_validator = TRUE;
+        //$failures['metadata'][$key] = $result['failedItems'];
       }
     }
 
@@ -435,14 +438,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // @TODO: Update to use the validateFile() method
         //$result = $validator->validateFile($form_value['filename'], $form_values['fid']);
         $result = $validator->validate();
+        $validation[$key] = $result;
         // Check for old return style...
         if (!array_key_exists('status', $result) && ($result['status'] == 'fail')) {
           $failed_validator = TRUE;
-          $failures['file'][$key] = $result['details'];
+          //$failures['file'][$key] = $result['details'];
         }
         // Then new return style.
         elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-          $failures['file'][$key] = $result['failedItems'];
+          $failed_validator = TRUE;
+          //$failures['file'][$key] = $result['failedItems'];
         }
       }
     }
@@ -473,14 +478,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           foreach ($validators['header-row'] as $key => $validator) {
             // @TODO: Update to use the validateRow() method
             $result = $validator->validate();
+            $validation[$key] = $result;
             // Check for old style...
             if (!array_key_exists('status', $result) && ($result['status'] == 'fail')) {
               $failed_validator = TRUE;
-              $failures['header-row'][$key][$line_no] = $result['details'];
+              //$failures['header-row'][$key][$line_no] = $result['details'];
             }
             // Then new style.
             elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failures['header-row'][$key][$line_no] = $result['failedItems'];
+              $failed_validator = TRUE;
+              //$failures['header-row'][$key][$line_no] = $result['failedItems'];
             }
           }
         }
@@ -495,14 +502,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
             $result = $validator->validateRow($data_row);
+            $validation[$key] = $result;
             // Check for old style...
             if (!array_key_exists('status', $result) && ($result['status'] == 'fail')) {
               $failed_validator = TRUE;
-              $failures['data-row'][$key][$line_no] = $result['details'];
+              //$failures['data-row'][$key][$line_no] = $result['details'];
             }
             // Then new style.
             elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failures['data-row'][$key][$line_no] = $result['failedItems'];
+              $failed_validator = TRUE;
+              //$failures['data-row'][$key][$line_no] = $result['failedItems'];
             }
           }
         }

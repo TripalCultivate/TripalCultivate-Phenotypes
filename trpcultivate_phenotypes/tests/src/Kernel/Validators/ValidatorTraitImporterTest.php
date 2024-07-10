@@ -112,7 +112,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   public function testValidatorDuplicateTraitsFile() {
 
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
+    $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Set the genus in the $context array
@@ -203,7 +203,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   public function testValidatorDuplicateTraitsDatabase() {
 
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
+    $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Set the genus and indices in the $context array
