@@ -280,6 +280,11 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    * Test Project Plugin Validator.
    */
   public function testProjectPluginValidator() {
+    /*
+
+    This test has reference to a validator plugin marked deprecated.
+    ----------------------------------------------------------------
+
     $scope = 'PROJECT';
     $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
     $instance = $this->plugin_manager->createInstance($validator);
@@ -330,6 +335,8 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
     $validation[ $scope ] = $instance->validate();
     $this->assertEquals($validation[ $scope ]['status'], $status);
+    
+    */
   }
 
   /**
@@ -383,6 +390,9 @@ class PluginValidatorTest extends ChadoTestKernelBase {
    */
   public function testDataFilePluginValidator() {
     /*
+
+    This test has reference to a validator plugin marked deprecated.
+    ----------------------------------------------------------------
     $scope = 'FILE';
     $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
     $instance = $this->plugin_manager->createInstance($validator);
