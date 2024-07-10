@@ -168,11 +168,6 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
    * Tests submitting the importer form when all should be well.
    */
   public function testTraitImporterFormSubmitValid() {
-    /* 
-    
-    This test has reference to a validator plugin marked deprecated.
-    ----------------------------------------------------------------
-
 	  $plugin_id = 'trpcultivate-phenotypes-traits-importer';
 
     // Configure the module.
@@ -216,9 +211,6 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     }
     $this->assertCount(0, $form_validation_messages,
       "We should not have any errors but instead we have: " . implode(" AND ", $helpful_output));
-    
-    */
-
   }
 
   /**
@@ -293,12 +285,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
   /**
    * Tests submitting the importer form when the module is not configured.
    */
-  public function testTraitImporterFormSubmitNoOrganism() {
-    /*
-
-    This test has reference to a validator plugin marked deprecated.
-    ----------------------------------------------------------------
-    
+  public function testTraitImporterFormSubmitNoOrganism() { 
 	  $plugin_id = 'trpcultivate-phenotypes-traits-importer';
 
     // Create a file to upload.
@@ -360,7 +347,5 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
       "We should have exactly one validation error but instead we have: " . implode(" AND ", $helpful_output));
     $this->assertArrayHasKey('genus', $form_validation_messages,
       "We expected the genus form element specifically to have a validation error but instead we have: " . implode(" AND ", $helpful_output));
-
-    */
   }
 }
