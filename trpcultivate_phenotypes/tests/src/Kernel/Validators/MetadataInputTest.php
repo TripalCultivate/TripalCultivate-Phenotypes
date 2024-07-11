@@ -101,6 +101,13 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertIsNumeric($project_id, 'We were not able to create a project for testing.');
     $this->test_project['name'] = $project;
     $this->test_project['id'] = $project_id;
+
+
+    // Create project - genus relationship.
+    $project_prop = \Drupal::service('trpcultivate_phenotypes.genus_project')
+      ->setGenusToProject($this->test_project['id'], $this->test_genus['configured']);
+
+    $this->assertTrue($project_prop, 'We were not able to create a project-genus property for testing.');
   }
 
   /**
@@ -314,5 +321,121 @@ class MetadataInputTest extends ChadoTestKernelBase {
       'Project exists validator case title does not match expected title for a valid project.');
     $this->assertTrue($validation_status['valid'], 'A valid project must return a TRUE valid status.');
     $this->assertEmpty($validation_status['failedItems'], 'A valid project does not return a failed item value.');
+  }
+
+  /**
+   * Test project and genus input - project exists and genus match the set genus of a project.
+   */
+  public function testProjectGenusInput() {
+    // Create a plugin instance for this validator
+    $validator_id = 'trpcultivate_phenotypes_validator_project_genus_match';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+  
+    // Test items that will throw exception:
+    // 1. Passing a string value.
+    // 2. Failed to implement a form field element with project and genus name/key.
+    // 3. Passing object or the entire $form_state.
+
+    // Test passing a string value.
+    $form_values = 'Not a valid form values';
+
+    $exception_caught  = FALSE;
+    $exception_message = ''; 
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message =  $e->getMessage();
+    }
+    
+    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project genus match metadata validator.');
+    $this->assertStringContainsString('Unexpected string type was passed', $exception_message, 
+      'Expected exception message does not match message when passing string to project genus match metadata validator.');
+    
+      
+    // No project field.
+    $form_values = ['genus' => 'Lens'];
+
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no project form field was implemented.');
+    $this->assertStringContainsString('Failed to locate project field element', $exception_message, 
+      'Expected exception message does not match message when importer failed to implement a form field element with the name/key project.');
+
+    
+    // No genus field.
+    $form_values = ['project' => 'Test Project'];
+
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_values);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no genus form field was implemented.');
+    $this->assertStringContainsString('Failed to locate genus field element', $exception_message, 
+      'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
+
+
+    // A Drupal $form_state object.
+    $form_state = new FormState();
+    // A random field.
+    $form_state->setValues(['project' => uniqid()]);
+    
+    $exception_caught  = FALSE;
+    $exception_message = '';        
+    try {
+      $instance->validateMetadata($form_state);
+    }
+    catch (\Exception $e) {
+      $exception_caught  = TRUE;
+      $exception_message =  $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project genus match metadata validator.');
+    $this->assertStringContainsString('Unexpected object type was passed', $exception_message, 
+      'Expected exception message does not match message when passing $form_state to project genus match metadata validator.');
+
+
+    // Other tests:
+    // Each test will test that projectGenusMatch generated the correct case, valid status and failed item.
+    // Failed item is the failed project/genus value. Failed information is contained in the case to indicate project and genus match.
+
+    // Test project does not exist.
+    $project = 'project-' . uniqid();
+    $genus = $this->test_genus['configured'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
+    
+    $this->assertEquals('Project does not exist', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for non-existent project.');
+    $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
+    $this->assertStringContainsString($project, $validation_status['failedItems'], 'Failed project value is expected in failed items.');
+
+    // Test project with genus set.
+    $project = $this->test_project['id'];
+    $genus = $this->test_genus['configured'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
+    
+    $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for a valid project+genus.');
+    $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
+    $this->assertEmpty($validation_status['failedItems'], 'A valid project+genus does not return a failed item value.');
   }
 }
