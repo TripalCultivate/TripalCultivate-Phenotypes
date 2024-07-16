@@ -10,6 +10,7 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\file\Entity\File;
 
 /**
@@ -23,10 +24,20 @@ use Drupal\file\Entity\File;
  */
 class validDataFile extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
+   * File system service.
+   */
+  protected $service_EntityTypeManager;
+
+  /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition,
+    EntityTypeManagerInterface $entity_type_manager) {
+    
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+  
+    // Entity type manager service.
+    $this->service_EntityTypeManager = $entity_type_manager;
   }
 
   /**
@@ -37,6 +48,7 @@ class validDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       $configuration,
       $plugin_id,
       $plugin_definition,
+      $container->get('entity_type.manager')
     );
   }
 
@@ -59,8 +71,8 @@ class validDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
    *     - failedItems: the failed filename/file id value provided. This will be empty if the file was valid.
    */
   public function validateFile($filename, $fid = NULL) {
-    // Parameter check, verify that the file path is valid.
-    if ($filename && !file_exists($filename)) {
+    // Parameter check, verify that the file path is valid and exits in the file system (no directories).
+    if ($filename && !is_file($filename)) {
       throw new \Exception(t('File path provided is not a valid path.'));
     }
     
@@ -76,8 +88,30 @@ class validDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
     
     // File.
     $file = (is_null($fid)) ? $filename : $fid;
+    
     // Load file object.
-    $file_object = FILE::load($file);
+    if (is_numeric($file)) {
+      // Load file object by file id number.
+      $file_object = File::load($fid);
+    }
+    else {
+      // Find the file entity by uri and load file object by using the resulting
+      // file id number that matched.
+      $query = $this->service_EntityTypeManager
+        ->getStorage('file')
+        ->getQuery();
+      
+      $file_ids = $query
+        ->condition('uri', $file)
+        ->accessCheck(TRUE)
+        ->execute();
+
+      $file_object = 0;
+      if (!empty($file_ids)) {
+        $file_id = reset($file_ids);
+        $file_object = File::load($file_id);
+      }
+    }
     
     if (!$file_object) {
       // Cannot load file object.
@@ -85,11 +119,46 @@ class validDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       $valid = FALSE;
       $failed_items = $file;
     }
+    else {
+      // Check if the file uri exits and is readable.
+      $file_uri = $file_object->getFileUri();
 
-    // Check that the file uri points to a file that exists in the file system.
-    // Check that the extension and mime match the configured extensions in the importer definition.
-    // File is not empty.
+      // Check that the file is not empty by inspecting the file size.
+      if (filesize($file_uri) > 0) {
+        // Check that the file is readable and can be opened.
+        if (is_readable($file_uri)) {
+          // Check that the file type matches the file types the importer is 
+          // configured to accept.
+          $file_mime = $file_object->getMimeType();
 
+          // @TODO: Fetch the file_types plugin annotation value of the importer.
+          // NOTE: the importer uses file extension - create a helper method that will
+          // resolve an extension to mime type. ie. txt - text/plain.
+          $importer_file_types = ['text/tab-separated-values', 'text/plain'];
+          
+          if (!in_array($file_mime, ['text/tab-separated-values', 'text/plain'])) {
+            $case = 'The file uploaded is not prescribed file type';
+            $valid = FALSE;
+            $failed_items = $file;
+          }
+        }
+        else {
+          // Cannot read or open file.
+          $case = 'The file uploaded cannot be opened';
+          $valid = FALSE;
+          $failed_items = $file;
+        }
+
+        clearstatcache();
+      }
+      else {
+        // The file has no contents and is empty.
+        $case = 'The file uploaded has no data and is an empty file';
+        $valid = FALSE;
+        $failed_items = $file;
+      }
+    }
+    
     return [
       'case' => $case,
       'valid' => $valid,
