@@ -327,4 +327,44 @@ class DataFileInputTest extends ChadoTestKernelBase {
       $this->assertEmpty($validation_status['failedItems'], 'A valid file does not return a failed item value.');
     }
   }
+
+  /**
+   * Validate file for tab separated content.
+   */
+  public function testTsvDataFileInput() {
+    // @TODO: update validateRow() parameter - the second parameter has been
+    // marked deprecated.
+
+    // Create a plugin instance for this validator
+    $validator_id = 'trpcultivate_phenotypes_validator_valid_tsv_data_file';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+    
+    // Test a valid tsv header row but the number of items does not
+    // match expected number of items.
+    $row_values = implode("\t", ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5']);
+    $validation_status = $instance->validateRow($row_values, []);
+
+    $this->assertEquals('Data file header row is not a tab-separated values', $validation_status['case'],
+      'TSV File validator case title does not match expected title for failed tsv row check.');
+    $this->assertFalse($validation_status['valid'], 'A failed file header row must return a FALSE valid status.');
+    $this->assertStringContainsString($row_values, $validation_status['failedItems'], 'Failed header row value is expected in failed items.');
+
+    // Test an invalid string (not a tsv).
+    $row_values = implode(',', ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6', 'Header 7']);
+    $validation_status = $instance->validateRow($row_values, []);
+
+    $this->assertEquals('Data file header row is not a tab-separated values', $validation_status['case'],
+      'TSV File validator case title does not match expected title for failed tsv row check.');
+    $this->assertFalse($validation_status['valid'], 'A failed file header row must return a FALSE valid status.');
+    $this->assertStringContainsString($row_values, $validation_status['failedItems'], 'Failed header row value is expected in failed items.');
+
+    // Valid header row.
+    $row_values = implode("\t", ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6', 'Header 7']);
+    $validation_status = $instance->validateRow($row_values, []);
+
+    $this->assertEquals('Data file content is valid tab-separated values (tsv)', $validation_status['case'],
+      'TSV File validator case title does not match expected title for valid tsv row check.');
+    $this->assertTrue($validation_status['valid'], 'A valid file header row must return a TRUE valid status.');
+    $this->assertEmpty($validation_status['failedItems'], 'A valid file header row does not return a failed item value.');
+  }
 }
