@@ -22,11 +22,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class validTsvFile extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
-   * File system service.
-   */
-  protected $service_EntityTypeManager;
-
-  /**
    * Constructor.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
