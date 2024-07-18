@@ -8,7 +8,6 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 
  /**
   * Tests Tripal Cultivate Phenotypes Header Row Validator Plugins.
@@ -17,8 +16,6 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
   * @group validators
   */
 class HeaderRowTest extends ChadoTestKernelBase {
-  use PhenotypeImporterTestTrait;
-
   /**
    * Modules to enable.
    */
@@ -86,6 +83,16 @@ class HeaderRowTest extends ChadoTestKernelBase {
 
     // A valid header row and no missing header.
     $header_row = ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5'];
+    $validation_status = $instance->validateRow($header_row, []);
+
+    $this->assertEquals('Header row exists and match expected column headers', $validation_status['case'],
+      'Header row validator case title does not match expected title for a valid header row.');
+    $this->assertTrue($validation_status['valid'], 'A valid header row must return a TRUE valid status.');
+    $this->assertEmpty($validation_status['failedItems'], 'A valid header row does not return a failed item value.');
+  
+    // Headers Shuffled and not in specific order.
+    $header_row = ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5'];
+    shuffle($header_row);
     $validation_status = $instance->validateRow($header_row, []);
 
     $this->assertEquals('Header row exists and match expected column headers', $validation_status['case'],
