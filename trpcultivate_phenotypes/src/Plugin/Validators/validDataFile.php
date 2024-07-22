@@ -97,19 +97,15 @@ class validDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
     else {
       // Find the file entity by uri and load file object by using the resulting
       // file id number that matched.
-      $query = $this->service_EntityTypeManager
+      $file_ids = $this->service_EntityTypeManager
         ->getStorage('file')
-        ->getQuery();
+        ->loadByProperties(['uri' => $file]);
       
-      $file_ids = $query
-        ->condition('uri', $file)
-        ->accessCheck(TRUE)
-        ->execute();
+      $file_id = reset($file_ids);
 
       $file_object = 0;
-      if (!empty($file_ids)) {
-        $file_id = reset($file_ids);
-        $file_object = File::load($file_id);
+      if (!empty($file_id)) {
+        $file_object = File::load($file_id->get('fid')->value);
       }
     }
     
