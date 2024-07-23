@@ -55,34 +55,9 @@ class DataFileInputTest extends ChadoTestKernelBase {
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
-
-    // Test Chado database.
-    // Create a test chado instance and then set it in the container for use by our service.
-    $this->connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->connection);
-
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
-    $genus = 'Tripalus';
-    // Create our organism and configure it.
-    $organism_id = $this->connection->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'databasica',
-      ])
-      ->execute();
-
-    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (configured).');
-    $this->test_genus['configured'] = $genus;
-    $this->setOntologyConfig($this->test_genus['configured']);
-
-    // Set terms configuration.
-    $this->setTermConfig();
-
-    
     // Create test files.
     $this->installEntitySchema('file');
 
