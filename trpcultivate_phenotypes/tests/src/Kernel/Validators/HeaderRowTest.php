@@ -81,7 +81,7 @@ class HeaderRowTest extends ChadoTestKernelBase {
       $this->assertStringContainsString($missing_header, $validation_status['failedItems'], 'Missing header is expected in failed items.');
     }
 
-    // A valid header row and no missing header.
+    // A valid header row, no missing header and in the correct order.
     $header_row = ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5'];
     $validation_status = $instance->validateRow($header_row, []);
 
@@ -91,13 +91,22 @@ class HeaderRowTest extends ChadoTestKernelBase {
     $this->assertEmpty($validation_status['failedItems'], 'A valid header row does not return a failed item value.');
   
     // Headers Shuffled and not in specific order.
-    $header_row = ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5'];
+    $header_row = $header_copy = ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5'];
     shuffle($header_row);
     $validation_status = $instance->validateRow($header_row, []);
 
-    $this->assertEquals('Header row exists and match expected column headers', $validation_status['case'],
-      'Header row validator case title does not match expected title for a valid header row.');
-    $this->assertTrue($validation_status['valid'], 'A valid header row must return a TRUE valid status.');
-    $this->assertEmpty($validation_status['failedItems'], 'A valid header row does not return a failed item value.');
+    $not_in_order = [];
+    foreach($header_copy as $i => $header) {
+      if (isset($header_row[ $i ]) && $header_row[ $i ] != $header) {
+        array_push($not_in_order, $header);
+      }
+    }
+
+    $not_in_order = implode(', ', $not_in_order);
+
+    $this->assertEquals('Column header is not in the correct order', $validation_status['case'],
+      'Header row validator case title does not match expected title for header row not in the correct order.');
+    $this->assertFalse($validation_status['valid'], 'A failed header row must return a FALSE valid status.');
+    $this->assertStringContainsString($not_in_order, $validation_status['failedItems'], 'Out of place header is expected in failed items.');
   }
 }

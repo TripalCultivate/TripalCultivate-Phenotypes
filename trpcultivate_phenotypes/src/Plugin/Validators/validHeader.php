@@ -76,7 +76,6 @@ class validHeader extends TripalCultivatePhenotypesValidatorBase implements Cont
     }
     else {
       // Test that expected headers exist in the row and in the correct order.
-      // @TODO: confirm if the order of the header is important.
       $missing_headers = array_filter($importer_headers, function($expected_header) use($header_row) {
         return (!in_array($expected_header, $header_row));
       });
@@ -86,6 +85,25 @@ class validHeader extends TripalCultivatePhenotypesValidatorBase implements Cont
         $case = 'Missing expected column headers';
         $valid = FALSE;
         $failed_items = implode(', ', $missing_headers);
+      }
+      else {
+        // Test that the order of the header is the same order
+        // as the order of the expected headers.
+        $not_in_order = [];
+
+        foreach($importer_headers as $i => $header) {
+          if (isset($header_row[ $i ]) && $header_row[ $i ] != $header) {
+            // Store the header not in the correct order.
+            array_push($not_in_order, $header);
+          }
+        }
+
+        if (count($not_in_order) > 0) {
+          // Header out of place.
+          $case = 'Column header is not in the correct order';
+          $valid = FALSE;
+          $failed_items = implode(', ', $not_in_order);
+        }
       }
     }
      
