@@ -15,12 +15,24 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate empty cells of an importer.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_empty_cell",
+ *   id = "empty_cell",
  *   validator_name = @Translation("Empty Cell Validator"),
  *   validator_scope = "FILE ROW",
  * )
  */
 class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+
+  /**
+   *   An associative array containing the needed context, which is dependant
+   *   on the validator. For example, instead of validating each cell by default,
+   *   a validator may need a list of indices which correspond to the columns in
+   *   the row for which the validator should act on.
+   *
+   *   This validator requires the following keys:
+   *   - indices => an array of indices corresponding to the cells in $row_values to act on
+   */
+  public $context = [];
+
   /**
    * Constructor.
    */
@@ -45,9 +57,6 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element
-   * @param array $context
-   *   An associative array with the following key:
-   *   - indices => an array of indices corresponding to the cells in $row_values to act on
    *
    * @return array
    *   An associative array with the following keys.
@@ -55,7 +64,10 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
    */
-  public function validateRow($row_values, $context) {
+  public function validateRow($row_values) {
+
+    // Set our context which was configured for this validator
+    $context = $this->context;
 
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem

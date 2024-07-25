@@ -16,10 +16,9 @@ use Drupal\Core\Url;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 /**
- * Tripal Cultivate Phenotypes - Share Importer.
+ * Tripal Cultivate Phenotypes - Traits Importer.
  *
- * Focused on phenotypic data which has already been published or which is ready
- * to be freely shared.
+ * An importer for traits with a defined method and unit.
  *
  * @TripalImporter(
  *   id = "trpcultivate-phenotypes-traits-importer",
@@ -96,6 +95,139 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $instance->setServiceTraits($service_traits);
 
     return $instance;
+  }
+
+  /**
+   * Configure all the validators this importer uses.
+   *
+   * @param array $form_values
+   *   An array of the importer form values provided to formValidate.
+   * @return array
+   *   A listing of configured validator objects first keyed by
+   *   their inputType. More specifically,
+   *   - [inputType]: and array of validator instances. Not an
+   *     associative array although the keys do indicate what
+   *     order they should be run in.
+   */
+  public function configureValidators($form_values) {
+
+    $validators = [];
+
+    // Setup the plugin manager
+    $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+
+    // Importer assets.
+    // All values will be accessible to every instance of the validator Plugin.
+    // This importer does not require a project and this variable is set to 0
+    // instruct validators Project + Genus that relations project-genus can be ignored.
+    $project = 0;
+    $genus = $form_values['genus'];
+    $file_id = $form_values['file_upload'];
+
+    // Make the header columns into a simplified array where the header names
+    // are the values
+    $headers = array_keys($this->headers);
+
+    // Take our simplified headers array and flip the array keys and values
+    // This is the format that the validators will expect to know which indices
+    // in the row of data to act on
+    // For example: ['Trait Name'] => 0
+    $header_index = array_flip($headers);
+
+    // Set $skip to 0 since no validation is being done within this method
+    $skip = 0;
+
+    // -----------------------------------------------------
+    // Metadata
+    // - Genus Exists
+    // @deprecated getValidatorIdWithScope in issue #91
+    $validator = $manager->getValidatorIdWithScope('GENUS');
+    $instance = $manager->createInstance($validator);
+    // @deprecated loadAssets in issue #93
+    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
+    // @TODO: Rename according to the new validator_id for scope 'GENUS'
+    $validators['metadata']['GENUS'] = $instance;
+
+    // - Genus matches the configured project
+    // @TODO: In a future PR, create instance for the genus-project validator
+    //        and configure it
+
+    // -----------------------------------------------------
+    // File level
+    // - File exists
+    // @deprecated getValidatorIdWithScope in issue #91
+    $validator = $manager->getValidatorIdWithScope('FILE');
+    $instance = $manager->createInstance($validator);
+    // @deprecated loadAssets in issue #93
+    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
+    // @TODO: Rename according to the new validator_id for scope 'FILE'
+    $validators['file']['FILE'] = $instance;
+
+    // -----------------------------------------------------
+    // Header Level
+    // - All header row cells are not empty.
+    // @TODO: Uncomment the following code when the Headers validator has been
+    //        updated and no longer uses the validate() method.
+    // $instance = $manager->createInstance('empty_cell');
+    // $context['indices'] = [
+    //   $header_index['Trait Name'],
+    //   $header_index['Trait Description'],
+    //   $header_index['Method Short Name'],
+    //   $header_index['Collection Method'],
+    //   $header_index['Unit'],
+    //   $header_index['Type']
+    // ];
+    // $instance->context = $context;
+    // $validators['header-row']['empty_cell'] = $instance;
+
+    // - All column headers match expected header format
+    // @deprecated getValidatorIdWithScope in issue #91
+    $validator = $manager->getValidatorIdWithScope('HEADERS');
+    $instance = $manager->createInstance($validator);
+    // @deprecated loadAssets in issue #93
+    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
+    // @TODO: Rename according to the new validator_id for scope 'HEADERS'
+    $validators['header-row']['HEADERS'] = $instance;
+
+    // -----------------------------------------------------
+    // Data Row Level
+    // - All data row cells in columns 0,2,4 are not empty
+    $instance = $manager->createInstance('empty_cell');
+    $context['indices'] = [
+      $header_index['Trait Name'],
+      $header_index['Method Short Name'],
+      $header_index['Unit'],
+      $header_index['Type']
+    ];
+    $instance->context = $context;
+    $validators['data-row']['empty_cell'] = $instance;
+
+    // - The column 'Type' is one of "Qualitative" and "Quantitative"
+    $instance = $manager->createInstance('value_in_list');
+    $context['indices'] = [
+      $header_index['Type']
+    ];
+    $context['valid_values'] = [
+      'Quantitative',
+      'Qualitative'
+    ];
+    $instance->context = $context;
+    $validators['data-row']['valid_data_type'] = $instance;
+
+    // - The combination of Trait Name, Method Short Name and Unit is unique
+    $instance = $manager->createInstance('duplicate_traits');
+    $context['genus'] = $genus;
+    $context['indices'] = [
+      'Trait Name' => $header_index['Trait Name'],
+      'Method Short Name' => $header_index['Method Short Name'],
+      'Unit' => $header_index['Unit']
+    ];
+    $instance->context = $context;
+    $validators['data-row']['duplicate_traits'] = $instance;
+
+    //$this->validatorObjects = $validators;
+
+    return $validators;
   }
 
   /**
@@ -206,47 +338,202 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    * {@inheritdoc}
    */
   public function formValidate($form, &$form_state) {
-    $form_state_values = $form_state->getValues();
 
-    // Counter, count number of validators that failed.
-    $failed_validator = 0;
+    $form_values = $form_state->getValues();
 
-    // Test validator plugin.
-    $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+    $file_id = $form_values['file_upload'];
 
-    // Importer assets.
-    // All values will be accessible to every instance of the validator Plugin.
-    // This importer does not require a project and this variable is set to 0
-    // instruct validators Project + Genus that relations project-genus can be ignored.
-    $project = 0;
-    $genus = $form_state_values['genus'];
-    $file = $form_state_values['file_upload'];
-    $headers = array_keys($this->headers);
+    // Use a variable to keep track of if one input type had recieved errors
+    // and only continue to the next if no errors.
+    $failed_validator = FALSE;
 
-    $scopes = ['GENUS', 'FILE', 'HEADERS', 'TRAIT IMPORT VALUES'];
-    //$scopes = ['GENUS', 'FILE', 'HEADERS', 'FILE ROW'];
+    // Keep track of failed items.
+    // We expect the first key to be a unique id of the validator instance
+    // which is not just the validator id as there can be multiple instances
+    // of one validator. Then within that we expect line number
+    $failures = [];
+    // Preset the fail messages for the data-row validators
+    $failures['data-row'] = [
+      'empty_cell' => [
+        'fail_title' => 'Required columns were found to be empty',
+        'fail_details' => 'One or more required columns was empty at row #: ',
+        'failed_rows' => []
+      ],
+      'valid_data_type' => [
+        'fail_title' => 'Value in column "type" was not one of "Quantitative" or "Qualitative"',
+        'fail_details' => 'Column "type" violates required values at row #: ',
+        'failed_rows' => []
+      ],
+      'duplicate_traits' => [
+        'fail_title' => 'Identical Trait Name + Method Short Name + Unit combination found',
+        'fail_details' => 'Traits that already exist in the input file or in the database were detected at row #: ',
+        'failed_rows' => []
+      ]
+    ];
 
     // Array to hold all validation result for each level.
-    // Each result is keyed by the scope.
-    $validation = [];
+    // Each result is keyed by the validator scope or id.
+    // @TODO: This will not be hardcoded when issue #85 is resolved (that
+    // implements using the configuration setters from issue #93)
+    $validation = [
+      'GENUS' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'FILE' => [
+        'title' => 'File is a valid tsv or txt',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'HEADERS' => [
+        'title' => 'File has all of the column headers expected',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'empty_cell' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'valid_data_type' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'duplicate_traits' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ]
+    ];
 
-    foreach($scopes as $scope) {
-      // Create instance of the scope-specific plugin and perform validation.
-      $validator = $manager->getValidatorIdWithScope($scope);
-      $instance = $manager->createInstance($validator);
+    // Configure the validators
+    $validators = $this->configureValidators($form_values);
 
-      // Set other validation level to upcoming/todo if a validation failed.
-      $skip = ($failed_validator > 0) ? 1 : 0;
+    // ************************************************************************
+    // Metadata Validation
+    // ************************************************************************
+    foreach ($validators['metadata'] as $key => $validator) {
+      // @TODO: Update to use the validateMetadata() method
+      $result = $validator->validate();
+      // $validation_results['metadata'][$key] = $result;
+      $validation[$key] = $result;
+      // Check for old return style...
+      if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
+        $failed_validator = TRUE;
+        //$failures['metadata'][$key] = $result['details'];
+      }
+      // Then new return style.
+      elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+        $failed_validator = TRUE;
+        //$failures['metadata'][$key] = $result['failedItems'];
+      }
+    }
 
-      // Load values.
-      $instance->loadAssets($project, $genus, $file, $headers, $skip);
+    // Check if any previous validators failed before moving on to the next
+    // input type validation
+    if ($failed_validator === FALSE) {
+      // **********************************************************************
+      // File Validation
+      // **********************************************************************
+      foreach ($validators['file'] as $key => $validator) {
+        // @TODO: Update to use the validateFile() method
+        //$result = $validator->validateFile($form_value['filename'], $form_values['fid']);
+        $result = $validator->validate();
+        $validation[$key] = $result;
+        // Check for old return style...
+        if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
+          $failed_validator = TRUE;
+          //$failures['file'][$key] = $result['details'];
+        }
+        // Then new return style.
+        elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+          $failed_validator = TRUE;
+          //$failures['file'][$key] = $result['failedItems'];
+        }
+      }
+    }
 
-      // Perform required level validation.
-      $validation[ $scope ] = $instance->validate();
+    // Check if any previous validators failed before moving on to the next
+    // input type validation
+    if ($failed_validator === FALSE) {
 
-      // Inspect for any failed validation to halt the importer.
-      if ($validation[ $scope ]['status'] == 'fail') {
-        $failed_validator++;
+      // Open the file so we can iterate through the rows
+      $file = File::load($file_id);
+      // Open and read file in this uri.
+      $file_uri = $file->getFileUri();
+      $handle = fopen($file_uri, 'r');
+
+      // Line counter.
+      $line_no = 0;
+
+      // Begin column and row validation.
+      while(!feof($handle)) {
+        // Current row.
+        $line = fgets($handle);
+        $line_no++;
+
+        // ********************************************************************
+        // Header Row Validation
+        // ********************************************************************
+        if ($line_no == 1) {
+          foreach ($validators['header-row'] as $key => $validator) {
+            // @TODO: Update to use the validateRow() method
+            $result = $validator->validate();
+            $validation[$key] = $result;
+            // Check for old style...
+            if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
+              $failed_validator = TRUE;
+              // If the header row fails validation, break out of the while loop
+              // since we don't want to continue validating the data rows.
+              break 2;
+              //$failures['header-row'][$key][$line_no] = $result['details'];
+            }
+            // Then new style.
+            elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+              $failed_validator = TRUE;
+              break 2;
+              //$failures['header-row'][$key][$line_no] = $result['failedItems'];
+            }
+          }
+        }
+        // ********************************************************************
+        // Data Row Validation
+        // ********************************************************************
+        // Skip empty lines
+        else if (!empty(trim($line))) {
+          // Split line into an array
+          $data_row = str_getcsv($line, "\t");
+          // Call each validator on this row of the file
+          foreach($validators['data-row'] as $validator_name => $validator) {
+            $result = $validator->validateRow($data_row);
+            $validation[$validator_name] = $result;
+            // Check for old style...
+            if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
+              $failed_validator = TRUE;
+              array_push($failures['data-row'][$validator_name]['failed_rows'], $line_no);
+            }
+            // Then new style.
+            elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+              $failed_validator = TRUE;
+              //array_push($failures['data-row'][$validator_name]['failed_rows'], $line_no);
+            }
+          }
+        }
+      }
+      // For each data-row validator, check if the validation status failed.
+      // If so, format the validation message and set the status to 'fail'.
+      if ($failed_validator === TRUE) {
+        foreach($failures['data-row'] as $validator_name => $validator_messages) {
+          if (!empty($validator_messages['failed_rows'])) {
+            $validation[$validator_name] = [
+              'title' => $validator_messages['fail_title'],
+              'status' => 'fail',
+              'details' => $validator_messages['fail_details'] . implode(', ', $validator_messages['failed_rows'])
+            ];
+          }
+        }
       }
     }
 
@@ -256,7 +543,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $storage[ $this->validation_result ] = $validation;
     $form_state->setStorage($storage);
 
-    if ($failed_validator > 0) {
+    if ($failed_validator === TRUE) {
       // There are issues in the submission and are detailed in the validation result window.
       // Prevent this form from submitting and reload form with all the validation errors
       // in the storage system.
