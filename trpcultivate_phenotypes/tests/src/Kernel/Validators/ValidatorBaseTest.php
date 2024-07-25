@@ -75,7 +75,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   public function testValidatorBaseCheckIndices() {
 
     // Create a plugin instance for any validator that uses this function
-    $validator_id = 'trpcultivate_phenotypes_validator_value_in_list';
+    $validator_id = 'value_in_list';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Simulates a row within the Trait Importer
@@ -92,9 +92,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
     // Provide an empty array of indices
     $context['indices'] = [];
+    $instance->context = $context;
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row, $context);
+      $validation_status = $instance->validateRow($file_row);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
@@ -104,9 +105,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
     // Provide too many indices
     $context['indices'] = [ 0, 1, 2, 3, 4, 5, 6, 7 ];
+    $instance->context = $context;
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row, $context);
+      $validation_status = $instance->validateRow($file_row);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
@@ -116,9 +118,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
     // Provide invalid indices
     $context['indices'] = [ 1, -4, 77 ];
+    $instance->context = $context;
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row, $context);
+      $validation_status = $instance->validateRow($file_row);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;

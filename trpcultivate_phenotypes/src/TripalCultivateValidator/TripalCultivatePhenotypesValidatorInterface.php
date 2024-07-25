@@ -98,13 +98,6 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    * @param array $row_values
    *  An array of values from a single row/line in the file where each element
    *  is a single column.
-   * @param array $context
-   *   @deprecated Remove in issue #91
-   *   An associative array containing the needed context, which is dependant
-   *   on the validator.
-   *   For example, instead of validating each cell by default, a validator may
-   *   need a list of indices which correspond to the columns in the row for
-   *   which the validator should act on.
    *
    * @return array
    *  An array of information about the validity of the data passed in.
@@ -126,7 +119,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *  - details: string describing the failure to users with failed items embedded.
    *  - status: one of 'pass' or 'fail'
    */
-  public function validateRow(array $row_values, array $context);
+  public function validateRow(array $row_values);
 
   /**
    * Given an array of values (that represents a single row in an input file),
