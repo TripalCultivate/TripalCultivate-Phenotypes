@@ -112,8 +112,11 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   public function testValidatorDuplicateTraitsFile() {
 
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
+    $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Set the genus in the $context array
+    $context['genus'] = 'Tripalus';
 
     // Simulates a row within the Trait Importer
     $file_row = [
@@ -127,28 +130,30 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Default case: Enter a single row of data
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
-    $validation_status = $instance->validateRow($file_row, $context);
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
+    $instance->context = $context;
+    $validation_status = $instance->validateRow($file_row);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate.");
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo('My trait', 'My method', 'My unit', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #1.');
 
     // Case #1: Re-renter the same details of the default case, should fail since it's a duplicate of the previous row
     $expected_status = 'fail';
-    $validation_status = $instance->validateRow($file_row, $context);
+    $validation_status = $instance->validateRow($file_row);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to fail when passed in a duplicate trait name + method + unit combination.");
 
     // Case #2: Provide an incorrect key to $context['indices']
-    $context['indices'] = [ 'trait' => 0, 'method name' => 2, 'unit' => 3 ];
+    $context['indices'] = [ 'Trait Name' => 0, 'method name' => 2, 'Unit' => 3 ];
+    $instance->context = $context;
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row, $context);
+      $validation_status = $instance->validateRow($file_row);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in the wrong index key "method name" to $context[\'indices\'].');
-    $this->assertStringContainsString('The method name (key: method) was not set', $e->getMessage(), "Did not get the expected exception message when providing the wrong index key \"method name\".");
+    $this->assertStringContainsString('The method name (key: Method Short Name) was not set', $e->getMessage(), "Did not get the expected exception message when providing the wrong index key \"method name\".");
 
     // Case #3: Enter a second unique row and check our global $unique_traits array
     // Note: unit is at a different index
@@ -162,8 +167,9 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     ];
 
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 5 ];
-    $validation_status = $instance->validateRow($file_row_2, $context);
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 5 ];
+    $instance->context = $context;
+    $validation_status = $instance->validateRow($file_row_2);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #2 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo('My trait 2', 'My method 2', 'My unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #2.');
@@ -180,8 +186,9 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     ];
 
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
-    $validation_status = $instance->validateRow($file_row_3, $context);
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
+    $instance->context = $context;
+    $validation_status = $instance->validateRow($file_row_3);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #3 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo('My trait', 'My method', 'My unit 2', $unique_traits, 'Failed to find expected key within the global $unique_traits array for combo #3.');
@@ -196,8 +203,14 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   public function testValidatorDuplicateTraitsDatabase() {
 
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_duplicate_traits';
+    $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Set the genus and indices in the $context array
+    // For this test method, the context array only needs to be set once
+    $context['genus'] = 'Tripalus';
+    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
+    $instance->context = $context;
 
     // Simulates a row in the input file for the Trait Importer
     // with the column headers as keys
@@ -216,8 +229,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Default case: Validate a single row and check against an empty database
     $expected_status = 'pass';
-    $context['indices'] = [ 'trait' => 0, 'method' => 2, 'unit' => 4 ];
-    $validation_status = $instance->validateRow($file_row, $context);
+    $validation_status = $instance->validateRow($file_row);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate and an empty database.");
 
     // Verify this trait isn't in the database
@@ -244,7 +256,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Now that the trait is confirmed to be in the database, our validator should
     // return a fail status when trying to validate the same trait again
     $expected_status = 'fail';
-    $validation_status = $instance->validateRow($file_row_1, $context);
+    $validation_status = $instance->validateRow($file_row_1);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided a row of values for which there already exists a trait+method+unit combo in the database.");
 
     // Case #2: Validate trait details where trait name and method name already
@@ -260,7 +272,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $file_row_2 = array_values($file_row_case_2);
 
     $expected_status = 'pass';
-    $validation_status = $instance->validateRow($file_row_2, $context);
+    $validation_status = $instance->validateRow($file_row_2);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the second row of values to validate the situation where trait and method are in the database but the unit is not.");
 
     // Verify this combo does not exist in the database yet
@@ -282,7 +294,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     $combo_ids_3 = $this->service_traits->insertTrait($file_row_case_3);
     $expected_status = 'fail';
-    $validation_status = $instance->validateRow($file_row_3, $context);
+    $validation_status = $instance->validateRow($file_row_3);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided the third row of values to validate where trait + method + unit already exist in the database.");
     // Check that we are getting the right error code for a database duplicate
     $this->assertStringEndsWith('is already found in the database.', $validation_status['details'], 'Duplicate Trait validation did not report that there was a duplicate in the database when validating the third row.');
@@ -291,7 +303,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $file_row_4 = $file_row_3;
 
     $expected_status = 'fail';
-    $validation_status = $instance->validateRow($file_row_4, $context);
+    $validation_status = $instance->validateRow($file_row_4);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided the fourth row of values to validate where trait + method + unit was in the previous row AND exists in the database.");
     $this->assertStringEndsWith('within both the input file and the database.', $validation_status['details'], 'Duplicate Trait validation did not report that there was a duplicate in the file AND the database when validating the fourth row.');
 
