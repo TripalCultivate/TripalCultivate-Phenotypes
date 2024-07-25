@@ -201,4 +201,40 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
     return $allownew;
   }
+
+  /**
+   * Split or explode a data file line/row values into an array using a delimiter.
+   * 
+   * @param string $row
+   *   A line in the data file.
+   * 
+   * @return array
+   *   An array containing the values extracted from the line after splitting it based
+   *   on a delimiter value.
+   */
+  public function splitRowIntoColumns(string $row) {
+    // @TODO: use value set in $context.delimiter property.
+    $delimiter = '';
+    
+    if ($delimiter) {
+      throw new \Exception(t('No delimiter provided.'));
+    }
+    
+    // Split the values.
+    $values = explode($delimiter, $row);
+
+    if (count($values) == 1 && $values[0] === $row) {
+      // The delimiter failed to split the row and returned the original row.
+      throw new \Exception(t('The data row or line provided could not be split using the delimiter.'));  
+    }
+
+    // Sanitize values.
+    foreach($values as &$value) {
+      if ($value) {
+        $value = trim(str_replace(['"','\''], '', $value)); 
+      }
+    }
+    
+    return $values;
+  }
 }
