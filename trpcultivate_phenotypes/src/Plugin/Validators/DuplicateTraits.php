@@ -16,12 +16,28 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate duplicate traits within a file
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_duplicate_traits",
+ *   id = "duplicate_traits",
  *   validator_name = @Translation("Duplicate Traits Validator"),
  *   validator_scope = "FILE ROW",
  * )
  */
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+
+  /**
+   *   An associative array containing the needed context, which is dependant
+   *   on the validator. For example, instead of validating each cell by default,
+   *   a validator may need a list of indices which correspond to the columns in
+   *   the row for which the validator should act on.
+   *
+   *   This validator requires the following keys:
+   *   - genus => a string of the genus name
+   *   - indices => an associative array with the following keys, which are
+   *                column headers of required columns for the Traits Importer:
+   *     - 'Trait Name': int, the index of the trait name column in $row_values
+   *     - 'Method Short Name': int, the index of the method name column in $row_values
+   *     - 'Unit': int, the index of the unit column in $row_values
+   */
+  public $context = [];
 
   /**
    * A nested array of already validated values forming the unique trait name +
@@ -68,12 +84,6 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element
-   * @param array $context
-   *   An associative array with the following keys:
-   *   - indices => an associative array with the following keys:
-   *     - 'trait': int, the index of the trait name column in $row_values
-   *     - 'method': int, the index of the method name column in $row_values
-   *     - 'unit': int, the index of the unit column in $row_values
    *
    * @return array
    *   An associative array with the following keys:
@@ -81,7 +91,10 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
    *   - details: details about the offending field/value.
    */
-  public function validateRow($row_values, $context) {
+  public function validateRow($row_values) {
+
+    // Set our context which was configured for this validator
+    $context = $this->context;
 
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem.
@@ -94,19 +107,19 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // using the indices stored in our $context array
     // We need to ensure that each array key we expect in $context['indices']
     // exists, otherwise throw an exception
-    if (!isset($context['indices']['trait'])) {
-      throw new \Exception(t('The trait name (key: trait) was not set in the $context[\'indices\'] array'));
+    if (!isset($context['indices']['Trait Name'])) {
+      throw new \Exception(t('The trait name (key: Trait Name) was not set in the $context[\'indices\'] array'));
     }
-    if (!isset($context['indices']['method'])) {
-       throw new \Exception(t('The method name (key: method) was not set in the $context[\'indices\'] array'));
+    if (!isset($context['indices']['Method Short Name'])) {
+       throw new \Exception(t('The method name (key: Method Short Name) was not set in the $context[\'indices\'] array'));
     }
-    if (!isset($context['indices']['unit'])) {
-       throw new \Exception(t('The unit (key: unit) was not set in the $context[\'indices\'] array'));
+    if (!isset($context['indices']['Unit'])) {
+       throw new \Exception(t('The unit (key: Unit) was not set in the $context[\'indices\'] array'));
     }
 
-    $trait = $row_values[$context['indices']['trait']];
-    $method = $row_values[$context['indices']['method']];
-    $unit = $row_values[$context['indices']['unit']];
+    $trait = $row_values[$context['indices']['Trait Name']];
+    $method = $row_values[$context['indices']['Method Short Name']];
+    $unit = $row_values[$context['indices']['Unit']];
 
     // Set our flags for tracking database and input file duplicates
     $duplicate_in_file = FALSE;
@@ -122,6 +135,8 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     }
 
     // Check if our trait combo exists at the database level
+    // First make sure to set our genus before getting our trait combo
+    $this->service_traits->setTraitGenus($context['genus']);
     // Grab our traits service
     $trait_combo = $this->service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
     if (!empty($trait_combo)) {
