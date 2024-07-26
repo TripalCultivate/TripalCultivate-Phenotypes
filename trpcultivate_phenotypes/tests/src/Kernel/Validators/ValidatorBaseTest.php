@@ -276,9 +276,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $exception_caught = NULL;
     $exception_message = NULL;
     try {
-      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
-      $context = [];
-      $instance->validateRow($row_values, $context);
+      $row_values = implode("\t", ['col1', 'col2', 'col3', 'col4', 'col5']);
+      $instance->validateRow($row_values);
     } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -311,5 +310,94 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       $exception_message,
       "We did not get the exception message we expected when calling BasicallyBase::validate()"
     );
+  }
+
+  /**
+   * Test line or row split method.
+   */
+  public function testLineSplit() {
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Create a data row.
+    // This line captures data values with single/double quotes and leading/trailing spaces.
+    $line = $line_copy = ['Value A', 'Value "B"', 'Value \'C\'', 'Value D ', ' Value E', ' Value F ', ' Value G           '];
+    // Sanitize the values so that the expected split values would be:
+    // Value A, Value B, Value C, Value D, Value E, Value F and Value G.
+    foreach($line as &$l) {
+      $l = trim(str_replace(['"','\''], '', $l)); 
+    }
+
+    // At this point line is sanitized and sparkling*
+    
+    // Test:
+    // 1. Failed to specify a delimiter.
+    // 2. Test that delimiter is could not split the line.
+    // 3. Line values and split values match. 
+    // 4. Some other delimiter.
+    
+    // Failed to defnie a delimiter
+    $str_line = implode('~', $line_copy);
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+
+    try {
+      $instance->splitRowIntoColumns($str_line);
+    } 
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no delimiter defined in splitRowIntoColumns().');
+    $this->assertStringContainsString('No delimiter provided', $exception_message, 
+      'Expected exception message does not match message when no delimiter defined in splitRowIntoColumns().');
+    
+    
+    // Delimiter is not present in the line and could not split the line.
+    // This case will return the original line.
+    $instance->context['delimiter'] = '<the_delimiter>';  
+    $str_line = implode('<not_the_delimiter>', $line_copy);
+    
+    $exception_caught = FALSE;
+    $exception_message = '';
+
+    try {
+      $instance->splitRowIntoColumns($str_line);
+    } 
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line using the delimiter.');
+    $this->assertStringContainsString('The data row or line provided could not be split using the delimiter', $exception_message, 
+      'Expected exception message does not match message when splitRowIntoColumns() could not split line using the delimiter.');
+   
+      
+    // Test that the sanitized line is the same as the split values.
+    // Test delimiter for tsv: tab.
+    $instance->context['delimiter'] = '\t';
+    $str_line = implode($instance->context['delimiter'], $line_copy);
+    $values = $instance->splitRowIntoColumns($str_line);
+    $this->assertEquals($line, $values, 'Line values does not match expected split values.');
+  
+     
+    // Test delimiter for csv: comma character.
+    $instance->context['delimiter'] = ',';
+    $str_line = implode($instance->context['delimiter'], $line_copy);
+    $values = $instance->splitRowIntoColumns($str_line);
+    $this->assertEquals($line, $values, 'Line values does not match expected split values.');
   }
 }

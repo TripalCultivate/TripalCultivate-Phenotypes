@@ -5,6 +5,17 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator;
 use Drupal\Component\Plugin\PluginBase;
 
 abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
+  /**
+   *   An associative array containing the needed context, which is dependant
+   *   on the validator. For example, row level validators are passed the raw
+   *   row from the file and thus need the importer to indicate how it should
+   *   be split.
+   *
+   *   Row level validators require the following key(s):
+   *   - delimiter => the delimiter to be passed to explode in order to break
+   *     the raw row string into an array of columns.
+   */
+  public $context = [];
 
   /**
    * Get validator plugin validator_name definition annotation value.
@@ -63,7 +74,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   /**
    * {@inheritdoc}
    */
-  public function validateRow(array $row_values) {
+  public function validateRow(string $row_values) {
     $plugin_name = $this->getValidatorName();
     throw new \Exception("Method validateRow() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
   }
@@ -213,10 +224,9 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   on a delimiter value.
    */
   public function splitRowIntoColumns(string $row) {
-    // @TODO: use value set in $context.delimiter property.
-    $delimiter = '';
-    
-    if ($delimiter) {
+    // Delimiter:
+    $delimiter = $this->context['delimiter'] ?? ''; 
+    if (empty($delimiter)) {
       throw new \Exception(t('No delimiter provided.'));
     }
     

@@ -38,6 +38,11 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
   private $config;
 
   /**
+   * Delimiter for TSV file format.
+   */
+  private $delimiter = "\t";
+
+  /**
    * Modules to enable.
    */
   protected static $modules = [
@@ -92,8 +97,11 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
     // Case #1: Check for a valid value in a single column
     $expected_status = 'pass';
     $context['indices'] = [ 5 ];
+    // Set the delimiter.
+    $context['delimiter'] = $this->delimiter;
     $context['valid_values'] = [ 'Qualitative', 'Quantitative' ];
     $instance->context = $context;
+    $file_row = implode($this->delimiter, $file_row);
     $validation_status = $instance->validateRow($file_row);
     $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to pass when provided a cell with a valid value in the list.");
     $this->assertStringContainsString('Value at index 5 was one of:', $validation_status['details'], "Value in list validation details did not report that index 5 contained a valid value.");
@@ -158,7 +166,10 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
     // Case #1: Provide a list of indices for cells that are not empty
     $expected_status = 'pass';
     $context['indices'] = [ 0, 2, 4 ];
+    // Set the delimiter.
+    $context['delimiter'] = $this->delimiter;
     $instance->context = $context;
+    $file_row = implode($this->delimiter, $file_row);
     $validation_status = $instance->validateRow($file_row);
     $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to pass when provided only non-empty cells to check.");
 

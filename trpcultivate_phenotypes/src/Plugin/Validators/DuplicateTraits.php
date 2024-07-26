@@ -82,9 +82,10 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * Validate the values within the cells of this row.
    *
    * @param array $row_values
-   *   The contents of the file's row where each value within a cell is
-   *   stored as an array element
-   *
+   *   A single line or row extracted from the data file 
+   *   containing data entries, values or column headers, with each value 
+   *   delimited by a character specified by the importer class. 
+   *    
    * @return array
    *   An associative array with the following keys:
    *   - title: string, section or title of the validation as it appears in the result window.
@@ -92,6 +93,8 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   - details: details about the offending field/value.
    */
   public function validateRow($row_values) {
+    // Split row values into an array.
+    $row_values = $this->splitRowIntoColumns($row_values);
 
     // Set our context which was configured for this validator
     $context = $this->context;

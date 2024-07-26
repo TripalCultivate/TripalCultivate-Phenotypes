@@ -199,6 +199,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $header_index['Unit'],
       $header_index['Type']
     ];
+
+    // Delimiter for tab-separated values: \t
+    $context['delimiter'] = "\t";
+
     $instance->context = $context;
     $validators['data-row']['empty_cell'] = $instance;
 
@@ -503,8 +507,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // ********************************************************************
         // Skip empty lines
         else if (!empty(trim($line))) {
-          // Split line into an array
-          $data_row = str_getcsv($line, "\t");
+          $data_row = $line;
+
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
             $result = $validator->validateRow($data_row);
