@@ -329,7 +329,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   /**
    * Test line or row split method.
    */
-  public function testLineSplit() {
+  public function testSplitRowIntoColumns() {
     $configuration = [];
     $validator_id = 'fake_basically_base';
     $plugin_definition = [
