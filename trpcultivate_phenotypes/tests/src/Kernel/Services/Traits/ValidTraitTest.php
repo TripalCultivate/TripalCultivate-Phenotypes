@@ -1,10 +1,4 @@
 <?php
-
-/**
- * @file
- * Kernel test of Traits service.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
@@ -27,7 +21,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
   protected $service_traits;
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */

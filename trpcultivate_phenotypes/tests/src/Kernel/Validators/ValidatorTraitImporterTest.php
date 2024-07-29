@@ -1,12 +1,7 @@
 <?php
-
-/**
- * @file
- * Kernel tests for validator plugins specific to validating the Trait Importer
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
@@ -28,7 +23,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   protected $plugin_manager;
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */

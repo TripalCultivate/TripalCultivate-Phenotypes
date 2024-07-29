@@ -1,8 +1,8 @@
 <?php
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
 use Drupal\Core\Url;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
 /**
@@ -39,11 +39,18 @@ class InstallTest extends ChadoTestBrowserBase {
   protected static $help_text_excerpt = 'pports collecting all data for a specific trait (e.g. Plant Height) into a single page while still fully describing methodology and units for accurate analysis.';
 
   /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() :void {
     parent::setUp();
-    $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $this->chado_connection = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
   }
 
   /**
