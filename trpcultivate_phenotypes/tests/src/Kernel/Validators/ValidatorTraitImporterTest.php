@@ -4,7 +4,6 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
-use Drupal\tripal_chado\Database\ChadoConnection;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that are specific to
