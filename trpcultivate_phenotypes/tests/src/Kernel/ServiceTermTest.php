@@ -1,13 +1,8 @@
 <?php
-
-/**
- * @file
- * Kernel test of Terms service.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
 
  /**
@@ -41,11 +36,11 @@ class ServiceTermTest extends ChadoTestKernelBase {
   private $config;
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */
-  protected $chado_connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * {@inheritdoc}
