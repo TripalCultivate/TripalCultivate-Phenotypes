@@ -199,8 +199,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $header_index['Unit'],
       $header_index['Type']
     ];
-
-    // Delimiter for tab-separated values: \t
+    
+    // This importer expects data in tab-separated values.
+    // Delimiter: tabulator key - \t
     $context['delimiter'] = "\t";
 
     $instance->context = $context;
@@ -507,6 +508,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // ********************************************************************
         // Skip empty lines
         else if (!empty(trim($line))) {
+          // Pass the line (string) and row validator handles separating values
+          // into an array based on the delimiter defined by this importer instance.
           $data_row = $line;
 
           // Call each validator on this row of the file
