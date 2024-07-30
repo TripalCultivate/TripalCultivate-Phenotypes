@@ -227,7 +227,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     // Delimiter:
     $delimiter = $this->context['delimiter'] ?? ''; 
     if (empty($delimiter)) {
-      throw new \Exception(t('No delimiter provided.'));
+      throw new \Exception('No delimiter provided.');
     }
     
     // Split the values.
@@ -235,7 +235,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
     if (count($values) == 1 && $values[0] === $row) {
       // The delimiter failed to split the row and returned the original row.
-      throw new \Exception(t('The data row or line provided could not be split using the delimiter.'));  
+      throw new \Exception('The data row or line provided could not be split using the delimiter (' . $delimiter . ').');  
     }
 
     // Sanitize values.
