@@ -62,11 +62,11 @@ class validTsvFile extends TripalCultivatePhenotypesValidatorBase implements Con
    
     $items = str_getcsv($row_values, "\t");
     // @TODO: a way to get the count of importer expected column headers.
-    $expected_coulum_count = 7;
+    $expected_column_count = 7;
     
     // Tab check by comparing the number of items from splitting the string
     // by tab to the number of items expected.
-    if (count($items) != $expected_coulum_count) {
+    if (count($items) != $expected_column_count) {
       $case = 'Data file header row is not a tab-separated values';
       $valid = FALSE;
       $failed_items = $row_values;
