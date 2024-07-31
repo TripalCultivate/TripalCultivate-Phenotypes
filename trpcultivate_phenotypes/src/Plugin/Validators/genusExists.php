@@ -11,6 +11,7 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePheno
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
  * Validate that genus exists and is configured.
@@ -28,15 +29,24 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
   protected $service_PhenoGenusOntology;
 
   /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
    * Constructor.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition,
-    TripalCultivatePhenotypesGenusOntologyService $service_genus_ontology) {
+    TripalCultivatePhenotypesGenusOntologyService $service_genus_ontology, ChadoConnection $chado_connection) {
 
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     
     // Genus ontology service.
     $this->service_PhenoGenusOntology = $service_genus_ontology;
+    // Chado.
+    $this->chado_connection = $chado_connection;
   }
 
   /**
@@ -47,7 +57,8 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('trpcultivate_phenotypes.genus_ontology')
+      $container->get('trpcultivate_phenotypes.genus_ontology'),
+      $container->get('tripal_chado.database')
     );
   }
 
@@ -65,7 +76,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
    *     - valid: either TRUE or FALSE depending on if the genus value is valid or not.
-   *     - failedItems: the failed genus value provided. This will be empty if the value was valid.
+   *     - failedItems: an array of "items" that failed to be used in the message to the user. This is an empty array if the metadata input was valid.
    */
   public function validateMetadata($form_values) {
     // This genus validator assumes that a field with name/key genus was
@@ -74,44 +85,51 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
   
     // Parameter passed to the method is not an array.
     if (!is_array($form_values)) {
-      throw new \Exception(t('Unexpected @type type was passed as parameter to genusExists validator.', ['@type' => gettype($form_values)]));
+      $type = gettype($form_values);
+      throw new \Exception('Unexpected ' . $type . ' type was passed as parameter to genusExists validator.');
     }
     
     // Failed to locate the genus field element.
-    if (is_array($form_values) && !array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception(t('Failed to locate genus field element. genusExists validator expects a form field element name genus.'));
+    if (!array_key_exists($expected_field_key, $form_values)) {
+      throw new \Exception('Failed to locate genus field element. genusExists validator expects a form field element name genus.');
     }
   
     // Validator response values for a valid genus value.
     $case = 'Genus exists and is configured with phenotypes';
     $valid = TRUE;
-    $failed_items = '';
+    $failed_items = [];
     
     // Genus.
     $genus = trim($form_values[ $expected_field_key ]);
-
-    // This method has now curated all genus available in the organism table,
-    // both configured and non-configured genus.
-    $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
-
-    if (!$genus_config) {
+    
+    // Query genus to check if the genus provided exists.
+    $query = "SELECT genus FROM {1:organism} WHERE genus = :genus";
+    $genus_exists = $this->chado_connection
+      ->query($query, [':genus' => $genus])
+      ->fetchField();
+  
+    if (!$genus_exists) {
       // The genus provided does not exist.
       $case = 'Genus does not exist';
       $valid = FALSE;
-      $failed_items = $genus;
-    }
+      $failed_items = ['genus_provided' => $genus];
+    }  
     else {
-      // The genus provided does exist, test that it was
-      // fully configured, that is, a cv was set for trait configuration.
+      // The genus provided does exist, test that the genus 
+      // has configuration values.
 
-      if (empty($genus_config['trait']) || $genus_config['trait'] <= 0) {
+      // This method has now curated all genus available in the organism table,
+      // both configured and non-configured genus.
+      $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
+      
+      if (!$genus_config || $genus_config['trait'] <= 0) {
         // Not configured genus.
         $case = 'Genus exists but is not configured';
         $valid = FALSE;
-        $failed_items = $genus;
+        $failed_items = ['genus_provided' => $genus];
       }
     }
-    
+
     return [
       'case' => $case,
       'valid' => $valid,

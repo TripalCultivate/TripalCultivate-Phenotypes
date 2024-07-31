@@ -66,7 +66,7 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
    *     - valid: either TRUE or FALSE depending on if the project+genus value is valid or not.
-   *     - failedItems: the failed project and genus value provided. This will be empty if the value was valid.
+   *     - failedItems: an array of "items" that failed to be used in the message to the user. This is an empty array if the metadata input was valid.
    */
   public function validateMetadata($form_values) {
     // This project genus match validator assumes that fields with name/key project and genus were
@@ -78,20 +78,21 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   
     // Parameter passed to the method is not an array.
     if (!is_array($form_values)) {
-      throw new \Exception(t('Unexpected @type type was passed as parameter to projectGenusMatch validator.', ['@type' => gettype($form_values)]));
+      $type = gettype($form_values);
+      throw new \Exception('Unexpected ' . $type . ' type was passed as parameter to projectGenusMatch validator.');
     }
     
     // Failed to locate the project and genus field element.
     foreach($expected_field_key as $field) {
       if (!array_key_exists($field, $form_values)) {
-        throw new \Exception(t('Failed to locate @field field element. projectGenusMatch validator expects a form field element name @field.', ['@field' => $field]));
+        throw new \Exception('Failed to locate ' . $field . ' field element. projectGenusMatch validator expects a form field element name ' . $field . '.');
       }
     }
 
     // Validator response values for a valid project+genus value.
     $case = 'Project exists and project-genus match the genus provided';
     $valid = TRUE;
-    $failed_items = '';
+    $failed_items = [];
 
     // Project.
     $project = trim($form_values[ $expected_field_key['fld_project'] ]);
@@ -117,7 +118,7 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       // The project provided whether the name or project id, does not exist.
       $case = 'Project does not exist';
       $valid = FALSE;
-      $failed_items = $project;
+      $failed_items = ['project_provided' => $project];
     }
     else {
       // Inspect the set genus to the project and see if it matches
@@ -128,7 +129,7 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
         // Genus does not match the genus paired to the project.
         $case = 'Genus does not match the genus set to the project';
         $valid = FALSE;
-        $failed_items = $genus;
+        $failed_items = ['genus_provided' => $genus];
       }
     }
 
