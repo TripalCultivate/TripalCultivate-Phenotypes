@@ -21,17 +21,28 @@ class MetadataInputTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
-   * A genus that exists and is configured. 
+   * An array of genus for testing.
+   * - config: a configured genus.
+   * - not-config: genus not configured.
+   * 
+   * @var array
    */
-  protected $test_genus;
+  protected array $test_genus;
 
-   /**
-   * A project that exists. 
+  /**
+   * An array of projects for testing.
+   * - project-with-configgenus: a project that is paired with a configured genus.
+   * - project-with-genus: a project that is paired with a genus.
+   * - just-project: a project record.
+   * 
+   * @var array
    */
-  protected $test_project;
+  protected array $test_project;
 
   /**
    * Modules to enable.
+   * 
+   * @var array
    */
   protected static $modules = [
     'user',
@@ -308,7 +319,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertEquals('Project does not exist', $validation_status['case'],
       'Project exists validator case title does not match expected title for non-existent project.');
     $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
-    $this->assertStringContainsString($project, $validation_status['failedItems'], 'Failed project value is expected in failed items.');
+    $this->assertEquals($project, $validation_status['failedItems']['project_provided'], 'Failed project value is expected in failed items.');
 
 
     // Project exists - by project id.

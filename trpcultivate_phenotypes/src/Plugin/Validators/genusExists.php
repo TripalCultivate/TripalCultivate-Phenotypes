@@ -25,6 +25,8 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 class genusExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
    * Genus Ontology Service;
+   * 
+   * @var TripalCultivatePhenotypesGenusOntologyService
    */
   protected $service_PhenoGenusOntology;
 

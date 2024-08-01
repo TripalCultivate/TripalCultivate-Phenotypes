@@ -25,6 +25,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
    * Genus Project Service.
+   * 
+   * @var TripalCultivatePhenotypesGenusProjectService
    */
   protected $service_PhenoGenusProject;
 
