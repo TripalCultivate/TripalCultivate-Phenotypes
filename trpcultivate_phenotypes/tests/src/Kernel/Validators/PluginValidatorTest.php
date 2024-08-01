@@ -1,13 +1,8 @@
 <?php
-
-/**
- * @file
- * Kernel test of Validator Plugin.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\file\Entity\File;
 
@@ -24,11 +19,11 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   protected $plugin_manager;
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */
-  protected $chado;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Configuration
@@ -84,13 +79,13 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by our service.
-    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Prepare by adding test records to genus, project and projectproperty
     // to relate a genus to a project.
     $project = 'Project - ' . uniqid();
-    $project_id = $this->chado->insert('1:project')
+    $project_id = $this->chado_connection->insert('1:project')
       ->fields([
         'name' => $project,
         'description' => $project . ' : Description'
@@ -100,7 +95,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     $this->assets['project'] = $project;
 
     $genus = 'Wild Genus ' . uniqid();
-    $this->chado->insert('1:organism')
+    $this->chado_connection->insert('1:organism')
       ->fields([
         'genus' => $genus,
         'species' => 'Wild Species',
@@ -110,7 +105,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
 
     $this->assets['genus'] = $genus;
 
-    $this->chado->insert('1:projectprop')
+    $this->chado_connection->insert('1:projectprop')
       ->fields([
         'project_id' => $project_id,
         'type_id' => 1,
@@ -263,14 +258,14 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   public function testRecordsCreated() {
     // Test project.
     $sql_project = "SELECT name FROM {1:project} WHERE name = :name LIMIT 1";
-    $project = $this->chado->query($sql_project, [':name' => $this->assets['project']])
+    $project = $this->chado_connection->query($sql_project, [':name' => $this->assets['project']])
       ->fetchField();
 
     $this->assertNotNull($project, 'Project test record not created.');
 
     // Test genus.
     $sql_genus = "SELECT genus FROM {1:organism} WHERE genus = :genus LIMIT 1";
-    $genus = $this->chado->query($sql_genus, [':genus' => $this->assets['genus']])
+    $genus = $this->chado_connection->query($sql_genus, [':genus' => $this->assets['genus']])
       ->fetchField();
 
     $this->assertNotNull($genus, 'Genus test record not created.');
@@ -297,7 +292,7 @@ class PluginValidatorTest extends ChadoTestKernelBase {
     // This will allow (pass) so long as project has no genus set and user
     // can set the genus so further in the importer the project-genus can be created.
     $project_no_genus = 'Project No Genus';
-    $this->chado->insert('1:project')
+    $this->chado_connection->insert('1:project')
       ->fields([
         'name' => $project_no_genus,
         'description' => $project_no_genus . ' : Description'

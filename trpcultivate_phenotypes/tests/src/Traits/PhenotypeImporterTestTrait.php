@@ -2,8 +2,16 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Traits;
 
 use Drupal\file\Entity\File;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
 trait PhenotypeImporterTestTrait {
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
 
   /**
    * Sets the ontology configuration for a specific genus.
@@ -62,7 +70,7 @@ trait PhenotypeImporterTestTrait {
       if (empty($details[$key]['name']) AND !empty($details[$key][$id_column])) {
         $table = ($id_column == 'cv_id') ? 'cv' : 'db';
         $id = $details[$key][$id_column];
-        $name = $this->connection->select("1:$table", 'tbl')
+        $name = $this->chado_connection->select("1:$table", 'tbl')
           ->fields('tbl', ['name'])
           ->condition($id_column, $id, '=')
           ->execute()
@@ -74,7 +82,7 @@ trait PhenotypeImporterTestTrait {
       // -- no id but we have the name.
       elseif (!empty($details[$key]['name']) AND empty($details[$key][$id_column])) {
         $name = $details[$key]['name'];
-        $id = $this->connection->select("1:$table", 'tbl')
+        $id = $this->chado_connection->select("1:$table", 'tbl')
           ->fields('tbl', [$id_column])
           ->condition('name', $name, '=')
           ->execute()
@@ -89,7 +97,7 @@ trait PhenotypeImporterTestTrait {
         // set the name if it's not already.
         $details[$key]['name'] = $details[$key]['name'] ?: $genus . ' ' . $key . uniqid();
         $name = $details[$key]['name'];
-        $id = $this->connection->insert("1:$table")
+        $id = $this->chado_connection->insert("1:$table")
           ->fields([
             'name' => $name,
           ])

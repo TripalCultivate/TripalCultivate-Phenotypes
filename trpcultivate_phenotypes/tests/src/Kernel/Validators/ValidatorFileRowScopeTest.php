@@ -1,12 +1,7 @@
 <?php
-
-/**
- * @file
- * Kernel tests for validator plugins that operate within the scope of "FILE ROW"
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 
  /**
@@ -24,11 +19,11 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
   protected $plugin_manager;
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */
-  protected $chado;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Configuration
@@ -63,8 +58,8 @@ class ValidatorFileRowScopeTest extends ChadoTestKernelBase {
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by our service.
-    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
