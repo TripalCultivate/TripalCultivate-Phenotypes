@@ -74,7 +74,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   /**
    * {@inheritdoc}
    */
-  public function validateRow(string $row_values) {
+  public function validateRow(array $row_values) {
     $plugin_name = $this->getValidatorName();
     throw new \Exception("Method validateRow() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
   }

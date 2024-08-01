@@ -56,11 +56,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   protected $service_traits;
 
   /**
-   * Delimiter for TSV file format.
-   */
-  private $delimiter = "\t";
-
-  /**
    * Modules to enable.
    */
   protected static $modules = [
@@ -120,9 +115,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
-    // Set the delimiter.
-    $context['delimiter'] = $this->delimiter;
-
     // Set the genus in the $context array
     $context['genus'] = 'Tripalus';
 
@@ -135,8 +127,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
       'My unit',
       'Quantitative'
     ];
-
-    $file_row = implode($this->delimiter, $file_row);
 
     // Default case: Enter a single row of data
     $expected_status = 'pass';
@@ -176,8 +166,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
       'My unit 2'
     ];
 
-    $file_row_2 = implode($this->delimiter, $file_row_2);
-
     $expected_status = 'pass';
     $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 5 ];
     $instance->context = $context;
@@ -196,8 +184,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
       'My unit 2',
       'Qualitative'
     ];
-
-    $file_row_3 = implode($this->delimiter, $file_row_3);
 
     $expected_status = 'pass';
     $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
@@ -219,9 +205,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Create a plugin instance for this validator
     $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
-    
-    // Set the delimiter.
-    $context['delimiter'] = $this->delimiter;
 
     // Set the genus and indices in the $context array
     // For this test method, the context array only needs to be set once
@@ -243,7 +226,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Create a simplified array without assigning the column headers as keys
     // for use with our validator directly
     $file_row = array_values($file_row_default);
-    $file_row = implode($this->delimiter, $file_row);
     
     // Default case: Validate a single row and check against an empty database
     $expected_status = 'pass';
@@ -274,7 +256,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Now that the trait is confirmed to be in the database, our validator should
     // return a fail status when trying to validate the same trait again
     $expected_status = 'fail';
-    $file_row_1 = implode($this->delimiter, $file_row_1);
     $validation_status = $instance->validateRow($file_row_1);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided a row of values for which there already exists a trait+method+unit combo in the database.");
 
@@ -291,7 +272,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $file_row_2 = array_values($file_row_case_2);
 
     $expected_status = 'pass';
-    $file_row_2 = implode($this->delimiter, $file_row_2);
     $validation_status = $instance->validateRow($file_row_2);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the second row of values to validate the situation where trait and method are in the database but the unit is not.");
 
@@ -314,7 +294,6 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     $combo_ids_3 = $this->service_traits->insertTrait($file_row_case_3);
     $expected_status = 'fail';
-    $file_row_3 = implode($this->delimiter, $file_row_3);
     $validation_status = $instance->validateRow($file_row_3);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to fail when provided the third row of values to validate where trait + method + unit already exist in the database.");
     // Check that we are getting the right error code for a database duplicate

@@ -95,10 +95,9 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   /**
    * Validates rows within the data file submitted to an importer.
    *
-   * @param string $row_values
-   *   A single line or row extracted from the data file 
-   *   containing data entries, values or column headers, with each value 
-   *   delimited by a character specified by the importer class. 
+   * @param array $row_values
+   *  An array of values from a single row/line in the file where each element
+   *  is a single column.
    *
    * @return array
    *  An array of information about the validity of the data passed in.
@@ -120,7 +119,7 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *  - details: string describing the failure to users with failed items embedded.
    *  - status: one of 'pass' or 'fail'
    */
-  public function validateRow(string $row_values);
+  public function validateRow(array $row_values);
 
   /**
    * Given an array of values (that represents a single row in an input file),

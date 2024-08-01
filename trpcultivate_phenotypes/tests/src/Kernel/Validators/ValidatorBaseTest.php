@@ -37,11 +37,6 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   private $config;
 
   /**
-   * Delimiter for TSV file format.
-   */
-  private $delimiter = "\t";
-
-  /**
    * Modules to enable.
    */
   protected static $modules = [
@@ -93,15 +88,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Qualitative'
     ];
 
-    $file_row = implode($this->delimiter, $file_row);
-
     // ERROR CASES
 
     // Provide an empty array of indices
     $context['indices'] = [];
-    // Set the delimiter.
-    $context['delimiter'] = $this->delimiter;
-
     $instance->context = $context;
     $exception_caught = FALSE;
     try {
@@ -290,7 +280,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $exception_caught = NULL;
     $exception_message = NULL;
     try {
-      $row_values = implode("\t", ['col1', 'col2', 'col3', 'col4', 'col5']);
+      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
       $instance->validateRow($row_values);
     } catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -402,7 +392,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       
     // Test that the sanitized line is the same as the split values.
     // Test delimiter for tsv: tab.
-    $instance->context['delimiter'] = $this->delimiter;
+    $instance->context['delimiter'] = "\t";
     $str_line = implode($instance->context['delimiter'], $raw_line);
     $values = $instance->splitRowIntoColumns($str_line);
     $this->assertEquals($good_line, $values, 'Line values does not match expected split values.');

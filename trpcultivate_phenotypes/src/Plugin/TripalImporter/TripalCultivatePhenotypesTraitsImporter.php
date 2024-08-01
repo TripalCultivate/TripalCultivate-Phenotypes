@@ -510,7 +510,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         else if (!empty(trim($line))) {
           // Pass the line (string) and row validator handles separating values
           // into an array based on the delimiter defined by this importer instance.
-          $data_row = $line;
+          $data_row = $this->splitRowIntoColumns($line);
 
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
