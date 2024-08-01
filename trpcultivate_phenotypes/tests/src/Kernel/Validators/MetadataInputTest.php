@@ -110,7 +110,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $this->test_project[ $test_case ]['name']  = $project;
       $this->test_project[ $test_case ]['genus'] = $project_genus;
 
-      if ($test_case != 'just-project') {
+      if ($test_case == 'project-with-configgenus') {
         // Create project - genus relationship.
         $project_prop = \Drupal::service('trpcultivate_phenotypes.genus_project')
           ->setGenusToProject($this->test_project[ $test_case ]['id'], $this->test_project[ $test_case ]['genus']);
@@ -313,8 +313,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     // Project exists - by project id.
     foreach($this->test_project as $project) {
-      $project = $project['id'];
-      $form_values = ['project' => $project];  
+      $form_values = ['project' => $project['id']];  
       $validation_status = $instance->validateMetadata($form_values);
 
       $this->assertEquals('Project exists', $validation_status['case'],
@@ -324,8 +323,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
       
       // Project exists - by project name.
-      $project = $this->test_project['name'];
-      $form_values = ['project' => $project];  
+      $form_values = ['project' => $project['name']];  
       $validation_status = $instance->validateMetadata($form_values);
 
       $this->assertEquals('Project exists', $validation_status['case'],
@@ -333,7 +331,6 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $this->assertTrue($validation_status['valid'], 'A valid project must return a TRUE valid status.');
       $this->assertEmpty($validation_status['failedItems'], 'A valid project does not return a failed item value.');
     }
-
   }
 
   /**
@@ -440,14 +437,34 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->assertEquals($project, $validation_status['failedItems']['project_provided'], 'Failed project value is expected in failed items.');
 
     // Test project exists but not attached to any genus.
+    $project = $this->test_project['just-project']['id'];
+    $genus = $this->test_project['just-project']['genus'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
     
+    $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for a valid project+genus.');
+    $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
+    $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
+
 
     // Test project exists but is attached to a different genus.
+    $project = $this->test_project['just-project']['id'];
+    $genus = $this->test_project['project-with-configgenus']['genus'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
+
+    $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for a valid project+genus.');
+    $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
+    $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
 
 
     // Test project with genus set.
-    $project = $this->test_project['id'];
-    $genus = $this->test_genus['configured'];
+    $project = $this->test_project['project-with-configgenus']['id'];
+    $genus = $this->test_project['project-with-configgenus']['genus'];
 
     $form_values = ['project' => $project, 'genus' => $genus];  
     $validation_status = $instance->validateMetadata($form_values);

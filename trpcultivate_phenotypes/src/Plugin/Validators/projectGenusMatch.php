@@ -125,7 +125,7 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       // the genus provided in the genus field.
       $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
       
-      if ($genus != $project_genus['genus']) {
+      if (!isset($project_genus['genus']) || $genus != $project_genus['genus']) {
         // Genus does not match the genus paired to the project.
         $case = 'Genus does not match the genus set to the project';
         $valid = FALSE;
