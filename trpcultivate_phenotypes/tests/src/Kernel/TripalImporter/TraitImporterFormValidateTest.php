@@ -26,7 +26,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
   /**
    * Chado connection
    */
-  protected $connection;
+  protected $chado_connection;
 
   /**
    * Saves details regarding the config.
@@ -67,7 +67,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
 		// Open connection to Chado
-		$this->connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+		$this->chado_connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
@@ -188,7 +188,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
     // Configure the module.
     $genus = 'Tripalus';
-    $organism_id = $this->connection->insert('1:organism')
+    $organism_id = $this->chado_connection->insert('1:organism')
       ->fields([
         'genus' => $genus,
         'species' => 'databasica',
