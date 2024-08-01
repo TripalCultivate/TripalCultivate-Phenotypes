@@ -1,8 +1,8 @@
 <?php
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\TripalImporter;
 
 use Drupal\Core\Url;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
@@ -24,9 +24,11 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
   protected $importer;
 
   /**
-   * Chado connection
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
    */
-  protected $chado_connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Config factory
@@ -106,7 +108,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     $container->set('tripal.logger', $mock_logger);
 
     // Create our organism and configure it.
-    $organism_id = $this->connection->insert('1:organism')
+    $organism_id = $this->chado_connection->insert('1:organism')
       ->fields([
         'genus' => 'Tripalus',
         'species' => 'databasica',
@@ -123,7 +125,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
       [],
       'trpcultivate-phenotypes-traits-importer',
       $this->definitions,
-      $this->connection
+      $this->chado_connection
     );
 
   }

@@ -1,8 +1,8 @@
 <?php
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\TripalImporter;
 
 use Drupal\Core\Url;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
@@ -24,9 +24,11 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
   protected $importer;
 
   /**
-   * Chado connection
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
    */
-  protected $chado_connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Saves details regarding the config.

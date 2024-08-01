@@ -2,8 +2,16 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Traits;
 
 use Drupal\file\Entity\File;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
 trait PhenotypeImporterTestTrait {
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
 
   /**
    * Sets the ontology configuration for a specific genus.
