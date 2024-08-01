@@ -29,7 +29,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
   ];
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */
