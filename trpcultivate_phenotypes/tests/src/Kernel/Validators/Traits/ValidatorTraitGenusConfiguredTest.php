@@ -129,19 +129,45 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
    */
   public function testSetter() {
 
-    // Check a CONFIGURED genus in a well setup validator.
+    // Check a NOT EXISTENT genus in a well setup validator.
+    $genus = uniqid();
+    $expected_message = "genus '$genus' does not exist in chado";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->instance->setConfiguredGenus($this->configured_genus);
-    }
-    catch (\Exception $e) {
+      $this->instance->setConfiguredGenus($genus);
+    } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    $this->assertFalse(
+    $this->assertTrue(
       $exception_caught,
-      "Calling setConfiguredGenus() with a configured genus should not have thrown an exception but it threw '$exception_message'"
+      "Calling setConfiguredGenus() with genus that is not in chado should have thrown an exception but didn't."
+    );
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      "The exception thrown does not have the message we expected for a genus that doesn't even exist in chado."
+    );
+
+    // Check that a genus has NOT been set by using getConfguredGenus()
+    $expected_message = "Cannot retrieve the genus as one has not been set by the setGenusConfigured() method.";
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->instance->getConfiguredGenus();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "Calling getConfiguredGenus() when a genus has not been succesfully set yet (after attempting to set a non-existing genus) should have thrown an exception but didn't."
+    );
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      "The exception thrown does not have the message we expected when trying to get a configured genus but one hasn't been set yet."
     );
 
     // Check a NOT CONFIGURED genus in a well setup validator.
@@ -164,25 +190,47 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
       "The exception thrown does not have the message we expected for a genus existing in chado that is not configured."
     );
 
-    // Check a NOT EXISTENT genus in a well setup validator.
-    $genus = uniqid();
-    $expected_message = "genus '$genus' does not exist in chado";
+    // Check that a genus still has NOT been set by using getConfguredGenus()
+    $expected_message = "Cannot retrieve the genus as one has not been set by the setGenusConfigured() method.";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->instance->setConfiguredGenus($genus);
+      $this->instance->getConfiguredGenus();
     } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
     $this->assertTrue(
       $exception_caught,
-      "Calling setConfiguredGenus() with genus that is not in chado should have thrown an exception but didn't."
+      "Calling getConfiguredGenus() when a genus has not been succesfully set yet (after attempting to set an existing but not configured genus) should have thrown an exception but didn't."
     );
     $this->assertStringContainsString(
       $expected_message,
       $exception_message,
-      "The exception thrown does not have the message we expected for a genus that doesn't even exist in chado."
+      "The exception thrown does not have the message we expected when trying to get a configured genus but one hasn't been set yet."
+    );
+
+    // Check a CONFIGURED genus in a well setup validator.
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->instance->setConfiguredGenus($this->configured_genus);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling setConfiguredGenus() with a configured genus should not have thrown an exception but it threw '$exception_message'"
+    );
+
+    // Check that the genus was set correctly by using getConfiguredGenus()
+    $grabbed_genus = $this->instance->getConfiguredGenus();
+    $this->assertEquals(
+      $this->configured_genus,
+      $grabbed_genus,
+      "Could not grab the configured genus using getGenusConfigured() despite having called setConfiguredGenus() with a valid configured genus."
     );
   }
 }

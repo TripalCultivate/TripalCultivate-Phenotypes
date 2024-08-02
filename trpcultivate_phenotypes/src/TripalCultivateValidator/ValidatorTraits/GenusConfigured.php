@@ -69,6 +69,27 @@ trait GenusConfigured {
 
     // Now we finally get to set things up for the validator!
     // @todo set configured values
-    // @todo set genus
+    // Set the configured genus
+    $this->context['genus'] = $genus;
+  }
+
+  /**
+   * Returns a genus which has been configured
+   *
+   * @return string
+   *   The genus name
+   *
+   * @throws \Exception
+   *  - If the 'genus' key does not exist in the context array (ie. the genus has
+   *    NOT been set)
+   */
+  public function getConfiguredGenus() {
+
+    if (array_key_exists('genus', $this->context)) {
+      return $this->context['genus'];
+    }
+    else {
+      throw new \Exception("Cannot retrieve the genus as one has not been set by the setGenusConfigured() method.");
+    }
   }
 }

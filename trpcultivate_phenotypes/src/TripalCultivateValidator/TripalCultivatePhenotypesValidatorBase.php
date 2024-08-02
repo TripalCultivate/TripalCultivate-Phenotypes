@@ -45,6 +45,16 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   }
 
   /**
+   * An associative array containing the needed context, which is dependant
+   * on the validator. For example, instead of validating each cell by default,
+   * a validator may need a list of indices which correspond to the columns in
+   * the row for which the validator should act on.
+   *
+   * Key-value pairs are set by the setter methods in ValidatorTraits.
+   */
+  protected $context = [];
+
+  /**
    * {@inheritdoc}
    */
   public function validateMetadata(array $form_values) {
