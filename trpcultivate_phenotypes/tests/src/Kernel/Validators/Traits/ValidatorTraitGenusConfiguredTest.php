@@ -151,7 +151,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     );
 
     // Check that a genus has NOT been set by using getConfguredGenus()
-    $expected_message = "Cannot retrieve the genus as one has not been set by the setGenusConfigured() method.";
+    $expected_message = "Cannot retrieve the genus as one has not been set by the setConfiguredGenus() method.";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
@@ -191,7 +191,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     );
 
     // Check that a genus still has NOT been set by using getConfguredGenus()
-    $expected_message = "Cannot retrieve the genus as one has not been set by the setGenusConfigured() method.";
+    $expected_message = "Cannot retrieve the genus as one has not been set by the setConfiguredGenus() method.";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
@@ -230,7 +230,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $this->configured_genus,
       $grabbed_genus,
-      "Could not grab the configured genus using getGenusConfigured() despite having called setConfiguredGenus() with a valid configured genus."
+      "Could not grab the configured genus using getConfiguredGenus() despite having called setConfiguredGenus() with a valid configured genus."
     );
   }
 }

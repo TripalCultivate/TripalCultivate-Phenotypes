@@ -89,7 +89,7 @@ trait GenusConfigured {
       return $this->context['genus'];
     }
     else {
-      throw new \Exception("Cannot retrieve the genus as one has not been set by the setGenusConfigured() method.");
+      throw new \Exception("Cannot retrieve the genus as one has not been set by the setConfiguredGenus() method.");
     }
   }
 }
