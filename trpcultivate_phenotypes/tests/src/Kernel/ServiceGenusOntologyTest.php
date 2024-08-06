@@ -1,13 +1,8 @@
 <?php
-
-/**
- * @file
- * Kernel test of Genus Ontology service.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
 
 /**
@@ -33,11 +28,11 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
   ];
 
   /**
-   * Tripal DBX Chado Connection object
+   * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
    */
-  protected $chado;
+  protected ChadoConnection $chado_connection;
 
   /**
    * Configuration
@@ -48,7 +43,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
 
   /**
    * Test genus.
-   * 
+   *
    * @var array
    */
   private $test_genus = [
@@ -61,7 +56,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    */
   protected function setUp() :void {
     parent::setUp();
-    
+
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
@@ -69,8 +64,8 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Create a test chado instance and then set it in the container for use by our service.
-    $this->chado = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado);
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Create organism of type null (id: 1).
     $test_insert_genus = $this->test_genus;
@@ -81,7 +76,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
         ('$test_insert_genus[1]', 'arientinum', 1)
     ";
 
-    $this->chado->query($ins_genus);
+    $this->chado_connection->query($ins_genus);
 
     $this->service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
   }
@@ -187,7 +182,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     // Active Genus list.
     $active_genus = $this->service->getConfiguredGenusList();
     $extra_item = array_diff($active_genus, $this->test_genus);
-    
+
     // Assert no extra item thus both arrays are the same.
     $this->assertEmpty($extra_item, 'Active genus arrays do not match.');
   }

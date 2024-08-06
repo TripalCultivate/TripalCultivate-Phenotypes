@@ -1,13 +1,8 @@
 <?php
-
-/**
- * @file
- * Functional test of Ontology and Terms configuration page.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
 use Drupal\Component\Utility\SafeMarkup;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
  /**
@@ -33,11 +28,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
   protected $admin_user;
 
   /**
-   * Chado test schema.
+   * A Database query interface for querying Chado using Tripal DBX.
    *
-   * @var object
+   * @var ChadoConnection
    */
-  protected $chado;
+  protected ChadoConnection $chado_connection;
 
   /**
    * {@inheritdoc}
@@ -52,7 +47,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Now, we want to setup our test chado instance.
     // We can't do this before the parent as we need the container
     // and Tripal DBX initialized...
-    $this->chado = $this->getTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+    $this->chado_connection = $this->getTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
 
     // However, by doing things in the above order, we now have all our
     // services for dependancy injection setup before the test chado was
@@ -101,7 +96,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
       'Cicer'
     ];
 
-    $this->chado->insert('1:organism')
+    $this->chado_connection->insert('1:organism')
       ->fields(['genus', 'species', 'type_id'])
       ->values([
         'genus' => $test_insert_genus[0],
@@ -138,13 +133,13 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $genus_ontology = $service_genusontology->defineGenusOntology();
 
     // Find cv id in the test schema to be used as test values.
-    $cvs = $this->chado->query("SELECT cv_id FROM {1:cv} LIMIT 10")
+    $cvs = $this->chado_connection->query("SELECT cv_id FROM {1:cv} LIMIT 10")
       ->fetchAllKeyed(0, 0);
 
     $test_cv_id = array_keys($cvs);
 
     // Find db id in test schema to be used as test values.
-    $dbs = $this->chado->query("SELECT db_id FROM {1:db} LIMIT 2")
+    $dbs = $this->chado_connection->query("SELECT db_id FROM {1:db} LIMIT 2")
       ->fetchAllKeyed(0, 0);
 
     $test_db_id = array_keys($dbs);
@@ -227,7 +222,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
 
     // Find cvterms in test schema to be used as test values.
     // Terms will accept term values in cvterm name (database:accession) format.
-    $cvterms = $this->chado->query("
+    $cvterms = $this->chado_connection->query("
       SELECT ct.cvterm_id, CONCAT(ct.name, ' (', db.name, ':', dx.accession, ')')
       FROM {1:cvterm} AS ct LEFT JOIN {1:dbxref} AS dx USING(dbxref_id) LEFT JOIN {1:db} USING(db_id)
       LIMIT 13
