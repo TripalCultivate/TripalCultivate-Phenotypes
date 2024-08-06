@@ -122,6 +122,31 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   public function validateRow(array $row_values);
 
   /**
+   * Validates rows within the data file submitted to an importer.
+   *
+   * @param string $raw_row
+   *  A single line or row extracted from the data file 
+   *  containing data entries, values or column headers, with each value 
+   *  delimited by a character specified by the importer class.
+   *
+   * @return array
+   *  An array of information about the validity of the data passed in.
+   *  The supported keys are:
+   *  - 'case': a developer code describing the case triggered
+   *      (i.e. no record in chado matching project name). If the data is
+   *      is valid then this is not required but could be 'data verified'.
+   *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
+   *  - 'failedIems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indicies are not emptya then
+   *      this will be an array of indices that were empty. Another example is
+   *      that if this validator checks that a number of indices have values in
+   *      a specific list, then this array would use the index as the key and
+   *      the value the column actually had that was not in the list for each
+   *      failed column.
+   */
+  public function validateRawRow(string $raw_row);
+
+  /**
    * Given an array of values (that represents a single row in an input file),
    * check that the list in $indices is within the range of keys in $row_values.
    *

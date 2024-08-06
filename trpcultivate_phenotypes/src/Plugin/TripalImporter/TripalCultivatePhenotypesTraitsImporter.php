@@ -508,8 +508,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // ********************************************************************
         // Skip empty lines
         else if (!empty(trim($line))) {
-          // Split line into an array
-          $data_row = str_getcsv($line, "\t");
+          // Split line into an array using the delimter defined by this importer
+          // in the configure values method above.
+          $data_row = $this->splitRowIntoColumns($line);
 
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {

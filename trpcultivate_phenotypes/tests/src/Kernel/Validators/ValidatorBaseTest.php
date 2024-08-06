@@ -273,10 +273,6 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     );
 
     // Tests Base Class validateRow().
-    // Set the delimiter.
-    $context['delimiter'] = $this->delimiter;
-    $instance->context = $context;
-
     $exception_caught = NULL;
     $exception_message = NULL;
     try {
