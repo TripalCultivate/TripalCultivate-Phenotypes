@@ -12,7 +12,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\Entity\File;
 use Drupal\Core\Url;
-
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 /**
@@ -202,6 +202,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     
     // This importer expects data in tab-separated values.
     // Delimiter: tabulator key - \t
+    // @TODO: use the delimiter setter.
     $context['delimiter'] = "\t";
 
     $instance->context = $context;
@@ -312,7 +313,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       '#title' => 'Genus',
       '#description' => t('The genus of the germplasm being phenotyped with the supplied traits.
         Traits in this system are specific to the genus in order to ensure they are specific enough to accurately describe the phenotypes.
-        In order for genus to be availabe here is must be first configured in the Analyzed Phenotypes configuration.'),
+        In order for genus to be available here is must be first configured in the Analyzed Phenotypes configuration.'),
       '#empty_option' => '- Select -',
       '#options' => $active_genus,
       '#default_value' => $default_genus,
@@ -348,7 +349,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     $file_id = $form_values['file_upload'];
 
-    // Use a variable to keep track of if one input type had recieved errors
+    // Use a variable to keep track of if one input type had received errors
     // and only continue to the next if no errors.
     $failed_validator = FALSE;
 
@@ -508,9 +509,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // ********************************************************************
         // Skip empty lines
         else if (!empty(trim($line))) {
-          // Split line into an array using the delimter defined by this importer
+          // Split line into an array using the delimiter defined by this importer
           // in the configure values method above.
-          $data_row = str_getcsv($line, "\t");
+          $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line);
 
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {

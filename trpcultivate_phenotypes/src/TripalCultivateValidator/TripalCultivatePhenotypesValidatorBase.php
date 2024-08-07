@@ -231,9 +231,11 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   An array containing the values extracted from the line after splitting it based
    *   on a delimiter value.
    */
-  public function splitRowIntoColumns(string $row) {
+  public static function splitRowIntoColumns(string $row) {
     // Delimiter:
-    $delimiter = $this->context['delimiter'] ?? ''; 
+
+    // @TODO: use the delimiter getter.
+    $delimiter = "\t";
     if (empty($delimiter)) {
       throw new \Exception('No delimiter provided.');
     }
