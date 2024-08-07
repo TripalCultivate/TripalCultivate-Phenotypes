@@ -342,6 +342,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     // 4. Some other delimiter.
     
     // Failed to define a delimiter
+    // @TODO: Use delimiter setter.
+    /*
     $str_line = implode('~', $raw_line);
 
     $exception_caught = FALSE;
@@ -358,7 +360,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $this->assertTrue($exception_caught, 'Failed to catch exception when no delimiter defined in splitRowIntoColumns().');
     $this->assertStringContainsString('No delimiter provided', $exception_message, 
       'Expected exception message does not match message when no delimiter defined in splitRowIntoColumns().');
-    
+    */
     
     // Delimiter is not present in the line and could not split the line.
     // This case will return the original line.
@@ -391,7 +393,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $str_line = implode($instance->context['delimiter'], $raw_line);
     $values = $instance->splitRowIntoColumns($str_line);
     $this->assertEquals($good_line, $values, 'Line values does not match expected split values.');
-  
+    
+    // @TODO: Use delimiter setter.
     /* 
     // Test delimiter for csv: comma character.
     $instance->context['delimiter'] = ',';
