@@ -4,7 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 
 /**
  * Provides setters focused for setting a delimiter used by the importer
- * to delimit data/values in the data file and getter to retrieve the set value.
+ * to delimit data/values in the data file.
  */
 trait DataFileDelimiter {
   // The key used to reference the delimiter set or get from the
