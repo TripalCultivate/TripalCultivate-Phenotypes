@@ -2,49 +2,84 @@
 
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits;
 
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
+
 /**
- * Provides setters focused for setting a delimiter used by the importer
- * to delimit data/values in the data file.
+ * Provides setters focused for setting a project used by the importer
+ * to package datasets and a getter to retrieve the set value.
  */
-trait DataFileDelimiter {
-  // The key used to reference the delimiter set or get from the
+trait Project {
+  // The key used to reference the project set or get from the
   // context property in the parent class.
-  private string $trait_key = 'delimiter';
-  
+  private string $trait_key = 'project';
+
   /**
-   * Sets the delimiter.
+   * Sets a project.
    *
-   * @param string $delimiter
-   *   A value used to separate/delimit the values in a data file row or line. 
+   * @param string|int $project
+   *   A string value is the project name (project.name), whereas an integer value
+   *   is the project id number (project.project_id).
    * 
    * @throws \Exception
-   *   Invalid delimiter provided such as empty string, false and 0 values.
+   *   Project is an empty string or the value 0.
    * 
    * @return void
    */
-  public function setDelimiter(string $delimiter) {
-    // Delimiter must have a value.
-    if (empty($delimiter)) {
-      throw new \Exception('Invalid delimiter: Cannot use ' . $delimiter . ' as data file delimiter.');
+  public function setProject(string|int $project) {
+    // Project must have a value and not 0.
+    if (empty($project) || (is_numeric($project) && (int) $project <= 0)) {
+      throw new \Exception('Invalid project provided.');
+    }
+
+    // Project must exists.
+    // Determine what was provided to the project field: project id or name.
+    if (is_numeric($project)) {
+      // Value is integer. Project id was provided.
+      // Test project by looking up the id to retrieve the project name.
+      $project_rec = ChadoProjectAutocompleteController::getProjectName((int) $project); 
+    }
+    else {
+      // Value is string. Project name was provided.
+      // Test project by looking up the name to retrieve the project id.
+      $project_rec = ChadoProjectAutocompleteController::getProjectId($project);
+    }
+
+    if ($project_rec <= 0 || empty($project_rec)) {
+      throw new \Exception('The project provided does not exist in chado.project table.');
     }
     
-    $this->context[ $this->trait_key ] = $delimiter;
+    // Make both the project id and project name available to the context property.
+    if (is_numeric($project)) {
+      $set_project = [
+        'id' => $project,
+        'name' => $project_rec
+      ];
+    }
+    else {
+      $set_project = [
+        'id' => $project_rec,
+        'name' => $project
+      ];
+    }
+
+    $this->context[ $this->trait_key ] = $set_project; 
   }
 
   /**
-   * Returns the delimiter set by the importer.
+   * Returns the project set.
    *
-   * @return string
-   *   The delimiter value set by the importer.
+   * @return array
+   *   The project set that includes the project id number and project name
+   *   keyed by id and name, respectively.
    * 
    * @throws \Exception
-   *   If the 'delimiter' key does not exist in the context array (ie. the delimiter
+   *   If the 'project' key does not exist in the context array (ie. the project
    *   array has NOT been set).
    */
-  public function getDelimiter() {
-    // The trait key element delimiter should exists in the context property.
+  public function getProject() {
+    // The trait key element project should exists in the context property.
     if (!array_key_exists($this->trait_key, $this->context)) {
-      throw new \Exception("Cannot retrieve delimiter set by the importer.");
+      throw new \Exception("Cannot retrieve project set by the importer.");
     }
 
     return $this->context[ $this->trait_key ];
