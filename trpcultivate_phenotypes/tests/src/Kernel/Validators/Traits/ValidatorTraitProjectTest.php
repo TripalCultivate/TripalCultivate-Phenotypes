@@ -21,7 +21,6 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
    * Modules to enable.
    */
   protected static $modules = [
-    'file',
     'user',
     'tripal',
     'tripal_chado',
