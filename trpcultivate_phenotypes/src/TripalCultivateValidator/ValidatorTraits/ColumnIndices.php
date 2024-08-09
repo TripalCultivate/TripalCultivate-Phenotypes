@@ -2,8 +2,6 @@
 
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits;
 
-use Drupal\tripal_chado\Database\ChadoConnection;
-
 /**
  * Provides setters focused on configuring a validator to look at particular
  * column within a row of a provided file
@@ -20,9 +18,10 @@ trait ColumnIndices {
    *   instance should act on
    * @return void
    */
-  public function setIndices(string $indices) {
+  public function setIndices(array $indices) {
 
     // Anything to validate first?
+    // Is $indices properly formatted as an array?
     // The temptation is to use the checkIndices() method here, but it requires
     // an array $row_values which feels like additional overhead
 

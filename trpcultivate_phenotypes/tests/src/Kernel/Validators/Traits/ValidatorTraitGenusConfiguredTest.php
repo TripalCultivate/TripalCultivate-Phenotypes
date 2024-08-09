@@ -124,10 +124,11 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
 
   /**
    * Tests the GenusConfigured::setConfiguredGenus() setter
+   *       and GenusConfigured::getConfiguredGenus() getter
    *
    * @return void
    */
-  public function testSetter() {
+  public function testConfiguredGenusSetterGetter() {
 
     // Check a NOT EXISTENT genus in a well setup validator.
     $genus = uniqid();
