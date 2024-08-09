@@ -37,29 +37,25 @@ trait Project {
       // Value is integer. Project id was provided.
       // Test project by looking up the id to retrieve the project name.
       $project_rec = ChadoProjectAutocompleteController::getProjectName((int) $project); 
-    }
-    else {
-      // Value is string. Project name was provided.
-      // Test project by looking up the name to retrieve the project id.
-      $project_rec = ChadoProjectAutocompleteController::getProjectId($project);
-    }
 
-    if ($project_rec <= 0 || empty($project_rec)) {
-      throw new \Exception('The project provided does not exist in chado.project table.');
-    }
-    
-    // Make both the project id and project name available to the context property.
-    if (is_numeric($project)) {
       $set_project = [
         'id' => $project,
         'name' => $project_rec
       ];
     }
     else {
+      // Value is string. Project name was provided.
+      // Test project by looking up the name to retrieve the project id.
+      $project_rec = ChadoProjectAutocompleteController::getProjectId($project);
+
       $set_project = [
         'id' => $project_rec,
         'name' => $project
       ];
+    }
+
+    if ($project_rec <= 0 || empty($project_rec)) {
+      throw new \Exception('The project provided does not exist in chado.project table.');
     }
 
     $this->context[ $this->trait_key ] = $set_project; 
