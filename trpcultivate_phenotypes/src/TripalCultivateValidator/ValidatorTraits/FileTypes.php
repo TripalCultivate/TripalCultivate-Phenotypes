@@ -9,7 +9,7 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 trait FileTypes {
   // The key used to reference the file types set or get from the
   // context property in the parent class.
-  private string $trait_key = 'file_type';
+  private string $trait_key = 'file_types';
 
   /**
    * Sets a file type/file media type.

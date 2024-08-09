@@ -171,7 +171,9 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       'txt' => 'text/plain'
     ];
 
-    $this->instance->setFileTypes(['tsv', 'txt']);
+    $types = array_keys($tsv_txt);
+
+    $this->instance->setFileTypes($types);
     $type = $this->instance->getFileTypes();
 
     $this->assertEquals($tsv_txt, $type, 'Tsv file type set does not match returned file type of the getter method.');
