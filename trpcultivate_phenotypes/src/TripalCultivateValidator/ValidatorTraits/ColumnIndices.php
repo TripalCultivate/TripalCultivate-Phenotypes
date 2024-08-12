@@ -9,19 +9,24 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 trait ColumnIndices {
 
   /**
-   * Sets the genus configured to work with TripalCultivate Phenotypes for
-   * this validator.
+   * Sets the array of indices for which the validator to do its checks on.
    *
    * @param array $indices
    *   An array (can be one- or multi-dimensional) of integers or keys which
    *   correspond to columns in a row of delimited values that the validator
    *   instance should act on
    * @return void
+   *
+   * @throws \Exception
+   *  - If $indices array is empty
    */
   public function setIndices(array $indices) {
 
-    // Anything to validate first?
-    // Is $indices properly formatted as an array?
+    // Make sure we don't have an empty array
+    if(count($indices) === 0) {
+      throw new \Exception('The ColumnIndices Trait requires a non-empty array of indices.');
+    }
+
     // The temptation is to use the checkIndices() method here, but it requires
     // an array $row_values which feels like additional overhead
 
