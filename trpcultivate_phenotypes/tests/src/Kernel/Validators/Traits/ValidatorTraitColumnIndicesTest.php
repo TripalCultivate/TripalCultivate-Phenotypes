@@ -3,7 +3,6 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\ValidatorColumnIndices;
 
  /**
@@ -13,8 +12,6 @@ use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\Valida
   * @group validator_traits
   */
 class ValidatorTraitColumnIndicesTest extends ChadoTestKernelBase {
-
-  use PhenotypeImporterTestTrait;
 
   /**
    * Modules to enable.
@@ -110,7 +107,29 @@ class ValidatorTraitColumnIndicesTest extends ChadoTestKernelBase {
       'The exception thrown does not have the message we expected when trying to get indices but none have been set yet.'
     );
 
-    // Set indices and then check that they've been set
+    // Try to set an empty array of indices
+    // Exception message should trigger
+    $invalid_indices = [];
+    $expected_message = 'The ColumnIndices Trait requires a non-empty array of indices.';
+
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->instance->setIndices($invalid_indices);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Calling setIndices() with an empty array should have thrown an exception but did not.');
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      'The exception thrown does not have the message we expected when trying to set indices with an empty array.'
+    );
+
+    // Set valid indices and then check that they've been set
     foreach($this->valid_indices as $indices) {
       $exception_caught = FALSE;
       $exception_message = 'NONE';
