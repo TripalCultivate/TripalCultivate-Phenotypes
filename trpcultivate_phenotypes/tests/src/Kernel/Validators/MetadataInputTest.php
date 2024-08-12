@@ -104,6 +104,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $projects = [
       'project-with-configgenus' => $this->test_genus['configured'],
       'project-with-genus' => $this->test_genus['not-configured'],
+      'project-genus-not-tru-service' => $this->test_genus['configured'],
       'just-project' => ''
     ];
     
@@ -128,7 +129,23 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
         $this->assertTrue($project_prop, 'We were not able to create a project-genus (for: ' . $test_case . ') property for testing.');
       }
-    }
+
+      if ($test_case == 'project-genus-not-tru-service') {
+        // Create project-genus relationship not using the project-genus service
+        // to relate a project to a genus.
+
+        // Using term: null.
+        $project_prop = $this->chado_connection->insert('1:projectprop')
+          ->fields([
+            'project_id' => $project_id,
+            'type_id' => 1,
+            'value' => $project_genus
+          ])
+          ->execute();
+        
+        $this->assertNotEmpty($project_prop, 'We were not able to create a project-genus (for: ' . $test_case . ') property for testing.');
+      }
+    }    
   }
 
   /**
@@ -454,20 +471,32 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = ['project' => $project, 'genus' => $genus];  
     $validation_status = $instance->validateMetadata($form_values);
     
-    $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
+    $this->assertEquals('Project has no genus set and could not compare with the genus provided', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
     $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
     $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
 
 
     // Test project exists but is attached to a different genus.
-    $project = $this->test_project['just-project']['id'];
-    $genus = $this->test_project['project-with-configgenus']['genus'];
+    $project = $this->test_project['project-with-configgenus']['id'];
+    $genus = $this->test_project['project-with-genus']['genus'];
 
     $form_values = ['project' => $project, 'genus' => $genus];  
     $validation_status = $instance->validateMetadata($form_values);
 
     $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for a valid project+genus.');
+    $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
+    $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
+
+    // Test a project-genus created not using the project-genus service.
+    $project = $this->test_project['project-genus-not-tru-service']['id'];
+    $genus = $this->test_project['project-genus-not-tru-service']['genus'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];  
+    $validation_status = $instance->validateMetadata($form_values);
+    
+    $this->assertEquals('Project has no genus set and could not compare with the genus provided', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
     $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
     $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
