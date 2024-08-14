@@ -9,9 +9,13 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
  * to package datasets and a getter to retrieve the set value.
  */
 trait Project {
-  // The key used to reference the project set or get from the
-  // context property in the parent class.
-  private string $trait_key = 'project';
+  /**
+   * The key used to reference the project set or get from the
+   * context property in the parent class.
+   * 
+   * @var string
+   */
+   private string $trait_key = 'project';
 
   /**
    * Sets a project.

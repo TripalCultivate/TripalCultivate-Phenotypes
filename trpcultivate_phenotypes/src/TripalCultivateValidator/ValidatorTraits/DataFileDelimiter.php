@@ -7,8 +7,12 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
  * to delimit data/values in the data file and getter to retrieve the set value.
  */
 trait DataFileDelimiter {
-  // The key used to reference the delimiter set or get from the
-  // context property in the parent class.
+  /**
+   * The key used to reference the delimiter set or get from the
+   * context property in the parent class.
+   *
+   * @var string
+   */
   private string $trait_key = 'delimiter';
   
   /**

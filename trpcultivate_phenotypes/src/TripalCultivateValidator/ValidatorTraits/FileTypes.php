@@ -7,8 +7,12 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
  * supported by the importer and a getter to retrieve the set value.
  */
 trait FileTypes {
-  // The key used to reference the file types set or get from the
-  // context property in the parent class.
+  /**
+   * The key used to reference the file types set or get from the
+   * context property in the parent class.
+   * 
+   * @var string
+   * /
   private string $trait_key = 'file_types';
 
   /**
