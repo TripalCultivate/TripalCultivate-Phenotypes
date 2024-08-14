@@ -10,8 +10,8 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\File
  * Used to test the base class.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "validator_requiring_filetype",
- *   validator_name = @Translation("Validator Using File Type Trait"),
+ *   id = "validator_requiring_filetypes",
+ *   validator_name = @Translation("Validator Using File Types Trait"),
  *   input_types = {"file"}
  * )
  */

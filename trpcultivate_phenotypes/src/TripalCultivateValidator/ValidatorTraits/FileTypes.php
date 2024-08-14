@@ -12,7 +12,7 @@ trait FileTypes {
    * context property in the parent class.
    * 
    * @var string
-   * /
+   */
   private string $trait_key = 'file_types';
 
   /**
