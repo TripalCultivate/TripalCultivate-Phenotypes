@@ -10,12 +10,12 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\Data
  * Used to test the base class.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "validator_requiring_delimiter",
- *   validator_name = @Translation("Validator Using Delimiter Trait"),
+ *   id = "validator_requiring_datafile_delimiter",
+ *   validator_name = @Translation("Validator Using Data File Delimiter Trait"),
  *   input_types = {"header-row", "data-row", "raw-row"}
  * )
  */
-class ValidatorDelimiter extends TripalCultivatePhenotypesValidatorBase {
+class ValidatorDataFileDelimiter extends TripalCultivatePhenotypesValidatorBase {
 
   use DataFileDelimiter;
 

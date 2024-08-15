@@ -4,58 +4,59 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 
 /**
  * Provides setters focused for setting a delimiter used by the importer
- * to delimit data/values in the data file and getter to retrieve the set value.
+ * to delimit data/values in the data file, and getter to retrieve the set value.
  */
 trait DataFileDelimiter {
+
   /**
-   * The key used to reference the delimiter set or get from the
-   * context property in the parent class.
-   *
+   * The key used by the setter method to create a delimiter element 
+   * in the context array, as well as the key used by the getter method 
+   * to reference and retrieve the delimiter element value.
+   * 
    * @var string
    */
   private string $trait_key = 'delimiter';
   
   /**
-   * Sets the delimiter.
+   * Sets the data file delimiter.
    *
    * @param string $delimiter
-   *   A value used to separate/delimit the values in a data file row or line. 
-   * 
-   * @throws \Exception
-   *   Invalid delimiter provided such as empty string, false and 0 values.
-   * 
+   *   A character used to separate/delimit the values in a data file row or line.
+   *
    * @return void
+   *  
+   * @throws \Exception
+   *  - An empty string value.
    */
-  public function setDelimiter(string $delimiter) {
-    // Delimiter must not be an empty string
+  public function setDataFileDelimiter(string $delimiter) {
+
+    // Delimiter character must not be an empty string.
     if($delimiter === '') {
       throw new \Exception('The DataFileDelimiter Trait requires a non-empty string as a data file delimiter.');
     }
-  
-    // Delimiter must not be false, 0 or null
-    if (empty($delimiter)) {
-      throw new \Exception('Invalid delimiter: Cannot use ' . $delimiter . ' as data file delimiter.');
-    }
     
+    // Create an element in the context array keyed by the trait key
+    // property, and set the value to the delimiter character provided.
     $this->context[ $this->trait_key ] = $delimiter;
   }
 
   /**
-   * Returns the delimiter set by the importer.
+   * Gets the data file delimiter.
    *
    * @return string
-   *   The delimiter value set by the importer.
+   *   The delimiter character set by the setter method.
    * 
    * @throws \Exception
-   *   If the 'delimiter' key does not exist in the context array (ie. the delimiter
-   *   array has NOT been set).
+   *  - If the 'delimiter' key does not exist in the context array
+   *    (ie. the delimiter element has NOT been set).
    */
-  public function getDelimiter() {
-    // The trait key element delimiter should exists in the context property.
-    if (!array_key_exists($this->trait_key, $this->context)) {
-      throw new \Exception("Cannot retrieve delimiter set by the importer.");
-    }
+  public function getDataFileDelimiter() {
 
-    return $this->context[ $this->trait_key ];
+    if (array_key_exists($this->trait_key, $this->context)) {
+      return $this->context[ $this->trait_key ];
+    }
+    else {
+      throw new \Exception('Cannot retrieve delimiter from the context array as one has not been set by setDataFileDelimiter() method.');
+    }
   }
 }
