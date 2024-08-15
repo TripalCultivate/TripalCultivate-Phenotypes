@@ -27,7 +27,12 @@ trait DataFileDelimiter {
    * @return void
    */
   public function setDelimiter(string $delimiter) {
-    // Delimiter must have a value.
+    // Delimiter must not be an empty string
+    if($delimiter === '') {
+      throw new \Exception('The DataFileDelimiter Trait requires a non-empty string as a data file delimiter.');
+    }
+  
+    // Delimiter must not be false, 0 or null
     if (empty($delimiter)) {
       throw new \Exception('Invalid delimiter: Cannot use ' . $delimiter . ' as data file delimiter.');
     }
