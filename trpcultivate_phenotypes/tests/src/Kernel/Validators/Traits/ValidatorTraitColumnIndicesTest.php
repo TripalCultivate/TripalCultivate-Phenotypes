@@ -32,6 +32,13 @@ class ValidatorTraitColumnIndicesTest extends ChadoTestKernelBase {
   protected ValidatorColumnIndices $instance;
 
   /**
+   * An array of indices which are invalid
+   *
+   * @var array
+   */
+  protected array $invalid_indices;
+
+  /**
    * An array of indices which are valid
    *
    * @var array
@@ -49,6 +56,17 @@ class ValidatorTraitColumnIndicesTest extends ChadoTestKernelBase {
 
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
+
+    // Create a new object for the purpose of testing
+    $my_array = ['key' => 'value'];
+    $my_object = (object) $my_array;
+
+    // Setup our invalid indices array
+    $invalid_indices = [
+      [ 1, 2, [ 3, 4, 5] ],
+      [ 1, $my_object, 3 ]
+    ];
+    $this->invalid_indices = $invalid_indices;
 
     // Setup our valid indices array
     $valid_indices = [
@@ -109,13 +127,13 @@ class ValidatorTraitColumnIndicesTest extends ChadoTestKernelBase {
 
     // Try to set an empty array of indices
     // Exception message should trigger
-    $invalid_indices = [];
+    $empty_indices = [];
     $expected_message = 'The ColumnIndices Trait requires a non-empty array of indices.';
 
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->instance->setIndices($invalid_indices);
+      $this->instance->setIndices($empty_indices);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -128,6 +146,29 @@ class ValidatorTraitColumnIndicesTest extends ChadoTestKernelBase {
       $exception_message,
       'The exception thrown does not have the message we expected when trying to set indices with an empty array.'
     );
+
+    // Try to set a multi-dimensional array (only 1-dimensional allowed)
+    // Exception message should trigger
+    foreach($this->invalid_indices as $indices) {
+      $expected_message = 'The ColumnIndices Trait requires a one-dimensional array only.';
+
+      $exception_caught = FALSE;
+      $exception_message = 'NONE';
+      try {
+        $this->instance->setIndices($indices);
+      }
+      catch (\Exception $e) {
+        $exception_caught = TRUE;
+        $exception_message = $e->getMessage();
+      }
+
+      $this->assertTrue($exception_caught, 'Calling setIndices() with a multi-dimensional array should have thrown an exception but did not.');
+      $this->assertStringContainsString(
+        $expected_message,
+        $exception_message,
+        'The exception thrown does not have the message we expected when trying to set indices with a multi-dimensional array.'
+      );
+    }
 
     // Set valid indices and then check that they've been set
     foreach($this->valid_indices as $indices) {

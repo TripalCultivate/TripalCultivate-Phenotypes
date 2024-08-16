@@ -12,9 +12,8 @@ trait ColumnIndices {
    * Sets the array of indices for which the validator to do its checks on.
    *
    * @param array $indices
-   *   An array (can be one- or multi-dimensional) of integers or keys which
-   *   correspond to columns in a row of delimited values that the validator
-   *   instance should act on
+   *   An array of integers or keys which correspond to columns in a row of
+   *   delimited values that the validator instance should act on
    * @return void
    *
    * @throws \Exception
@@ -27,8 +26,12 @@ trait ColumnIndices {
       throw new \Exception('The ColumnIndices Trait requires a non-empty array of indices.');
     }
 
-    // The temptation is to use the checkIndices() method here, but it requires
-    // an array $row_values which feels like additional overhead
+    // Check if we have a multidimentsional array or array of objects
+    foreach ($indices as $index) {
+      if (is_array($index) || is_object($index)) {
+        throw new \Exception('The ColumnIndices Trait requires a one-dimensional array only.');
+      }
+    }
 
     // Set the indices array
     $this->context['indices'] = $indices;
@@ -39,7 +42,7 @@ trait ColumnIndices {
    * of delimited values that the validator instance should act on.
    *
    * @return array
-   *   A one- or multi-dimensional array containing integers as values
+   *   A one-dimensional array containing column indices or column names
    *
    * @throws \Exception
    *  - If the 'indices' key does not exist in the context array (ie. the indices
