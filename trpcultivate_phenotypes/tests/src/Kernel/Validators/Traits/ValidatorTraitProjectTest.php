@@ -21,7 +21,6 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
    * Modules to enable.
    */
   protected static $modules = [
-    'user',
     'tripal',
     'tripal_chado',
     'trpcultivate_phenotypes'
@@ -110,7 +109,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     // prior to a call to project setter method.
     
     // Exception message when failed to set a project.
-    $expected_message = 'Cannot retrieve project set by the importer';
+    $expected_message = 'Cannot retrieve project from the context array as one has not been set by setProject() method.';
 
     try {
       $this->instance->getProject();
@@ -130,30 +129,43 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
 
     // Test invalid project will trigger an exception.
 
-    // Not valid projects:
-    $invalid_projects = ['', 0];
-    // Exception message when invalid project was provided to the setter.
-    $expected_message = 'Invalid project provided.';
-
-    foreach($invalid_projects as $invalid_project) {
-      $exception_caught = FALSE;
-      $exception_message = '';
+    // Not valid project id: 0
+    $exception_caught = FALSE;
+    $exception_message = '';
       
-      try {
-        $this->instance->setProject($invalid_project);
-      } 
-      catch (\Exception $e) {
-        $exception_caught = TRUE;
-        $exception_message = $e->getMessage();
-      }
-      
-      $this->assertTrue($exception_caught, 'Project setter method should throw an exception for invalid project value.');
-      $this->assertStringContainsString(
-        sprintf($expected_message, $invalid_project),
-        $exception_message,
-        'Expected exception message does not match the message when invalid value was passed to the project setter method'
-      );
+    try {
+      $this->instance->setProject(0);
+    } 
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
+    
+    $this->assertTrue($exception_caught, 'Project setter method should throw an exception for project id 0.');
+    $this->assertStringContainsString(
+      $exception_message,
+      'The Project Trait requires project id number to be a number greater than 0.',
+      'Expected exception message does not match the message when project id of 0 was passed to the project setter method.'
+    );
+
+    // Not valid project name: Empty string.
+    $exception_caught = FALSE;
+    $exception_message = '';
+      
+    try {
+      $this->instance->setProject('');
+    } 
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    
+    $this->assertTrue($exception_caught, 'Project setter method should throw an exception for empty string project name.');
+    $this->assertStringContainsString(
+      $exception_message,
+      'The Project Trait requires project name to be a non-empty string value.',
+      'Expected exception message does not match the message when project name of empty string was passed to the project setter method.'
+    );
 
     // A non-existent project id (integer).
     $exception_message = '';
@@ -169,8 +181,8 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     $this->assertTrue($exception_caught, 'Project setter method should throw an exception for non-existent project id.');
     $this->assertStringContainsString(
       $exception_message,
-      'The project provided does not exist in chado.project table.',
-      'Expected exception message does not match the message when non-existent project id was passed to the project setter method'
+      'The Project Trait requires a project that exists in the database.',
+      'Expected exception message does not match the message when non-existent project id was passed to the project setter method.'
     );
 
     // A non-existent project name (string).
@@ -188,8 +200,8 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     $this->assertTrue($exception_caught, 'Project setter method should throw an exception for non-existent project name.');
     $this->assertStringContainsString(
       $exception_message,
-      'The project provided does not exist in chado.project table.',
-      'Expected exception message does not match the message when non-existent project name was passed to the project setter method'
+      'The Project Trait requires a project that exists in the database.',
+      'Expected exception message does not match the message when non-existent project name was passed to the project setter method.'
     );
 
     
@@ -204,7 +216,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $project, 
       $this->test_project, 
-      'The set project does not match the project returned by the project getter method'
+      'The set project does not match the project returned by the project getter method.'
     );
 
     // Valid project by name (string):
@@ -214,7 +226,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $project, 
       $this->test_project, 
-      'The set project does not match the project returned by the project getter method'
+      'The set project does not match the project returned by the project getter method.'
     );
   }
 }
