@@ -13,18 +13,26 @@ trait ValidValues {
    * specified (set by another validator trait) set of columns within a file row
    *
    * @param array $valid_values
-   *   An array of values that are allowed within the cell(s) that are being
-   *   validated in a file row
+   *   A one-dimensional array of values that are allowed within the cell(s) that
+   *   are being validated in a file row
    * @return void
    *
    * @throws \Exception
    *  - If $valid_values array is empty
+   *  - If $valid_values array is multi-dimensional or contains objects
    */
   public function setValidValues(array $valid_values) {
 
     // Make sure we don't have an empty array
     if(count($valid_values) === 0) {
       throw new \Exception('The ValidValues Trait requires a non-empty array to set valid values.');
+    }
+
+    // Check if we have a multidimentsional array or array of objects
+    foreach ($valid_values as $values) {
+      if (is_array($values) || is_object($values)) {
+        throw new \Exception('The ValidValues Trait requires a one-dimensional array only.');
+      }
     }
 
     // Set the valid_values array

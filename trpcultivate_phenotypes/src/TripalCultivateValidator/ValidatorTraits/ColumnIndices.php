@@ -18,6 +18,7 @@ trait ColumnIndices {
    *
    * @throws \Exception
    *  - If $indices array is empty
+   *  - If $indices array is multi-dimensional or contains objects
    */
   public function setIndices(array $indices) {
 
