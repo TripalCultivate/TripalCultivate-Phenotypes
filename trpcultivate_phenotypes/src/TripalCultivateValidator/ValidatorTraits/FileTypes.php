@@ -3,33 +3,36 @@
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits;
 
 /**
- * Provides setters focused for setting a file extension and file media type (MIME) 
- * supported by the importer and a getter to retrieve the set value.
+ * Provides setters focused for setting a file types and file media type (MIME) 
+ * supported by the importer, and getter to retrieve the set value.
  */
 trait FileTypes {
   /**
-   * The key used to reference the file types set or get from the
-   * context property in the parent class.
+   * The key used by the setter method to create a file types element 
+   * in the context array, as well as the key used by the getter method 
+   * to reference and retrieve the file types element value.
    * 
    * @var string
    */
   private string $trait_key = 'file_types';
 
   /**
-   * Sets a file type/file media type.
+   * Sets a file types with the file media type.
    *
-   * @param array $types
-   *   An array of file extensions the importer expect of the data file.
-   * 
-   * @throws \Exception
-   *   types array is an empty array or string.
+   * @param array $extensions
+   *   An array of file extensions (file types) the importer expects the file extension of the data file.
    * 
    * @return void
+   * 
+   * @throws \Exception
+   *  - Types array is an empty array.
+   *  - Unsupported extension (cannot resolve mime type using the type-mime mapping array).
    */
-  public function setFileTypes(array $types) {
-    // Types must have a value.
-    if (empty($types)) {
-      throw new \Exception('No file type provided.');
+  public function setFileTypes(array $extensions) {
+    
+    // Extensions array must have a element.
+    if (empty($extensions)) {
+      throw new \Exception('The File Types Trait requires an array of file extensions and must not be empty.');
     }
     
     // File extension and file media type (mime type).
@@ -38,15 +41,15 @@ trait FileTypes {
       'csv'  => 'text/csv',
       'txt'  => 'text/plain',
 
-      // Other file types here, ensure file types
-      // support delimiter.
+      // Add any additional valid file types here, 
+      // while ensuring file types support use of a delimiter.
     ];
 
     // Resolve the types to the correct mime type.
     $file_types = [];
     $unresolved = [];
 
-    foreach($types as $type) {
+    foreach($extensions as $type) {
       if (!isset($file_type_to_mime[ $type ])) {
         array_push($unresolved, $type);
         continue;
@@ -58,29 +61,30 @@ trait FileTypes {
     // Types could not be resolve.
     if ($unresolved) {
       $unresolved = implode(', ', $unresolved);
-      throw new \Exception('Could not resolve file media type (MIME type) of the following file extensions: ' . $unresolved);
+      throw new \Exception('The File Types Trait could not to resolve the mime type of the extensions: ' . $unresolved);
     }
 
-    $this->context[ $this->trait_key ] = $file_types; 
+    $this->context[ $this->trait_key ] = $file_types;
   }
 
   /**
-   * Returns the file types set.
+   * Gets the file types.
    *
    * @return array
-   *   The file types set that include the file extension (type) and the corresponding 
-   *   file media type (mime), keyed by file type.
+   *   The file types set by the setter method. The types include the file extension (type) and 
+   *   the corresponding file media type (mime), keyed by file extension.
    * 
    * @throws \Exception
-   *   If the 'file_type' key does not exist in the context array (ie. the file_type
-   *   array has NOT been set).
+   *  - If the 'file_types' key does not exist in the context array
+   *    (ie. the file_types array has NOT been set).
    */
   public function getFileTypes() {
-    // The trait key element file_type should exists in the context property.
-    if (!array_key_exists($this->trait_key, $this->context)) {
-      throw new \Exception("Cannot retrieve file types set by the importer.");
-    }
 
-    return $this->context[ $this->trait_key ];
+    if (array_key_exists($this->trait_key, $this->context)) {
+      return $this->context[ $this->trait_key ];
+    }
+    else {
+      throw new \Exception('Cannot retrieve file types from the context array as one has not been set by setFileTypes() method.');
+    }
   }
 }

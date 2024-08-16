@@ -20,7 +20,6 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    * Modules to enable.
    */
   protected static $modules = [
-    'user',
     'tripal',
     'tripal_chado',
     'trpcultivate_phenotypes'
@@ -79,7 +78,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     // prior to a call to file types setter method.
     
     // Exception message when failed to set file types.
-    $expected_message = 'Cannot retrieve file types set by the importer';
+    $expected_message = 'Cannot retrieve file types from the context array as one has not been set by setFileTypes() method.';
 
     try {
       $this->instance->getFileTypes();
@@ -115,14 +114,14 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     $this->assertTrue($exception_caught, 'File types setter method should throw an exception when no file type was provided.');
     $this->assertStringContainsString(
       $exception_message,
-      'No file type provided.',
+      'The File Types Trait requires an array of file extensions and must not be empty.',
       'Expected exception message does not match the message when no value was passed to the file type setter method'
     );
   
     // Unsupported file extensions.
     $invalid_types = [['jpg', 'gif', 'svg'], ['png', 'pdf'], ['gzip']];
     // Exception message when unsupported file types was provided to the setter.
-    $expected_message =  'Could not resolve file media type (MIME type) of the following file extensions: %s';
+    $expected_message =  'The File Types Trait could not to resolve the mime type of the extensions: %s';
 
     foreach($invalid_types as $invalid_type) {
       $exception_caught = FALSE;
@@ -146,6 +145,28 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       );
     }
     
+    // Test a valid type and an unsupported type.
+    $unsupported_type = 'jpg';
+    $valid_invalid_types = ['tsv', $unsupported_type];
+    
+    $exception_caught = FALSE;
+    $exception_message = '';
+    
+    try {
+      $this->instance->setFileTypes($valid_invalid_types);
+    } 
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    
+    $this->assertTrue($exception_caught, 'File types setter method should throw an exception when a type mime could not be resolved.');
+    $this->assertStringContainsString(
+      $exception_message,
+      'The File Types Trait could not to resolve the mime type of the extensions: ' . $unsupported_type,
+      'Expected exception message does not match the message when a type mime could not be resolved'
+    );
+
     
     // Test valid types.
 
@@ -154,8 +175,6 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
 
     foreach($valid_types as $valid_type) {
       $this->instance->setFileTypes($valid_type);
-      // Get the type using the getter. Set type no has
-      // mime information resolved.
       $type = $this->instance->getFileTypes();
 
       // Test that each type has an entry in the context variable.
