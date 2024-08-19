@@ -5,7 +5,7 @@ on:
       - 4.x
 
 jobs:
-  grid-1A:
+  grid-2A:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -19,4 +19,4 @@ jobs:
           dockerfile: 'Dockerfile'
           php-version: '8.1'
           pgsql-version: '16'
-          drupal-version: '10.2.x-dev'
+          drupal-version: '10.4.x-dev'

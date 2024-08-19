@@ -18,5 +18,5 @@ jobs:
           build-image: TRUE
           dockerfile: 'Dockerfile'
           php-version: '8.1'
-          pgsql-version: '13'
-          drupal-version: '10.1.x-dev'
+          pgsql-version: '16'
+          drupal-version: '10.3.x-dev'
