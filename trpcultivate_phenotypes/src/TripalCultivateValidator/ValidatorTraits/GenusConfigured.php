@@ -68,9 +68,11 @@ trait GenusConfigured {
     }
 
     // Now we finally get to set things up for the validator!
-    // @todo set configured values
+    // Set configured values
+    $this->context['genus']['ontology_terms'] = $configuration_values;
+
     // Set the configured genus
-    $this->context['genus'] = $genus;
+    $this->context['genus']['name'] = $genus;
   }
 
   /**
@@ -86,10 +88,45 @@ trait GenusConfigured {
   public function getConfiguredGenus() {
 
     if (array_key_exists('genus', $this->context)) {
-      return $this->context['genus'];
+      if (array_key_exists('name', $this->context['genus'])) {
+        return $this->context['genus']['name'];
+      }
+      else {
+        throw new \Exception("Cannot retrieve the genus name as one has not been set by the setConfiguredGenus() method.");
+      }
     }
     else {
-      throw new \Exception("Cannot retrieve the genus as one has not been set by the setConfiguredGenus() method.");
+      throw new \Exception("Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.");
     }
+  }
+
+  /**
+   * Returns the ontology term IDs that have been configured for a genus
+   *
+   * @return array
+   *   An array of ontology cvterm IDs associated with the following keys:
+   *     trait,
+   *     unit,
+   *     method,
+   *     crop_ontology,
+   *     database
+   *
+   * @throws \Exception
+   *  - If the 'genus' key does not exist in the context array (ie. the genus has
+   *    NOT been set)
+   */
+  public function getConfiguredGenusOntologyTerms() {
+    if (array_key_exists('genus', $this->context)) {
+      if (array_key_exists('ontology_terms', $this->context['genus'])) {
+        return $this->context['genus']['ontology_terms'];
+      }
+      else {
+        throw new \Exception("Cannot retrieve the ontology terms of the genus as one has not been set by the setConfiguredGenus() method.");
+      }
+    }
+    else {
+      throw new \Exception("Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.");
+    }
+
   }
 }
