@@ -21,7 +21,8 @@
         "DEVSENSE.composer-php-vscode",
         "mblode.twig-language-2",
         "redhat.vscode-yaml",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions"
       ],
       "settings": {
         // This turns off basic PHP suggestions provided by Visual Studio Code (in lieu of Intelephense's).

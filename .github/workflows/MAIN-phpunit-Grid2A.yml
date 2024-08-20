@@ -4,8 +4,14 @@ on:
     branches:
       - 4.x
 
+env:
+  php_version: '8.1'
+  pgsql_version: '16'
+  drupal_version: '10.3.x-dev'
+
 jobs:
   grid-2A:
+    name: "Drupal $drupal_version - PHP $php_version - PostgreSQL $pgsql_version"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -17,6 +23,6 @@ jobs:
           modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           build-image: TRUE
           dockerfile: 'Dockerfile'
-          php-version: '8.1'
-          pgsql-version: '16'
-          drupal-version: '10.3.x-dev'
+          php-version: $php_version
+          pgsql-version: $pgsql_version
+          drupal-version: $drupal_version

@@ -19,6 +19,7 @@ env:
 
 jobs:
   run-tests:
+    name: "Drupal ${{ matrix.drupal-version }} - PHP ${{ matrix.php-version }} - PostgreSQL ${{ matrix.pgsql-version }}"
     runs-on: ubuntu-latest
 
     strategy:
