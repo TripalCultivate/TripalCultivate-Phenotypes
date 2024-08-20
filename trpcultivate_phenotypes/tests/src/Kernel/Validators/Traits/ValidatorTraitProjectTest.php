@@ -39,7 +39,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
    * 
    * @var array
    */
-  protected array $test_projects;
+  protected array $test_project;
 
 
   /**
