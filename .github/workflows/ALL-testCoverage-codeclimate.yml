@@ -2,10 +2,6 @@
 name: Test Coverage
 on: [push, workflow_dispatch]
 
-env:
-  PKG_NAME: TripalCultivate-Phenotypes
-  MODULES: "trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare"
-
 jobs:
   run-tests:
     runs-on: ubuntu-latest
@@ -15,8 +11,8 @@ jobs:
       - name: Run Automated testing + report coverage
         uses: tripal/test-tripal-action@v1.6
         with:
-          directory-name: my_tripal_extension
-          modules: my_tripal_extension
+          directory-name: 'TripalCultivate-Phenotypes'
+          modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           php-version: 8.3
           pgsql-version: 16
           drupal-version: 10.4.x-dev
