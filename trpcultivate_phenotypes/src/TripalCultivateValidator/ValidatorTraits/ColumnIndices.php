@@ -9,7 +9,12 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 trait ColumnIndices {
 
   /**
-   * Sets the array of indices for which the validator to do its checks on.
+   * Sets the array of indices for the validator to do its checks on.
+   *
+   * Specifically, in this context, an index is the key of the column the
+   * validator should check. In the case of lists, this index/key is a sequential
+   * integer created by PHP and in the case of associative arrays, this index/key
+   * will likely be a meaningful string (such as names of column headers).
    *
    * @param array $indices
    *   An array where each value is the key of the column the validator instance should
@@ -40,8 +45,12 @@ trait ColumnIndices {
   }
 
   /**
-   * Returns an array of integers or keys which correspond to columns in a row
-   * of delimited values that the validator instance should act on.
+   * Returns the indices of the columns this validator should act on.
+   *
+   * Specifically, in this context, an index is the key of the column the  
+   * validator should check. In the case of lists, this index/key is a sequential  
+   * integer created by PHP and in the case of associative arrays, this index/key  
+   * will likely be a meaningful string (such as names of column headers).  
    *
    * @return array
    *   A one-dimensional array containing column indices. If the array to be validated
