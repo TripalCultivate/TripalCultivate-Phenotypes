@@ -62,11 +62,11 @@ maintainability issues and test coverage.
 
 The following compatibility is proven via automated testing workflows.
 
-|  Drupal     |  10.0.x         |  10.1.x         |  10.2.x         |
+|  Drupal     |  10.2.x         |  10.3.x         |  10.4.x         |
 |-------------|-----------------|-----------------|-----------------|
-| **PHP 8.1** | ![Grid1A-Badge] | ![Grid1B-Badge] | ![Grid1C-Badge] |
-| **PHP 8.2** | ![Grid2A-Badge] | ![Grid2B-Badge] | ![Grid2C-Badge] |
-| **PHP 8.3** |                 |                 | ![Grid3C-Badge] |
+| **PHP 8.1** | ![Grid1A-Badge] | ![Grid2A-Badge] | ![Grid3A-Badge] |
+| **PHP 8.2** | ![Grid1B-Badge] | ![Grid2B-Badge] | ![Grid3B-Badge] |
+| **PHP 8.3** | ![Grid1C-Badge] | ![Grid2C-Badge] | ![Grid3C-Badge] |
 
 [our CodeClimate project page]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes
 [MaintainabilityBadge]: https://api.codeclimate.com/v1/badges/03fa542e0d95dedb97e8/maintainability
@@ -80,4 +80,6 @@ The following compatibility is proven via automated testing workflows.
 [Grid2B-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-Grid2B.yml/badge.svg
 [Grid2C-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-Grid2C.yml/badge.svg
 
+[Grid3A-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-Grid3A.yml/badge.svg
+[Grid3B-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-Grid3B.yml/badge.svg
 [Grid3C-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-Grid3C.yml/badge.svg
