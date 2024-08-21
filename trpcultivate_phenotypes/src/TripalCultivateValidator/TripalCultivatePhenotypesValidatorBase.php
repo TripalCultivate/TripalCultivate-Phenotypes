@@ -265,6 +265,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     // in the FileType trait.
     $supported_delimiters = $mime_to_delimiter_mapping[ $mime_type ];
 
+    $delimiter = NULL;
     // If there is only one supported delimiter then we can simply split the row!
     if (sizeof($supported_delimiters) === 1) {
       $delimiter = array_pop($supported_delimiters);
@@ -285,6 +286,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
       asort($counts);
       $winning_delimiter = array_​key_​first($counts);
       $columns = $results[ $winning_delimiter ];
+      $delimiter = $winning_delimiter;
     }
 
     // Now lets double check that we got some values...

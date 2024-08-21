@@ -367,17 +367,14 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
     // Delimiter is not present in the line and could not split the line.
     // This case will return the original line.
-    // @TODO: Use delimiter setter.
-    /*
-
-    $delimiter = '<the_delimiter>';
-    $str_line = implode('<not_the_delimiter>', $raw_line);
+    $delimiter = '<not_the_delimiter>';
+    $str_line = implode($delimiter, $raw_line);
 
     $exception_caught = FALSE;
     $exception_message = '';
 
     try {
-      $instance->splitRowIntoColumns($str_line);
+      $instance->splitRowIntoColumns($str_line, $expected_mime_type);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -385,10 +382,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line using the delimiter.');
-    $this->assertStringContainsString('The data row or line provided could not be split using the delimiter (' . $delimiter . ')', $exception_message,
+    $this->assertStringContainsString('could not be split using the delimiter (' . $expected_delimiter . ')', $exception_message,
       'Expected exception message does not match message when splitRowIntoColumns() could not split line using the delimiter.');
-
-    */
 
     // Test that the sanitized line is the same as the split values.
     $delimiter = $expected_delimiter;
