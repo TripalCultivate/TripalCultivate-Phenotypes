@@ -4,19 +4,29 @@ on:
     branches:
       - 4.x
 
+## UPDATES
+## Update the version numbers in the job name and the action parameters
+# |-------------|-----------------|-----------------|-----------------|
+# |  Drupal     |  10.2.x         |  10.3.x         |  10.4.x         |
+# |-------------|-----------------|-----------------|-----------------|
+# | **PHP 8.1** | ![Grid1A-Badge] | ![Grid2A-Badge] | ![Grid3A-Badge] |
+# | **PHP 8.2** | ![Grid1B-Badge] | ![Grid2B-Badge] | ![Grid3B-Badge] |
+# | **PHP 8.3** | ![Grid1C-Badge] | ![Grid2C-Badge] | ![Grid3C-Badge] |
+
 jobs:
-  grid-1A:
+  grid-1C:
+    name: "Drupal 10.2.x-dev - PHP 8.3 - PostgreSQL 16"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
       - name: Run Automated testing
-        uses: tripal/test-tripal-action@v1.5
+        uses: tripal/test-tripal-action@v1.6
         with:
           directory-name: 'TripalCultivate-Phenotypes'
           modules: 'trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare'
           build-image: TRUE
           dockerfile: 'Dockerfile'
-          php-version: '8.1'
-          pgsql-version: '13'
-          drupal-version: '10.2.x-dev'
+          php-version: 8.3
+          pgsql-version: 16
+          drupal-version: 10.2.x-dev
