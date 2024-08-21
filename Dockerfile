@@ -1,6 +1,6 @@
-ARG drupalversion='10.2.x-dev'
-ARG phpversion='8.3'
-ARG pgsqlversion='16'
+ARG drupalversion=10.3.x-dev
+ARG phpversion=8.3
+ARG pgsqlversion=16
 FROM knowpulse/tripalcultivate:baseonly-drupal${drupalversion}-php${phpversion}-pgsql${pgsqlversion}
 
 COPY . /var/www/drupal/web/modules/contrib/TripalCultivate-Phenotypes
