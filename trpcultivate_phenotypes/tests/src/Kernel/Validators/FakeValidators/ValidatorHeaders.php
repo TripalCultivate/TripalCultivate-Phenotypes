@@ -3,21 +3,21 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\HeaderMetadata;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\Headers;
 
 /**
  * Fake Validator that does not implement any of its own methods.
  * Used to test the base class.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "validator_requiring_header_metadata",
- *   validator_name = @Translation("Validator Using Header Metadata Trait"),
+ *   id = "validator_requiring_headers",
+ *   validator_name = @Translation("Validator Using Headers Trait"),
  *   input_types = {"header-row", "data-row"}
  * )
  */
-class ValidatorHeaderMetadata extends TripalCultivatePhenotypesValidatorBase {
+class ValidatorHeaders extends TripalCultivatePhenotypesValidatorBase {
 
-  use HeaderMetadata;
+  use Headers;
 
   /**
    * Constructor.
