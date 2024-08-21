@@ -22,7 +22,8 @@
         "mblode.twig-language-2",
         "redhat.vscode-yaml",
         "ms-azuretools.vscode-docker",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "GitHub.vscode-pull-request-github"
       ],
       "settings": {
         // This turns off basic PHP suggestions provided by Visual Studio Code (in lieu of Intelephense's).
