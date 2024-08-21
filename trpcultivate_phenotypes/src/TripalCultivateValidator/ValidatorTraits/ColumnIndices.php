@@ -24,7 +24,7 @@ trait ColumnIndices {
    *
    * @throws \Exception
    *  - If $indices array is empty
-   *  - If $indices array is multi-dimensional or contains objects
+   *  - If $indices array contains values that are not of type string or integer
    */
   public function setIndices(array $indices) {
 
@@ -33,10 +33,10 @@ trait ColumnIndices {
       throw new \Exception('The ColumnIndices Trait requires a non-empty array of indices.');
     }
 
-    // Check if we have a multidimentsional array or array of objects
-    foreach ($indices as $index) {
-      if (is_array($index) || is_object($index)) {
-        throw new \Exception('The ColumnIndices Trait requires a one-dimensional array only.');
+    // Check that our array only contains the types: integer or string
+    foreach ($indices as $value) {
+      if (!(is_string($value) || (is_int($value)))) {
+        throw new \Exception('The ColumnIndices Trait requires a one-dimensional array with values that are of type integer or string only.');
       }
     }
 
@@ -47,10 +47,10 @@ trait ColumnIndices {
   /**
    * Returns the indices of the columns this validator should act on.
    *
-   * Specifically, in this context, an index is the key of the column the  
-   * validator should check. In the case of lists, this index/key is a sequential  
-   * integer created by PHP and in the case of associative arrays, this index/key  
-   * will likely be a meaningful string (such as names of column headers).  
+   * Specifically, in this context, an index is the key of the column the
+   * validator should check. In the case of lists, this index/key is a sequential
+   * integer created by PHP and in the case of associative arrays, this index/key
+   * will likely be a meaningful string (such as names of column headers).
    *
    * @return array
    *   A one-dimensional array containing column indices. If the array to be validated

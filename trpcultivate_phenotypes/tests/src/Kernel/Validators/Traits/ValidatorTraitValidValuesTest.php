@@ -64,7 +64,8 @@ class ValidatorTraitValidValuesTest extends ChadoTestKernelBase {
     // Setup our invalid values array
     $invalid_values = [
       [ 1, 2, [ 3, 4, 5] ],
-      [ 1, $my_object, 3 ]
+      [ 1, $my_object, 3 ],
+      [ 0.5, -7.3, 6.6 ]
     ];
     $this->invalid_values = $invalid_values;
 
@@ -149,7 +150,7 @@ class ValidatorTraitValidValuesTest extends ChadoTestKernelBase {
     // Try to set a multi-dimensional array (only 1-dimensional allowed)
     // Exception message should trigger
     foreach($this->invalid_values as $values) {
-      $expected_message = 'The ValidValues Trait requires a one-dimensional array only.';
+      $expected_message = 'The ValidValues Trait requires a one-dimensional array with values that are of type integer or string only.';
 
       $exception_caught = FALSE;
       $exception_message = 'NONE';
@@ -161,11 +162,11 @@ class ValidatorTraitValidValuesTest extends ChadoTestKernelBase {
         $exception_message = $e->getMessage();
       }
 
-      $this->assertTrue($exception_caught, 'Calling setValidValues() with a multi-dimensional array should have thrown an exception but did not.');
+      $this->assertTrue($exception_caught, 'Calling setValidValues() with an array of values that are not of type integer or string should have thrown an exception but did not.');
       $this->assertStringContainsString(
         $expected_message,
         $exception_message,
-        'The exception thrown does not have the message we expected when trying to set valid values with a multi-dimensional array.'
+        'The exception thrown does not have the message we expected when trying to set indices with an array that has a value which is not a string or integer.'
       );
     }
 

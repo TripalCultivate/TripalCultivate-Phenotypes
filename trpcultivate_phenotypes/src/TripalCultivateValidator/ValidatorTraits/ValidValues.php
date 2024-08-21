@@ -10,7 +10,7 @@ trait ValidValues {
 
   /**
    * Sets the array of values for which the validator is checking for in a
-   * specified (set by another validator trait) set of columns within a file row
+   * specified set of columns (set by another validator trait) within a file row
    *
    * @param array $valid_values
    *   A one-dimensional array of values that are allowed within the cell(s) that
@@ -19,7 +19,7 @@ trait ValidValues {
    *
    * @throws \Exception
    *  - If $valid_values array is empty
-   *  - If $valid_values array is multi-dimensional or contains objects
+   *  - If $valid_values array contains values that are not of type string or integer
    */
   public function setValidValues(array $valid_values) {
 
@@ -29,9 +29,9 @@ trait ValidValues {
     }
 
     // Check if we have a multidimentsional array or array of objects
-    foreach ($valid_values as $values) {
-      if (is_array($values) || is_object($values)) {
-        throw new \Exception('The ValidValues Trait requires a one-dimensional array only.');
+    foreach ($valid_values as $value) {
+      if (!(is_string($value) || (is_int($value)))) {
+        throw new \Exception('The ValidValues Trait requires a one-dimensional array with values that are of type integer or string only.');
       }
     }
 
