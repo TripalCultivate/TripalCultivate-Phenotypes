@@ -4,6 +4,9 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
+
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that are specific to
@@ -18,8 +21,10 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
   /**
    * Plugin Manager service.
+   *
+   * @var TripalCultivatePhenotypesValidatorManager
    */
-  protected $plugin_manager;
+  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -29,26 +34,21 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Configuration
-   *
-   * @var config_entity
-   */
-  private $config;
-
-  /**
    * Saves details regarding the config.
    */
-  protected $cvdbon;
+  protected array $cvdbon;
 
   /**
    * The terms required by this module mapped to the cvterm_ids they are set to.
    */
-  protected $terms;
+  protected array $terms;
 
   /**
    * Traits service
+   *
+   * @var TripalCultivatePhenotypesTraitsService
    */
-  protected $service_traits;
+  protected TripalCultivatePhenotypesTraitsService $service_traits;
 
   /**
    * Modules to enable.
@@ -141,14 +141,16 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $context['indices'] = [ 'Trait Name' => 0, 'method name' => 2, 'Unit' => 3 ];
     $instance->context = $context;
     $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $validation_status = $instance->validateRow($file_row);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in the wrong index key "method name" to $context[\'indices\'].');
-    $this->assertStringContainsString('The method name (key: Method Short Name) was not set', $e->getMessage(), "Did not get the expected exception message when providing the wrong index key \"method name\".");
+    $this->assertStringContainsString('The method name (key: Method Short Name) was not set', $exception_message, "Did not get the expected exception message when providing the wrong index key \"method name\".");
 
     // Case #3: Enter a second unique row and check our global $unique_traits array
     // Note: unit is at a different index
