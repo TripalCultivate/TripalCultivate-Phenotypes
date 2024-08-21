@@ -225,37 +225,81 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   /**
    * Split or explode a data file line/row values into an array using a delimiter.
    *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime type passed in. For example, the mime type text/tab-separated-values
+   * maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases this is a
+   * one-to-one mapping. If it is not a one-to-one mapping then we loop through
+   * the options.
+   *
    * @param string $row
-   *   A line in the data file.
+   *   A line in the data file which has not yet been split into columns.
+   * @param string $mime_type
+   *   The mime type of the file currently being validated or imported (i.e. the
+   *   mime type of the file this line is from).
    *
    * @return array
    *   An array containing the values extracted from the line after splitting it based
    *   on a delimiter value.
    */
-  public static function splitRowIntoColumns(string $row) {
+  public static function splitRowIntoColumns(string $row, string $mime_type) {
     // Delimiter:
 
-    // @TODO: use the delimiter getter.
-    $delimiter = "\t";
-    if (empty($delimiter)) {
-      throw new \Exception('No delimiter provided.');
+    // @todo this should be a static/constant variable in the FileType trait.
+    $mime_to_delimiter_mapping = [
+      'text/tab-separated-values' => ["\t"],
+      'text/csv' => [','],
+      'text/plain' => ["\t", ','],
+    ];
+
+    // Ensure that the mime type is in our delimiter mapping...
+    if (!array_key_exists($mime_type, $mime_to_delimiter_mapping)) {
+      throw new \Exception('The mime type "' . $mime_type . '" passed into splitRowIntoColumns() is not supported. We support the following mime types:' . implode(', ', array_keys($mime_to_delimiter_mapping)) . '.');
     }
 
-    // Split the values.
-    $values = explode($delimiter, $row);
+    // Determine the delimiter we should use based on the mime type.
+    // @todo this should be replaced by the getDelimitersForMimeType() method
+    // in the FileType trait.
+    $supported_delimiters = $mime_to_delimiter_mapping[ $mime_type ];
 
-    if (count($values) == 1 && $values[0] === $row) {
+    // If there is only one supported delimiter then we can simply split the row!
+    if (sizeof($supported_delimiters) === 1) {
+      $delimiter = array_pop($supported_delimiters);
+      $columns = str_getcsv($row, $delimiter);
+    }
+    // Otherwise we will have to try a few combinations and try to determine
+    // which one is "right"...
+    else {
+      $results = [];
+      $counts = [];
+      foreach ($supported_delimiters as $delimiter) {
+        $results[$delimiter] = str_getcsv($row, $delimiter);
+        $counts[$delimiter] = count($results[$delimiter]);
+      }
+
+      // Now lets choose the one with the most columns --shrugs-- not ideal
+      // but I'm not sure there is a better option.
+      asort($counts);
+      $winning_delimiter = array_​key_​first($counts);
+      $columns = $results[ $winning_delimiter ];
+    }
+
+    // Now lets double check that we got some values...
+    if (count($columns) == 1 && $columns[0] === $row) {
       // The delimiter failed to split the row and returned the original row.
       throw new \Exception('The data row or line provided could not be split using the delimiter (' . $delimiter . ').');
     }
 
     // Sanitize values.
-    foreach($values as &$value) {
+    foreach($columns as &$value) {
       if ($value) {
         $value = trim(str_replace(['"','\''], '', $value));
       }
     }
 
-    return $values;
+    return $columns;
   }
 }
