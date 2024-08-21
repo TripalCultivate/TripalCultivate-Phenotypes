@@ -199,12 +199,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $header_index['Unit'],
       $header_index['Type']
     ];
-    
-    // This importer expects data in tab-separated values.
-    // Delimiter: tabulator key - \t
-    // @TODO: use the delimiter setter.
-    $context['delimiter'] = "\t";
-
     $instance->context = $context;
     $validators['data-row']['empty_cell'] = $instance;
 
@@ -470,6 +464,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Open and read file in this uri.
       $file_uri = $file->getFileUri();
       $handle = fopen($file_uri, 'r');
+      // Get the mime type which is used to split the row.
+      $file_mime_type = $file->getMimeType();
 
       // Line counter.
       $line_no = 0;
@@ -511,7 +507,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         else if (!empty(trim($line))) {
           // Split line into an array using the delimiter defined by this importer
           // in the configure values method above.
-          $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line);
+          $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
 
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
