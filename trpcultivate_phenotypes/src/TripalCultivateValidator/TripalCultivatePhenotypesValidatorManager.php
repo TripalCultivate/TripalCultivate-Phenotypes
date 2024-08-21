@@ -54,6 +54,19 @@ class TripalCultivatePhenotypesValidatorManager extends DefaultPluginManager {
   public function getValidatorIdWithScope($scope) {
     $plugins = $this->getDefinitions();
     $plugin_definitions = array_values($plugins);
+    $plugin_with_scope = [];
+
+    // Remove all plugins without scope.
+    foreach($plugin_definitions as $i => $plugin) {
+      if (!isset($plugin['validator_scope'])) {
+        continue;
+      }
+
+      array_push($plugin_with_scope, $plugin);
+    }
+
+    unset($plugin_definitions);
+    $plugin_definitions = $plugin_with_scope;
 
     $plugin_key = array_search(
       $scope,
