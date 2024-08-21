@@ -26,14 +26,14 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, string $plugin_id, array $plugin_definition) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, string $plugin_id, array $plugin_definition){
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition){
     return new static(
       $configuration,
       $plugin_id,
@@ -61,12 +61,6 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
     // This project exists validator assumes that a field with name/key project was
     // implemented in the Importer form.
     $expected_field_key = 'project';
-
-    // Parameter passed to the method is not an array.
-    if (!is_array($form_values)) {
-      $type = gettype($form_values);
-      throw new \Exception('Unexpected ' . $type . ' type was passed as parameter to projectExists validator.');
-    }
 
     // Failed to locate the project field element.
     if (!array_key_exists($expected_field_key, $form_values)) {

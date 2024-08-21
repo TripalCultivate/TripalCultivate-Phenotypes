@@ -41,7 +41,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, string $plugin_id, array $plugin_definition,
+  public function __construct(array $configuration, $plugin_id, $plugin_definition,
     TripalCultivatePhenotypesGenusOntologyService $service_genus_ontology, ChadoConnection $chado_connection) {
 
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -55,7 +55,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, string $plugin_id, array $plugin_definition){
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition){
     return new static(
       $configuration,
       $plugin_id,
@@ -85,12 +85,6 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
     // This genus validator assumes that a field with name/key genus was
     // implemented in the Importer form.
     $expected_field_key = 'genus';
-
-    // Parameter passed to the method is not an array.
-    if (!is_array($form_values)) {
-      $type = gettype($form_values);
-      throw new \Exception('Unexpected ' . $type . ' type was passed as parameter to genusExists validator.');
-    }
 
     // Failed to locate the genus field element.
     if (!array_key_exists($expected_field_key, $form_values)) {

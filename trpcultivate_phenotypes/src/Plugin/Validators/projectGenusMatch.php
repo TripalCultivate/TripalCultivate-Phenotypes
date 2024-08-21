@@ -34,7 +34,7 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, string $plugin_id, array $plugin_definition, TripalCultivatePhenotypesGenusProjectService $service_genusproject) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, TripalCultivatePhenotypesGenusProjectService $service_genusproject) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     // Genus project service.
@@ -44,7 +44,7 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, string $plugin_id, array $plugin_definition){
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition){
     return new static(
       $configuration,
       $plugin_id,
@@ -78,12 +78,6 @@ class projectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       'fld_project' => 'project',
       'fld_genus' => 'genus'
     ];
-
-    // Parameter passed to the method is not an array.
-    if (!is_array($form_values)) {
-      $type = gettype($form_values);
-      throw new \Exception('Unexpected ' . $type . ' type was passed as parameter to projectGenusMatch validator.');
-    }
 
     // Failed to locate the project and genus field element.
     foreach($expected_field_key as $field) {
