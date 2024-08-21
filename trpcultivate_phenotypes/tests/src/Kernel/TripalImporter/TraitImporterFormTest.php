@@ -16,7 +16,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
 
 	protected string $defaultTheme = 'stark';
 
-	protected static array $modules = ['system', 'user', 'file', 'tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
+	protected static $modules = ['system', 'user', 'file', 'tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
 
   use UserCreationTrait;
   use PhenotypeImporterTestTrait;

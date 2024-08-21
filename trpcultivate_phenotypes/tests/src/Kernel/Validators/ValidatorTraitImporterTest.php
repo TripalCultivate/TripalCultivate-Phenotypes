@@ -53,7 +53,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     /**
    * Modules to enable.
    */
-  protected static array $modules = [
+  protected static $modules = [
     'file',
     'user',
     'tripal',

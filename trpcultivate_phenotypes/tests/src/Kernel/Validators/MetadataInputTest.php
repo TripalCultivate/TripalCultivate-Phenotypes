@@ -3,6 +3,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
 use Drupal\Core\Form\FormState;
 
  /**
@@ -13,6 +14,13 @@ use Drupal\Core\Form\FormState;
   */
 class MetadataInputTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
+
+  /**
+   * The Validators plugin manager for creating new validator instances.
+   *
+   * @var TripalCultivatePhenotypesValidatorManager
+   */
+  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
 
   /**
    * An array of genus for testing.
@@ -38,7 +46,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
    *
    * @var array
    */
-  protected static array $modules = [
+  protected static $modules = [
     'user',
     'tripal',
     'tripal_chado',
@@ -163,13 +171,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     try {
       $instance->validateMetadata($form_values);
     }
-    catch (\Exception $e) {
+    catch (\TypeError $e) {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to genus metadata validator.');
-    $this->assertStringContainsString('Unexpected string type was passed', $exception_message,
+    $this->assertStringContainsString(
+      'Argument #1 ($form_values) must be of type array, string given', $exception_message,
       'Expected exception message does not match message when passing string to genus metadata validator.');
 
 
@@ -201,13 +210,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     try {
       $instance->validateMetadata($form_state);
     }
-    catch (\Exception $e) {
+    catch (\TypeError $e) {
       $exception_caught  = TRUE;
       $exception_message =  $e->getMessage();
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to genus metadata validator.');
-    $this->assertStringContainsString('Unexpected object type was passed', $exception_message,
+    $this->assertStringContainsString(
+      'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given', $exception_message,
       'Expected exception message does not match message when passing $form_state to genus metadata validator.');
 
 
@@ -270,13 +280,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     try {
       $instance->validateMetadata($form_values);
     }
-    catch (\Exception $e) {
+    catch (\TypeError $e) {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project exists metadata validator.');
-    $this->assertStringContainsString('Unexpected string type was passed', $exception_message,
+    $this->assertStringContainsString(
+      'Argument #1 ($form_values) must be of type array, string given', $exception_message,
       'Expected exception message does not match message when passing string to project exists metadata validator.');
 
 
@@ -308,13 +319,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     try {
       $instance->validateMetadata($form_state);
     }
-    catch (\Exception $e) {
+    catch (\TypeError $e) {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project exists metadata validator.');
-    $this->assertStringContainsString('Unexpected object type was passed', $exception_message,
+    $this->assertStringContainsString(
+      'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given', $exception_message,
       'Expected exception message does not match message when passing $form_state to project exists metadata validator.');
 
 
@@ -376,13 +388,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     try {
       $instance->validateMetadata($form_values);
     }
-    catch (\Exception $e) {
+    catch (\TypeError $e) {
       $exception_caught  = TRUE;
       $exception_message =  $e->getMessage();
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project genus match metadata validator.');
-    $this->assertStringContainsString('Unexpected string type was passed', $exception_message,
+    $this->assertStringContainsString(
+      'Argument #1 ($form_values) must be of type array, string given', $exception_message,
       'Expected exception message does not match message when passing string to project genus match metadata validator.');
 
 
@@ -432,13 +445,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     try {
       $instance->validateMetadata($form_state);
     }
-    catch (\Exception $e) {
+    catch (\TypeError $e) {
       $exception_caught  = TRUE;
       $exception_message =  $e->getMessage();
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project genus match metadata validator.');
-    $this->assertStringContainsString('Unexpected object type was passed', $exception_message,
+    $this->assertStringContainsString(
+      'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given', $exception_message,
       'Expected exception message does not match message when passing $form_state to project genus match metadata validator.');
 
 
