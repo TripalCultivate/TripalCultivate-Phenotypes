@@ -12,8 +12,9 @@ trait ColumnIndices {
    * Sets the array of indices for which the validator to do its checks on.
    *
    * @param array $indices
-   *   An array of integers or keys which correspond to columns in a row of
-   *   delimited values that the validator instance should act on
+   *   An array where each value is the key of the column the validator instance should
+   *   act on. It must be either an integer or string. For more detail, see the
+   *   definition of indices in the docblock above.
    * @return void
    *
    * @throws \Exception
@@ -43,7 +44,9 @@ trait ColumnIndices {
    * of delimited values that the validator instance should act on.
    *
    * @return array
-   *   A one-dimensional array containing column indices or column names
+   *   A one-dimensional array containing column indices. If the array to be validated
+   *   is a list then these will be sequential integers and if it's an associative
+   *   array they will be the string keys set by the developer.
    *
    * @throws \Exception
    *  - If the 'indices' key does not exist in the context array (ie. the indices
