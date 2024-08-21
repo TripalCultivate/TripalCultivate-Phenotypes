@@ -223,7 +223,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Create a simplified array without assigning the column headers as keys
     // for use with our validator directly
     $file_row = array_values($file_row_default);
-    
+
     // Default case: Validate a single row and check against an empty database
     $expected_status = 'pass';
     $validation_status = $instance->validateRow($file_row);

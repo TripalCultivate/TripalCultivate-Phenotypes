@@ -124,9 +124,13 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
   /**
    * Validates rows within the data file submitted to an importer.
    *
+   * Note: This should only be used when validating the format of the row.
+   * If you are validating the content of the columns then you should use
+   * validateRow() instead.
+   *
    * @param string $raw_row
-   *  A single line or row extracted from the data file 
-   *  containing data entries, values or column headers, with each value 
+   *  A single line or row extracted from the data file
+   *  containing data entries, values or column headers, with each value
    *  delimited by a character specified by the importer class.
    *
    * @return array

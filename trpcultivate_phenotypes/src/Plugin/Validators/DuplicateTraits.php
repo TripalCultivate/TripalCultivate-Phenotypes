@@ -84,7 +84,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
    *   stored as an array element.
-   *    
+   *
    * @return array
    *   An associative array with the following keys:
    *   - title: string, section or title of the validation as it appears in the result window.
