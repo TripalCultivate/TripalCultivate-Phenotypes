@@ -313,7 +313,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       '#title' => 'Genus',
       '#description' => t('The genus of the germplasm being phenotyped with the supplied traits.
         Traits in this system are specific to the genus in order to ensure they are specific enough to accurately describe the phenotypes.
-        In order for genus to be available here is must be first configured in the Analyzed Phenotypes configuration.'),
+        In order for genus to be available here, it must be first configured in the Analyzed Phenotypes configuration.'),
       '#empty_option' => '- Select -',
       '#options' => $active_genus,
       '#default_value' => $default_genus,
