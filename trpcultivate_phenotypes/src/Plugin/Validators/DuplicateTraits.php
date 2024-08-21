@@ -37,7 +37,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *     - 'Method Short Name': int, the index of the method name column in $row_values
    *     - 'Unit': int, the index of the unit column in $row_values
    */
-  public $context = [];
+  public array $context = [];
 
   /**
    * A nested array of already validated values forming the unique trait name +
