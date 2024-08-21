@@ -4,6 +4,9 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
+
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Plugins that are specific to
@@ -18,8 +21,10 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
   /**
    * Plugin Manager service.
+   *
+   * @var TripalCultivatePhenotypesValidatorManager
    */
-  protected $plugin_manager;
+  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -29,31 +34,26 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Configuration
-   *
-   * @var config_entity
-   */
-  private $config;
-
-  /**
    * Saves details regarding the config.
    */
-  protected $cvdbon;
+  protected array $cvdbon;
 
   /**
    * The terms required by this module mapped to the cvterm_ids they are set to.
    */
-  protected $terms;
+  protected array $terms;
 
   /**
    * Traits service
+   *
+   * @var TripalCultivatePhenotypesTraitsService
    */
-  protected $service_traits;
+  protected TripalCultivatePhenotypesTraitsService $service_traits;
 
     /**
    * Modules to enable.
    */
-  protected static $modules = [
+  protected static array $modules = [
     'file',
     'user',
     'tripal',

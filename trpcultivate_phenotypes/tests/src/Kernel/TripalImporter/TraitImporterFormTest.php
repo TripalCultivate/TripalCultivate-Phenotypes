@@ -14,14 +14,12 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
  */
 class TraitImporterFormTest extends ChadoTestKernelBase {
 
-	protected $defaultTheme = 'stark';
+	protected string $defaultTheme = 'stark';
 
-	protected static $modules = ['system', 'user', 'file', 'tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
+	protected static array $modules = ['system', 'user', 'file', 'tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
 
   use UserCreationTrait;
   use PhenotypeImporterTestTrait;
-
-  protected $importer;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -40,7 +38,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
    */
   protected array $terms;
 
-  protected $definitions = [
+  protected array $definitions = [
     'test-trait-importer' => [
       'id' => 'trpcultivate-phenotypes-traits-importer',
       'label' => 'Tripal Cultivate: Phenotypic Trait Importer',
@@ -287,7 +285,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
   /**
    * Tests submitting the importer form when the module is not configured.
    */
-  public function testTraitImporterFormSubmitNoOrganism() { 
+  public function testTraitImporterFormSubmitNoOrganism() {
 	  $plugin_id = 'trpcultivate-phenotypes-traits-importer';
 
     // Create a file to upload.

@@ -1,10 +1,4 @@
 <?php
-
-/**
- * @file
- * Kernel tests for validator plugins specific to validating metadata/input to importer.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
@@ -24,7 +18,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
    * An array of genus for testing.
    * - config: a configured genus.
    * - not-config: genus not configured.
-   * 
+   *
    * @var array
    */
   protected array $test_genus;
@@ -34,17 +28,17 @@ class MetadataInputTest extends ChadoTestKernelBase {
    * - project-with-configgenus: a project that is paired with a configured genus.
    * - project-with-genus: a project that is paired with a genus.
    * - just-project: a project record.
-   * 
+   *
    * @var array
    */
   protected array $test_project;
 
   /**
    * Modules to enable.
-   * 
+   *
    * @var array
    */
-  protected static $modules = [
+  protected static array $modules = [
     'user',
     'tripal',
     'tripal_chado',
@@ -95,7 +89,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (not configured).');
     $this->test_genus['not-configured'] = $genus;
-    
+
     // Set terms configuration.
     $this->setTermConfig();
 
@@ -107,7 +101,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
       'project-genus-not-tru-service' => $this->test_genus['configured'],
       'just-project' => ''
     ];
-    
+
     foreach($projects as $test_case => $project_genus) {
       $project = 'Research Project: ' . $test_case;
       $project_id = $this->chado_connection->insert('1:project')
@@ -142,10 +136,10 @@ class MetadataInputTest extends ChadoTestKernelBase {
             'value' => $project_genus
           ])
           ->execute();
-        
+
         $this->assertNotEmpty($project_prop, 'We were not able to create a project-genus (for: ' . $test_case . ') property for testing.');
       }
-    }    
+    }
   }
 
   /**
@@ -155,7 +149,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_genus_exists';
     $instance = $this->plugin_manager->createInstance($validator_id);
-    
+
     // Test items that will throw exception:
     // 1. Passing a string value.
     // 2. Failed to implement a form field element with genus name/key.
@@ -165,7 +159,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = 'Not a valid form values';
 
     $exception_caught  = FALSE;
-    $exception_message = ''; 
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -173,17 +167,17 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to genus metadata validator.');
-    $this->assertStringContainsString('Unexpected string type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected string type was passed', $exception_message,
       'Expected exception message does not match message when passing string to genus metadata validator.');
-    
-      
+
+
     // No genus field.
     $form_values = ['project_id' => 1111];
 
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -193,17 +187,17 @@ class MetadataInputTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when no genus form field was implemented.');
-    $this->assertStringContainsString('Failed to locate genus field element', $exception_message, 
+    $this->assertStringContainsString('Failed to locate genus field element', $exception_message,
       'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
 
-    
+
     // A Drupal $form_state object.
     $form_state = new FormState();
     // A random field.
     $form_state->setValues(['project' => uniqid()]);
-    
+
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_state);
     }
@@ -211,11 +205,11 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $exception_caught  = TRUE;
       $exception_message =  $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to genus metadata validator.');
-    $this->assertStringContainsString('Unexpected object type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected object type was passed', $exception_message,
       'Expected exception message does not match message when passing $form_state to genus metadata validator.');
-    
+
 
     // Other tests:
     // Each test will test that genusExists generated the correct case, valid status and failed item.
@@ -224,29 +218,29 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     // Genus does not exist.
     $genus = 'genus-' . uniqid();
-    $form_values = ['genus' => $genus];  
+    $form_values = ['genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Genus does not exist', $validation_status['case'],
       'Genus exists validator case title does not match expected title for non-existent genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
     $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
-    
+
 
     // Genus exists but not configured/recognized by the module.
     $genus = $this->test_genus['not-configured'];
     $form_values = ['genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Genus exists but is not configured', $validation_status['case'],
       'Genus exists validator case title does not match expected title for not configured genus.');
     $this->assertFalse($validation_status['valid'], 'A failed genus must return a FALSE valid status.');
     $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
-    
+
 
     // A valid genus - exists and is configured.
     $genus = $this->test_genus['configured'];
-    $form_values = ['genus' => $genus];  
+    $form_values = ['genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
 
     $this->assertEquals('Genus exists and is configured with phenotypes', $validation_status['case'],
@@ -262,7 +256,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_project_exists';
     $instance = $this->plugin_manager->createInstance($validator_id);
-    
+
     // Test items that will throw exception:
     // 1. Passing a string value.
     // 2. Failed to implement a form field element with project name/key.
@@ -272,7 +266,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = 'Not a valid form values';
 
     $exception_caught  = FALSE;
-    $exception_message = ''; 
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -280,17 +274,17 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project exists metadata validator.');
-    $this->assertStringContainsString('Unexpected string type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected string type was passed', $exception_message,
       'Expected exception message does not match message when passing string to project exists metadata validator.');
-    
-      
+
+
     // No project field.
     $form_values = ['genus' => 'Lens'];
 
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -300,17 +294,17 @@ class MetadataInputTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when no project form field was implemented.');
-    $this->assertStringContainsString('Failed to locate project field element', $exception_message, 
+    $this->assertStringContainsString('Failed to locate project field element', $exception_message,
       'Expected exception message does not match message when importer failed to implement a form field element with the name/key project.');
 
-    
+
     // A Drupal $form_state object.
     $form_state = new FormState();
     // A random field.
     $form_state->setValues(['project' => uniqid()]);
-    
+
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_state);
     }
@@ -318,9 +312,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project exists metadata validator.');
-    $this->assertStringContainsString('Unexpected object type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected object type was passed', $exception_message,
       'Expected exception message does not match message when passing $form_state to project exists metadata validator.');
 
 
@@ -330,9 +324,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     // Project does not exist.
     $project = 'project-' . uniqid();
-    $form_values = ['project' => $project];  
+    $form_values = ['project' => $project];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Project does not exist', $validation_status['case'],
       'Project exists validator case title does not match expected title for non-existent project.');
     $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
@@ -341,7 +335,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     // Project exists - by project id.
     foreach($this->test_project as $project) {
-      $form_values = ['project' => $project['id']];  
+      $form_values = ['project' => $project['id']];
       $validation_status = $instance->validateMetadata($form_values);
 
       $this->assertEquals('Project exists', $validation_status['case'],
@@ -349,9 +343,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $this->assertTrue($validation_status['valid'], 'A valid project must return a TRUE valid status.');
       $this->assertEmpty($validation_status['failedItems'], 'A valid project does not return a failed item value.');
 
-      
+
       // Project exists - by project name.
-      $form_values = ['project' => $project['name']];  
+      $form_values = ['project' => $project['name']];
       $validation_status = $instance->validateMetadata($form_values);
 
       $this->assertEquals('Project exists', $validation_status['case'],
@@ -368,7 +362,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // Create a plugin instance for this validator
     $validator_id = 'trpcultivate_phenotypes_validator_project_genus_match';
     $instance = $this->plugin_manager->createInstance($validator_id);
-  
+
     // Test items that will throw exception:
     // 1. Passing a string value.
     // 2. Failed to implement a form field element with project and genus name/key.
@@ -378,7 +372,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = 'Not a valid form values';
 
     $exception_caught  = FALSE;
-    $exception_message = ''; 
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -386,17 +380,17 @@ class MetadataInputTest extends ChadoTestKernelBase {
       $exception_caught  = TRUE;
       $exception_message =  $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project genus match metadata validator.');
-    $this->assertStringContainsString('Unexpected string type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected string type was passed', $exception_message,
       'Expected exception message does not match message when passing string to project genus match metadata validator.');
-    
-      
+
+
     // No project field.
     $form_values = ['genus' => 'Lens'];
 
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -406,15 +400,15 @@ class MetadataInputTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when no project form field was implemented.');
-    $this->assertStringContainsString('Failed to locate project field element', $exception_message, 
+    $this->assertStringContainsString('Failed to locate project field element', $exception_message,
       'Expected exception message does not match message when importer failed to implement a form field element with the name/key project.');
 
-    
+
     // No genus field.
     $form_values = ['project' => 'Test Project'];
 
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_values);
     }
@@ -424,7 +418,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when no genus form field was implemented.');
-    $this->assertStringContainsString('Failed to locate genus field element', $exception_message, 
+    $this->assertStringContainsString('Failed to locate genus field element', $exception_message,
       'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
 
 
@@ -432,9 +426,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_state = new FormState();
     // A random field.
     $form_state->setValues(['project' => uniqid()]);
-    
+
     $exception_caught  = FALSE;
-    $exception_message = '';        
+    $exception_message = '';
     try {
       $instance->validateMetadata($form_state);
     }
@@ -444,7 +438,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project genus match metadata validator.');
-    $this->assertStringContainsString('Unexpected object type was passed', $exception_message, 
+    $this->assertStringContainsString('Unexpected object type was passed', $exception_message,
       'Expected exception message does not match message when passing $form_state to project genus match metadata validator.');
 
 
@@ -456,9 +450,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $project = 'project-' . uniqid();
     $genus = $this->test_genus['configured'];
 
-    $form_values = ['project' => $project, 'genus' => $genus];  
+    $form_values = ['project' => $project, 'genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Project does not exist', $validation_status['case'],
       'Project genus match validator case title does not match expected title for non-existent project.');
     $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
@@ -468,9 +462,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $project = $this->test_project['just-project']['id'];
     $genus = $this->test_project['just-project']['genus'];
 
-    $form_values = ['project' => $project, 'genus' => $genus];  
+    $form_values = ['project' => $project, 'genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Project has no genus set and could not compare with the genus provided', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
     $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
@@ -481,7 +475,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $project = $this->test_project['project-with-configgenus']['id'];
     $genus = $this->test_project['project-with-genus']['genus'];
 
-    $form_values = ['project' => $project, 'genus' => $genus];  
+    $form_values = ['project' => $project, 'genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
 
     $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
@@ -493,9 +487,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $project = $this->test_project['project-genus-not-tru-service']['id'];
     $genus = $this->test_project['project-genus-not-tru-service']['genus'];
 
-    $form_values = ['project' => $project, 'genus' => $genus];  
+    $form_values = ['project' => $project, 'genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Project has no genus set and could not compare with the genus provided', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
     $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
@@ -506,9 +500,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $project = $this->test_project['project-with-configgenus']['id'];
     $genus = $this->test_project['project-with-configgenus']['genus'];
 
-    $form_values = ['project' => $project, 'genus' => $genus];  
+    $form_values = ['project' => $project, 'genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
-    
+
     $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
     $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
