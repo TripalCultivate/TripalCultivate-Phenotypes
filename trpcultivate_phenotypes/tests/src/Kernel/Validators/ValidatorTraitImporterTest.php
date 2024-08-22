@@ -50,7 +50,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
    */
   protected TripalCultivatePhenotypesTraitsService $service_traits;
 
-    /**
+  /**
    * Modules to enable.
    */
   protected static $modules = [

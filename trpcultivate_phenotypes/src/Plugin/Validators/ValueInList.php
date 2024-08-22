@@ -34,7 +34,7 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
    *   - valid_values => an array of values that are allowed within the cell(s) located
    *     at the indices specified in $context['indices']
    */
-  public $context = [];
+  public array $context = [];
 
   /**
    * Constructor.
@@ -59,7 +59,7 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
    *
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
-   *   stored as an array element
+   *   stored as an array element.
    *
    * @return array
    *   An associative array with the following keys.

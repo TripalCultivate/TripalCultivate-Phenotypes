@@ -37,7 +37,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *     - 'Method Short Name': int, the index of the method name column in $row_values
    *     - 'Unit': int, the index of the unit column in $row_values
    */
-  public $context = [];
+  public array $context = [];
 
   /**
    * A nested array of already validated values forming the unique trait name +
@@ -83,7 +83,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
-   *   stored as an array element
+   *   stored as an array element.
    *
    * @return array
    *   An associative array with the following keys:

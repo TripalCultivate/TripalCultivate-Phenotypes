@@ -31,7 +31,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *   This validator requires the following keys:
    *   - indices => an array of indices corresponding to the cells in $row_values to act on
    */
-  public $context = [];
+  public array $context = [];
 
   /**
    * Constructor.
@@ -56,7 +56,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *
    * @param array $row_values
    *   The contents of the file's row where each value within a cell is
-   *   stored as an array element
+   *   stored as an array element.
    *
    * @return array
    *   An associative array with the following keys.

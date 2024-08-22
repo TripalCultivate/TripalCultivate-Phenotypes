@@ -157,6 +157,11 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $returned_allownew = $instance->getConfigAllowNew();
     $this->assertEquals($expected_allownew, $returned_allownew,
       "We did not get the status for Allowing New configuration that we expected through the $validator_id validator.");
+
+    // check that the validator scope is not returned when it is not set.
+    // @deprecated Remove in issue #91
+    $scope = $instance->getValidatorScope();
+    $this->assertNull($scope, "The validator scope is not set for the $validator_id therefore no scope should be returned.");
   }
 
   /**
@@ -206,7 +211,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test the validate methods: validateMetadata(), validateFile(), validateRow(), validate().
+   * Test the validate methods: validateMetadata(), validateFile(),
+   * validateRawRow(), validateRow(), validate().
    *
    * NOTE: These should all thrown an exception in the base class.
    */
@@ -267,13 +273,33 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       "We did not get the exception message we expected when calling BasicallyBase::validateFile()"
     );
 
+    // Tests Base Class validateRawRow().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
+      $row_string = implode("\t", $row_values);
+      $instance->validateRawRow($row_string);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateRawRow() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateRawRow() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateRawRow()"
+    );
+
     // Tests Base Class validateRow().
     $exception_caught = NULL;
     $exception_message = NULL;
     try {
       $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
-      $context = [];
-      $instance->validateRow($row_values, $context);
+      $instance->validateRow($row_values);
     } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -305,6 +331,156 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Method validate() from base class',
       $exception_message,
       "We did not get the exception message we expected when calling BasicallyBase::validate()"
+    );
+  }
+
+  /**
+   * DATA PROVIDER: tests the split row by providing mime type to delimiter options.
+   */
+  public function provideMimeTypeDelimiters() {
+    $sets = [];
+
+    $sets[] = [
+      'text/tab-separated-values',
+      "\t",
+    ];
+
+    $sets[] = [
+      'text/csv',
+      ','
+    ];
+
+    /* Not currently supported as multiple delimiters match this mime-type
+    $sets[] = [
+      'text/plain',
+      ','
+    ];
+    */
+
+    return $sets;
+  }
+
+  /**
+   * Test line or row split method.
+   *
+   * @dataProvider provideMimeTypeDelimiters
+   */
+  public function testSplitRowIntoColumns(string $expected_mime_type, string $expected_delimiter) {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Create a data row.
+    // This line captures data values with single/double quotes and leading/trailing spaces.
+    $good_line = $raw_line = ['Value A', 'Value "B"', 'Value \'C\'', 'Value D ', ' Value E', ' Value F ', ' Value G           '];
+    // Sanitize the values so that the expected split values would be:
+    // Value A, Value B, Value C, Value D, Value E, Value F and Value G.
+    foreach($good_line as &$l) {
+      $l = trim(str_replace(['"','\''], '', $l));
+    }
+
+    // At this point line is sanitized and sparkling*
+
+    // Test:
+    // 1. Failed to specify a delimiter.
+    // 2. Test that delimiter could not split the line.
+    // 3. Line values and split values match.
+    // 4. Some other delimiter.
+
+    // Unsupported mime type and thus unknown delimiter.
+    $delimiter = '~';
+    $str_line = implode($delimiter, $raw_line);
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+
+    try {
+      $instance->splitRowIntoColumns($str_line, 'text/uncertain');
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no delimiter defined in splitRowIntoColumns().');
+    $this->assertStringContainsString(
+      'mime type "text/uncertain" passed into splitRowIntoColumns() is not supported', $exception_message,
+      'We did not get the expected message when an unknown mime type is passed into splitRowIntoColumns().');
+
+    // Delimiter is not present in the line and could not split the line.
+    // This case will return the original line.
+    $delimiter = '<not_the_delimiter>';
+    $str_line = implode($delimiter, $raw_line);
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+
+    try {
+      $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line using the delimiter.');
+    $this->assertStringContainsString(
+      'line provided could not be split into columns', $exception_message,
+      'Expected exception message does not match message when splitRowIntoColumns() could not split line using the delimiter.');
+
+    // Test that the sanitized line is the same as the split values.
+    $delimiter = $expected_delimiter;
+    $str_line = implode($delimiter, $raw_line);
+    $values = $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+    $this->assertEquals($good_line, $values, 'Line values does not match expected split values.');
+  }
+
+  /**
+   * Quickly test that mime-types with multiple delimiters are handled.
+   */
+  public function testSplitRowIntoColumnsMultiDelimiter() {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    $str_line = 'Line does not actually matter here as test/plain is not supported.';
+    $expected_mime_type = 'text/plain';
+    $expected_exception_message = "We don't currently support splitting mime types with multiple delimiter options";
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+    try {
+      $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line because text/plain has two supported delimiters and we dont yet know how to pick the right one reliably.');
+    $this->assertStringContainsString(
+      $expected_exception_message,
+      $exception_message,
+      'Expected exception message does not match message when splitRowIntoColumns() could not split line because there are too many supported delimiters.'
     );
   }
 }
