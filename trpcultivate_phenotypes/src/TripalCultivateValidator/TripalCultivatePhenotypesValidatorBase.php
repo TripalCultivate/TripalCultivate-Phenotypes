@@ -258,7 +258,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     $delimiter = NULL;
     // If there is only one supported delimiter then we can simply split the row!
     if (sizeof($supported_delimiters) === 1) {
-      $delimiter = array_pop($supported_delimiters);
+      $delimiter = end($supported_delimiters);
       $columns = str_getcsv($row, $delimiter);
     }
     // Otherwise we will have to try to determine which one is "right"?!?
