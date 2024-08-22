@@ -14,7 +14,19 @@ trait Headers {
    *
    * @var string
    */ 
-  private string $trait_key = 'headers';
+  private string $context_key = 'headers';
+  
+  /**
+   * Expected types of the headers, each type will have a getter method.
+   * A general-purpose getter getHeaders() can be used to get headers of 
+   * a specific one header type or combination of header types.
+   * 
+   * @var array
+   */
+  private array $types = [
+    'required', // Header must have a value.
+    'optional', // Header may contain a value.
+  ];
 
   /**
    * Sets the headers.
@@ -25,8 +37,9 @@ trait Headers {
    *   keyed by name, description and type, respectively.
    * 
    *   This list of headers is expected to appear in the data file header row.
+   *   
    *   NOTE: the set headers array is zero-based index and represents the order
-   *         of the header as each appears in the headers definition in the importer.
+   *         of the header as each item appears in the headers array parameter.
    * 
    * @throws \Exception
    *  - An empty array header.
@@ -39,42 +52,39 @@ trait Headers {
     if (empty($headers)) {
       throw new \Exception('The Headers Trait requires an array of headers and must not be empty.');  
     }
-
-    // Expected types of the headers, each type will have a getter method.
-    // There must be headers of type required in the headers. Additional type
-    // is created keyed by: all - which will reference all the headers.
     
-    // NOTE: all - is not a type value used to set the type key of a header.
-    $types = ['required', 'optional'];
-
-    $context_headers = [];
+    // Required keys, each header element must posses and 
+    // could not be set to an empty value. Type key value must be
+    // one of the type values defined by the types property. 
+    $required_keys = [
+      'name', // Name of the header.
+      'type'  // Type of the header (ie. required or optional).
+    ];
     
-    // For each type, pull the headers using the type key for comparison.
-    foreach($types as $type) {
-      // Pull the subset of headers that the type matches the type being processed
-      // and check the result if type is required.
-      $headers_of_type = array_filter($headers, function($headers) use($type) { 
-        return $headers['type'] == $type; 
-      });
+    foreach($headers as $index => $header) {
+      // Header element key and value check.
+      foreach($required_keys as $key) {
+        // Key is set.
+        if (!isset($header[ $key ])) {
+          throw new \Exception('Headers Trait requires the header key: ' . $key . ' when defining headers.');
+        }
+        
+        // Key value is not empty.
+        if (empty(trim($header[ $key ]))) {
+          throw new \Exception('Headers Trait requires the header key: ' . $key . ' to be have a value.');
+        }
 
-      // Required array check.
-      if ($type == 'required' && empty($headers_of_type)) {
-        // Throws an exception.
-        throw new \Exception('The Headers Trait requires an array of headers of type required.');  
+        // Type value is one of valid types.
+        if ($key == 'type' && !in_array($header[ $key ], $this->types)) {
+          $str_types = implode(', ', $this->types);
+          throw new \Exception('Headers Trait requires the header key: ' . $key . ' value to be one of [' . $str_types . '].');
+        }
       }
 
-      // Simplify the headers of a type to just the index and header name.
-      foreach($headers_of_type as $key => $header) {
-        $context_headers[ $key ] = $header['name'];
-      }
-      
-      $this->context[ $this->trait_key ][ $type ] = $context_headers;
-      unset($context_headers);
+      // With the header type already verified to be one of the valid types, 
+      // push the header into the right type context array.
+      $this->context[ $this->context_key ][ $header['type'] ][ $index ] = $header['name'];
     }
-
-    // Create an element in the context array that will reference
-    // all the headers - keys (order) and header name. Key: all.
-    $this->context[ $this->trait_key ]['all'] = array_column($headers, 'name');
   }
   
   /**
@@ -95,8 +105,8 @@ trait Headers {
     
     $type_key = 'required';
 
-    if (array_key_exists($this->trait_key, $this->context)) {
-      return $this->context[ $this->trait_key ][ $type_key ];
+    if (array_key_exists($this->context_key, $this->context)) {
+      return $this->context[ $this->context_key ][ $type_key ];
     }
     else {
       throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
@@ -121,37 +131,60 @@ trait Headers {
     
     $type_key = 'optional';
 
-    if (array_key_exists($this->trait_key, $this->context)) {
-      return $this->context[ $this->trait_key ][ $type_key ];
+    if (array_key_exists($this->context_key, $this->context)) {
+      return $this->context[ $this->context_key ][ $type_key ];
     }
     else {
       throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
     }
   }
-  
+
   /**
-   * Get all headers.
+   * Get headers of type(s).
+   * 
+   * @param array $types
+   *   A list of header types to get. 
+   *   Default to required and optional header types.
    * 
    * @return array
-   *   All headers of regardless of type, keyed by the index (order) from
-   *   the headers array and header name as the value.
-   * 
-   *   The key all in the context headers array set by the setter method.
-   *   NOTE: the headers array is zero-based index.
+   *   A list or combination of lists of headers of type
+   *   defined by the types parameter.
    * 
    * @throws \Exception
    *  - If the 'headers' key does not exists in the context array
    *    (ie. the headers element has NOT been set).
+   *  - If an unrecognized header type is requested in the types parameter.
    */
-  public function getAllHeaders() {
-    
-    $type_key = 'all';
+  public function getHeaders(array $types = ['required', 'optional']) {
 
-    if (array_key_exists($this->trait_key, $this->context)) {
-      return $this->context[ $this->trait_key ][ $type_key ];
+    $valid_types = $this->types;
+    
+    // See if the requested types to determine if there are any that are not recognized. 
+    // If any such unrecognized types are detected, throw an exception.
+    $invalid_types = array_filter($types, function($type) use($valid_types) { 
+      return !in_array($type, $valid_types); 
+    });
+    
+    if (!empty($invalid_types)) {
+      $str_invalid_types = implode(', ', $invalid_types);
+      $str_valid_types = implode(', ', $valid_types);
+      throw new \Exception('Cannot retrieve invalid header types: ' . $str_invalid_types . '. Use one of valid types: [' . $str_valid_types . ']');
+    }
+
+    if (array_key_exists($this->context_key, $this->context)) {
+      // At this point, types requested are valid.   
+      $headers = [];
+
+      foreach($types as $type) {
+        foreach($this->context[ $this->context_key ][ $type ] as $index => $header) {
+          $headers[ $index ] = $header;
+        }
+      }
+
+      return $headers;
     }
     else {
-      throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
-    }
+      throw new \Exception('Cannot retrieve headers from the context array as one has not been set by setHeaders() method.');
+    } 
   }
 }
