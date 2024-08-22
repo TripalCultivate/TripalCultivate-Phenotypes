@@ -3,45 +3,65 @@
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits;
 
 /**
- * Provides setters focused for setting a file types and file media type (MIME) 
+ * Provides setters focused for setting a file types and file media type (MIME)
  * supported by the importer, and getter to retrieve the set value.
  */
 trait FileTypes {
   /**
-   * The key used by the setter method to create a file types element 
-   * in the context array, as well as the key used by the getter method 
+   * The key used by the setter method to create a file types element
+   * in the context array, as well as the key used by the getter method
    * to reference and retrieve the file types element value.
-   * 
+   *
    * @var string
    */
   private string $trait_key = 'file_types';
+
+  /**
+   * A mapping of supported file mime-types and their supported delimiters.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime-type passed in. For example, the mime-type
+   * "text/tab-separated-values" maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases, this is a
+   * one-to-one mapping.
+   *
+   * @var array
+   */
+  protected static array $mime_to_delimiter_mapping = [
+    'text/tab-separated-values' => ["\t"],
+    'text/csv' => [','],
+    'text/plain' => ["\t", ','],
+  ];
 
   /**
    * Sets a file types with the file media type.
    *
    * @param array $extensions
    *   An array of file extensions (file types) the importer expects the file extension of the data file.
-   * 
+   *
    * @return void
-   * 
+   *
    * @throws \Exception
    *  - Types array is an empty array.
    *  - Unsupported extension (cannot resolve mime type using the type-mime mapping array).
    */
   public function setFileTypes(array $extensions) {
-    
+
     // Extensions array must have a element.
     if (empty($extensions)) {
       throw new \Exception('The File Types Trait requires an array of file extensions and must not be empty.');
     }
-    
+
     // File extension and file media type (mime type).
     $file_type_to_mime = [
       'tsv'  => 'text/tab-separated-values',
       'csv'  => 'text/csv',
       'txt'  => 'text/plain',
 
-      // Add any additional valid file types here, 
+      // Add any additional valid file types here,
       // while ensuring file types support use of a delimiter.
     ];
 
@@ -54,10 +74,10 @@ trait FileTypes {
         array_push($unresolved, $type);
         continue;
       }
-      
+
       $file_types[ $type ] = $file_type_to_mime[ $type ];
     }
-    
+
     // Types could not be resolve.
     if ($unresolved) {
       $unresolved = implode(', ', $unresolved);
@@ -71,9 +91,9 @@ trait FileTypes {
    * Gets the file types.
    *
    * @return array
-   *   The file types set by the setter method. The types include the file extension (type) and 
+   *   The file types set by the setter method. The types include the file extension (type) and
    *   the corresponding file media type (mime), keyed by file extension.
-   * 
+   *
    * @throws \Exception
    *  - If the 'file_types' key does not exist in the context array
    *    (ie. the file_types array has NOT been set).
@@ -86,5 +106,23 @@ trait FileTypes {
     else {
       throw new \Exception('Cannot retrieve file types from the context array as one has not been set by setFileTypes() method.');
     }
+  }
+
+  /**
+   * Gets the list of delimiters supported by the file mime-type that
+   * was provided to the setter
+   *
+   * NOTE: This method is static to allow for it to also be used by the static
+   * method splitRowIntoColumns()
+   *
+   * @return array
+   *   The list of delimiters that are supported by the file mime-type
+   *
+   * @throws \Exception
+   *   - If the 'delimiter' key does not exist in the context array (ie. the
+   *     setFileTypes() method has NOT been called)
+   */
+  public static function getDelimitersForMimeType() {
+
   }
 }
