@@ -350,10 +350,12 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       ','
     ];
 
+    /* Not currently supported as multiple delimiters match this mime-type
     $sets[] = [
       'text/plain',
       ','
     ];
+    */
 
     return $sets;
   }
@@ -441,5 +443,44 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $str_line = implode($delimiter, $raw_line);
     $values = $instance->splitRowIntoColumns($str_line, $expected_mime_type);
     $this->assertEquals($good_line, $values, 'Line values does not match expected split values.');
+  }
+
+  /**
+   * Quickly test that mime-types with multiple delimiters are handled.
+   */
+  public function testSplitRowIntoColumnsMultiDelimiter() {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    $str_line = 'Line does not actually matter here as test/plain is not supported.';
+    $expected_mime_type = 'text/plain';
+    $expected_exception_message = "We don't currently support splitting mime types with multiple delimiter options";
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+    try {
+      $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line because text/plain has two supported delimiters and we dont yet know how to pick the right one reliably.');
+    $this->assertStringContainsString(
+      $expected_exception_message,
+      $exception_message,
+      'Expected exception message does not match message when splitRowIntoColumns() could not split line because there are too many supported delimiters.'
+    );
   }
 }
