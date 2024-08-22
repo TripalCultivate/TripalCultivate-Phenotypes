@@ -128,6 +128,12 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    * If you are validating the content of the columns then you should use
    * validateRow() instead.
    *
+   * NOTE: Currently this method assumes it will not be passed empty lines or
+   * comment lines... to the point it will throw an exception if it is. We should
+   * rethink this at a later point. Example: Many file formats have comments. These
+   * are not data rows and will not split properly BUT we may want to validate them
+   * in other ways and at a mimimum we may not want to say they are an error ;-p
+   *
    * @param string $raw_row
    *  A single line or row extracted from the data file
    *  containing data entries, values or column headers, with each value

@@ -480,8 +480,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Header Row Validation
         // ********************************************************************
         if ($line_no == 1) {
+          // Split line into an array using the delimiter defined by this importer
+          // in the configure values method above.
+          $header_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
           foreach ($validators['header-row'] as $key => $validator) {
-            // @TODO: Update to use the validateRow() method
+            // @TODO: Update to use the validateRow() method and use the split $header_row above.
             $result = $validator->validate();
             $validation[$key] = $result;
             // Check for old style...

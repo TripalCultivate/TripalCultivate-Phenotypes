@@ -7,18 +7,6 @@ use Drupal\Component\Plugin\PluginBase;
 abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
 
   /**
-   *   An associative array containing the needed context, which is dependant
-   *   on the validator. For example, row level validators are passed the raw
-   *   row from the file and thus need the importer to indicate how it should
-   *   be split.
-   *
-   *   Row level validators require the following key(s):
-   *   - delimiter => the delimiter to be passed to explode in order to break
-   *     the raw row string into an array of columns.
-   */
-  public array $context = [];
-
-  /**
    * Get validator plugin validator_name definition annotation value.
    *
    * @return string
@@ -263,6 +251,8 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     // Determine the delimiter we should use based on the mime type.
     // @todo this should be replaced by the getDelimitersForMimeType() method
     // in the FileType trait.
+    // @todo it has also been mentioned we may want to call getDelimitersForMimeType()
+    // once for the header and reuse it throughout the file.
     $supported_delimiters = $mime_to_delimiter_mapping[ $mime_type ];
 
     $delimiter = NULL;
@@ -271,23 +261,38 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
       $delimiter = array_pop($supported_delimiters);
       $columns = str_getcsv($row, $delimiter);
     }
-    // Otherwise we will have to try a few combinations and try to determine
-    // which one is "right"...
+    // Otherwise we will have to try to determine which one is "right"?!?
+    // Points to remember in the future:
+    //  - We can't use the one that splits into the most columns as a text column
+    // could include multiple commas which could overpower the overall number of
+    // tabs in a tab-delimited plain text file.
+    // - It would be good to confirm we are getting the same number of columns
+    // for each line in a file but since this needs to be a static method we
+    // would pass that information in.
+    // - If we try to check for the same number of columns as expected, we have
+    // to remember that researchers routinely add "Comments" columns to the end,
+    // sometimes without a header.
+    // - If going based on the number of columns in the header, the point above
+    // still impacts this, plus this method is called when splitting the header
+    // before any validators run!
     else {
-      $results = [];
-      $counts = [];
-      foreach ($supported_delimiters as $delimiter) {
-        $results[$delimiter] = str_getcsv($row, $delimiter);
-        $counts[$delimiter] = count($results[$delimiter]);
-      }
 
-      // Now lets choose the one with the most columns --shrugs-- not ideal
-      // but I'm not sure there is a better option. asort() is from smallest
-      // to largest preserving the keys so we want to choose the last element.
-      asort($counts);
-      $winning_delimiter = array_key_last($counts);
-      $columns = $results[ $winning_delimiter ];
-      $delimiter = $winning_delimiter;
+      throw new \Exception("We don't currently support splitting mime types with multiple delimiter options as its not trivial to choose the correct one.");
+
+      // $results = [];
+      // $counts = [];
+      // foreach ($supported_delimiters as $delimiter) {
+      //   $results[$delimiter] = str_getcsv($row, $delimiter);
+      //   $counts[$delimiter] = count($results[$delimiter]);
+      // }
+
+      // // Now lets choose the one with the most columns --shrugs-- not ideal
+      // // but I'm not sure there is a better option. asort() is from smallest
+      // // to largest preserving the keys so we want to choose the last element.
+      // asort($counts);
+      // $winning_delimiter = array_key_last($counts);
+      // $columns = $results[ $winning_delimiter ];
+      // $delimiter = $winning_delimiter;
     }
 
     // Now lets double check that we got some values...
