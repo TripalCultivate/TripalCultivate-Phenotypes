@@ -52,10 +52,10 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of information to customize messages for the UI.
-   *      For example, if this validator checks a specific set of form elements
+   *  - 'failedItems': an array of information to customize messages for the UI.
+   *      For example, if this validator checks a specific set of form elements,
    *      then this array should be keyed by the form element key and the value
-   *      match that provided by the user input in form_values.
+   *      matches what was provided by the user input in form_values.
    *  The old style keys we are deprecating are:
    *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
@@ -80,8 +80,8 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of information to customize messages for the UI.
-   *      For example, if this validator checks the permissions of the file then
+   *  - 'failedItems': an array of information to customize messages for the UI.
+   *      For example, if this validator checks the permissions of the file, then
    *      this array might contain the permissions the file actually had that
    *      did not match what was expected.
    *  The old style keys we are deprecating are:
@@ -106,13 +106,12 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of the items that failed validation. For example,
-   *      if this validator validates that a number of indicies are not emptya then
+   *      'failedItems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indices are not empty, then
    *      this will be an array of indices that were empty. Another example is
-   *      that if this validator checks that a number of indices have values in
-   *      a specific list, then this array would use the index as the key and
-   *      the value the column actually had that was not in the list for each
-   *      failed column.
+   *      if this validator checks that a number of indices have values in a
+   *      specific list, then this array would use the index as the key and
+   *      the value the column actually had, for each failed column.
    *  The old style keys we are deprecating are:
    *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
