@@ -12,7 +12,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\Entity\File;
 use Drupal\Core\Url;
-
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 /**
@@ -307,7 +307,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       '#title' => 'Genus',
       '#description' => t('The genus of the germplasm being phenotyped with the supplied traits.
         Traits in this system are specific to the genus in order to ensure they are specific enough to accurately describe the phenotypes.
-        In order for genus to be availabe here is must be first configured in the Analyzed Phenotypes configuration.'),
+        In order for genus to be available here, it must be first configured in the Analyzed Phenotypes configuration.'),
       '#empty_option' => '- Select -',
       '#options' => $active_genus,
       '#default_value' => $default_genus,
@@ -343,7 +343,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     $file_id = $form_values['file_upload'];
 
-    // Use a variable to keep track of if one input type had recieved errors
+    // Use a variable to keep track of if one input type had received errors
     // and only continue to the next if no errors.
     $failed_validator = FALSE;
 
@@ -464,6 +464,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Open and read file in this uri.
       $file_uri = $file->getFileUri();
       $handle = fopen($file_uri, 'r');
+      // Get the mime type which is used to split the row.
+      $file_mime_type = $file->getMimeType();
 
       // Line counter.
       $line_no = 0;
@@ -478,8 +480,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Header Row Validation
         // ********************************************************************
         if ($line_no == 1) {
+          // Split line into an array using the delimiter defined by this importer
+          // in the configure values method above.
+          $header_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
           foreach ($validators['header-row'] as $key => $validator) {
-            // @TODO: Update to use the validateRow() method
+            // @TODO: Update to use the validateRow() method and use the split $header_row above.
             $result = $validator->validate();
             $validation[$key] = $result;
             // Check for old style...
@@ -503,8 +508,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // ********************************************************************
         // Skip empty lines
         else if (!empty(trim($line))) {
-          // Split line into an array
-          $data_row = str_getcsv($line, "\t");
+          // Split line into an array using the delimiter defined by this importer
+          // in the configure values method above.
+          $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
             $result = $validator->validateRow($data_row);

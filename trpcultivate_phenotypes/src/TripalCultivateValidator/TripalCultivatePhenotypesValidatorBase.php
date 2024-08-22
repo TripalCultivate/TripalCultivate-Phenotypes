@@ -80,6 +80,14 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
 
   /**
    * {@inheritdoc}
+   */
+  public function validateRawRow(string $raw_row) {
+    $plugin_name = $this->getValidatorName();
+    throw new \Exception("Method validateRawRow() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+  }
+
+  /**
+   * {@inheritdoc}
    * @deprecated Remove in issue #91
    */
   public function validate() {
@@ -160,7 +168,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   The validator plugin scope annotation definition value.
    */
   public function getValidatorScope() {
-    return $this->pluginDefinition['validator_scope'];
+    return (array_key_exists('validator_scope', $this->pluginDefinition)) ? $this->pluginDefinition['validator_scope'] : NULL;
   }
 
   /**
@@ -210,5 +218,106 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
       ->get('trpcultivate.phenotypes.ontology.allownew');
 
     return $allownew;
+  }
+
+  /**
+   * Split or explode a data file line/row values into an array using a delimiter.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime type passed in. For example, the mime type text/tab-separated-values
+   * maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases this is a
+   * one-to-one mapping. If it is not a one-to-one mapping then we loop through
+   * the options.
+   *
+   * @param string $row
+   *   A line in the data file which has not yet been split into columns.
+   * @param string $mime_type
+   *   The mime type of the file currently being validated or imported (i.e. the
+   *   mime type of the file this line is from).
+   *
+   * @return array
+   *   An array containing the values extracted from the line after splitting it based
+   *   on a delimiter value.
+   */
+  public static function splitRowIntoColumns(string $row, string $mime_type) {
+    // Delimiter:
+
+    // @todo this should be a static/constant variable in the FileType trait.
+    $mime_to_delimiter_mapping = [
+      'text/tab-separated-values' => ["\t"],
+      'text/csv' => [','],
+      'text/plain' => ["\t", ','],
+    ];
+
+    // Ensure that the mime type is in our delimiter mapping...
+    if (!array_key_exists($mime_type, $mime_to_delimiter_mapping)) {
+      throw new \Exception('The mime type "' . $mime_type . '" passed into splitRowIntoColumns() is not supported. We support the following mime types:' . implode(', ', array_keys($mime_to_delimiter_mapping)) . '.');
+    }
+
+    // Determine the delimiter we should use based on the mime type.
+    // @todo this should be replaced by the getDelimitersForMimeType() method
+    // in the FileType trait.
+    // @todo it has also been mentioned we may want to call getDelimitersForMimeType()
+    // once for the header and reuse it throughout the file.
+    $supported_delimiters = $mime_to_delimiter_mapping[ $mime_type ];
+
+    $delimiter = NULL;
+    // If there is only one supported delimiter then we can simply split the row!
+    if (sizeof($supported_delimiters) === 1) {
+      $delimiter = end($supported_delimiters);
+      $columns = str_getcsv($row, $delimiter);
+    }
+    // Otherwise we will have to try to determine which one is "right"?!?
+    // Points to remember in the future:
+    //  - We can't use the one that splits into the most columns as a text column
+    // could include multiple commas which could overpower the overall number of
+    // tabs in a tab-delimited plain text file.
+    // - It would be good to confirm we are getting the same number of columns
+    // for each line in a file but since this needs to be a static method we
+    // would pass that information in.
+    // - If we try to check for the same number of columns as expected, we have
+    // to remember that researchers routinely add "Comments" columns to the end,
+    // sometimes without a header.
+    // - If going based on the number of columns in the header, the point above
+    // still impacts this, plus this method is called when splitting the header
+    // before any validators run!
+    else {
+
+      throw new \Exception("We don't currently support splitting mime types with multiple delimiter options as its not trivial to choose the correct one.");
+
+      // $results = [];
+      // $counts = [];
+      // foreach ($supported_delimiters as $delimiter) {
+      //   $results[$delimiter] = str_getcsv($row, $delimiter);
+      //   $counts[$delimiter] = count($results[$delimiter]);
+      // }
+
+      // // Now lets choose the one with the most columns --shrugs-- not ideal
+      // // but I'm not sure there is a better option. asort() is from smallest
+      // // to largest preserving the keys so we want to choose the last element.
+      // asort($counts);
+      // $winning_delimiter = array_key_last($counts);
+      // $columns = $results[ $winning_delimiter ];
+      // $delimiter = $winning_delimiter;
+    }
+
+    // Now lets double check that we got some values...
+    if (count($columns) == 1 && $columns[0] === $row) {
+      // The delimiter failed to split the row and returned the original row.
+      throw new \Exception('The data row or line provided could not be split into columns. The supported delimiter(s) are "' . implode('", "', $supported_delimiters) . '".');
+    }
+
+    // Sanitize values.
+    foreach($columns as &$value) {
+      if ($value) {
+        $value = trim(str_replace(['"','\''], '', $value));
+      }
+    }
+
+    return $columns;
   }
 }
