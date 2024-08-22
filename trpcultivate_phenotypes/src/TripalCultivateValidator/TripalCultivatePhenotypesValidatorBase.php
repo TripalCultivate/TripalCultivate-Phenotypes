@@ -52,7 +52,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *
    * Key-value pairs are set by the setter methods in ValidatorTraits.
    */
-  protected $context = [];
+  protected array $context = [];
 
   /**
    * {@inheritdoc}
