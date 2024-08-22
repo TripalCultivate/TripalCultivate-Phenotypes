@@ -91,13 +91,12 @@ trait GenusConfigured {
       if (array_key_exists('name', $this->context['genus'])) {
         return $this->context['genus']['name'];
       }
-      else {
-        throw new \Exception("Cannot retrieve the genus name as one has not been set by the setConfiguredGenus() method.");
-      }
     }
-    else {
-      throw new \Exception("Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.");
-    }
+
+    // If we get here we weren't able to retrieve the genus name.
+    // This could be because no genus details at all are set or it could be
+    // that the name is just not set.
+    throw new \Exception("Cannot retrieve the genus name as one has not been set by the setConfiguredGenus() method.");
   }
 
   /**
@@ -120,13 +119,12 @@ trait GenusConfigured {
       if (array_key_exists('ontology_terms', $this->context['genus'])) {
         return $this->context['genus']['ontology_terms'];
       }
-      else {
-        throw new \Exception("Cannot retrieve the ontology terms of the genus as one has not been set by the setConfiguredGenus() method.");
-      }
-    }
-    else {
-      throw new \Exception("Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.");
     }
 
+
+    // If we get here we weren't able to retrieve the genus ontology terms.
+    // This could be because no genus details at all are set or it could be
+    // that the ontology terms are just not set.
+    throw new \Exception("Cannot retrieve the ontology terms of the genus as one has not been set by the setConfiguredGenus() method.");
   }
 }

@@ -160,7 +160,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     );
 
     // Check that a genus has NOT been set by using getConfguredGenus()
-    $expected_message = "Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.";
+    $expected_message = "Cannot retrieve the genus name as one has not been set";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
@@ -180,7 +180,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     );
 
     // Check that ontology terms for a non-configured genus have also not been set
-    $expected_message = "Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.";
+    $expected_message = "Cannot retrieve the ontology terms of the genus as one has not been set";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
@@ -220,7 +220,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     );
 
     // Check that a genus still has NOT been set by using getConfguredGenus()
-    $expected_message = "Cannot retrieve anything to do with genus as one has not been set by the setConfiguredGenus() method.";
+    $expected_message = "Cannot retrieve the genus name as one has not been set";
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
