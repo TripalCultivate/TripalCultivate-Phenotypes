@@ -9,8 +9,10 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 trait ValidValues {
 
   /**
-   * Sets the array of values for which the validator is checking for in a
-   * specified set of columns (set by another validator trait) within a file row
+   * Sets a list of values that should be allowed for a cell being validated.
+   *
+   * Note: Often this setter is combined with the setIndices() setter which indicates
+   * which columns should have one of these values.
    *
    * @param array $valid_values
    *   A one-dimensional array of values that are allowed within the cell(s) that
@@ -40,8 +42,8 @@ trait ValidValues {
   }
 
   /**
-   * Returns an array of valid values which are permitted to be in specified
-   * columns of a file row that the validator instance acts on.
+   * Returns a list of allowed values for cell(s) being validated. Specifically, it
+   * is expected that the cell must contain one of the values in this list.
    *
    * @return array
    *   A one-dimensional array containing valid values
