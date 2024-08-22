@@ -282,9 +282,10 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
       }
 
       // Now lets choose the one with the most columns --shrugs-- not ideal
-      // but I'm not sure there is a better option.
+      // but I'm not sure there is a better option. asort() is from smallest
+      // to largest preserving the keys so we want to choose the last element.
       asort($counts);
-      $winning_delimiter = array_​key_​first($counts);
+      $winning_delimiter = array_key_last($counts);
       $columns = $results[ $winning_delimiter ];
       $delimiter = $winning_delimiter;
     }
@@ -292,7 +293,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     // Now lets double check that we got some values...
     if (count($columns) == 1 && $columns[0] === $row) {
       // The delimiter failed to split the row and returned the original row.
-      throw new \Exception('The data row or line provided could not be split using the delimiter (' . $delimiter . ').');
+      throw new \Exception('The data row or line provided could not be split into columns. The supported delimiter(s) are "' . implode('", "', $supported_delimiters) . '".');
     }
 
     // Sanitize values.

@@ -308,9 +308,36 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test line or row split method.
+   * DATA PROVIDER: tests the split row by providing mime type to delimiter options.
    */
-  public function testSplitRowIntoColumns() {
+  public function provideMimeTypeDelimiters() {
+    $sets = [];
+
+    $sets[] = [
+      'text/tab-separated-values',
+      "\t",
+    ];
+
+    $sets[] = [
+      'text/csv',
+      ','
+    ];
+
+    $sets[] = [
+      'text/plain',
+      ','
+    ];
+
+    return $sets;
+  }
+
+  /**
+   * Test line or row split method.
+   *
+   * @dataProvider provideMimeTypeDelimiters
+   */
+  public function testSplitRowIntoColumns(string $expected_mime_type, string $expected_delimiter) {
+
     $configuration = [];
     $validator_id = 'fake_basically_base';
     $plugin_definition = [
@@ -332,10 +359,6 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     foreach($good_line as &$l) {
       $l = trim(str_replace(['"','\''], '', $l));
     }
-
-    // @todo test all supported mime-types.
-    $expected_mime_type = 'text/tab-separated-values';
-    $expected_delimiter = "\t";
 
     // At this point line is sanitized and sparkling*
 
@@ -382,7 +405,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line using the delimiter.');
-    $this->assertStringContainsString('could not be split using the delimiter (' . $expected_delimiter . ')', $exception_message,
+    $this->assertStringContainsString(
+      'line provided could not be split into columns', $exception_message,
       'Expected exception message does not match message when splitRowIntoColumns() could not split line using the delimiter.');
 
     // Test that the sanitized line is the same as the split values.
