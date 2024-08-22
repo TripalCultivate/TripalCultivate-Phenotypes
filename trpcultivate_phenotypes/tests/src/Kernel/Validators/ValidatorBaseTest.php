@@ -157,6 +157,11 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $returned_allownew = $instance->getConfigAllowNew();
     $this->assertEquals($expected_allownew, $returned_allownew,
       "We did not get the status for Allowing New configuration that we expected through the $validator_id validator.");
+
+    // check that the validator scope is not returned when it is not set.
+    // @deprecated Remove in issue #91
+    $scope = $instance->getValidatorScope();
+    $this->assertNull($scope, "The validator scope is not set for the $validator_id therefore no scope should be returned.");
   }
 
   /**
@@ -206,7 +211,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test the validate methods: validateMetadata(), validateFile(), validateRow(), validate().
+   * Test the validate methods: validateMetadata(), validateFile(),
+   * validateRawRow(), validateRow(), validate().
    *
    * NOTE: These should all thrown an exception in the base class.
    */
@@ -265,6 +271,27 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Method validateFile() from base class',
       $exception_message,
       "We did not get the exception message we expected when calling BasicallyBase::validateFile()"
+    );
+
+    // Tests Base Class validateRawRow().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
+      $row_string = implode("\t", $row_values);
+      $instance->validateRawRow($row_string);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateRawRow() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateRawRow() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateRawRow()"
     );
 
     // Tests Base Class validateRow().

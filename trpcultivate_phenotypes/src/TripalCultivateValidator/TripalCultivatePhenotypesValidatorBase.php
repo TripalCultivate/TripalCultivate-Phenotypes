@@ -170,7 +170,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   The validator plugin scope annotation definition value.
    */
   public function getValidatorScope() {
-    return $this->pluginDefinition['validator_scope'];
+    return (array_key_exists('validator_scope', $this->pluginDefinition)) ? $this->pluginDefinition['validator_scope'] : NULL;
   }
 
   /**
