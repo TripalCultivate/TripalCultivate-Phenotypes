@@ -3,18 +3,18 @@
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits;
 
 /**
- * Provides setters focused for setting a file types and file media type (MIME)
- * supported by the importer, and getter to retrieve the set value.
+ * Provides setters focused for setting supported mime-types by an importer and
+ * the particular mime-type of the input file. Getters are provided to retrieve
+ * mime-types, supported file extensions and delimiters.
  */
 trait FileTypes {
 
   /**
    * A mapping of file extensions and their supported mime-types
    *
-   * More specifically, based on the file extension of an input file, a list
-   * of valid mime-types for that extension is looked up in this mapping. In this
-   * way, we can support multiple different mime-types for a single file
-   * extension and get closer to the
+   * More specifically, based on the supported file extensions of the
+   * current importer, a list of valid mime-types for the extension(s) is looked
+   * up in this mapping.
    *
    * @var array
    */
@@ -45,7 +45,8 @@ trait FileTypes {
   ];
 
   /**
-   * Sets the mime-type of the current input file.
+   * Sets the mime-type of the current input file as well as that mime-type's
+   * supported file delimiters.
    *
    * @param string $mime_type
    *   A string that is the mime-type of the input file
@@ -73,10 +74,10 @@ trait FileTypes {
     $file_delimiters = $this->$mime_to_delimiter_mapping[$mime_type];
 
     // Set the mime-types
-    $this->context['mime_type'] = $mime_type;
+    $this->context['file_mime_type'] = $mime_type;
 
     // Set the supported file delimiters
-    $this->context['file_delimiter'] = $file_delimiters;
+    $this->context['file_delimiters'] = $file_delimiters;
   }
 
   /**
@@ -90,6 +91,7 @@ trait FileTypes {
    *
    * @throws \Exception
    *  - extensions array is an empty array.
+   *  - if a file extension is not in the $extension_to_mime_mapping array
    */
   public function setSupportedMimeTypes(array $extensions) {
 
@@ -98,27 +100,30 @@ trait FileTypes {
       throw new \Exception("The setSupportedMimeTypes() setter requires an array of file extensions that are supported by the importer and must not be empty.");
     }
 
-    $file_delimiters = $this->$mime_to_delimiter_mapping[$mime_type];
-
-    // Set the context array for file extensions
-    //$this->context['file_extensions'] = $file_types;
+    $mime_types = [];
+    foreach($extensions as $ext) {
+      if (!isset($this->extension_to_mime_mapping[ $ext ])) {
+        throw new \Exception("The setSupportedMimeTypes() setter does not recognize '" . $ext . "' as a valid file extension.");
+      }
+      array_push($mime_types, $this->extension_to_mime_mapping[$ext]);
+    }
 
     // Set the mime-types
-    $this->context['mime_type'] = $mime_type;
+    $this->context['supported_mime_types'] = $mime_types;
 
-    // Set the supported file delimiters
-    $this->context['file_delimiter'] = $file_delimiters;
+    // Set the supported file extensions
+    $this->context['file_extensions'] = $extensions;
   }
 
   /**
-   * Gets the supported file extensions.
+   * Gets the supported file extensions of the current importer.
    *
    * @return array
    *   The file extensions set by the setFileTypes() setter method.
    *
    * @throws \Exception
    *  - If the 'file_extensions' key does not exist in the context array
-   *    (ie. the setFileTypes() method has NOT been called).
+   *    (ie. the setSupportedMimeTypes() method has NOT been called).
    */
   public function getSupportedFileExtensions() {
 
@@ -133,50 +138,72 @@ trait FileTypes {
   }
 
   /**
-   * Gets the supported file mime-types.
+   * Gets the supported file mime-types of the current importer.
    *
    * @return array
-   *   The file mime-types set by the setFileTypes() setter method.
+   *   The file mime-types set by the setSupportedMimeTypes() setter method.
    *
    * @throws \Exception
-   *  - If the 'mime_types' key does not exist in the context array
-   *    (ie. the setFileTypes() method has NOT been called).
+   *  - If the 'supported_mime_types' key does not exist in the context array
+   *    (ie. the setSupportedMimeTypes() method has NOT been called).
    */
   public function getSupportedMimeTypes() {
 
-    $context_key = 'mime_types';
+    $context_key = 'supported_mime_types';
 
     if (array_key_exists($context_key, $this->context)) {
       return $this->context[ $context_key ];
     }
     else {
-      throw new \Exception('Cannot retrieve supported file mime-types as they have not been set by setFileTypes() method.');
+      throw new \Exception('Cannot retrieve supported file mime-types as they have not been set by setSupportedMimeTypes() method.');
     }
   }
 
   /**
-   * Gets the list of delimiters supported by the file mime-type that
+   * Gets the file mime-type of the input file.
+   *
+   * @return array
+   *   The file mime-type set by the setFileMimeType() setter method.
+   *
+   * @throws \Exception
+   *  - If the 'file_mime_type' key does not exist in the context array
+   *    (ie. the setFileMimeType() method has NOT been called).
+   */
+  public function getFileMimeType() {
+
+    $context_key = 'file_mime_type';
+
+    if (array_key_exists($context_key, $this->context)) {
+      return $this->context[$context_key];
+    } else {
+      throw new \Exception('Cannot retrieve the input file mime-type as it has not been set by setFileMimeType() method.');
+    }
+  }
+
+  /**
+   * Gets the list of delimiters supported by the input file's mime-type that
    * was provided to the setter
    *
    * NOTE: This method is static to allow for it to also be used by the static
    * method splitRowIntoColumns()
    *
    * @return array
-   *   The list of delimiters that are supported by the file mime-type
+   *   The list of delimiters that are supported by the file mime-type, as set
+   *   by the setFileMimeType() method.
    *
    * @throws \Exception
-   *   - If the 'delimiter' key does not exist in the context array (ie. the
-   *     setFileTypes() method has NOT been called)
+   *   - If the 'file_delimiters' key does not exist in the context array
+   *     (ie. the setFileMimeType() method has NOT been called)
    */
-  public static function getDelimitersForMimeType() {
+  public static function getFileDelimiters() {
 
-    $context_key = 'file_delimiter';
+    $context_key = 'file_delimiters';
 
     if (array_key_exists($context_key, $this->context)) {
       return $this->context[ $context_key ];
     }
     else {
-      throw new \Exception('Cannot retrieve supported file delimiters as they have not been set by setFileTypes() method.');
+      throw new \Exception('Cannot retrieve supported file delimiters as they have not been set by setFileMimeType() method.');
     }
   }
 }
