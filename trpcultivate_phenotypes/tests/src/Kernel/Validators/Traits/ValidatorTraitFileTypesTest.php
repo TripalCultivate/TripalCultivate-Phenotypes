@@ -76,13 +76,13 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
   public function testFileTypesSetterGetter() {
     // Test getter will trigger an error when attempting to get file types
     // prior to a call to file types setter method.
-    
+
     // Exception message when failed to set file types.
     $expected_message = 'Cannot retrieve file types from the context array as one has not been set by setFileTypes() method.';
 
     try {
       $this->instance->getFileTypes();
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -94,7 +94,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       $exception_message,
       'Expected exception message does not match the message when trying to get unset file types.'
     );
-    
+
 
     // Test invalid file types will trigger an exception.
 
@@ -102,22 +102,22 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     // Exception message when no file type was provided to the setter.
     $exception_caught = FALSE;
     $exception_message = '';
-    
+
     try {
       $this->instance->setFileTypes([]);
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'File types setter method should throw an exception when no file type was provided.');
     $this->assertStringContainsString(
       $exception_message,
       'The File Types Trait requires an array of file extensions and must not be empty.',
       'Expected exception message does not match the message when no value was passed to the file type setter method'
     );
-  
+
     // Unsupported file extensions.
     $invalid_types = [['jpg', 'gif', 'svg'], ['png', 'pdf'], ['gzip']];
     // Exception message when unsupported file types was provided to the setter.
@@ -126,17 +126,17 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     foreach($invalid_types as $invalid_type) {
       $exception_caught = FALSE;
       $exception_message = '';
-      
+
       $str_file_types = implode(', ', $invalid_type);
 
       try {
         $this->instance->setFileTypes($invalid_type);
-      } 
+      }
       catch (\Exception $e) {
         $exception_caught = TRUE;
         $exception_message = $e->getMessage();
       }
-      
+
       $this->assertTrue($exception_caught, 'File type setter method should throw an exception for unsupported file types.');
       $this->assertStringContainsString(
         sprintf($expected_message, $str_file_types),
@@ -144,22 +144,22 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
         'Expected exception message does not match the message when unsupported type was passed to the file type setter method'
       );
     }
-    
+
     // Test a valid type and an unsupported type.
     $unsupported_type = 'jpg';
     $valid_invalid_types = ['tsv', $unsupported_type];
-    
+
     $exception_caught = FALSE;
     $exception_message = '';
-    
+
     try {
       $this->instance->setFileTypes($valid_invalid_types);
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    
+
     $this->assertTrue($exception_caught, 'File types setter method should throw an exception when a type mime could not be resolved.');
     $this->assertStringContainsString(
       $exception_message,
@@ -167,7 +167,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       'Expected exception message does not match the message when a type mime could not be resolved'
     );
 
-    
+
     // Test valid types.
 
     // Supported file types: tsv, csv and txt.
