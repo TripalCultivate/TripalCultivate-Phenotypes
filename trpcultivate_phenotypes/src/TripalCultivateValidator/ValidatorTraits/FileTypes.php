@@ -67,11 +67,11 @@ trait FileTypes {
       throw new \Exception("The FileTypes Trait requires a string of the input file's mime-type and must not be empty.");
     }
 
-    if (!isset($this->$mime_to_delimiter_mapping[ $mime_type ])) {
+    if (!isset(self::$mime_to_delimiter_mapping[ $mime_type ])) {
       throw new \Exception('The FileTypes Trait requires a supported mime-type but ' . $mime_type . ' is unsupported.');
     }
 
-    $file_delimiters = $this->$mime_to_delimiter_mapping[$mime_type];
+    $file_delimiters = self::$mime_to_delimiter_mapping[$mime_type];
 
     // Set the mime-types
     $this->context['file_mime_type'] = $mime_type;
@@ -104,11 +104,11 @@ trait FileTypes {
     $invalid_ext = [];
 
     foreach($extensions as $ext) {
-      if (!isset($this->extension_to_mime_mapping[ $ext ])) {
-        array_push($invalid_ext, $this->extension_to_mime_mapping[$ext]);
+      if (!isset(self::$extension_to_mime_mapping[ $ext ])) {
+        array_push($invalid_ext, $ext);
         continue;
       }
-      array_push($mime_types, $this->extension_to_mime_mapping[$ext]);
+      array_push($mime_types, self::$extension_to_mime_mapping[$ext]);
     }
 
     if ($invalid_ext) {
