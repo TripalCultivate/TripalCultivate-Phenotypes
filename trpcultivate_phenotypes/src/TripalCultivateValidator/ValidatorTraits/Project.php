@@ -75,7 +75,8 @@ trait Project {
   }
 
   /**
-   * Gets the project.
+   * Returns a single project which has been verified to exist by the setter for use
+   * by a validator.
    *
    * @return array
    *   The project set by the setter method. The project includes the project id number 
