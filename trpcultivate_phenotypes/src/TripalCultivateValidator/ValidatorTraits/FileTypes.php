@@ -101,11 +101,19 @@ trait FileTypes {
     }
 
     $mime_types = [];
+    $invalid_ext = [];
+
     foreach($extensions as $ext) {
       if (!isset($this->extension_to_mime_mapping[ $ext ])) {
-        throw new \Exception("The setSupportedMimeTypes() setter does not recognize '" . $ext . "' as a valid file extension.");
+        array_push($invalid_ext, $this->extension_to_mime_mapping[$ext]);
+        continue;
       }
       array_push($mime_types, $this->extension_to_mime_mapping[$ext]);
+    }
+
+    if ($invalid_ext) {
+      $invalid_ext = implode(', ', $invalid_ext);
+      throw new \Exception('The setSupportedMimeTypes() setter does not recognize the following extensions: ' . $invalid_ext);
     }
 
     // Set the mime-types
