@@ -19,7 +19,10 @@ trait Project {
    private string $trait_key = 'project';
 
   /**
-   * Sets a project.
+   * Sets a single project for use by a validator.
+   *
+   * Note: This project must exist in the chado.project table already and as long as it
+   * does both the project_id and project name will be saved for use by the validator.
    *
    * @param string|int $project
    *   A string value is a project name (project.name), whereas an integer value
