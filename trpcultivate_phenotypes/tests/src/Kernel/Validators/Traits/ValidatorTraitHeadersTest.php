@@ -34,18 +34,6 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
   protected ValidatorHeaders $instance;
 
   /**
-   * Test headers. This test value is equivalent to setting
-   * up the required headers expected by the importer where
-   * each array element comprises of header name, description 
-   * and type (ie. required, optional), keyed by name, description
-   * type, respectively.
-   * 
-   * @var array
-   */
-  protected array $test_headers = [];
-
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -85,8 +73,8 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
    * 
    * @return void
    */
-  public function testHeaderSetterGetter() {
-    // Test getter will trigger an error when attempting to get a headers
+  public function testHeadersSetterGetter() {
+    // Test getter will trigger an error when attempting to get a type(s) of headers
     // prior to a call to headers setter method.
     
     $expected_types = ['required', 'optional'];
@@ -130,7 +118,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     );
     
     
-    // Test setter parameter and header key/value.
+    // Test setter parameter and header key/value requirements.
     
     // An empty headers array. 
     try {
@@ -189,7 +177,6 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     ];
 
     foreach($headers as $test_case => $header) {
-      
       try {
         $this->instance->setHeaders($header);
       } 
@@ -205,7 +192,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $this->assertStringContainsString(
         $expected_message,
         $exception_message,
-        'Expected exception message does not match the message if ' . $error_type . ' ' .  $error_key
+        'Expected exception message does not match the message if ' . $error_type . ' ' . $error_key
       );
     }
 
@@ -267,15 +254,17 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $this->assertEquals(
         $headers_by_type[ $type ],
         $required_set_headers, 
-        'The set headers does not match the headers returned by headers getter method (type: ' . $type . ').'
+        'The set headers does not match the headers returned by headers getter method (param type: ' . $type . ').'
       );     
     }
 
 
     // Test header getter with invalid type request.
+    
+    $with_bad_types = ['not_my_type', 'required', 'rare_type'];
+    
     try {
-      // No specific type, the getter will get default types.
-      $this->instance->getHeaders(['not_my_type', 'required']);
+      $this->instance->getHeaders($with_bad_types);
     } 
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -284,7 +273,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
     $this->assertTrue($exception_caught, 'Header getter method should throw an exception if type requested is invalid.');
     $this->assertStringContainsString(
-      'Cannot retrieve invalid header types: not_my_type',
+      'Cannot retrieve invalid header types: ' . $with_bad_types[0] . ', ' . $with_bad_types[2],
       $exception_message,
       'Expected exception message does not match the message when trying to get headers.'
     );
@@ -294,7 +283,22 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $headers_by_type['required'] + $headers_by_type['optional'],
       $all_headers, 
-      'The set headers does not match the headers returned by headers getter method (type: ' . $type . ').'
-    );     
+      'The set headers does not match the headers returned by headers getter method (param type: default).'
+    );
+
+
+    // Test that the order of header, index number is unaltered.
+
+    // The resulting headers array will have optional headers preceding
+    // required headers.
+    $headers_optional_index = array_keys($headers_by_type['optional']);
+    $headers_required_index = array_keys($headers_by_type['required']);
+
+    $all_headers = $this->instance->getHeaders(['optional', 'required']);
+    $this->assertEquals(
+      array_merge($headers_optional_index, $headers_required_index),
+      array_keys($all_headers), 
+      'The set header index does not match the header index returned by headers getter method (param type: optional, required).'
+    );
   }
 }

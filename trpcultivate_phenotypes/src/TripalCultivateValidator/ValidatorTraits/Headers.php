@@ -10,7 +10,9 @@ trait Headers {
   /**
    * The key used by the setter method to create a headers element 
    * in the context array, as well as the key used by the getter method 
-   * to reference and retrieve the headers element value.
+   * to reference and retrieve the headers element values. 
+   * 
+   * Each value is keyed by the types defined by type property.
    *
    * @var string
    */ 
@@ -39,7 +41,8 @@ trait Headers {
    *   This list of headers is expected to appear in the data file header row.
    *   
    *   NOTE: the set headers array is zero-based index and represents the order
-   *         of the header as each item appears in the headers array parameter.
+   *         of the header as each item appears in the headers array parameter
+   *         and is unaltered by setters and getters.
    * 
    * @throws \Exception
    *  - An empty array header.
@@ -48,28 +51,30 @@ trait Headers {
    */
   public function setHeaders(array $headers) {
 
-    // Headers must have a value and at least a required header.
+    // Headers must have a value.
     if (empty($headers)) {
       throw new \Exception('The Headers Trait requires an array of headers and must not be empty.');  
     }
     
-    // Required keys, each header element must posses and 
+    // Required keys that each header element must posses and 
     // could not be set to an empty value. Type key value must be
     // one of the type values defined by the types property. 
-    $required_keys = [
+    $required_header_keys = [
       'name', // Name of the header.
       'type'  // Type of the header (ie. required or optional).
     ];
     
+    // Each header, check required keys and value and place 
+    // in designated type array of the context.
     foreach($headers as $index => $header) {
       // Header element key and value check.
-      foreach($required_keys as $key) {
-        // Key is set.
+      foreach($required_header_keys as $key) {
+        // Key is not set.
         if (!isset($header[ $key ])) {
           throw new \Exception('Headers Trait requires the header key: ' . $key . ' when defining headers.');
         }
         
-        // Key value is not empty.
+        // Key is set but value is empty.
         if (empty(trim($header[ $key ]))) {
           throw new \Exception('Headers Trait requires the header key: ' . $key . ' to be have a value.');
         }
@@ -82,7 +87,7 @@ trait Headers {
       }
 
       // With the header type already verified to be one of the valid types, 
-      // push the header into the right type context array.
+      // push the header into the designated type context array.
       $this->context[ $this->context_key ][ $header['type'] ][ $index ] = $header['name'];
     }
   }
@@ -149,6 +154,10 @@ trait Headers {
    * @return array
    *   A list or combination of lists of headers of type
    *   defined by the types parameter.
+   *   
+   *   Returned array is keyed by the index (order) from
+   *   the headers array and header name as the value.
+   *   NOTE: the headers array is zero-based index.
    * 
    * @throws \Exception
    *  - If the 'headers' key does not exists in the context array
@@ -180,7 +189,9 @@ trait Headers {
           $headers[ $index ] = $header;
         }
       }
-
+      
+      // All headers of type matching all types requested into 
+      // one array key by the index and header name as the value.
       return $headers;
     }
     else {
