@@ -15,7 +15,7 @@ trait DataFileDelimiter {
    * 
    * @var string
    */
-  private string $trait_key = 'delimiter';
+  private string $context_key = 'delimiter';
   
   /**
    * Sets the data file delimiter.
