@@ -16,7 +16,7 @@ trait Project {
    * 
    * @var string
    */
-   private string $trait_key = 'project';
+   private string $context_key = 'project';
 
   /**
    * Sets a single project for use by a validator.
@@ -48,8 +48,8 @@ trait Project {
       $project_rec = ChadoProjectAutocompleteController::getProjectName($project);
       
       $set_project = [
-        'id' => $project,       // Id
-        'name' => $project_rec, // Name
+        'project_id' => $project,     // Project Id
+        'name' => $project_rec,       // Name
       ];
     }
     else {
@@ -62,16 +62,16 @@ trait Project {
       $project_rec = ChadoProjectAutocompleteController::getProjectId($project);
 
       $set_project = [
-        'id' => $project_rec,   // Id
-        'name' => $project,     // Name
+        'project_id' => $project_rec, // Project Id
+        'name' => $project,           // Name
       ];
     }
     
-    if ($set_project['id'] <= 0 || empty($set_project['name'])) {
+    if ($set_project['project_id'] <= 0 || empty($set_project['name'])) {
       throw new \Exception('The Project Trait requires a project that exists in the database.');
     }
 
-    $this->context[ $this->trait_key ] = $set_project; 
+    $this->context[ $this->context_key ] = $set_project; 
   }
 
   /**
@@ -80,7 +80,7 @@ trait Project {
    *
    * @return array
    *   The project set by the setter method. The project includes the project id number 
-   *   and project name keyed by id and name, respectively.
+   *   and project name keyed by project_id and name, respectively.
    * 
    * @throws \Exception
    *  - If the 'project' key does not exist in the context array 
@@ -88,8 +88,8 @@ trait Project {
    */
   public function getProject() {
     
-    if (array_key_exists($this->trait_key, $this->context)) {
-      return $this->context[ $this->trait_key ];
+    if (array_key_exists($this->context_key, $this->context)) {
+      return $this->context[ $this->context_key ];
     }
     else {
       throw new \Exception('Cannot retrieve project from the context array as one has not been set by setProject() method.');

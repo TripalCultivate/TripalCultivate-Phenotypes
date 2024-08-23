@@ -35,7 +35,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
 
   /**
    * Test projects with reference to project id and project name
-   * keyed by id and name, respectively.
+   * keyed by project_id and name, respectively.
    * 
    * @var array
    */
@@ -71,7 +71,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     $this->assertIsNumeric($project_id, "We were not able to create an project for testing.");
     
     $this->test_project = [
-      'id' => $project_id,
+      'project_id' => $project_id,
       'name' => $project_name
     ];
 
@@ -209,8 +209,8 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
     // back the same value using the getter method. The project name or id
     // has been resolved to correct project id and name.
 
-    // Valid project by id (integer):
-    $this->instance->setProject($this->test_project['id']);
+    // Valid project by project id (integer):
+    $this->instance->setProject($this->test_project['project_id']);
 
     $project = $this->instance->getProject();
     $this->assertEquals(
