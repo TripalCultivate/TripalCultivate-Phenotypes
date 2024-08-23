@@ -9,7 +9,7 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 trait FileTypes {
 
   /**
-   * A mapping of supported file extensions and their supported mime-types
+   * A mapping of file extensions and their supported mime-types
    *
    * More specifically, based on the file extension of an input file, a list
    * of valid mime-types for that extension is looked up in this mapping. In this
@@ -18,13 +18,11 @@ trait FileTypes {
    *
    * @var array
    */
-  /*
   public static array $extension_to_mime_mapping = [
     'tsv'  => ['text/tab-separated-values'],
     'csv'  => ['text/csv'],
     'txt'  => ['text/plain'],
   ];
-  */
 
   /**
    * A mapping of supported file mime-types and their supported delimiters.
@@ -47,7 +45,7 @@ trait FileTypes {
   ];
 
   /**
-   * Sets a file types with the file media type.
+   * Sets the mime-type of the current input file.
    *
    * @param string $mime_type
    *   A string that is the mime-type of the input file
@@ -58,14 +56,14 @@ trait FileTypes {
    * @return void
    *
    * @throws \Exception
-   *  - Types array is an empty array.
-   *  - Unsupported extension (cannot resolve mime type using the type-mime mapping array).
+   *  - mime_type string is empty
+   *  - Unsupported mime_type (cannot resolve mime type using the type-mime mapping array).
    */
-  public function setFileTypes(array $mime_type) {
+  public function setFileMimeType(string $mime_type) {
 
     // Extensions array must have a element.
     if (empty($mime_type)) {
-      throw new \Exception('The FileTypes Trait requires a string of the input file\'s mime-type and must not be empty.');
+      throw new \Exception("The FileTypes Trait requires a string of the input file's mime-type and must not be empty.");
     }
 
     if (!isset($this->$mime_to_delimiter_mapping[ $mime_type ])) {
@@ -74,11 +72,39 @@ trait FileTypes {
 
     $file_delimiters = $this->$mime_to_delimiter_mapping[$mime_type];
 
+    // Set the mime-types
+    $this->context['mime_type'] = $mime_type;
+
+    // Set the supported file delimiters
+    $this->context['file_delimiter'] = $file_delimiters;
+  }
+
+  /**
+   * Sets the supported mime-types for an importer based on the supported file
+   * extensions.
+   *
+   * @param array $extensions
+   *   An array of file extensions that are supported by this importer
+   *
+   * @return void
+   *
+   * @throws \Exception
+   *  - extensions array is an empty array.
+   */
+  public function setSupportedMimeTypes(array $extensions) {
+
+    // Extensions array must have a element.
+    if (empty($extensions)) {
+      throw new \Exception("The setSupportedMimeTypes() setter requires an array of file extensions that are supported by the importer and must not be empty.");
+    }
+
+    $file_delimiters = $this->$mime_to_delimiter_mapping[$mime_type];
+
     // Set the context array for file extensions
     //$this->context['file_extensions'] = $file_types;
 
     // Set the mime-types
-    $this->context['mime_types'] = $mime_types;
+    $this->context['mime_type'] = $mime_type;
 
     // Set the supported file delimiters
     $this->context['file_delimiter'] = $file_delimiters;
@@ -94,7 +120,6 @@ trait FileTypes {
    *  - If the 'file_extensions' key does not exist in the context array
    *    (ie. the setFileTypes() method has NOT been called).
    */
-  /*
   public function getSupportedFileExtensions() {
 
     $context_key = 'file_extensions';
@@ -106,7 +131,6 @@ trait FileTypes {
       throw new \Exception('Cannot retrieve supported file extensions as they have not been set by setFileTypes() method.');
     }
   }
-  */
 
   /**
    * Gets the supported file mime-types.

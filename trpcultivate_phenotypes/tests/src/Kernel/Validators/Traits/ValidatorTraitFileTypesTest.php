@@ -77,34 +77,32 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     // Test getter will trigger an error when attempting to get file types
     // prior to a call to file types setter method.
 
-    // Exception message when failed to set file types.
-    $expected_message = 'Cannot retrieve file types from the context array as one has not been set by setFileTypes() method.';
+    // Exception message when failed to set file mime-type.
+    $expected_message = 'Cannot retrieve supported file mime-types as they have not been set by setFileTypes() method.';
 
     try {
-      $this->instance->getFileTypes();
+      $this->instance->getSupportedMimeTypes();
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
 
-    $this->assertTrue($exception_caught, 'File types getter method should throw an exception for unset file types.');
+    $this->assertTrue($exception_caught, 'File Types getSupportedMimeTypes() method should throw an exception for unset file mime-type.');
     $this->assertStringContainsString(
       $expected_message,
       $exception_message,
-      'Expected exception message does not match the message when trying to get unset file types.'
+      'Expected exception message does not match the message when trying to call getSupportedMimeTypes() on an unset file mime-type.'
     );
 
 
-    // Test invalid file types will trigger an exception.
-
-    // No file type provided:
-    // Exception message when no file type was provided to the setter.
+    // Test than an empty mime-type will trigger an exception.
+    $expected_message = "The FileTypes Trait requires a string of the input file's mime-type and must not be empty.";
     $exception_caught = FALSE;
     $exception_message = '';
 
     try {
-      $this->instance->setFileTypes([]);
+      $this->instance->setFileTypes('');
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -114,7 +112,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     $this->assertTrue($exception_caught, 'File types setter method should throw an exception when no file type was provided.');
     $this->assertStringContainsString(
       $exception_message,
-      'The File Types Trait requires an array of file extensions and must not be empty.',
+      $expected_message,
       'Expected exception message does not match the message when no value was passed to the file type setter method'
     );
 
