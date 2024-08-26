@@ -68,6 +68,51 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Data Provider: provides various scenarios of file extensions
+   */
+  public function provideExtensionsForSetter() {
+
+    $scenarios = [];
+
+    // #0: Just tsv
+    $scenario[] = [
+      ['tsv'],
+      ['text/tab-separated-values'],
+    ];
+
+    // #1: Just csv
+    $scenarios[] = [
+      ['csv'],
+      ['text/csv'],
+    ];
+
+    // #2: Just txt
+    $scenarios[] = [
+      ['txt'],
+      ['text/plain'],
+    ];
+
+    // #3: tsv, txt
+    $scenarios[] = [
+      ['tsv', 'txt'],
+      ['text/tab-separated-values', 'text/plain'],
+      // $case = 'valid'
+      // $exception_thrown = FALSE
+      // $exception_message = ''
+    ];
+
+    $scenarios[] = [
+      ['csv', 'txt'],
+      ['text/csv', 'text/plain'],
+      // $case = 'valid'
+      // $exception_thrown = FALSE
+      // $exception_message = ''
+    ];
+
+    return $scenarios;
+  }
+
+  /**
    * Tests setter/getters are focused on what the importer supports.
    *
    * Specifically,
@@ -75,9 +120,11 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    *  - FileTypes::getSupportedMimeTypes()
    *  - FileTypes::getSupportedFileExtensions()
    *
+   * @dataProvider provideExtensionsForSetter
+   *
    * @return void
    */
-  public function testSupportedMimeTypes() {
+  public function testSupportedMimeTypes($expected_extensions, $expected_mime_types) {
 
     // Exception message when failed to set supported mime-types
     $exception_caught = FALSE;
@@ -118,11 +165,11 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
         $exception_message = $e->getMessage();
       }
 
-      $this->assertTrue($exception_caught, 'FileType::setSupportedMimeTypes() setter method should throw an exception for unsupported file types.');
+      $this->assertTrue($exception_caught, 'FileTypes::setSupportedMimeTypes() setter method should throw an exception for unsupported file types.');
       $this->assertStringContainsString(
         sprintf($expected_message, $str_file_types),
         $exception_message,
-        'Exception message does not match the expected one when an unsupported type was passed to the FileType::setSupportedMimeTypes() setter.'
+        'Exception message does not match the expected one when an unsupported type was passed to the FileTypes::setSupportedMimeTypes() setter.'
       );
     }
 
@@ -148,21 +195,12 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       'Exception message does not match the expected one when a mix of supported and unsupported file extensions are passed into FileTypes::setSupportedMimeTypes().'
     );
 
-    // Test valid types.
-    // Supported file types: tsv, csv and txt.
-    /* Commenting this out as it might be better as a data provider since we now need to know the mime types as well.
-    $valid_extensions = [['tsv', 'txt'], ['csv', 'txt'], ['tsv'], ['csv'], ['txt']];
+    // Test valid file extension types and check that their supported mime types
+    // are returned by the getter method.
+    $this->instance->setSupportedMimeTypes($expected_extensions);
+    $grabbed_types = $this->instance->getSupportedMimeTypes();
+    $this->assertEquals($expected_mime_types, $grabbed_types);
 
-    foreach ($valid_types as $valid_type) {
-      $this->instance->setSupportedMimeTypes($valid_type);
-      $type = $this->instance->getSupportedMimeTypes();
-
-      // Test that each type has an entry in the context variable.
-      foreach ($valid_type as $file_type) {
-        $this->assertNotEmpty($type[$file_type], 'The extension ' . $file_type . ' must be set in the context file_type property.');
-      }
-    }
-      */
   }
 
   /**
@@ -175,7 +213,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    *
    * @return void
    */
-  public function testFileTypesSetterGetter() {
+  public function testFileMimeTypes() {
 
     // Test than an empty mime-type will trigger an exception.
     $exception_caught = FALSE;
