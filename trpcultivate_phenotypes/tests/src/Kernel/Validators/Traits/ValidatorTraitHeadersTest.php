@@ -300,5 +300,33 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       array_keys($all_headers), 
       'The set header index does not match the header index returned by headers getter method (param type: optional, required).'
     );
+
+
+    // Test that if a type has no headers, the context array
+    // for that type is set to empty array.
+    $headers = [
+      [
+        'name' => 'Header 1',
+        'type' => 'required'
+      ],
+      [
+        'name' => 'Header 2',
+        'type' => 'required',
+      ],
+      [
+        'name' => 'Header 3',
+        'type' => 'required'
+      ]
+    ];
+
+    $this->instance->setHeaders($headers);
+
+    // Get optional headers:
+    $optional_set_headers = $this->instance->getOptionalHeaders();
+    $this->assertEquals(
+      $optional_set_headers,
+      [], 
+      'The optional type headers getter should return an empty array when no optional type defined in the headers parameter.'
+    );
   }
 }

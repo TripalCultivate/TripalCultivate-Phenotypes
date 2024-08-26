@@ -66,6 +66,8 @@ trait Headers {
     
     // Each header, check required keys and value and place 
     // in designated type array of the context.
+    $context_headers = [];
+
     foreach($headers as $index => $header) {
       // Header element key and value check.
       foreach($required_header_keys as $key) {
@@ -87,8 +89,13 @@ trait Headers {
       }
 
       // With the header type already verified to be one of the valid types, 
-      // push the header into the designated type context array.
-      $this->context[ $this->context_key ][ $header['type'] ][ $index ] = $header['name'];
+      // push the header into the designated type temporary context array.
+      $context_headers[ $header['type'] ][ $index ] = $header['name'];
+    }
+    
+    // Set each header type context array.
+    foreach($this->types as $type) {  
+      $this->context[ $this->context_key ][ $type ] = $context_headers[ $type ] ?? [];
     }
   }
   
@@ -168,12 +175,13 @@ trait Headers {
 
     $valid_types = $this->types;
     
-    // See if the requested types to determine if there are any that are not recognized. 
-    // If any such unrecognized types are detected, throw an exception.
+    // Pull out any unrecognized types by compairing the types paramter
+    // to the types property listing valid types.
     $invalid_types = array_filter($types, function($type) use($valid_types) { 
       return !in_array($type, $valid_types); 
     });
     
+    // If any such unrecognized types are detected, throw an exception.
     if (!empty($invalid_types)) {
       $str_invalid_types = implode(', ', $invalid_types);
       $str_valid_types = implode(', ', $valid_types);
