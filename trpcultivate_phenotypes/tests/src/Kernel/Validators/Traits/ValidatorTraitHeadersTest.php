@@ -67,7 +67,114 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
     $this->instance = $instance;
   }
+  
+  /**
+   * Data Provider: provides test headers.
+   */
+  public function provideHeadersForHeadersSetters() {
+    return [
+      'header element' => [
+        'missing key' => [
+          [
+            'not-name' => 'Not the name',
+            'type' => 'required'
+          ],
+          [
+            'name' => 'Header',
+            'not-type' => 'Not the type'
+          ]
+        ],
+        'empty value' => [
+          [
+            'name' => '',
+            'type' => 'required'
+          ],
+          [
+            'name' => 'Header',
+            'type' => ''
+          ]
+        ],
+        'invalid type' => [
+          [
+            'name' => 'Header',
+            'type' => 'spurious type'
+          ]
+        ]
+      ],
+      'header content' => [
+        'empty array' => [],
+        'all required' => [
+          [
+            'name' => 'Header 1',
+            'type' => 'required'
+          ],
+          [
+            'name' => 'Header 2',
+            'type' => 'required',
+          ],
+          [
+            'name' => 'Header 3',
+            'type' => 'required'
+          ]
+        ],
+        'mix types' => [
+          [
+            'name' => 'Header 1',
+            'type' => 'required'
+          ],
+          [
+            'name' => 'Header 2',
+            'type' => 'required'
+          ],
+          [
+            'name' => 'Header 3',
+            'type' => 'optional'
+          ],
+          [
+            'name' => 'Header 4',
+            'type' => 'optional'
+          ],
+          [
+            'name' => 'Header 5',
+            'type' => 'required'
+          ]
+        ]
+      ],
+    ];
+  }
+  
+  /**
+   * Test the Headers setter and getters.
+   * 
+   * @dataProvider provideHeadersForHeadersSetters
+   */
+  public function testHeadersSetterGetterDraft($test, $case, $headers) {
+    if ($test == 'header element') {
+      try {
+        $this->instance->setHeaders($headers);
+      } 
+      catch (\Exception $e) {
+        $exception_caught = TRUE;
+        $exception_message = $e->getMessage();
+      }
 
+      $this->assertTrue($exception_caught, 'Headers setter method should throw an exception if ' . $case);
+      $this->assertStringContainsString(
+        'Headers Trait requires the header key',
+        $exception_message,
+        'Expected exception message does not match the message if ' . $case
+      );
+    }
+  }
+
+
+
+  ////////////////////////
+
+
+
+
+  
   /**
    * Tests the Headers setter and getters.
    * 
