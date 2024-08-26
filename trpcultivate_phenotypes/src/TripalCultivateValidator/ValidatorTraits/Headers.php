@@ -34,9 +34,11 @@ trait Headers {
    * Sets the headers.
    * 
    * @param $headers
-   *   The key-value pair array of headers defined by the importer.
-   *   Each item consists of a header name, text description and type (required, optional)
-   *   keyed by name, description and type, respectively.
+   *   A list of header definitions defined by the importer (usually in a protected
+   *   variable at the top of the importer class). Each item in this list is an associative
+   *   array defining the specific header and the headers must be listed in order!
+   *   Each header item must consist of a header name (key: 'name'), and type (key: 'type',
+   *   supported values: 'required', 'optional').
    * 
    *   This list of headers is expected to appear in the data file header row.
    *   
@@ -159,10 +161,12 @@ trait Headers {
    *   Default to required and optional header types.
    * 
    * @return array
-   *   A list or combination of lists of headers of type
-   *   defined by the types parameter.
-   *   
-   *   Returned array is keyed by the index (order) from
+   *   A single list of headers matching a type defined by the types parameter.
+   *   For example, if the types parameter includes required and optional the the 
+   *   resulting array will container all headers in order of index assuming there
+   *   are only required and optional types supported.
+   *
+   *   The returned array is keyed by the index (column order) from
    *   the headers array and header name as the value.
    *   NOTE: the headers array is zero-based index.
    * 
