@@ -154,10 +154,12 @@ trait Headers {
    *   Default to required and optional header types.
    * 
    * @return array
-   *   A list or combination of lists of headers of type
-   *   defined by the types parameter.
-   *   
-   *   Returned array is keyed by the index (order) from
+   *   A single list of headers matching a type defined by the types parameter.
+   *   For example, if the types parameter includes required and optional the the 
+   *   resulting array will container all headers in order of index assuming there
+   *   are only required and optional types supported.
+   *
+   *   The returned array is keyed by the index (column order) from
    *   the headers array and header name as the value.
    *   NOTE: the headers array is zero-based index.
    * 
