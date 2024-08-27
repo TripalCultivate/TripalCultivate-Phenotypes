@@ -67,12 +67,18 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
     $this->instance = $instance;
   }
-  
+
   /**
    * Data Provider: provides test headers.
    */
   public static function provideHeadersForHeadersSetter(): array {
     // description = [input, case, expected value/response]
+
+    // Each Senario should contain the following:
+    // - Headers array to be tested
+    // - True/False if an exception is expected
+    // - expected exception message (partial)
+    // - expected return from getters: array keyed by 'all', 'required', 'optional'
     return [
       'key name missing' => [
         [
@@ -80,8 +86,8 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
             'no-name' => 'Header',
             'type' => 'required'
           ]
-        ], 
-        'missing key', 
+        ],
+        'missing key',
         'Headers Trait requires the header key: name when defining headers.'
       ],
 
@@ -136,7 +142,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         'empty headers',
         'The Headers Trait requires an array of headers and must not be empty.'
       ],
-      
+
       'type is all required' => [
         [
           [
@@ -217,7 +223,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
   /**
    * Test the header array input/parameter to the headers setter.
-   * 
+   *
    * @dataProvider provideHeadersForHeadersSetter
    */
   public function testHeadersSetterInput(array $headers, string $case, $expected) {
@@ -237,15 +243,15 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         'Expected exception message does not match the message if ' . $case
       );
     }
-    
+
     if ($case == 'valid headers') {
       $this->instance->setHeaders($headers);
-      
+
       // Retrieve all.
       $set_headers = $this->instance->getHeaders();
       $this->assertEquals(
         $set_headers,
-        $expected['expected'], 
+        $expected['expected'],
         'The set headers does not match the headers returned by header getter for case: ' . $case
       );
 
@@ -253,7 +259,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $set_required_headers = $this->instance->getRequiredHeaders();
       $this->assertEquals(
         $set_required_headers,
-        $expected['required'], 
+        $expected['required'],
         'The set headers does not match the headers returned by required header getter for case: ' . $case
       );
 
@@ -261,7 +267,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $set_optional_headers = $this->instance->getOptionalHeaders();
       $this->assertEquals(
         $set_optional_headers,
-        $expected['optional'], 
+        $expected['optional'],
         'The set headers does not match the headers returned by optional header getter for case: ' . $case
       );
     }
@@ -283,18 +289,18 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
 
 
-  
+
 
   /**
    * Test the type array input/parameter to the header getter.
-   * 
-   * 
+   *
+   *
    */
   public function testHeaderGetterInput() {
-  
+
   }
-  
-  
+
+
 
 
 
@@ -309,16 +315,16 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
 
 
-  
+
   /**
    * Tests the Headers setter and getters.
-   * 
+   *
    * @return void
    */
   public function testHeadersSetterGetter() {
     // Test getter will trigger an error when attempting to get a type(s) of headers
     // prior to a call to headers setter method.
-    
+
     $expected_types = ['required', 'optional'];
     // Exception message when failed to set headers - all header types.
     $expected_message = 'Cannot retrieve%s headers from the context array as one has not been set by setHeaders() method.';
@@ -328,12 +334,12 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
       try {
         $this->instance->$getter();
-      } 
+      }
       catch (\Exception $e) {
         $exception_caught = TRUE;
         $exception_message = $e->getMessage();
       }
-       
+
       $this->assertTrue($exception_caught, 'Header type ' . $type . ' getter method should throw an exception for unset header.');
       $this->assertStringContainsString(
         sprintf($expected_message, ' ' . $type),
@@ -341,12 +347,12 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         'Expected exception message does not match the message when trying to get headers of type ' . $type . ' on unset headers.'
       );
     }
-    
+
     // Header getter.
     try {
       // No specific type, the getter will get default types.
       $this->instance->getHeaders();
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -358,14 +364,14 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $exception_message,
       'Expected exception message does not match the message when trying to get headers.'
     );
-    
-    
+
+
     // Test setter parameter and header key/value requirements.
-    
-    // An empty headers array. 
+
+    // An empty headers array.
     try {
       $this->instance->setHeaders([]);
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -421,15 +427,15 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     foreach($headers as $test_case => $header) {
       try {
         $this->instance->setHeaders($header);
-      } 
+      }
       catch (\Exception $e) {
         $exception_caught = TRUE;
         $exception_message = $e->getMessage();
       }
-      
+
       list($error_type, $error_key) = explode(':', $test_case);
       $expected_message = sprintf($failed_message[ $error_type ], $error_key);
-      
+
       $this->assertTrue($exception_caught, 'Headers setter method should throw an exception if ' . $error_type . ' ' .  $error_key);
       $this->assertStringContainsString(
         $expected_message,
@@ -477,7 +483,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       ],
       'optional' => [
         2 => $headers[2]['name'],
-        3 => $headers[3]['name']  
+        3 => $headers[3]['name']
       ]
     ];
 
@@ -488,26 +494,26 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $required_set_headers = $this->instance->$getter();
       $this->assertEquals(
         $headers_by_type[ $type ],
-        $required_set_headers, 
+        $required_set_headers,
         'The set headers does not match the headers returned by ' . $type . ' headers getter method.'
       );
 
       $required_set_headers = $this->instance->getHeaders([ $type ]);
       $this->assertEquals(
         $headers_by_type[ $type ],
-        $required_set_headers, 
+        $required_set_headers,
         'The set headers does not match the headers returned by headers getter method (param type: ' . $type . ').'
-      );     
+      );
     }
 
 
     // Test header getter with invalid type request.
-    
+
     $with_bad_types = ['not_my_type', 'required', 'rare_type'];
-    
+
     try {
       $this->instance->getHeaders($with_bad_types);
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -524,7 +530,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     $all_headers = $this->instance->getHeaders();
     $this->assertEquals(
       $headers_by_type['required'] + $headers_by_type['optional'],
-      $all_headers, 
+      $all_headers,
       'The set headers does not match the headers returned by headers getter method (param type: default).'
     );
 
@@ -539,7 +545,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     $all_headers = $this->instance->getHeaders(['optional', 'required']);
     $this->assertEquals(
       array_merge($headers_optional_index, $headers_required_index),
-      array_keys($all_headers), 
+      array_keys($all_headers),
       'The set header index does not match the header index returned by headers getter method (param type: optional, required).'
     );
 
@@ -567,7 +573,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     $optional_set_headers = $this->instance->getOptionalHeaders();
     $this->assertEquals(
       $optional_set_headers,
-      [], 
+      [],
       'The optional type headers getter should return an empty array when no optional type defined in the headers parameter.'
     );
   }
