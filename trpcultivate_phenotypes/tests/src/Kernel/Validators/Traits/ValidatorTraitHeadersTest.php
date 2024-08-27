@@ -71,88 +71,160 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
   /**
    * Data Provider: provides test headers.
    */
-  public function provideHeadersForHeadersSetters() {
+  public static function provideHeadersForHeadersSetter(): array {
+    // description = [input, case, expected value/response]
     return [
-      'header element' => [
-        'missing key' => [
+      'key name missing' => [
+        [
           [
-            'not-name' => 'Not the name',
+            'no-name' => 'Header',
             'type' => 'required'
-          ],
+          ]
+        ], 
+        'missing key', 
+        'Headers Trait requires the header key: name when defining headers.'
+      ],
+
+      'key type missing' => [
+        [
           [
             'name' => 'Header',
-            'not-type' => 'Not the type'
+            'no-type' => 'required'
           ]
         ],
-        'empty value' => [
+        'missing key',
+        'Headers Trait requires the header key: type when defining headers.'
+      ],
+
+      'value name empty' => [
+        [
           [
             'name' => '',
             'type' => 'required'
-          ],
+          ]
+        ],
+        'empty value',
+        'Headers Trait requires the header key: name to be have a value.'
+      ],
+
+      'value type empty' => [
+        [
           [
             'name' => 'Header',
             'type' => ''
           ]
         ],
-        'invalid type' => [
+        'empty value',
+        'Headers Trait requires the header key: type to be have a value.'
+      ],
+
+      'value type invalid' => [
+        [
           [
             'name' => 'Header',
             'type' => 'spurious type'
           ]
-        ]
+        ],
+        'invalid type',
+        'Headers Trait requires the header key: type value to be one of'
       ],
-      'header content' => [
-        'empty array' => [],
-        'all required' => [
+
+      'an empty array' => [
+        [
+          []
+        ],
+        'empty headers',
+        'The Headers Trait requires an array of headers and must not be empty.'
+      ],
+      
+      'type is all required' => [
+        [
           [
             'name' => 'Header 1',
-            'type' => 'required'
+            'type' => 'required'  // 0
           ],
           [
             'name' => 'Header 2',
-            'type' => 'required',
+            'type' => 'required', // 1
           ],
           [
             'name' => 'Header 3',
-            'type' => 'required'
+            'type' => 'required'  // 2
           ]
         ],
-        'mix types' => [
+        'valid headers',
+        [
+          'expected' => [
+            0 => 'Header 1',
+            1 => 'Header 2',
+            2 => 'Header 3'
+          ],
+          'required' => [
+            0 => 'Header 1',
+            1 => 'Header 2',
+            2 => 'Header 3'
+          ],
+          'optional' => []
+        ]
+      ],
+
+      'mix types' => [
+        [
           [
             'name' => 'Header 1',
-            'type' => 'required'
+            'type' => 'required'  // 0
           ],
           [
             'name' => 'Header 2',
-            'type' => 'required'
+            'type' => 'required'  // 1
           ],
           [
             'name' => 'Header 3',
-            'type' => 'optional'
+            'type' => 'optional'  // 2
           ],
           [
             'name' => 'Header 4',
-            'type' => 'optional'
+            'type' => 'optional'  // 3
           ],
           [
             'name' => 'Header 5',
-            'type' => 'required'
+            'type' => 'required'  // 4
+          ]
+        ],
+        'valid headers',
+        [
+          'expected' => [
+            0 => 'Header 1',
+            1 => 'Header 2',
+            2 => 'Header 3',
+            3 => 'Header 4',
+            4 => 'Header 5'
+          ],
+          'required' => [
+            0 => 'Header 1',
+            1 => 'Header 2',
+            4 => 'Header 5'
+          ],
+          'optional' => [
+            2 => 'Header 3',
+            3 => 'Header 4'
           ]
         ]
-      ],
+      ]
     ];
   }
-  
+
+
   /**
-   * Test the Headers setter and getters.
+   * Test the header array input/parameter to the headers setter.
    * 
-   * @dataProvider provideHeadersForHeadersSetters
+   * @dataProvider provideHeadersForHeadersSetter
    */
-  public function testHeadersSetterGetterDraft($test, $case, $headers) {
-    if ($test == 'header element') {
+  public function testHeadersSetterInput(array $headers, string $case, $expected) {
+    if ($case == 'missing key') {
       try {
         $this->instance->setHeaders($headers);
-      } 
+      }
       catch (\Exception $e) {
         $exception_caught = TRUE;
         $exception_message = $e->getMessage();
@@ -160,12 +232,75 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
       $this->assertTrue($exception_caught, 'Headers setter method should throw an exception if ' . $case);
       $this->assertStringContainsString(
-        'Headers Trait requires the header key',
+        $expected,
         $exception_message,
         'Expected exception message does not match the message if ' . $case
       );
     }
+    
+    if ($case == 'valid headers') {
+      $this->instance->setHeaders($headers);
+      
+      // Retrieve all.
+      $set_headers = $this->instance->getHeaders();
+      $this->assertEquals(
+        $set_headers,
+        $expected['expected'], 
+        'The set headers does not match the headers returned by header getter for case: ' . $case
+      );
+
+      // Retrieve required.
+      $set_required_headers = $this->instance->getRequiredHeaders();
+      $this->assertEquals(
+        $set_required_headers,
+        $expected['required'], 
+        'The set headers does not match the headers returned by required header getter for case: ' . $case
+      );
+
+      // Retrieve optional.
+      $set_optional_headers = $this->instance->getOptionalHeaders();
+      $this->assertEquals(
+        $set_optional_headers,
+        $expected['optional'], 
+        'The set headers does not match the headers returned by optional header getter for case: ' . $case
+      );
+    }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  /**
+   * Test the type array input/parameter to the header getter.
+   * 
+   * 
+   */
+  public function testHeaderGetterInput() {
+  
+  }
+  
+  
+
+
+
+
+
+
 
 
 
