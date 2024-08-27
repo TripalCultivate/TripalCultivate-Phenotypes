@@ -130,7 +130,7 @@ trait FileTypes {
    * Gets the supported file extensions of the current importer.
    *
    * @return array
-   *   The file extensions set by the setFileTypes() setter method.
+   *   The file extensions set by the setSupportedMimeTypes() setter method.
    *
    * @throws \Exception
    *  - If the 'file_extensions' key does not exist in the context array
@@ -144,7 +144,7 @@ trait FileTypes {
       return $this->context[ $context_key ];
     }
     else {
-      throw new \Exception('Cannot retrieve supported file extensions as they have not been set by setFileTypes() method.');
+      throw new \Exception('Cannot retrieve supported file extensions as they have not been set by setSupportedMimeTypes() method.');
     }
   }
 
