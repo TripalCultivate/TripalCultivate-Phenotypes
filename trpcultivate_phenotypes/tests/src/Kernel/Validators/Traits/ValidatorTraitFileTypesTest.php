@@ -75,15 +75,15 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     $scenarios = [];
 
     // #0: Test with an empty extensions array
-    /* $scenarios[] = [
-      [],
-      [],
+    $scenarios[] = [
+      [], // file extensions
+      [], // expected mime-types
       'invalid', // case
-      TRUE, // exception thrown
-      'The setSupportedMimeTypes() setter requires an array of file extensions that are supported by the importer and must not be empty.', // expected exception message
-    ]; */
+      TRUE, // setter exception thrown
+      'The setSupportedMimeTypes() setter requires an array of file extensions that are supported by the importer and must not be empty.', // expected exception message by the setter
+    ];
 
-    // #0: Just tsv
+    // #1: Just tsv
     $scenarios[] = [
       ['tsv'],
       ['text/tab-separated-values'],
@@ -92,7 +92,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       '',
     ];
 
-    // #1: Just csv
+    // #2: Just csv
     $scenarios[] = [
       ['csv'],
       ['text/csv'],
@@ -101,7 +101,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       '',
     ];
 
-    // #2: Just txt
+    // #3: Just txt
     $scenarios[] = [
       ['txt'],
       ['text/plain'],
@@ -110,7 +110,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       '',
     ];
 
-    // #3: tsv, txt
+    // #4: tsv, txt
     $scenarios[] = [
       ['tsv', 'txt'],
       ['text/tab-separated-values', 'text/plain'],
@@ -119,12 +119,52 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       '',
     ];
 
+    // #5: csv, txt
     $scenarios[] = [
       ['csv', 'txt'],
       ['text/csv', 'text/plain'],
       'valid',
       FALSE,
       '',
+    ];
+
+    // Invalid types
+
+    // #6: jpg, gif, svg
+    $scenarios[] = [
+      ['jpg', 'gif', 'svg'],
+      [],
+      'invalid',
+      TRUE,
+      'The setSupportedMimeTypes() setter does not recognize the following extensions: jpg, gif, svg',
+    ];
+
+    // #7: png, pdf
+    $scenarios[] = [
+      ['png', 'pdf'],
+      [],
+      'invalid',
+      TRUE,
+      'The setSupportedMimeTypes() setter does not recognize the following extensions: png, pdf',
+    ];
+
+    // #8: gzip
+    $scenarios[] = [
+      ['gzip'],
+      [],
+      'invalid',
+      TRUE,
+      'The setSupportedMimeTypes() setter does not recognize the following extensions: gzip',
+    ];
+
+    // Mixed types
+    // #9: tsv, jpg
+    $scenarios[] = [
+      ['tsv', 'jpg'],
+      [],
+      'mixed',
+      TRUE,
+      'The setSupportedMimeTypes() setter does not recognize the following extensions: jpg',
     ];
 
     return $scenarios;
@@ -142,12 +182,12 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    *
    * @return void
    */
-  public function testSupportedMimeTypes($expected_extensions, $expected_mime_types, $case, $exception_thrown, $expected_exception_message) {
+  public function testSupportedMimeTypes($expected_extensions, $expected_mime_types, $case, $setter_exception_thrown, $expected_setter_exception_message) {
 
-    // Exception message when failed to set supported mime-types
+    // Attempt to get mime-types with the getter before any have been set.
     $exception_caught = FALSE;
     $exception_message = '';
-    $expected_message = 'Cannot retrieve supported file mime-types as they have not been set';
+    $get_types_exception_message = 'Cannot retrieve supported file mime-types as they have not been set by setSupportedMimeTypes() method.';
 
     try {
       $this->instance->getSupportedMimeTypes();
@@ -157,60 +197,29 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     }
 
     $this->assertTrue($exception_caught, 'FileTypes::getSupportedMimeTypes() method should throw an exception when trying to get supported mime types before setting them.');
-    $this->assertStringContainsString(
-      $expected_message,
+    $this->assertEquals(
+      $get_types_exception_message,
       $exception_message,
       'Exception message does not match the expected one when trying to get supported mime types before setting them.'
     );
 
-    // Unsupported file extensions.
-    $invalid_types = [['jpg', 'gif', 'svg'], ['png', 'pdf'], ['gzip']];
-    // Exception message when unsupported file types was provided to the setter.
+    // Attempt to get file extensions with the getter before any have been set.
     $exception_caught = FALSE;
     $exception_message = '';
-    $expected_message =  'The setSupportedMimeTypes() setter does not recognize the following extensions: %s';
-
-    foreach ($invalid_types as $invalid_type) {
-      $exception_caught = FALSE;
-      $exception_message = '';
-
-      $str_file_types = implode(', ', $invalid_type);
-
-      try {
-        $this->instance->setSupportedMimeTypes($invalid_type);
-      } catch (\Exception $e) {
-        $exception_caught = TRUE;
-        $exception_message = $e->getMessage();
-      }
-
-      $this->assertTrue($exception_caught, 'FileTypes::setSupportedMimeTypes() setter method should throw an exception for unsupported file types.');
-      $this->assertStringContainsString(
-        sprintf($expected_message, $str_file_types),
-        $exception_message,
-        'Exception message does not match the expected one when an unsupported type was passed to the FileTypes::setSupportedMimeTypes() setter.'
-      );
-    }
-
-    // Test a valid type and an unsupported type.
-    $unsupported_type = 'jpg';
-    $valid_invalid_types = ['tsv', $unsupported_type];
-    $expected_message = "The setSupportedMimeTypes() setter does not recognize the following extensions: $unsupported_type";
-
-    $exception_caught = FALSE;
-    $exception_message = '';
+    $get_ext_exception_message = 'Cannot retrieve supported file extensions as they have not been set by setSupportedMimeTypes() method.';
 
     try {
-      $this->instance->setSupportedMimeTypes($valid_invalid_types);
+      $this->instance->getSupportedFileExtensions();
     } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
 
-    $this->assertTrue($exception_caught, 'FileType::setSupportedMimeTypes() setter method should throw an exception when a mix of supported and unsupported extensions are passed in.');
-    $this->assertStringContainsString(
+    $this->assertTrue($exception_caught, 'FileTypes::getSupportedFileExtensions() method should throw an exception when trying to get supported file extensions before setting them.');
+    $this->assertEquals(
+      $get_ext_exception_message,
       $exception_message,
-      $expected_message,
-      'Exception message does not match the expected one when a mix of supported and unsupported file extensions are passed into FileTypes::setSupportedMimeTypes().'
+      'Exception message does not match the expected one when trying to get supported file extensions before setting them.'
     );
 
     // Test various file extensions (see data provider) and check that their
@@ -224,17 +233,77 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    $this->assertEquals($exception_thrown, $exception_caught, 'Unexpected exception activity occured when ' . $case . ' file extensions were provided.');
-    $this->assertEquals($expected_exception_message, $exception_message, 'The expected and actual exception messages do not match with ' . $case . ' file extensions provided.');
+    $this->assertEquals($setter_exception_thrown, $exception_caught, 'Unexpected exception activity occured when ' . $case . ' file extensions were provided.');
+    $this->assertEquals(
+      $expected_setter_exception_message,
+      $exception_message,
+      'The expected and actual exception messages do not match with ' . $case . ' file extensions provided.'
+    );
 
-    // Now try to grab the mime types
-    //try {
-    $grabbed_types = $this->instance->getSupportedMimeTypes();
+    // Now try to grab the mime-types
+    // If our case is mixed or invalid, then expect an exception from the getter
+    if ($case == 'invalid' || $case == 'mixed') {
+      $exception_thrown = TRUE;
+      $expected_exception_message = $get_types_exception_message;
+    } else if ($case == 'valid') {
+      $exception_thrown = FALSE;
+      $expected_exception_message = '';
+    }
+
+    $grabbed_types = [];
+    $exception_caught = FALSE;
+    $exception_message = '';
+    try {
+      $grabbed_types = $this->instance->getSupportedMimeTypes();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      $exception_thrown,
+      $exception_caught,
+      'Unexpected exception activity occured when trying to get supported mime-types after ' . $case . ' file extensions were provided.');
+    $this->assertEquals(
+      $expected_exception_message,
+      $exception_message,
+      'The expected and actual exception messages do not match when calling getSupportedMimeTypes() after setting with ' . $case . ' file extensions provided.'
+    );
+    // Finally, check that our retrieved mime-types match our expected
     $this->assertEquals($expected_mime_types, $grabbed_types);
-    //} catch (\Exception $e) {
 
-    //}
+    // Now try to grab the supported file extensions
+    // If our case is mixed or invalid, then expect an exception from the getter
+    if ($case == 'invalid' || $case == 'mixed') {
+      $exception_thrown = TRUE;
+      $expected_exception_message = $get_ext_exception_message;
+      $expected_getter_extensions = [];
+    } else if ($case == 'valid') {
+      $exception_thrown = FALSE;
+      $expected_exception_message = '';
+      $expected_getter_extensions = $expected_extensions;
+    }
 
+    $grabbed_extensions = [];
+    $exception_caught = FALSE;
+    $exception_message = '';
+    try {
+      $grabbed_extensions = $this->instance->getSupportedFileExtensions();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      $exception_thrown,
+      $exception_caught,
+      'Unexpected exception activity occured when trying to get file extensions after ' . $case . ' file extensions were provided.'
+    );
+    $this->assertEquals(
+      $expected_exception_message,
+      $exception_message,
+      'The expected and actual exception messages do not match when calling getSupportedFileExtensions() after setting with ' . $case . ' file extensions provided.'
+    );
+    // Finally, check that our retrieved mime-types match our expected
+    $this->assertEquals($expected_getter_extensions, $grabbed_extensions);
   }
 
   /**
