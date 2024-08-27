@@ -71,140 +71,235 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
   /**
    * Data Provider: provides test headers.
    */
-  public static function provideHeadersForHeadersSetter(): array {
-    // description = [input, case, expected value/response]
+  public function provideHeadersForHeadersSetter() {
+    // Each scenario is of the array structure below.
+    /**
+     * [
+     *   - A human readable short description of the test scenario.
+     *   - The headers array input.
+     *   - TRUE or FALSE if the the test will trigger an exception.
+     *   - An array of exception message 
+     *     [
+     *       - setter: exception message the setter will throw.
+     *       - getter-all: exception message the headers getter will throw.
+     *       - getter-required: exception message the required headers getter will throw.
+     *       - getter-optional: exception message the optional headers getter will throw. 
+     *     ]
+     *   - Expected headers returned by the getters.
+     *     [
+     *       - all: headers getter with default types - all headers.
+     *       - required: required headers getter.
+     *       - optional: optional headers getter.
+     *     ]
+     * ]
+     */
 
-    // Each Senario should contain the following:
-    // - Headers array to be tested
-    // - True/False if an exception is expected
-    // - expected exception message (partial)
-    // - expected return from getters: array keyed by 'all', 'required', 'optional'
     return [
-      'key name missing' => [
+      [
+        'missing name key',
         [
           [
-            'no-name' => 'Header',
+            'not-name' => 'Header',
             'type' => 'required'
           ]
         ],
-        'missing key',
-        'Headers Trait requires the header key: name when defining headers.'
+        TRUE,
+        [
+          'setter' => 'Headers Trait requires the header key: name when defining headers.',
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+        ],
+        [
+          'all' => FALSE,
+          'required' => [],
+          'optional' => []
+        ]
       ],
-
-      'key type missing' => [
+      [
+        'missing type key',
         [
           [
             'name' => 'Header',
-            'no-type' => 'required'
+            'not-type' => 'required'
           ]
         ],
-        'missing key',
-        'Headers Trait requires the header key: type when defining headers.'
+        TRUE,
+        [
+          'setter' => 'Headers Trait requires the header key: type when defining headers.',
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+        ],
+        [
+          'all' => FALSE,
+          'required' => [],
+          'optional' => []
+        ]
       ],
-
-      'value name empty' => [
+      [
+        'empty name value',
         [
           [
             'name' => '',
             'type' => 'required'
           ]
         ],
-        'empty value',
-        'Headers Trait requires the header key: name to be have a value.'
+        TRUE,
+        [
+          'setter' => 'Headers Trait requires the header key: name to be have a value.',
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+        ],
+        [
+          'all' => FALSE,
+          'required' => [],
+          'optional' => []
+        ]
       ],
-
-      'value type empty' => [
+      [
+        'empty type value',
         [
           [
             'name' => 'Header',
             'type' => ''
           ]
         ],
-        'empty value',
-        'Headers Trait requires the header key: type to be have a value.'
+        TRUE,
+        [
+          'setter' => 'Headers Trait requires the header key: type to be have a value.',
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+        ],
+        [
+          'all' => FALSE,
+          'required' => [],
+          'optional' => []
+        ]
       ],
-
-      'value type invalid' => [
+      [
+        'type is invalid',
         [
           [
             'name' => 'Header',
             'type' => 'spurious type'
           ]
         ],
-        'invalid type',
-        'Headers Trait requires the header key: type value to be one of'
-      ],
-
-      'an empty array' => [
+        TRUE,
         [
-          []
+          'setter' => 'Headers Trait requires the header key: type value to be one of',
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
         ],
-        'empty headers',
-        'The Headers Trait requires an array of headers and must not be empty.'
+        [
+          'all' => FALSE,
+          'required' => [],
+          'optional' => []
+        ]
       ],
-
-      'type is all required' => [
+      [
+        'all types required',
         [
           [
             'name' => 'Header 1',
-            'type' => 'required'  // 0
+            'type' => 'required'
           ],
           [
             'name' => 'Header 2',
-            'type' => 'required', // 1
-          ],
-          [
-            'name' => 'Header 3',
-            'type' => 'required'  // 2
+            'type' => 'required'
           ]
         ],
-        'valid headers',
+        FALSE,
         [
-          'expected' => [
+          'setter' => '',
+          'getter-all' => '',
+          'getter-required' => '',
+          'getter-optional' => ''
+        ],
+        [
+          'all' => [
             0 => 'Header 1',
             1 => 'Header 2',
-            2 => 'Header 3'
           ],
           'required' => [
             0 => 'Header 1',
-            1 => 'Header 2',
-            2 => 'Header 3'
+            1 => 'Header 2'
           ],
           'optional' => []
         ]
       ],
-
-      'mix types' => [
+      [
+        'all types optional',
         [
           [
             'name' => 'Header 1',
-            'type' => 'required'  // 0
+            'type' => 'optional'
           ],
           [
             'name' => 'Header 2',
-            'type' => 'required'  // 1
+            'type' => 'optional'
+          ]
+        ],
+        FALSE,
+        [
+          'setter' => '',
+          'getter-all' => '',
+          'getter-required' => '',
+          'getter-optional' => ''
+        ],
+        [
+          'all' => [
+            0 => 'Header 1',
+            1 => 'Header 2',
+          ],
+          'required' => [],
+          'optional' => [
+            0 => 'Header 1',
+            1 => 'Header 2'
+          ]
+        ]
+      ],
+      [
+        'mix types',
+        [
+          [
+            'name' => 'Header 1',
+            'type' => 'required'
+          ],
+          [
+            'name' => 'Header 2',
+            'type' => 'required'
           ],
           [
             'name' => 'Header 3',
-            'type' => 'optional'  // 2
+            'type' => 'optional'
           ],
           [
             'name' => 'Header 4',
-            'type' => 'optional'  // 3
+            'type' => 'optional'
           ],
           [
             'name' => 'Header 5',
-            'type' => 'required'  // 4
+            'type' => 'required'
           ]
         ],
-        'valid headers',
+        FALSE,
         [
-          'expected' => [
+          'setter' => '',
+          'getter-all' => '',
+          'getter-required' => '',
+          'getter-optional' => ''
+        ],
+        [
+          'all' => [
             0 => 'Header 1',
             1 => 'Header 2',
             2 => 'Header 3',
             3 => 'Header 4',
-            4 => 'Header 5'
+            4 => 'header 5'
           ],
           'required' => [
             0 => 'Header 1',
@@ -220,91 +315,69 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     ];
   }
 
-
   /**
-   * Test the header array input/parameter to the headers setter.
-   *
+   * Test setter and getter.
+   * 
    * @dataProvider provideHeadersForHeadersSetter
    */
-  public function testHeadersSetterInput(array $headers, string $case, $expected) {
-    if ($case == 'missing key') {
+  public function testHeaderSetterGetter($scenario, $headers_input, $has_exception, $exception_message, $expected) {
+    $exception_caught = FALSE;
+    $exception_get_message = '';
+    
+    try {
+      $this->instance->setHeaders($headers_input);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_get_message = $e->getMessage();
+    }
+
+    $this->assertEquals($exception_caught, $has_exception);
+    $this->assertStringContainsString(
+      $exception_message['setter'],
+      $exception_get_message
+    );
+
+    // Test required and optional getter.
+    foreach(['required', 'optional'] as $type) {
+      $exception_caught = FALSE;
+      $exception_get_message = '';
+
+      $getter = 'get' . ucfirst($type) . 'Headers';
+      
       try {
-        $this->instance->setHeaders($headers);
+        $this->instance->$getter();
       }
       catch (\Exception $e) {
         $exception_caught = TRUE;
-        $exception_message = $e->getMessage();
+        $exception_get_message = $e->getMessage();
       }
 
-      $this->assertTrue($exception_caught, 'Headers setter method should throw an exception if ' . $case);
+      $this->assertEquals($exception_caught, $has_exception);
       $this->assertStringContainsString(
-        $expected,
-        $exception_message,
-        'Expected exception message does not match the message if ' . $case
-      );
+        $exception_message[ 'getter-' . $type ],
+        $exception_get_message
+      );      
     }
 
-    if ($case == 'valid headers') {
-      $this->instance->setHeaders($headers);
+    // Test header getter (get all headers).
+    $exception_caught = FALSE;
+    $exception_get_message = '';
 
-      // Retrieve all.
-      $set_headers = $this->instance->getHeaders();
-      $this->assertEquals(
-        $set_headers,
-        $expected['expected'],
-        'The set headers does not match the headers returned by header getter for case: ' . $case
-      );
-
-      // Retrieve required.
-      $set_required_headers = $this->instance->getRequiredHeaders();
-      $this->assertEquals(
-        $set_required_headers,
-        $expected['required'],
-        'The set headers does not match the headers returned by required header getter for case: ' . $case
-      );
-
-      // Retrieve optional.
-      $set_optional_headers = $this->instance->getOptionalHeaders();
-      $this->assertEquals(
-        $set_optional_headers,
-        $expected['optional'],
-        'The set headers does not match the headers returned by optional header getter for case: ' . $case
-      );
+    try {
+      $this->instance->getHeaders();
     }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_get_message = $e->getMessage();
+    }
+
+    $this->assertEquals($exception_caught, $has_exception);
+    $this->assertStringContainsString(
+      $exception_message['getter-all'],
+      $exception_get_message
+    );      
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  /**
-   * Test the type array input/parameter to the header getter.
-   *
-   *
-   */
-  public function testHeaderGetterInput() {
-
-  }
-
-
-
-
-
-
 
 
 
