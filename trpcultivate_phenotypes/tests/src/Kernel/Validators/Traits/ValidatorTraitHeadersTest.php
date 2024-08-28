@@ -92,13 +92,11 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     return [
       [
         'headers array is empty',
-        [
-          []
-        ],
+        [],
         ['required', 'optional'], // Default to fetch all types.
         TRUE,
         [
-          'setter' => 'Headers Trait requires the header key: name when defining headers.',
+          'setter' => 'The Headers Trait requires an array of headers and must not be empty.',
           'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
           'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
           'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
