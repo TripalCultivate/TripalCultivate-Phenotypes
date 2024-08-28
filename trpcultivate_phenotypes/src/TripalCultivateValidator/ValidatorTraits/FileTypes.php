@@ -62,25 +62,20 @@ trait FileTypes {
    */
   public function setFileMimeType(string $mime_type) {
 
-    // Extensions array must have a element.
+    // Mime-type must not be an empty string.
     if (empty($mime_type)) {
-      throw new \Exception("The FileTypes Trait requires a string of the input file's mime-type and must not be empty.");
+      throw new \Exception("The setFileMimeType() setter requires a string of the input file's mime-type and must not be empty.");
     }
 
     /** @TODO: Log the below message instead of throwing an exception
-     * This check will occur in the
+     *         This check should occur in the DataFile validator
     if (!isset(self::$mime_to_delimiter_mapping[ $mime_type ])) {
       throw new \Exception('The FileTypes Trait requires a supported mime-type but ' . $mime_type . ' is unsupported.');
     }
     */
 
-    $file_delimiters = self::$mime_to_delimiter_mapping[$mime_type];
-
-    // Set the mime-types
+    // Set the mime-type
     $this->context['file_mime_type'] = $mime_type;
-
-    // Set the supported file delimiters
-    $this->context['file_delimiters'] = $file_delimiters;
   }
 
   /**
@@ -198,23 +193,32 @@ trait FileTypes {
    * NOTE: This method is static to allow for it to also be used by the static
    * method splitRowIntoColumns()
    *
+   * @param string $mime_type
+   *   A string that is the mime-type of the input file.
+   *
+   *   HINT: You can get the mime-type of a file from the 'mime-type' property
+   *   of a file object
+   *
    * @return array
-   *   The list of delimiters that are supported by the file mime-type, as set
-   *   by the setFileMimeType() method.
+   *   The list of delimiters that are supported by the file mime-type.
    *
    * @throws \Exception
-   *   - If the 'file_delimiters' key does not exist in the context array
-   *     (ie. the setFileMimeType() method has NOT been called)
+   *   - If mime_type does not exist as a key in the mime_to_delimiter_mapping
+   *     array
    */
-  public static function getFileDelimiters() {
+  public static function getFileDelimiters(string $mime_type) {
 
-    $context_key = 'file_delimiters';
+    // Check if mime type is an empty string.
+    if (empty($mime_type)) {
+      throw new \Exception("The getFileDelimiters() getter requires a string of the input file's mime-type and must not be empty.");
+    }
 
-    if (array_key_exists($context_key, $this->context)) {
-      return $this->context[ $context_key ];
+    // Grab the delimiters for this mime-type.
+    if (array_key_exists($mime_type, self::$mime_to_delimiter_mapping)) {
+      self::$mime_to_delimiter_mapping[$mime_type];
     }
     else {
-      throw new \Exception('Cannot retrieve supported file delimiters as they have not been set by setFileMimeType() method.');
+      throw new \Exception('Cannot retrieve file delimiters for the mime-type provided: ' . $mime_type);
     }
   }
 }
