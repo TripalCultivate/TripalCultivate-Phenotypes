@@ -246,7 +246,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   public static function splitRowIntoColumns(string $row, string $mime_type) {
     // Delimiter:
 
-    // @todo this should be a static/constant variable in the FileType trait.
+    // @todo this should use the mime_to_delimiter_mapping static variable.
     $mime_to_delimiter_mapping = [
       'text/tab-separated-values' => ["\t"],
       'text/csv' => [','],

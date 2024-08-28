@@ -36,6 +36,8 @@ trait FileTypes {
    * the performance hit to a minimum. Especially as in many cases, this is a
    * one-to-one mapping.
    *
+   * @todo move into validatorbase
+   *
    * @var array
    */
   public static array $mime_to_delimiter_mapping = [
@@ -198,6 +200,8 @@ trait FileTypes {
    *
    *   HINT: You can get the mime-type of a file from the 'mime-type' property
    *   of a file object
+   *
+   * @todo move to validator base
    *
    * @return array
    *   The list of delimiters that are supported by the file mime-type.
