@@ -64,6 +64,10 @@ trait GenusConfigured {
     // Check that the genus is configured + get that configuration while we are at it.
     $configuration_values = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
     if (!is_array($configuration_values) OR empty($configuration_values)) {
+      
+      // @TODO: This is a user provided value, should be logged message
+      //        and checked by a validator.
+      
       throw new \Exception("The genus '$genus' is not configured and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
     }
 

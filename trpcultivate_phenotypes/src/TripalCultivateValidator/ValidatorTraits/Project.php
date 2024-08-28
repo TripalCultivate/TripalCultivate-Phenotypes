@@ -41,6 +41,10 @@ trait Project {
     if (is_numeric($project)) {
       // Project id number.
       if ($project <= 0) {
+
+        // @TODO: This is a user provided value, should be logged message
+        //        and checked by a validator.
+
         throw new \Exception('The Project Trait requires project id number to be a number greater than 0.');  
       }
 
@@ -55,6 +59,10 @@ trait Project {
     else {
       // Project name.
       if (trim($project) === '') {
+
+        // @TODO: This is a user provided value, should be logged message
+        //        and checked by a validator.
+
         throw new \Exception('The Project Trait requires project name to be a non-empty string value.');  
       }
       
@@ -68,6 +76,10 @@ trait Project {
     }
     
     if ($set_project['project_id'] <= 0 || empty($set_project['name'])) {
+
+      // @TODO: This is a user provided value, should be logged message
+      //        and checked by a validator.
+
       throw new \Exception('The Project Trait requires a project that exists in the database.');
     }
 
