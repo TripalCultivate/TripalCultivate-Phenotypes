@@ -197,8 +197,8 @@ trait Headers {
         }
       }
       
-      // All headers of type matching all types requested into 
-      // one array key by the index and header name as the value.
+      // All of the header elements with a type matching one of the types 
+      // requested, keyed by the column index and 'header name' as the value.
       return $headers;
     }
     else {
