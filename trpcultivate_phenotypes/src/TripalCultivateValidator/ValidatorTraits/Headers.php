@@ -58,9 +58,9 @@ trait Headers {
       throw new \Exception('The Headers Trait requires an array of headers and must not be empty.');  
     }
     
-    // Required keys that each header element must posses and 
-    // could not be set to an empty value. Type key value must be
-    // one of the type values defined by the types property. 
+    // Required keys that each header element must possess and 
+    // cannot be set to an empty value. The 'type' key's value must be
+    // one of the 'type' values defined by the types property. 
     $required_header_keys = [
       'name', // Name of the header.
       'type'  // Type of the header (ie. required or optional).
