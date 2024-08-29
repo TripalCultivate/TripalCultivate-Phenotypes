@@ -104,11 +104,9 @@ trait Headers {
    * Get required headers.
    * 
    * @return array
-   *   All headers of type required, keyed by the index (order) from
+   *   All headers of type 'required', keyed by the index (order) from
    *   the headers array and header name as the value.
-   * 
-   *   The key required in the context headers array set by the setter method.
-   *   NOTE: the headers array is zero-based index.
+   *   NOTE: the array is zero-based indexed.
    * 
    * @throws \Exception
    *  - If the 'headers' key does not exists in the context array
