@@ -66,8 +66,7 @@ trait Headers {
       'type'  // Type of the header (ie. required or optional).
     ];
     
-    // Each header, check required keys and value and place 
-    // in designated type array of the context.
+    // For each header, check that the required keys exist and contain a value.
     $context_headers = [];
 
     foreach($headers as $index => $header) {
