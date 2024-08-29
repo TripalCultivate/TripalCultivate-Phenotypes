@@ -149,7 +149,7 @@ trait Headers {
   }
 
   /**
-   * Get headers of type(s).
+   * Get headers of a specified type(s).
    * 
    * @param array $types
    *   A list of header types to get. 
