@@ -133,8 +133,8 @@ trait Headers {
    *   NOTE: the array is zero-based indexed.
    * 
    * @throws \Exception
-   *  - If the 'headers' key does not exists in the context array
-   *    (ie. the headers element has NOT been set).
+   *  - If the ['headers']['optional'] key does not exist in the context array
+   *    (ie. the setHeaders() method has NOT been called).
    */
   public function getOptionalHeaders() {
     
