@@ -228,4 +228,47 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *   validation error and will not permit creation of terms.
    */
   public function getConfigAllowNew();
+  
+  /**
+   * Split or explode a data file line/row values into an array using a delimiter.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime type passed in. For example, the mime type text/tab-separated-values
+   * maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases this is a
+   * one-to-one mapping. If it is not a one-to-one mapping then we loop through
+   * the options.
+   *
+   * @param string $row
+   *   A line in the data file which has not yet been split into columns.
+   * @param string $mime_type
+   *   The mime type of the file currently being validated or imported (i.e. the
+   *   mime type of the file this line is from).
+   *
+   * @return array
+   *   An array containing the values extracted from the line after splitting it based
+   *   on a delimiter value.
+   */
+  public static function splitRowIntoColumns(string $row, string $mime_type);
+
+  /**
+   * Gets the list of delimiters supported by the input file's mime-type that
+   * was provided to the setter.
+   *
+   * NOTE: This method is static to allow for it to also be used by the static
+   * method splitRowIntoColumns().
+   *
+   * @param string $mime_type
+   *   A string that is the mime-type of the input file.
+   *
+   *   HINT: You can get the mime-type of a file from the 'mime-type' property
+   *   of a file object.
+   *
+   * @return array
+   *   The list of delimiters that are supported by the file mime-type.
+   */
+  public static function getFileDelimiters(string $mime_type);
 }

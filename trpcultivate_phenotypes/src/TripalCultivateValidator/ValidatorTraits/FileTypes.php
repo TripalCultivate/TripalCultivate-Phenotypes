@@ -25,28 +25,6 @@ trait FileTypes {
   ];
 
   /**
-   * A mapping of supported file mime-types and their supported delimiters.
-   *
-   * More specifically, the file is split based on the appropriate delimiter
-   * for the mime-type passed in. For example, the mime-type
-   * "text/tab-separated-values" maps to the tab (i.e. "\t") delimiter.
-   *
-   * By using this mapping approach we can actually support a number of different
-   * file types with different delimiters for the same importer while keeping
-   * the performance hit to a minimum. Especially as in many cases, this is a
-   * one-to-one mapping.
-   *
-   * @todo move into validatorbase
-   *
-   * @var array
-   */
-  public static array $mime_to_delimiter_mapping = [
-    'text/tab-separated-values' => ["\t"],
-    'text/csv' => [','],
-    'text/plain' => ["\t", ','],
-  ];
-
-  /**
    * Sets the mime-type of the current input file as well as that mime-type's
    * supported file delimiters.
    *
@@ -185,44 +163,6 @@ trait FileTypes {
       return $this->context[$context_key];
     } else {
       throw new \Exception('Cannot retrieve the input file mime-type as it has not been set by setFileMimeType() method.');
-    }
-  }
-
-  /**
-   * Gets the list of delimiters supported by the input file's mime-type that
-   * was provided to the setter
-   *
-   * NOTE: This method is static to allow for it to also be used by the static
-   * method splitRowIntoColumns()
-   *
-   * @param string $mime_type
-   *   A string that is the mime-type of the input file.
-   *
-   *   HINT: You can get the mime-type of a file from the 'mime-type' property
-   *   of a file object
-   *
-   * @todo move to validator base
-   *
-   * @return array
-   *   The list of delimiters that are supported by the file mime-type.
-   *
-   * @throws \Exception
-   *   - If mime_type does not exist as a key in the mime_to_delimiter_mapping
-   *     array
-   */
-  public static function getFileDelimiters(string $mime_type) {
-
-    // Check if mime type is an empty string.
-    if (empty($mime_type)) {
-      throw new \Exception("The getFileDelimiters() getter requires a string of the input file's mime-type and must not be empty.");
-    }
-
-    // Grab the delimiters for this mime-type.
-    if (array_key_exists($mime_type, self::$mime_to_delimiter_mapping)) {
-      self::$mime_to_delimiter_mapping[$mime_type];
-    }
-    else {
-      throw new \Exception('Cannot retrieve file delimiters for the mime-type provided: ' . $mime_type);
     }
   }
 }
