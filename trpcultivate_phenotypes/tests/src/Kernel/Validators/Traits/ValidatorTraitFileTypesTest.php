@@ -307,9 +307,8 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
 
     // For each senario we expect the following:
     // -- scenario label to provide helpful feedback if a test fails.
-    // -- an array of input and expected mime-type:
-    //    - a mime-type as a string to pass to setFileMimeType()
-    //    - a string that we expect to have returned by getFileMimeType()
+    // -- a string that is the mime-type to pass to setFileMimeType() and that
+    //    we also expect to have returned by getFileMimeType()
     // -- an array indicating whether to expect an exception with the keys
     //    being the method and the value being TRUE if we expect an exception
     //    when calling it for this senario.
@@ -400,6 +399,23 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    *  - FileTypes::setSupportedMimeTypes()
    *  - FileTypes::getSupportedMimeTypes()
    *  - FileTypes::getSupportedFileExtensions()
+   *
+   * @param string $scenario
+   *   Human-readable text description to help with feedback if a scenario fails.
+   * @param array $file_extensions
+   *   An array with 2 keys:
+   *   - 'input_file_extensions' is a list of file extensions as the input for
+   *     setSupportedMimeTypes()
+   *   - 'expected_file_extensions' is the list of file extensions that is
+   *     expected as the output from getSupportedFileExtensions()
+   * @param array $expected_mime_types
+   *   A list of the expected mime-types to be output from getSupportedMimeTypes()
+   * @param array $expected_exception_thrown
+   *   An array of expected exception outcomes (TRUE if one is expected, FALSE if
+   *   not expected) where the keys are the names of the methods.
+   * @param array $expected_exception_message
+   *   An array of expected exception messages with the key being the method name
+   *   and the value being the expected message (empty string if none expected).
    *
    * @dataProvider provideExtensionsForSetter
    *
@@ -536,6 +552,18 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    * Specifically,
    *  - FileTypes::setFileMimeType()
    *  - FileTypes::getFileMimeType()
+   *
+   * @param string $scenario
+   *   Human-readable text description to help with feedback if a scenario fails.
+   * @param string $mime_type
+   *   A string that is the mime-type to pass to setFileMimeType() and that we
+   *   also expect to have returned by getFileMimeType()
+   * @param array $expected_exception_thrown
+   *   An array of expected exception outcomes (TRUE if one is expected, FALSE if
+   *   not expected) where the keys are the names of the methods.
+   * @param array $expected_exception_message
+   *   An array of expected exception messages with the key being the method name
+   *   and the value being the expected message (empty string if none expected).
    *
    * @dataProvider provideMimeTypeForSetter
    *
