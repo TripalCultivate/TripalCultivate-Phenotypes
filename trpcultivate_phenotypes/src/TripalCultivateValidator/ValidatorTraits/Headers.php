@@ -117,11 +117,12 @@ trait Headers {
     $type_key = 'required';
 
     if (array_key_exists($this->context_key, $this->context)) {
-      return $this->context[ $this->context_key ][ $type_key ];
+      if (array_key_exists($type_key, $this->context[ $this->context_key ])) {
+        return $this->context[ $this->context_key ][ $type_key ];
+      }    
     }
-    else {
-      throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
-    }
+
+    throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
   }
   
   /**
@@ -141,11 +142,12 @@ trait Headers {
     $type_key = 'optional';
 
     if (array_key_exists($this->context_key, $this->context)) {
-      return $this->context[ $this->context_key ][ $type_key ];
+      if (array_key_exists($type_key, $this->context[ $this->context_key ])) {
+        return $this->context[ $this->context_key ][ $type_key ];
+      }
     }
-    else {
-      throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
-    }
+    
+    throw new \Exception('Cannot retrieve ' . $type_key . ' headers from the context array as one has not been set by setHeaders() method.');
   }
 
   /**
@@ -186,12 +188,18 @@ trait Headers {
       $str_valid_types = implode(', ', $valid_types);
       throw new \Exception('Cannot retrieve invalid header types: ' . $str_invalid_types . '. Use one of valid types: [' . $str_valid_types . ']');
     }
-
+   
     if (array_key_exists($this->context_key, $this->context)) {
       // At this point, types requested are valid.   
       $headers = [];
+      $unset_types = 0;
 
       foreach($types as $type) {
+        if (!array_key_exists($type, $this->context[ $this->context_key ])) {
+          $unset_types++;
+          break;
+        }
+
         foreach($this->context[ $this->context_key ][ $type ] as $index => $header) {
           $headers[ $index ] = $header;
         }
@@ -199,10 +207,11 @@ trait Headers {
       
       // All of the header elements with a type matching one of the types 
       // requested, keyed by the column index and 'header name' as the value.
-      return $headers;
+      if ($unset_types == 0) {
+        return $headers;
+      }
     }
-    else {
-      throw new \Exception('Cannot retrieve headers from the context array as one has not been set by setHeaders() method.');
-    } 
+    
+    throw new \Exception('Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'); 
   }
 }

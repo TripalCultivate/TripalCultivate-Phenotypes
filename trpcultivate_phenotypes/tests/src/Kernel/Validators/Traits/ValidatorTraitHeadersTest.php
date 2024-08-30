@@ -333,9 +333,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
           'all' => [
             0 => 'Header 1',
             1 => 'Header 2',
+            4 => 'Header 5',
             2 => 'Header 3',
-            3 => 'Header 4',
-            4 => 'header 5'
+            3 => 'Header 4'
           ],
           'required' => [
             0 => 'Header 1',
@@ -371,10 +371,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
           'getter-optional' => ''
         ],
         [
-          'all' => [
-            0 => 'Header 1',
-            1 => 'Header 2'
-          ],
+          'all' => FALSE,
           'required' => [
             0 => 'Header 1'
           ],
@@ -477,11 +474,12 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
     // Test required and optional getter methods (get required and optional type headers).
     foreach(['required', 'optional'] as $type) {
       $exception_get_message = '';
+      $headers = FALSE;
 
       $getter = 'get' . ucfirst($type) . 'Headers';
       
       try {
-        $this->instance->$getter();
+        $headers = $this->instance->$getter();
       }
       catch (\Exception $e) {
         $exception_get_message = $e->getMessage();
@@ -491,15 +489,19 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         $exception_message[ 'getter-' . $type ],
         $exception_get_message,
         'The expected exception message thrown by the getter for ' . $type . ' headers does not match message thrown for test scenario: ' . $scenario
-      );      
+      );
+      
+      // Check that it returned the correct headers array.
+      $this->assertEquals($headers, $expected[ $type ], 'Header returned does not match the expected headers for scenario:' . $scenario);
     }
     
 
     // Test header getter method (get all headers).
     $exception_get_message = '';
+    $headers = FALSE;
 
     try {
-      $this->instance->getHeaders($types_input);
+      $headers = $this->instance->getHeaders($types_input);
     }
     catch (\Exception $e) {
       $exception_get_message = $e->getMessage();
@@ -509,6 +511,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
       $exception_message['getter-all'],
       $exception_get_message,
       'The expected exception message thrown by the headers getter does not match message thrown for test scenario: ' . $scenario
-    );      
+    );
+    
+    // Check that it returned the correct headers array.
+    $this->assertEquals($headers, $expected['all'], 'Header returned does not match the expected headers for scenario: ' . $scenario);
   }
 }
