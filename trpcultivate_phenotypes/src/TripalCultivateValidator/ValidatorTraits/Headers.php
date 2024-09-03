@@ -178,8 +178,9 @@ trait Headers {
 
     $valid_types = $this->types;
     
-    // Pull out any unrecognized types by compairing the types paramter
-    // to the types property listing valid types.
+    // This use of array_filter will pull out any unrecognized types by 
+    // comparing the 'types' parameter to the types property defined
+    // at the top of this class.
     $invalid_types = array_filter($types, function($type) use($valid_types) { 
       return !in_array($type, $valid_types); 
     });
