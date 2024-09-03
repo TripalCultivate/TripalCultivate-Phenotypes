@@ -195,22 +195,22 @@ trait Headers {
     if (array_key_exists($this->context_key, $this->context)) {
       // At this point, types requested are valid.   
       $headers = [];
-      $unset_types = 0;
+      $processed_types = 0;
 
       foreach($types as $type) {
-        if (!array_key_exists($type, $this->context[ $this->context_key ])) {
-          $unset_types++;
-          break;
-        }
-
-        foreach($this->context[ $this->context_key ][ $type ] as $index => $header) {
-          $headers[ $index ] = $header;
+        if (array_key_exists($type, $this->context[ $this->context_key ])) {
+          $processed_types++;
+          foreach($this->context[ $this->context_key ][ $type ] as $index => $header) {
+            $headers[ $index ] = $header;
+          }
         }
       }
       
       // All of the header elements with a type matching one of the types 
       // requested, keyed by the column index and 'header name' as the value.
-      if ($unset_types == 0) {
+      // Only return if all of the types requested were processed (i.e. were
+      // in the headers context array).
+      if ($processed_types == sizeof($types)) {
         return $headers;
       }
     }
