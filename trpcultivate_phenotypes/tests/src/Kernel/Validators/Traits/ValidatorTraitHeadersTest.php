@@ -390,9 +390,6 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
    */
   public function testGettersWithUnsetHeaders() {
 
-    // Exception message when calling a getter prior to call setter method.
-    $expected_message = 'Cannot retrieve%s headers from the context array as one has not been set by setHeaders() method.';
-
     foreach(['required', 'optional'] as $type) {
       $getter = 'get' . ucfirst($type) . 'Headers';
 
@@ -406,7 +403,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
       $this->assertTrue($exception_caught, 'Header type ' . $type . ' getter method should throw an exception for unset header.');
       $this->assertStringContainsString(
-        sprintf($expected_message, ' ' . $type),
+        'Cannot retrieve ' . $type . ' headers from the context array as one has not been set by setHeaders() method.',
         $exception_message,
         'Expected exception message does not match the message when trying to get headers of type ' . $type . ' on unset headers.'
       );
@@ -424,7 +421,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
     $this->assertTrue($exception_caught, 'Header getter method should throw an exception for unset header.');
     $this->assertStringContainsString(
-      sprintf($expected_message, ''),
+      'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method',
       $exception_message,
       'Expected exception message does not match the message when trying to get headers.'
     );
