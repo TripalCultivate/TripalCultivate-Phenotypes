@@ -158,14 +158,15 @@ trait Headers {
    *   Default to required and optional header types.
    * 
    * @return array
-   *   A single list of headers matching a type defined by the types parameter.
-   *   For example, if the types parameter includes required and optional the the 
-   *   resulting array will container all headers in order of index assuming there
-   *   are only required and optional types supported.
+   *   A single list of headers matching the type(s) defined by the 'types' parameter.
+   *   For example, if the 'types' parameter includes 'required' and 'optional', then the 
+   *   resulting array will contain all headers in order of index (this is assuming there
+   *   are only 'required' and 'optional' types supported).
    *
-   *   The returned array is keyed by the index (column order) from
-   *   the headers array and header name as the value.
-   *   NOTE: the headers array is zero-based index.
+   *   The returned array is keyed by the index (column order) from the original headers 
+   *   array that was given to the setHeaders() method. 
+   *   The value is the header 'name'.
+   *   NOTE: the array is zero-based indexed.
    * 
    * @throws \Exception
    *  - If the 'headers' key does not exists in the context array
