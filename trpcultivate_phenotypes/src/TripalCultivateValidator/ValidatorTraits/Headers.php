@@ -169,9 +169,10 @@ trait Headers {
    *   NOTE: the array is zero-based indexed.
    * 
    * @throws \Exception
-   *  - If the 'headers' key does not exists in the context array
-   *    (ie. the headers element has NOT been set).
-   *  - If an unrecognized header type is requested in the types parameter.
+   * If the ['headers'][<one of the types given as a param>] key does not exist in the context array.
+   * This could be caused by either:
+   *  - The setHeaders() method has NOT been called.
+   *  - If an unrecognized header type is requested in the 'types' parameter.
    */
   public function getHeaders(array $types = ['required', 'optional']) {
 
