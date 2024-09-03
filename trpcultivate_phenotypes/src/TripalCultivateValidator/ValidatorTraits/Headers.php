@@ -218,6 +218,6 @@ trait Headers {
       }
     }
     
-    throw new \Exception('Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'); 
+    throw new \Exception('Cannot retrieve requested headers as the ' . $this->context_key . ' key was not set in the context array, or one or more types were not set by setHeaders() method.'); 
   }
 }
