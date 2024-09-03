@@ -90,6 +90,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
    */
   public function provideHeadersForHeadersSetter() {
     return [
+      // #0: Test the headers input array is an empty array value.
       [
         'headers array is empty',
         [],
@@ -108,7 +109,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #1: Test that in the headers input array, an element is missing the name key.
       [
         'missing name key',
         [
@@ -132,7 +133,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #2: Test that in the headers input array, an element is missing the type key.
       [
         'missing type key',
         [
@@ -156,7 +157,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #3. Test that in the headers input array, an element has an empty value for the name key. 
       [
         'empty name value',
         [
@@ -180,7 +181,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #4. Test that in the headers input array, an element has an empty value for the type key.
       [
         'empty type value',
         [
@@ -204,7 +205,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #5: Test that in the headers input array, an element has an invalid type value for the type key.
       [
         'type is invalid',
         [
@@ -228,7 +229,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
       
-      //
+      // #6: Test that all the headers in the headers input array are of type required.
       [
         'all types required',
         [
@@ -262,7 +263,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #7: Test that all headers in the headers input array are of type optional.
       [
         'all types optional',
         [
@@ -296,7 +297,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #8: Test that headers in the headers input array are of mix header types (optional and required).
       [
         'mix types',
         [
@@ -349,7 +350,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      //
+      // #9: Test headers getter method with invalid header type.
       [
         'invalid header types',
         [
