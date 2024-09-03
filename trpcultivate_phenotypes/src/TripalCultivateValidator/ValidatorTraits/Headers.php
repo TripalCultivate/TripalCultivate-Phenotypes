@@ -48,6 +48,9 @@ trait Headers {
    * 
    * @throws \Exception
    *  - An empty array header.
+   *  - When 'name' and/or 'type' key is missing
+   *  - When 'name' and/or 'type' key has a missing value
+   *  - When the value for 'type' is not one of 'required' or 'optional'
    * 
    * @return void
    */

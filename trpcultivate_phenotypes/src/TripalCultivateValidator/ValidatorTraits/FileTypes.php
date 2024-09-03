@@ -161,7 +161,8 @@ trait FileTypes {
 
     if (array_key_exists($context_key, $this->context)) {
       return $this->context[$context_key];
-    } else {
+    }
+    else {
       throw new \Exception('Cannot retrieve the input file mime-type as it has not been set by setFileMimeType() method.');
     }
   }
