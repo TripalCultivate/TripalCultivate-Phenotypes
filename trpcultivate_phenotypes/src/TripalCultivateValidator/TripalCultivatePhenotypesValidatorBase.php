@@ -45,6 +45,37 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   }
 
   /**
+   * An associative array containing the needed context, which is dependant
+   * on the validator. For example, instead of validating each cell by default,
+   * a validator may need a list of indices which correspond to the columns in
+   * the row for which the validator should act on.
+   *
+   * Key-value pairs are set by the setter methods in ValidatorTraits.
+   */
+  protected array $context = [];
+
+  /**
+   * A mapping of supported file mime-types and their supported delimiters.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime-type passed in. For example, the mime-type
+   * "text/tab-separated-values" maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases, this is a
+   * one-to-one mapping.
+   *
+   * @var array
+   */
+  public static array $mime_to_delimiter_mapping = [
+    'text/tab-separated-values' => ["\t"],
+    'text/csv' => [','],
+    'text/plain' => ["\t", ','],
+  ];
+
+
+  /**
    * {@inheritdoc}
    */
   public function validateMetadata(array $form_values) {
@@ -234,14 +265,8 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   on a delimiter value.
    */
   public static function splitRowIntoColumns(string $row, string $mime_type) {
-    // Delimiter:
-
-    // @todo this should be a static/constant variable in the FileType trait.
-    $mime_to_delimiter_mapping = [
-      'text/tab-separated-values' => ["\t"],
-      'text/csv' => [','],
-      'text/plain' => ["\t", ','],
-    ];
+    
+    $mime_to_delimiter_mapping = self::$mime_to_delimiter_mapping;
 
     // Ensure that the mime type is in our delimiter mapping...
     if (!array_key_exists($mime_type, $mime_to_delimiter_mapping)) {
@@ -249,11 +274,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     }
 
     // Determine the delimiter we should use based on the mime type.
-    // @todo this should be replaced by the getDelimitersForMimeType() method
-    // in the FileType trait.
-    // @todo it has also been mentioned we may want to call getDelimitersForMimeType()
-    // once for the header and reuse it throughout the file.
-    $supported_delimiters = $mime_to_delimiter_mapping[ $mime_type ];
+    $supported_delimiters = self::getFileDelimiters($mime_type);
 
     $delimiter = NULL;
     // If there is only one supported delimiter then we can simply split the row!
@@ -309,5 +330,41 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     }
 
     return $columns;
+  }
+
+  /**
+   * Gets the list of delimiters supported by the input file's mime-type that
+   * was provided to the setter.
+   *
+   * NOTE: This method is static to allow for it to also be used by the static
+   * method splitRowIntoColumns().
+   *
+   * @param string $mime_type
+   *   A string that is the mime-type of the input file.
+   *
+   *   HINT: You can get the mime-type of a file from the 'mime-type' property
+   *   of a file object.
+   *
+   * @return array
+   *   The list of delimiters that are supported by the file mime-type.
+   *
+   * @throws \Exception
+   *   - If mime_type does not exist as a key in the mime_to_delimiter_mapping
+   *     array.
+   */
+  public static function getFileDelimiters(string $mime_type) {
+
+    // Check if mime type is an empty string.
+    if (empty($mime_type)) {
+      throw new \Exception("The getFileDelimiters() getter requires a string of the input file's mime-type and must not be empty.");
+    }
+
+    // Grab the delimiters for this mime-type.
+    if (array_key_exists($mime_type, self::$mime_to_delimiter_mapping)) {
+      return self::$mime_to_delimiter_mapping[$mime_type];
+    }
+    else {
+      throw new \Exception('Cannot retrieve file delimiters for the mime-type provided: ' . $mime_type);
+    }
   }
 }

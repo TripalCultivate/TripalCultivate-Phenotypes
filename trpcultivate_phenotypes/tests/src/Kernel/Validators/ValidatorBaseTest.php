@@ -4,6 +4,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Base functions
@@ -336,6 +337,12 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * DATA PROVIDER: tests the split row by providing mime type to delimiter options.
+   * 
+   * @return array
+   *   Each test scenario is an array with the following values.
+   *
+   *   - Mime type input.
+   *   - Expected delimiter associated to the mime type provided.
    */
   public function provideMimeTypeDelimiters() {
     $sets = [];
@@ -361,7 +368,64 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Data Provider: provide test data (mime types) to file delimiter getter method.
+   * 
+   * @return array
+   *   Each test scenario is an array with the following values.
+   * 
+   *   - A string, human-readable short description of the test scenario.
+   *   - A string, mime type input.
+   *   - Boolean value, indicates if the scenario is expecting an exception thrown (TRUE) or not (FALSE).
+   *   - The expected exception message thrown by the getter method on failed request.
+   *   - The expected delimiter returned.
+   */
+  public function provideMimeTypesForFileDelimiterGetter() {
+    return [
+      [
+        'test empty string mime type input',
+        '',
+        TRUE,
+        'The getFileDelimiters() getter requires a string of the input file\'s mime-type and must not be empty.',
+        FALSE
+      ],
+      [
+        'test tab-separated values mime type (tsv)',
+        'text/tab-separated-values',
+        FALSE,
+        '',
+        ["\t"]
+      ],
+      [
+        'test comma-separated values mime type (csv)',
+        'text/csv',
+        FALSE,
+        '',
+        [',']
+      ],
+      [
+        'test tab-separated values mime type (txt)',
+        'text/plain',
+        FALSE,
+        '',
+        ["\t", ',']
+      ],
+      [
+        'test unsupported mime types (docx)',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        TRUE,
+        'Cannot retrieve file delimiters for the mime-type provided: application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        FALSE
+      ]
+    ];
+  }
+
+  /**
    * Test line or row split method.
+   * 
+   * @param $expected_mime_type
+   *   Mime type input to the split row method.
+   * @param $expected_delimiter
+   *   The delimiter associated to the mime type in the mime type - delimiter mapping array.
    *
    * @dataProvider provideMimeTypeDelimiters
    */
@@ -405,7 +469,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $exception_message = '';
 
     try {
-      $instance->splitRowIntoColumns($str_line, 'text/uncertain');
+      TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($str_line, 'text/uncertain');
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -426,7 +490,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $exception_message = '';
 
     try {
-      $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+      TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($str_line, $expected_mime_type);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -441,8 +505,48 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     // Test that the sanitized line is the same as the split values.
     $delimiter = $expected_delimiter;
     $str_line = implode($delimiter, $raw_line);
-    $values = $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+    $values = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($str_line, $expected_mime_type);
     $this->assertEquals($good_line, $values, 'Line values does not match expected split values.');
+  }
+
+  /**
+   * Test validator base file delimiter getter method.
+   * 
+   * @param $scenario
+   *   Human-readable text description of the test scenario.
+   * @param $mime_type_input
+   *   Mime type input.
+   * @param $has_exception
+   *   Indicates if the test scenario will throw an exception (TRUE) or not (FALSE).
+   * @param $exception_message
+   *   The exception message if the test scenario is expected to throw an exception.
+   * @param $expected
+   *   The returned file delimiter.
+   * 
+   * @dataProvider provideMimeTypesForFileDelimiterGetter
+   */
+  public function testFileDelimiterGetter($scenario, $mime_type_input, $has_exception, $exception_message, $expected) {
+    
+    $exception_caught = FALSE;
+    $exception_get_message = '';
+    $delimiter = FALSE;
+    
+    try {
+      $delimiter = TripalCultivatePhenotypesValidatorBase::getFileDelimiters($mime_type_input);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_get_message = $e->getMessage();
+    }
+    
+    $this->assertEquals($exception_caught, $has_exception, 'An exception was expected by file delimiter getter method for scenario:' . $scenario);
+    $this->assertStringContainsString(
+      $exception_message,
+      $exception_get_message,
+      'The expected exception message thrown by file delimiter getter does not match message thrown for test scenario: ' . $scenario
+    );
+
+    $this->assertEquals($delimiter, $expected, 'Value returned does not match expected value for scenario:' . $scenario);
   }
 
   /**
