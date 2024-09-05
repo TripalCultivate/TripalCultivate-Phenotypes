@@ -70,9 +70,18 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    */
   public function testValidatorBaseCheckIndices() {
 
-    // Create a plugin instance for any validator that uses this function
-    $validator_id = 'value_in_list';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
 
     // Simulates a row within the Trait Importer
     $file_row = [
@@ -84,28 +93,34 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Qualitative'
     ];
 
-    // ERROR CASES
-
-    // Provide an empty array of indices
-    // @TODO: This throws an exception from setIndices() instead of from checkIndices()
-    /**
-    $instance->setIndices([]);
+    // Provide a valid list of indices
+    $indices = [ 0, 1, 2, 3, 4, 5 ];
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row);
+      $instance->checkIndices($file_row, $indices);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+    }
+    $this->assertFalse($exception_caught, 'Caught an exception from checkIndices() in spite of valid indices being provided.');
+
+    // ------------ ERROR CASES ---------------
+    // Provide an empty array of indices
+    $indices = [];
+    $exception_caught = FALSE;
+    try {
+      $instance->checkIndices($file_row, $indices);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in an empty array of indices.');
     $this->assertStringContainsString('An empty indices array was provided.', $e->getMessage(), "Did not get the expected exception message when providing an empty array of indices.");
-    */
 
     // Provide too many indices
-    $instance->setIndices( [0, 1, 2, 3, 4, 5, 6, 7] );
+    $indices = [0, 1, 2, 3, 4, 5, 6, 7];
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row);
+      $instance->checkIndices($file_row, $indices);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
@@ -114,10 +129,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $this->assertStringContainsString('Too many indices were provided (8) compared to the number of cells in the provided row (6)', $e->getMessage(), "Did not get the expected exception message when providing 8 indices compared to 6 values.");
 
     // Provide invalid indices
-    $instance->setIndices( [1, -4, 77] );
+    $indices = [1, -4, 77];
     $exception_caught = FALSE;
     try {
-      $validation_status = $instance->validateRow($file_row);
+      $instance->checkIndices($file_row, $indices);
     }
     catch ( \Exception $e ) {
       $exception_caught = TRUE;
