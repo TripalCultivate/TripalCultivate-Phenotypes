@@ -193,13 +193,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Data Row Level
     // - All data row cells in columns 0,2,4 are not empty
     $instance = $manager->createInstance('empty_cell');
-    $context['indices'] = [
+    $indices = [
       $header_index['Trait Name'],
       $header_index['Method Short Name'],
       $header_index['Unit'],
       $header_index['Type']
     ];
-    $instance->context = $context;
+    $instance->setIndices($indices);
     $validators['data-row']['empty_cell'] = $instance;
 
     // - The column 'Type' is one of "Qualitative" and "Quantitative"
