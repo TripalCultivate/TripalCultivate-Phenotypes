@@ -8,9 +8,13 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ColumnIndices;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\GenusConfigured;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 /**
  * Validate duplicate traits within a file
@@ -24,20 +28,16 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
-   *   An associative array containing the needed context, which is dependant
-   *   on the validator. For example, instead of validating each cell by default,
-   *   a validator may need a list of indices which correspond to the columns in
-   *   the row for which the validator should act on.
-   *
-   *   This validator requires the following keys:
-   *   - genus => a string of the genus name
-   *   - indices => an associative array with the following keys, which are
-   *                column headers of required columns for the Traits Importer:
+   *   This validator requires the following validator traits:
+   *   - GenusConfigured: Gets a string of the configured genus name
+   *   - ColumnIndices => Gets an associative array with the following keys,
+   *       which are column headers of required columns for the Traits Importer:
    *     - 'Trait Name': int, the index of the trait name column in $row_values
    *     - 'Method Short Name': int, the index of the method name column in $row_values
    *     - 'Unit': int, the index of the unit column in $row_values
    */
-  public array $context = [];
+  use ColumnIndices;
+  use GenusConfigured;
 
   /**
    * A nested array of already validated values forming the unique trait name +
@@ -53,17 +53,39 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
   protected $unique_traits = [];
 
   /**
-   * Traits Service
+   * An instance of the Genus Ontology service for use in the methods in this
+   * trait.
+   *
+   * Services should be injected via depenency injection in your validator class
+   * and then assigned to this variable in your constructor.
+   *
+   * @var TripalCultivatePhenotypesGenusOntologyService
    */
-  protected $service_traits;
+  protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology;
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
+   * Traits Service
+   *
+   * @var TripalCultivatePhenotypesTraitsService
+   */
+  protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, TripalCultivatePhenotypesTraitsService $service_traits) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, ChadoConnection $chado_connection, TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology, TripalCultivatePhenotypesTraitsService $service_traits) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
-    $this->service_traits = $service_traits;
+    $this->chado_connection = $chado_connection;
+    $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_PhenoTraits = $service_traits;
   }
 
   /**
@@ -74,6 +96,8 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
       $configuration,
       $plugin_id,
       $plugin_definition,
+      $container->get('tripal_chado.database'),
+      $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.traits')
     );
   }
@@ -93,33 +117,33 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    */
   public function validateRow($row_values) {
 
-    // Set our context which was configured for this validator
-    $context = $this->context;
+    // Grab our indices
+    $indices = $this->getIndices();
 
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem.
     // Typically checkIndices() doesn't take an associative array but
     // because it checks the values not the keys, it will work in this
     // case as well.
-    $this->checkIndices($row_values, $context['indices']);
+    $this->checkIndices($row_values, $indices);
 
     // Grab our trait, method and unit values from the $row_values array
-    // using the indices stored in our $context array
-    // We need to ensure that each array key we expect in $context['indices']
+    // using our configured $indices array
+    // We need to ensure that each array key we expect in $indices
     // exists, otherwise throw an exception
-    if (!isset($context['indices']['Trait Name'])) {
-      throw new \Exception(t('The trait name (key: Trait Name) was not set in the $context[\'indices\'] array'));
+    if (!isset($indices['Trait Name'])) {
+      throw new \Exception('The trait name (key: Trait Name) was not set by setIndices()');
     }
-    if (!isset($context['indices']['Method Short Name'])) {
-       throw new \Exception(t('The method name (key: Method Short Name) was not set in the $context[\'indices\'] array'));
+    if (!isset($indices['Method Short Name'])) {
+      throw new \Exception('The method name (key: Method Short Name) was not set by setIndices()');
     }
-    if (!isset($context['indices']['Unit'])) {
-       throw new \Exception(t('The unit (key: Unit) was not set in the $context[\'indices\'] array'));
+    if (!isset($indices['Unit'])) {
+      throw new \Exception('The unit (key: Unit) was not set by setIndices()');
     }
 
-    $trait = $row_values[$context['indices']['Trait Name']];
-    $method = $row_values[$context['indices']['Method Short Name']];
-    $unit = $row_values[$context['indices']['Unit']];
+    $trait = $row_values[$indices['Trait Name']];
+    $method = $row_values[$indices['Method Short Name']];
+    $unit = $row_values[$indices['Unit']];
 
     // Set our flags for tracking database and input file duplicates
     $duplicate_in_file = FALSE;
@@ -135,10 +159,12 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     }
 
     // Check if our trait combo exists at the database level
-    // First make sure to set our genus before getting our trait combo
-    $this->service_traits->setTraitGenus($context['genus']);
+    // First make sure to get our genus and then set it in our Traits Service
+    // before we can grab our trait combo
+    $genus = $this->getConfiguredGenus();
+    $this->service_PhenoTraits->setTraitGenus($genus);
     // Grab our traits service
-    $trait_combo = $this->service_traits->getTraitMethodUnitCombo($trait, $method, $unit);
+    $trait_combo = $this->service_PhenoTraits->getTraitMethodUnitCombo($trait, $method, $unit);
     if (!empty($trait_combo)) {
       // Duplicate found
       $duplicate_in_db = TRUE;

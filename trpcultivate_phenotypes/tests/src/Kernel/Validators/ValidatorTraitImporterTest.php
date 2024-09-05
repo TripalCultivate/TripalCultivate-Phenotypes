@@ -34,12 +34,23 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
+   * The genus for configuring and testing with our validator
+   *
+   * @var string
+   */
+  protected string $genus = 'Tripalus';
+
+  /**
    * Saves details regarding the config.
+   *
+   * @var array
    */
   protected array $cvdbon;
 
   /**
    * The terms required by this module mapped to the cvterm_ids they are set to.
+   *
+   * @var array
    */
   protected array $terms;
 
@@ -81,22 +92,21 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
-    $genus = 'Tripalus';
     // Create our organism and configure it.
     $organism_id = $this->chado_connection->insert('1:organism')
       ->fields([
-        'genus' => $genus,
+        'genus' => $this->genus,
         'species' => 'databasica',
       ])
       ->execute();
     $this->assertIsNumeric($organism_id,
       "We were not able to create an organism for testing.");
-    $this->cvdbon = $this->setOntologyConfig($genus);
+    $this->cvdbon = $this->setOntologyConfig($this->genus);
     $this->terms = $this->setTermConfig();
 
     // Grab our traits service
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $this->service_traits->setTraitGenus($genus);
+    $this->service_traits->setTraitGenus($this->genus);
   }
 
   /**
@@ -110,8 +120,8 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
-    // Set the genus in the $context array
-    $context['genus'] = 'Tripalus';
+    // Set the genus
+    $instance->setConfiguredGenus($this->genus);
 
     // Simulates a row within the Trait Importer
     $file_row = [
@@ -125,8 +135,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
 
     // Default case: Enter a single row of data
     $expected_status = 'pass';
-    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
-    $instance->context = $context;
+    $instance->setIndices(['Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4]);
     $validation_status = $instance->validateRow($file_row);
     $this->assertEquals($expected_status, $validation_status['status'], "Duplicate Trait validation was expected to pass when provided the first row of values to validate.");
     $unique_traits = $instance->getUniqueTraits();
@@ -138,8 +147,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to fail when passed in a duplicate trait name + method + unit combination.");
 
     // Case #2: Provide an incorrect key to $context['indices']
-    $context['indices'] = [ 'Trait Name' => 0, 'method name' => 2, 'Unit' => 3 ];
-    $instance->context = $context;
+    $instance->setIndices([ 'Trait Name' => 0, 'method name' => 2, 'Unit' => 3 ]);
     $exception_caught = FALSE;
     $exception_message = '';
     try {
@@ -164,8 +172,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     ];
 
     $expected_status = 'pass';
-    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 5 ];
-    $instance->context = $context;
+    $instance->setIndices([ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 5 ]);
     $validation_status = $instance->validateRow($file_row_2);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #2 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
@@ -183,8 +190,7 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     ];
 
     $expected_status = 'pass';
-    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
-    $instance->context = $context;
+    $instance->setIndices([ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ]);
     $validation_status = $instance->validateRow($file_row_3);
     $this->assertEquals($expected_status, $validation_status['status'], "Validation was expected to pass for row #3 which contains a unique trait name + method + unit combination.");
     $unique_traits = $instance->getUniqueTraits();
@@ -203,11 +209,11 @@ class ValidatorTraitImporterTest extends ChadoTestKernelBase {
     $validator_id = 'duplicate_traits';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
-    // Set the genus and indices in the $context array
-    // For this test method, the context array only needs to be set once
-    $context['genus'] = 'Tripalus';
-    $context['indices'] = [ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ];
-    $instance->context = $context;
+    // Set the genus
+    $instance->setConfiguredGenus($this->genus);
+
+    // For this test method, indices only need to be set once
+    $instance->setIndices([ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ]);
 
     // Simulates a row in the input file for the Trait Importer
     // with the column headers as keys

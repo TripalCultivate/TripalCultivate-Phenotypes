@@ -53,7 +53,7 @@ class ValidatorGenusConfigured extends TripalCultivatePhenotypesValidatorBase {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('tripal_chado.databse'),
+      $container->get('tripal_chado.database'),
       $container->get('trpcultivate_phenotypes.genus_ontology')
     );
   }

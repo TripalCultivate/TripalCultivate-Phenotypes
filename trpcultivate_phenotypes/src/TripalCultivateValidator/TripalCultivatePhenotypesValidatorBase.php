@@ -200,7 +200,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     // Report if the indices array is empty
     if (!$indices) {
       throw new \Exception(
-        t('An empty indices array was provided.')
+        'An empty indices array was provided.'
       );
     }
 
@@ -210,7 +210,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     $num_indices = count($indices);
     if($num_indices > $num_values) {
       throw new \Exception(
-        t('Too many indices were provided (@indices) compared to the number of cells in the provided row (@values)', ['@indices' => $num_indices, '@values' => $num_values])
+        'Too many indices were provided ('. $num_indices .') compared to the number of cells in the provided row (' . $num_values .').'
       );
     }
 
@@ -220,7 +220,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     if($result) {
       $invalid_indices = implode(', ', $result);
       throw new \Exception(
-        t('One or more of the indices provided (@invalid) is not valid when compared to the indices of the provided row', ['@invalid' => $invalid_indices])
+        'One or more of the indices provided (' . $invalid_indices . ') is not valid when compared to the indices of the provided row.'
       );
     }
   }
@@ -265,7 +265,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   on a delimiter value.
    */
   public static function splitRowIntoColumns(string $row, string $mime_type) {
-    
+
     $mime_to_delimiter_mapping = self::$mime_to_delimiter_mapping;
 
     // Ensure that the mime type is in our delimiter mapping...
