@@ -204,14 +204,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // - The column 'Type' is one of "Qualitative" and "Quantitative"
     $instance = $manager->createInstance('value_in_list');
-    $context['indices'] = [
-      $header_index['Type']
-    ];
-    $context['valid_values'] = [
+    $instance->setIndices([$header_index['Type']]);
+    $instance->setValidValues([
       'Quantitative',
       'Qualitative'
-    ];
-    $instance->context = $context;
+    ]);
     $validators['data-row']['valid_data_type'] = $instance;
 
     // - The combination of Trait Name, Method Short Name and Unit is unique

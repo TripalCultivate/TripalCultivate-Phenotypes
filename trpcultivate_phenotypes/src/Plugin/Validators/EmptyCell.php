@@ -26,7 +26,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
   /**
    * This validator requires the following traits:
    * - ColumnIndices: Gets an array of indices corresponding to the cells in
-   *   $row_values to act on.
+   *     $row_values to act on.
    */
   use ColumnIndices;
 

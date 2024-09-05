@@ -8,6 +8,8 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ColumnIndices;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ValidValues;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -24,17 +26,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class ValueInList extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
-   *   An associative array containing the needed context, which is dependant
-   *   on the validator. For example, instead of validating each cell by default,
-   *   a validator may need a list of indices which correspond to the columns in
-   *   the row for which the validator should act on.
-   *
-   *   This validator requires the following keys:
-   *   - indices => an array of indices corresponding to the cells in $row_values to act on
-   *   - valid_values => an array of values that are allowed within the cell(s) located
-   *     at the indices specified in $context['indices']
+   *   This validator requires the following validator traits:
+   *   - ColumnIndices: Gets an array of indices corresponding to the cells in
+   *       $row_values to act on.
+   *   - ValidValues: Gets an array of values that are allowed within the cell(s)
+   *       located at the indices in getIndices().
    */
-  public array $context = [];
+  use ColumnIndices;
+  use ValidValues;
 
   /**
    * Constructor.
@@ -69,12 +68,15 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
    */
   public function validateRow($row_values) {
 
-    // Set our context which was configured for this validator
-    $context = $this->context;
+    // Grab our indices
+    $indices = $this->getIndices();
+
+    // Grab our valid values
+    $valid_values = $this->getValidValues();
 
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem
-    $this->checkIndices($row_values, $context['indices']);
+    $this->checkIndices($row_values, $indices);
 
     $valid = TRUE;
     $failed_indices = [];
@@ -84,15 +86,15 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
     $wrong_case = FALSE;
     // Convert our array of valid values to lower case for case insensitive
     // comparison
-    $valid_values_lwr = array_map('strtolower', $context['valid_values']);
+    $valid_values_lwr = array_map('strtolower', $valid_values);
 
     // Iterate through our array of row values
     foreach($row_values as $index => $cell) {
       // Only validate the values in which their index is also within our
       // context array of indices
-      if (in_array($index, $context['indices'])) {
+      if (in_array($index, $indices)) {
         // Check if our cell value is within the valid_values array
-        if (!in_array($cell, $context['valid_values'])) {
+        if (!in_array($cell, $valid_values)) {
           if (in_array(strtolower($cell), $valid_values_lwr)) {
             // We technically have a match, but the case doesn't match the valid value
             $wrong_case = TRUE;
@@ -114,12 +116,12 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
         $validator_status['title'] .= ' with >=1 case insensitive match';
       }
     } else {
-      $passed_list = implode(', ', $context['indices']);
-      $valid_values = implode(', ', $context['valid_values']);
+      $passed_list = implode(', ', $indices);
+      $values = implode(', ', $valid_values);
       $validator_status = [
         'title' => 'Values in required column(s) were valid',
         'status' => 'pass',
-        'details' => 'Value at index ' . $passed_list . ' was one of: ' . $valid_values . '.'
+        'details' => 'Value at index ' . $passed_list . ' was one of: ' . $values . '.'
       ];
     }
     return $validator_status;
