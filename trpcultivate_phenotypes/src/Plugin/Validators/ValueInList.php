@@ -71,12 +71,12 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
     // Grab our indices
     $indices = $this->getIndices();
 
-    // Grab our valid values
-    $valid_values = $this->getValidValues();
-
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem
     $this->checkIndices($row_values, $indices);
+
+    // Grab our valid values
+    $valid_values = $this->getValidValues();
 
     $valid = TRUE;
     $failed_indices = [];

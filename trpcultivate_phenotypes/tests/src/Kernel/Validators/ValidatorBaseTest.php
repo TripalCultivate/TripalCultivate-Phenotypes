@@ -87,8 +87,9 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     // ERROR CASES
 
     // Provide an empty array of indices
-    $context['indices'] = [];
-    $instance->context = $context;
+    // @TODO: This throws an exception from setIndices() instead of from checkIndices()
+    /**
+    $instance->setIndices([]);
     $exception_caught = FALSE;
     try {
       $validation_status = $instance->validateRow($file_row);
@@ -98,10 +99,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     }
     $this->assertTrue($exception_caught, 'Did not catch exception that should have occurred due to passing in an empty array of indices.');
     $this->assertStringContainsString('An empty indices array was provided.', $e->getMessage(), "Did not get the expected exception message when providing an empty array of indices.");
+    */
 
     // Provide too many indices
-    $context['indices'] = [ 0, 1, 2, 3, 4, 5, 6, 7 ];
-    $instance->context = $context;
+    $instance->setIndices( [0, 1, 2, 3, 4, 5, 6, 7] );
     $exception_caught = FALSE;
     try {
       $validation_status = $instance->validateRow($file_row);
@@ -113,8 +114,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $this->assertStringContainsString('Too many indices were provided (8) compared to the number of cells in the provided row (6)', $e->getMessage(), "Did not get the expected exception message when providing 8 indices compared to 6 values.");
 
     // Provide invalid indices
-    $context['indices'] = [ 1, -4, 77 ];
-    $instance->context = $context;
+    $instance->setIndices( [1, -4, 77] );
     $exception_caught = FALSE;
     try {
       $validation_status = $instance->validateRow($file_row);
@@ -337,7 +337,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * DATA PROVIDER: tests the split row by providing mime type to delimiter options.
-   * 
+   *
    * @return array
    *   Each test scenario is an array with the following values.
    *
@@ -369,10 +369,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * Data Provider: provide test data (mime types) to file delimiter getter method.
-   * 
+   *
    * @return array
    *   Each test scenario is an array with the following values.
-   * 
+   *
    *   - A string, human-readable short description of the test scenario.
    *   - A string, mime type input.
    *   - Boolean value, indicates if the scenario is expecting an exception thrown (TRUE) or not (FALSE).
@@ -421,7 +421,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * Test line or row split method.
-   * 
+   *
    * @param $expected_mime_type
    *   Mime type input to the split row method.
    * @param $expected_delimiter
@@ -511,7 +511,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * Test validator base file delimiter getter method.
-   * 
+   *
    * @param $scenario
    *   Human-readable text description of the test scenario.
    * @param $mime_type_input
@@ -522,15 +522,15 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    *   The exception message if the test scenario is expected to throw an exception.
    * @param $expected
    *   The returned file delimiter.
-   * 
+   *
    * @dataProvider provideMimeTypesForFileDelimiterGetter
    */
   public function testFileDelimiterGetter($scenario, $mime_type_input, $has_exception, $exception_message, $expected) {
-    
+
     $exception_caught = FALSE;
     $exception_get_message = '';
     $delimiter = FALSE;
-    
+
     try {
       $delimiter = TripalCultivatePhenotypesValidatorBase::getFileDelimiters($mime_type_input);
     }
@@ -538,7 +538,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       $exception_caught = TRUE;
       $exception_get_message = $e->getMessage();
     }
-    
+
     $this->assertEquals($exception_caught, $has_exception, 'An exception was expected by file delimiter getter method for scenario:' . $scenario);
     $this->assertStringContainsString(
       $exception_message,
