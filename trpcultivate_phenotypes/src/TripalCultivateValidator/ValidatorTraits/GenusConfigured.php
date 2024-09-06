@@ -59,7 +59,10 @@ trait GenusConfigured {
       ->condition('o.genus', $genus);
     $exists = $query->execute()->fetchObject();
     if (!is_object($exists)) {
-      throw new \Exception("The genus '$genus' does not exist in chado and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
+      // Since this is a user-provided value, the error is going to be logged
+      // instead of thrown as an exception and then checked by a validator so
+      // that the error can be passed to the user in a friendly way.
+      $this->logger->error("The genus '$genus' does not exist in chado and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
     } else {
       $genus_exists = TRUE;
     }

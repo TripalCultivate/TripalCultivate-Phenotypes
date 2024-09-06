@@ -158,22 +158,14 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
 
     // Check a NOT EXISTENT genus in a well setup validator.
     $genus = uniqid();
-    $expected_message = "genus '$genus' does not exist in chado";
-    $exception_caught = FALSE;
-    $exception_message = 'NONE';
-    try {
-      $this->instance->setConfiguredGenus($genus);
-    } catch (\Exception $e) {
-      $exception_caught = TRUE;
-      $exception_message = $e->getMessage();
-    }
-    $this->assertTrue(
-      $exception_caught,
-      "Calling setConfiguredGenus() with genus that is not in chado should have thrown an exception but didn't."
-    );
+    $printed_output = '';
+    $expected_message = "The genus '$genus' does not exist in chado";
+    ob_start();
+    $this->instance->setConfiguredGenus($genus);
+    $printed_output = ob_get_clean();
     $this->assertStringContainsString(
       $expected_message,
-      $exception_message,
+      $printed_output,
       "The exception thrown does not have the message we expected for a genus that doesn't even exist in chado."
     );
 
