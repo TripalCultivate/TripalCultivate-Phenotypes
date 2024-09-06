@@ -166,7 +166,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       $expected_message,
       $printed_output,
-      "The exception thrown does not have the message we expected for a genus that doesn't even exist in chado."
+      "The logged error message does not have the message we expected for a genus that doesn't even exist in chado."
     );
 
     // Check that a genus has NOT been set by using getConfguredGenus()
@@ -218,7 +218,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       $expected_message,
       $printed_output,
-      "The exception thrown does not have the message we expected for a genus existing in chado that is not configured."
+      "The logged error message does not have the message we expected for a genus existing in chado that is not configured."
     );
 
     // Check that a genus still has NOT been set by using getConfguredGenus()
