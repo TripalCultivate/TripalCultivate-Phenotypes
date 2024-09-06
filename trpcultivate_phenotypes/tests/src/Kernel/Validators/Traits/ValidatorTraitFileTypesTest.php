@@ -60,6 +60,23 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       $plugin_definition
     );
 
+    // We need to mock the logger to test the progress reporting.
+    $mock_logger = $this->getMockBuilder(\Drupal\tripal\Services\TripalLogger::class)
+      ->onlyMethods(['notice', 'error'])
+      ->getMock();
+    $mock_logger->method('notice')
+    ->willReturnCallback(function ($message, $context, $options) {
+      print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    $mock_logger->method('error')
+    ->willReturnCallback(function ($message, $context, $options) {
+      print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    // Finally, use setLogger() for this validator instance
+    $instance->setLogger($mock_logger);
+
     $this->assertIsObject(
       $instance,
       "Unable to create $validator_id validator instance to test the File Types trait."
@@ -323,27 +340,45 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     $scenarios[] = [
       'empty string', // scenario label
       '', // mime-type
-      [ // expected exception thrown
-        'setFileMimeType' => TRUE,
-        'getFileMimeType' => TRUE,
-      ],
-      [ // expected exception message
-        'setFileMimeType' => "The setFileMimeType() setter requires a string of the input file's mime-type and must not be empty.",
-        'getFileMimeType' => $get_type_exception_message,
+      [
+        'returned_values' => [
+          'mime-type' => '',
+        ],
+        'exception_thrown' => [ // expected exception thrown
+          'setFileMimeType' => TRUE,
+          'getFileMimeType' => TRUE,
+        ],
+        'exception_message' => [ // expected exception message
+          'setFileMimeType' => "The setFileMimeType() setter requires a string of the input file's mime-type and must not be empty.",
+          'getFileMimeType' => $get_type_exception_message,
+        ],
+        'logged_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
       ]
     ];
 
     // #1: Test with the mime-type for tsv files
     $scenarios[] = [
       'tsv mime-type',
-      'text/tab-delimited-values',
+      'text/tab-separated-values',
       [
-        'setFileMimeType' => FALSE,
-        'getFileMimeType' => FALSE,
-      ],
-      [
-        'setFileMimeType' => '',
-        'getFileMimeType' => '',
+        'returned_values' => [
+          'mime-type' => 'text/tab-separated-values',
+        ],
+        'exception_thrown' => [
+          'setFileMimeType' => FALSE,
+          'getFileMimeType' => FALSE,
+        ],
+        'exception_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
+        'logged_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
       ]
     ];
 
@@ -352,12 +387,21 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       'csv mime-type',
       'text/csv',
       [
-        'setFileMimeType' => FALSE,
-        'getFileMimeType' => FALSE,
-      ],
-      [
-        'setFileMimeType' => '',
-        'getFileMimeType' => '',
+        'returned_values' => [
+          'mime-type' => 'text/csv',
+        ],
+        'exception_thrown' => [
+          'setFileMimeType' => FALSE,
+          'getFileMimeType' => FALSE,
+        ],
+        'exception_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
+        'logged_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
       ]
     ];
 
@@ -366,12 +410,21 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       'txt mime-type',
       'text/plain',
       [
-        'setFileMimeType' => FALSE,
-        'getFileMimeType' => FALSE,
-      ],
-      [
-        'setFileMimeType' => '',
-        'getFileMimeType' => '',
+        'returned_values' => [
+          'mime-type' => 'text/plain',
+        ],
+        'exception_thrown' => [
+          'setFileMimeType' => FALSE,
+          'getFileMimeType' => FALSE,
+        ],
+        'exception_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
+        'logged_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => '',
+        ],
       ]
     ];
 
@@ -380,12 +433,21 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       'random string',
       'hello world',
       [
-        'setFileMimeType' => FALSE,
-        'getFileMimeType' => FALSE,
-      ],
-      [
-        'setFileMimeType' => '',
-        'getFileMimeType' => '',
+        'returned_values' => [
+          'mime-type' => '',
+        ],
+        'exception_thrown' => [
+          'setFileMimeType' => FALSE,
+          'getFileMimeType' => TRUE,
+        ],
+        'exception_message' => [
+          'setFileMimeType' => '',
+          'getFileMimeType' => 'Cannot retrieve the input file mime-type as it has not been set by setFileMimeType() method.',
+        ],
+        'logged_message' => [
+          'setFileMimeType' => "The setFileMimeType() setter requires a supported mime-type but 'hello world' is unsupported.",
+          'getFileMimeType' => '',
+        ],
       ]
     ];
 
@@ -569,7 +631,7 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    *
    * @return void
    */
-  public function testFileMimeType($scenario, $mime_type, $expected_exception_thrown, $expected_exception_message) {
+  public function testFileMimeType($scenario, $mime_type, $expectations) {
 
     // This exception message is expected when we intially call the getter
     // method for every scenario
@@ -599,21 +661,30 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
     // --------------------------------------------------------------------------
     $exception_caught = FALSE;
     $exception_message = '';
+    $printed_output = '';
     try {
+      ob_start();
       $this->instance->setFileMimeType($mime_type);
+      $printed_output = ob_get_contents();
     } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
+    ob_end_clean();
     $this->assertEquals(
-      $expected_exception_thrown['setFileMimeType'],
+      $expectations['exception_thrown']['setFileMimeType'],
       $exception_caught,
       "Unexpected exception activity occured for scenario: '" . $scenario . "'"
     );
     $this->assertEquals(
-      $expected_exception_message['setFileMimeType'],
+      $expectations['exception_message']['setFileMimeType'],
       $exception_message,
       "The expected and actual exception messages do not match when using FileTypes::setFileMimeType() for scenario: '" . $scenario . "'"
+    );
+    $this->assertEquals(
+      $expectations['logged_message']['setFileMimeType'],
+      $printed_output,
+      "The expected and actual logged messages do not match when using FileTypes::setFileMimeType() for scenario: '" . $scenario . "'"
     );
 
     // scenario: Check getFileMimeType() returns expected mime-type after
@@ -629,18 +700,18 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
       $exception_message = $e->getMessage();
     }
     $this->assertEquals(
-      $expected_exception_thrown['getFileMimeType'],
+      $expectations['exception_thrown']['getFileMimeType'],
       $exception_caught,
-      "Unexpected exception activity occured when trying to get file mime-type for scenario: '" . $scenario . "'"
+      "Unexpected exception activity occured when trying to get file mime-type for scenario: '" . $scenario . "'. Exception message: '" . $exception_message . "'."
     );
     $this->assertEquals(
-      $expected_exception_message['getFileMimeType'],
+      $expectations['exception_message']['getFileMimeType'],
       $exception_message,
       "The expected and actual exception messages do not match when calling FileTypes::getFileMimeType() for scenario: '" . $scenario . "'"
     );
     // Finally, check that our retrieved mime-type matches our expected
     $this->assertEquals(
-      $mime_type,
+      $expectations['returned_values']['mime-type'],
       $actual_type,
       "The expected mime-type using FileTypes::getFileMimeType() did not match the actual ones for scenario: '" . $scenario . "'"
     );
