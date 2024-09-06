@@ -3,6 +3,7 @@
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator;
 
 use Drupal\Component\Plugin\PluginBase;
+use Drupal\tripal\Services\TripalLogger;
 
 abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
 
@@ -265,7 +266,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   on a delimiter value.
    */
   public static function splitRowIntoColumns(string $row, string $mime_type) {
-    
+
     $mime_to_delimiter_mapping = self::$mime_to_delimiter_mapping;
 
     // Ensure that the mime type is in our delimiter mapping...
@@ -366,5 +367,45 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
     else {
       throw new \Exception('Cannot retrieve file delimiters for the mime-type provided: ' . $mime_type);
     }
+  }
+
+  /**
+   * The TripalLogger service used to report status and errors to both site users
+   * and administrators through the server log.
+   *
+   * @var TripalLogger
+   */
+  public TripalLogger $logger;
+
+  /**
+   * Sets the TripalLogger instance for the importer using this validator.
+   *
+   * @param TripalLogger $logger
+   *   The TripalLogger instance. In the case of validation done on the form
+   *   the job will not be set but in the case of any validation done in the
+   *   import run job, the job will be set.
+   */
+  public function setLogger(TripalLogger $logger) {
+    $this->logger = $logger;
+  }
+
+  /**
+   * Provides a configured TripalLogger instance for reporting things to
+   * site maintainers.
+   *
+   * @return TripalLogger
+   *   An instance of the Tripal logger.
+   *
+   * @throws \Exception
+   *   If the $logger property has not been set by the setLogger() method.
+   */
+  public function getLogger() {
+    if(!empty($this->logger)) {
+      return $this->logger;
+    }
+    else {
+      throw new \Exception('Cannot retrieve the Tripal Logger property as one has not been set for this validator using the setLogger() method.');
+    }
+
   }
 }
