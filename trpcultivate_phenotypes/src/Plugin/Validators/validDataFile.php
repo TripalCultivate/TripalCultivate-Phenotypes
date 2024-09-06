@@ -109,7 +109,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       $file_id = $fid;
       $file_object = File::load($file_id);
 
-      $input_key = 'filename';
+      $input_key = 'file_id';
     }
     else {
       // The file input is a string value, a path to the file.
@@ -127,7 +127,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         $file_object = File::load($file_id);
       }
 
-      $input_key = 'file_id';
+      $input_key = 'filename';
     }
 
     // Validate.

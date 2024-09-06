@@ -22,23 +22,19 @@ class DataFileInputTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
-   * Array of test file input. Each element is keyed by short description and the value 
+   * Array input test file. Each element is keyed by short description and the value 
    * is an array with the following keys:
-   *  - fid: file id number.
-   *  - uri: file uri.
-   * 
-   * Test file created are managed by Drupal file system.
+   *  - ext: file extension.
+   *  - mime: MIME type.
+   *  - content: file content to write into the file.
+   *  - filesize: file size.
+   *  - file: a file in the test fixtures directory to use.
+   *  - file_id: file id number.
+   *  - file_uri: file uri.
    * 
    * @var array
    */
   protected $test_files;
-
-  /**
-   * Holds a uri of a test file that is not managed by Drupal file system.
-   * 
-   * @var string
-   */
-  protected $test_unmanaged_file;
 
   /**
    * An instance of the data file validator.
@@ -68,13 +64,14 @@ class DataFileInputTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Create a plugin instance for this validator
+    $validator_id = 'trpcultivate_phenotypes_validator_valid_data_file';
     $this->validator_instance = \Drupal::service('plugin.manager.trpcultivate_validator')
-      ->createInstance('trpcultivate_phenotypes_validator_valid_data_file');
+      ->createInstance($validator_id);
 
     // Create test files.
     $this->installEntitySchema('file');
     
-    $create_test_files = [
+    $test_file_scenario = [
       // A valid file type, default type expected by the importer.
       'file-valid' => [
         'ext' => 'tsv',
@@ -87,7 +84,7 @@ class DataFileInputTest extends ChadoTestKernelBase {
         'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
         'content' => '',
-        'filesize' => 0
+        'filesize' => 0,
       ],
       
       // An alternative file type.
@@ -97,7 +94,7 @@ class DataFileInputTest extends ChadoTestKernelBase {
         'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
       ],
       
-      // Not valid file
+      // Not valid file.
       'file-image' => [
         'ext' => 'png',
         'mime' => 'image/png',
@@ -109,71 +106,87 @@ class DataFileInputTest extends ChadoTestKernelBase {
       'file-pretend' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        'file' => 'pdf.txt', // Can be found in the test Fixtures folder.
+        'file' => 'pdf.txt' // Can be found in the test Fixtures folder.
       ],
     ];
     
-    // Filename string used to prefix the test file filename.
-    $test_file_base_filename = 'test_data_file_';
-    // Destination directory of the test file generated.
-    $dir_public = 'public://';
+    // Array to hold the file id and file uri of the generated files
+    // that will be used as parameters to the validator.
+    $test_file_param = [];
 
-    // Create and save each test file.
-    foreach($create_test_files as $test_file_description => $prop) {
-      $filename = $test_file_base_filename . $test_file_description . '.' . $prop['ext'];
+    // Create the file for each test file scenario.
+    foreach($test_file_scenario as $test_scenario => $file_properties) {
+      $filename = 'test_data_file_' . $test_scenario . '.' . $file_properties['ext'];
 
       $file = File::create([
         'filename' => $filename,
-        'filemime' => $prop['mime'],
-        'uri' => $dir_public . $filename,
-        'status' => 0,
+        'filemime' => $file_properties['mime'],
+        'uri' => 'public://' . $filename,
+        'status' => 0
       ]);
-
-      if (isset($prop['filesize'])) {
-        // This is an empty file and to ensure the size is as expected of an empty file = 0Kb;
-        $file->setSize(0);
-      }
-
-      $file->save();
       
-      // Append the test file element with the file id and file uri.
-      $create_test_files[ $test_file_description ]['file_id'] = $file->id();
-      // File uri.
-      $fileuri = $file->getFileUri();
-      $create_test_files[ $test_file_description ]['file_uri'] = $fileuri;
+      $file_uri = $file->getFileUri();
+      $file_id  = $file->id();
 
-      // Write the string value set in the test file content key into the created file.
-      if (!empty($prop['content'])) {
-        file_put_contents($fileuri, $prop['content']);
+      // Update test scenario file properties.
+      
+      // Set the file size.
+      if (isset($file_properties['filesize'])) {
+        $file->setSize($file_properties['filesize']);
+      }
+      
+      // Write contents into the file.
+      if (!empty($file_properties['content'])) {
+        file_put_contents($file_uri, $file_properties['content']);
       }
 
-      // If an existing file was specified, move the file fixture into the uri to override
-      // the created file.
-      if (!empty($prop['file'])) {
+      // If an existing file was specified, move the file fixture into the uri 
+      // to override the created file and use it in lieu of the created file.
+      if (!empty($file_properties['file'])) {
         $path_to_fixtures = __DIR__ . '/../../Fixtures/';
-        $full_path = $path_to_fixtures . $prop['file'];
+        $full_path = $path_to_fixtures . $file_properties['file'];
         $this->assertFileIsReadable($full_path,
-          "Unable to setup FILE ". $test_file_description . " because cannot access Fixture file at $full_path.");
+          "Unable to setup FILE ". $test_scenario . " because cannot access Fixture file at $full_path.");
 
-        copy($full_path, $fileuri);
+        copy($full_path, $file_uri);
       }
-
-      // Set file permissions if needed.
-      if (!empty($prop['permissions'])) {
-        if ($prop['permissions'] == 'none') {
-          chmod($fileuri, 0000);
-        }
-      }
-
-      // Make a copy of the file-valid test file and make it unmanaged by Drupal File System.
-      if ($test_file_description == 'file-valid') {
-        $this->test_unmanaged_file = str_replace($test_file_base_filename, $test_file_base_filename . 'unmanaged_', $fileuri); 
-        copy($create_test_files['file-valid']['file_uri'], $this->test_unmanaged_file);
-      }
+      
+      // Save file id and file uri.
+      $test_file_param[ $test_scenario ] = [
+        'file_id' => $file_id,
+        'file_uri' => $file_uri
+      ];
     }
+    
+    
+    // Create an unmanaged file copy of the valid test file scenario 
+    // to use as input for validating a file without a file id (unmanaged file).
+    $file_valid_uri = $test_file_param['file-valid']['file_uri'];
+    $file_unmanaged_uri = str_replace('test_data_file', 'unmanaged_test_data_file', $file_valid_uri);
+    
+    $test_file_param['file-unmanaged'] = [
+      'file_id' => 0,
+      'file_uri' => $file_unmanaged_uri
+    ];
+    
+    // Move a copy of the file and rename it using the new filename.
+    copy($file_valid_uri, $file_unmanaged_uri);
+    
 
-    // Reference the updated test file array for use by the test methods.
-    $this->test_files = $create_test_files;
+    // Create test scenario for invalid parameters.
+    $test_file_param['invalid-parameters'] = [
+      'file_id' => 0,
+      'file_uri' => '...C:nodir/Users/Tripal/data-file.tsv/nodir'
+    ];
+    
+    // Create test scenario for non-existent file.
+    $test_file_param['non-existent'] = [
+      'file_id' => 999,
+      'file_uri' => 'public://non-existent.tsv'
+    ];
+
+    // Set the property to all test file scenario.
+    $this->test_files = $test_file_param;
   }
 
   /**
@@ -183,51 +196,69 @@ class DataFileInputTest extends ChadoTestKernelBase {
    *   Each scenario/element is an array with the following values.
    *   
    *   - A string, human-readable short description of the test scenario.
-   *   - A string, filename.
-   *   - Drupal file id number or NULL.
-   *   - Expected validation response.
+   *   - Test scenario array key set in the $test_files property.
+   *   - Expected validation response for using either parameters.
+   *    - filename: using filename (first parameter).
+   *    - fid: using fid (file id, second parameter).
    */
   public function provideFileForDataFileValidator() {
-    print_r($this->test_files);
-    
+        
     return [
-      // #0: Test invalid/non-existent file path as filename input.
+      // #0: Test invalid/non-existent file path as filename input and invalid fid of 0.
       [
-        'invalid filename',
-        '...C:nodir/Users/Tripal/data-file.tsv/nodir',
-        NULL,
+        'invalid parameters',
+        'invalid-parameters',
         [
-          'case' => 'File path does not exist',
-          'valid' => FALSE,
-          'failedItems' => ['filename' => '...C:nodir/Users/Tripal/data-file.tsv/nodir']
+          'filename' => [
+            'case' => 'File path does not exist',
+            'valid' => FALSE,
+            'failedItems' => ['filename' => '...C:nodir/Users/Tripal/data-file.tsv/nodir']
+          ],
+          'fid' => [
+            'case' => 'Invalid file id number',
+            'valid' => FALSE,
+            'failedItems' => ['file_id' => 0]
+          ]
+        ]
+      ],
+
+      // #2: Test non-existent file.
+      [
+        'file does not exist',
+        'non-existent',
+        [
+          'filename' => [
+            'case' => 'File path does not exist',
+            'valid' => FALSE,
+            'failedItems' => ['filename' => 'public://non-existent.tsv']
+          ],
+          'fid' => [
+            'case' => 'Filename or file id failed to load a file object',
+            'valid' => FALSE,
+            'failedItems' => ['file_id' => 999]
+          ]
+        ]
+      ],
+
+      // #3: Test unmanaged file.
+      [
+        'unmanaged file',
+        'file-unmanaged',
+        [
+          'filename' => [
+            'case' => 'Filename or file id failed to load a file object',
+            'valid' => FALSE,
+            'failedItems' => ['filename' => 'public://unmanaged_test_data_file_file-valid.tsv']
+          ],
+          'fid' => [
+            'case' => 'Invalid file id number',
+            'valid' => FALSE,
+            'failedItems' => ['file_id' => 0]
+          ]
         ]
       ],
       
-      // #1: Test file id number 0 as fid input.
-      [
-        'invalid file id number',
-        '',
-        0,
-        [
-          'case' => 'Invalid file id number',
-          'valid' => FALSE,
-          'failedItems' => ['file_id' => 0]
-        ]
-      ],
-
-      // #2: Test file that cannot be loaded (unmanaged file or file without file id) using
-      // filename as file input.
-      [
-        'cannot load file using filename',
-        $this->test_unmanaged_file,
-        NULL,
-        [
-          'case' => 'Filename or file id failed to load a file object',
-          'valid' => FALSE,
-          'failedItems' => ['filename' => $this->test_unmanaged_file]
-        ]
-      ],
-
+      // #4: Test an empty file.
     ];
   }
 
@@ -236,226 +267,19 @@ class DataFileInputTest extends ChadoTestKernelBase {
    * 
    * @dataProvider provideFileForDataFileValidator
    */
-  public function testDataFileInput($scenario, $filename_input, $file_id_input, $expected) {
-
-    $validation_status = $this->validator_instance->validateFile($filename_input, $file_id_input);
+  public function testDataFileInput($scenario, $test_file_key, $expected) {
+    $file_input = $this->test_files[ $test_file_key ];
     
-    // Test that each entry in the validation status report
-    // matches the expected values.
+    // Test file scenario using the file uri as parameter to filename (first parameter).
+    $validation_status = $this->validator_instance->validateFile($file_input['file_uri'], NULL);
     foreach($validation_status as $key => $value) {
-      $this->assertEquals($value, $expected[ $key ], 'The validation status - ' . $key . ', does not match expected status - ' . $key . ' for scenario: ' . $scenario);    
-    }
- }
-
-
-
-
-
-
-
-
-
-  /**
-   * Validate file for tab separated content.
-   */
-  /*
-  public function testTsvDataFileInput() {
-    // @TODO: update validateRow() parameter - the second parameter has been
-    // marked deprecated.
-
-    // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_valid_tsv_data_file';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+      $this->assertEquals($value, $expected['filename'][ $key ], 'The validation status using parameter filename, does not match expected status for parameter filename in scenario: ' . $scenario);
+    } 
     
-    // Test a valid tsv header row but the number of items does not
-    // match expected number of items.
-    $row_values = implode("\t", ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5']);
-    $validation_status = $instance->validateRow($row_values, []);
-
-    $this->assertEquals('Data file header row is not a tab-separated values', $validation_status['case'],
-      'TSV File validator case title does not match expected title for failed tsv row check.');
-    $this->assertFalse($validation_status['valid'], 'A failed file header row must return a FALSE valid status.');
-    $this->assertStringContainsString($row_values, $validation_status['failedItems'], 'Failed header row value is expected in failed items.');
-
-    // Test an invalid string (not a tsv).
-    $row_values = implode(',', ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6', 'Header 7']);
-    $validation_status = $instance->validateRow($row_values, []);
-
-    $this->assertEquals('Data file header row is not a tab-separated values', $validation_status['case'],
-      'TSV File validator case title does not match expected title for failed tsv row check.');
-    $this->assertFalse($validation_status['valid'], 'A failed file header row must return a FALSE valid status.');
-    $this->assertStringContainsString($row_values, $validation_status['failedItems'], 'Failed header row value is expected in failed items.');
-
-    // Valid header row.
-    $row_values = implode("\t", ['Header 1', 'Header 2', 'Header 3', 'Header 4', 'Header 5', 'Header 6', 'Header 7']);
-    $validation_status = $instance->validateRow($row_values, []);
-
-    $this->assertEquals('Data file content is valid tab-separated values (tsv)', $validation_status['case'],
-      'TSV File validator case title does not match expected title for valid tsv row check.');
-    $this->assertTrue($validation_status['valid'], 'A valid file header row must return a TRUE valid status.');
-    $this->assertEmpty($validation_status['failedItems'], 'A valid file header row does not return a failed item value.');
+    // Test file scenario using the file id as parameter to fid (second parameter).
+    $validation_status = $this->validator_instance->validateFile('', $file_input['file_id']);
+    foreach($validation_status as $key => $value) {
+      $this->assertEquals($value, $expected['fid'][ $key ], 'The validation status using parameter fid, does not match expected status for parameter fid in scenario: ' . $scenario);
+    }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Test items that will throw exception:
-    // 1. Passing an invalid file path
-    // 2. File id is 0
-    
-    // Invalid path.
-    $invalid_file_path = '...C:nodir/Users/Tripal/data-file.tsv/nodir';
-    
-    $exception_caught  = FALSE;
-    $exception_message = ''; 
-    try {
-      $instance->validateFile($invalid_file_path, NULL);
-    }
-    catch (\Exception $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-    
-    $this->assertTrue($exception_caught, 'Failed to catch exception when passing invalid file path to data file validator.');
-    $this->assertStringContainsString('File path provided is not a valid path', $exception_message, 
-      'Expected exception message does not match message when passing invalid file path to data file validator.');
-
-    
-    // Invalid file id.
-    $invalid_file_id = 0;
-    
-    $exception_caught  = FALSE;
-    $exception_message = ''; 
-    try {
-      $instance->validateFile('', $invalid_file_id);
-    }
-    catch (\Exception $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-    
-    $this->assertTrue($exception_caught, 'Failed to catch exception when passing invalid file id to data file validator.');
-    $this->assertStringContainsString('Drupal File System Id Number cannot be 0 or negative values', $exception_message, 
-      'Expected exception message does not match message when passing invalid file id to data file validator.');
-
-    
-    // Other tests:
-    // Each test will test that validateFile generated the correct case, valid status and failed item.
-    // Failed item is the failed file path or file id value. Failed information is contained in the case.
-
-    // Cannot load filename - unmanaged file (without filed id).
-    $filename = $this->test_unmanaged_file;
-    $validation_status = $instance->validateFile($filename, NULL);
-    
-    $this->assertEquals('Filename or file id failed to load a file object', $validation_status['case'],
-      'File validator case title does not match expected title for unmanaged file.');
-    $this->assertFalse($validation_status['valid'], 'A failed file must return a FALSE valid status.');
-    $this->assertStringContainsString($filename, $validation_status['failedItems'], 'Failed file value is expected in failed items.');
-    
-    // Cannot load a non-existent file id.
-    $file_id = 999;
-    $validation_status = $instance->validateFile('', $file_id);
-    
-    $this->assertEquals('Filename or file id failed to load a file object', $validation_status['case'],
-      'File validator case title does not match expected title for unmanaged file.');
-    $this->assertFalse($validation_status['valid'], 'A failed file must return a FALSE valid status.');
-    $this->assertStringContainsString($file_id, $validation_status['failedItems'], 'Failed file value is expected in failed items.');
-
-
-    // Test for both cases where the parameter is file uri and file id.
-    $parameter = ['is_uri', 'is_id'];
-
-    foreach($parameter as $p) {
-      // An empty file.
-      if ($p == 'is_uri') {
-        $param = $this->test_files['file-empty']['URI'];
-        $validation_status = $instance->validateFile($param, NULL);
-      }
-      else {
-        $param = $this->test_files['file-empty']['ID'];
-        $validation_status = $instance->validateFile('', $param);
-      }
-
-      $this->assertEquals('The file uploaded has no data and is an empty file', $validation_status['case'],
-        'File validator case title does not match expected title for empty file.');
-      $this->assertFalse($validation_status['valid'], 'A failed file must return a FALSE valid status.');
-      $this->assertStringContainsString($param, $validation_status['failedItems'], 'Failed file value is expected in failed items.');
-
-      // @TODO: could not test cannot open file case as there seems to be
-      // no file that cannot be opened (tested png and zip file).
-
-
-      // Incorrect file type/mime - a png file.
-      if ($p == 'is_uri') {
-        $param = $this->test_files['file-image']['URI'];
-        $validation_status = $instance->validateFile($param, NULL);
-      }
-      else {
-        $param = $this->test_files['file-image']['ID'];
-        $validation_status = $instance->validateFile('', $param);
-      }
-      
-      $this->assertEquals('The file uploaded is not prescribed file type', $validation_status['case'],
-        'File validator case title does not match expected title for incorrect file type.');
-      $this->assertFalse($validation_status['valid'], 'A failed file must return a FALSE valid status.');
-      $this->assertStringContainsString($param, $validation_status['failedItems'], 'Failed file value is expected in failed items.');
-    
-
-      // Test a valid tsv file.
-      if ($p == 'is_uri') {
-        $param = $this->test_files['file-valid']['URI'];
-        $validation_status = $instance->validateFile($param, NULL);
-      }
-      else {
-        $param = $this->test_files['file-valid']['ID'];
-        $validation_status = $instance->validateFile('', $param);
-      }
-      
-      $this->assertEquals('Data file is valid', $validation_status['case'],
-        'File validator case title does not match expected title for incorrect file type.');
-      $this->assertTrue($validation_status['valid'], 'A failed file must return a TRUE valid status.');
-      $this->assertEmpty($validation_status['failedItems'], 'A valid file does not return a failed item value.');
-
-
-      // Test a valid alternative txt file.
-      if ($p == 'is_uri') {
-        $param = $this->test_files['file-alternative']['URI'];
-        $validation_status = $instance->validateFile($param, NULL);
-      }
-      else {
-        $param = $this->test_files['file-alternative']['ID'];
-        $validation_status = $instance->validateFile('', $param);
-      }
-      
-      $this->assertEquals('Data file is valid', $validation_status['case'],
-        'File validator case title does not match expected title for incorrect file type.');
-      $this->assertTrue($validation_status['valid'], 'A failed file must return a TRUE valid status.');
-      $this->assertEmpty($validation_status['failedItems'], 'A valid file does not return a failed item value.');
-
-
-
-
-
-
-
-
-
-
-    */
 }
