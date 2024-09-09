@@ -324,13 +324,20 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
 
     // For each senario we expect the following:
     // -- scenario label to provide helpful feedback if a test fails.
-    // -- a string that is the mime-type to pass to setFileMimeType() and that
-    //    we also expect to have returned by getFileMimeType()
-    // -- an array indicating whether to expect an exception with the keys
-    //    being the method and the value being TRUE if we expect an exception
-    //    when calling it for this senario.
-    // -- an array of expected exception messages with the key being the method
-    //    and the value being the message we expect (NULL if no exception expected)
+    // -- a string that is the mime-type to pass to setFileMimeType()
+    // -- an array indicating the expectations when testing this scenario,
+    //      containing the following keys:
+    //    - 'returned_values': the expected return value from getFileMimeType()
+    //      for this scenario
+    //    - 'exception_thrown': whether to expect an exception with the keys
+    //      being the method and the value being TRUE if we expect an exception
+    //      when calling it for this senario.
+    //    - 'exception_message': an array of expected exception messages with
+    //      the keys being the method and the value being the message we expect
+    //      (empty string if no exception expected)
+    //    - 'logged_message': an array of expected logged messages with
+    //      the keys being the method and the value being the message we expect
+    //      (empty string if no logged message expected)
 
     // NOTE: getters have only one exception message, so assign it to a variable
     // to avoid repetition
@@ -620,12 +627,19 @@ class ValidatorTraitFileTypesTest extends ChadoTestKernelBase {
    * @param string $mime_type
    *   A string that is the mime-type to pass to setFileMimeType() and that we
    *   also expect to have returned by getFileMimeType()
-   * @param array $expected_exception_thrown
-   *   An array of expected exception outcomes (TRUE if one is expected, FALSE if
-   *   not expected) where the keys are the names of the methods.
-   * @param array $expected_exception_message
-   *   An array of expected exception messages with the key being the method name
-   *   and the value being the expected message (empty string if none expected).
+   * @param array $expectations
+   *   An array with the following 4 keys:
+   *   - 'returned_values': the expected return value from getFileMimeType()
+   *      for this scenario
+   *   - 'exception_thrown': whether to expect an exception with the keys
+   *      being the method and the value being TRUE if we expect an exception
+   *      when calling it for this senario.
+   *    - 'exception_message': an array of expected exception messages with
+   *      the keys being the method and the value being the message we expect
+   *      (empty string if no exception expected)
+   *    - 'logged_message': an array of expected logged messages with
+   *      the keys being the method and the value being the message we expect
+   *      (empty string if no logged message expected)
    *
    * @dataProvider provideMimeTypeForSetter
    *
