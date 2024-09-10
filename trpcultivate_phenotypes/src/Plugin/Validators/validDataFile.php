@@ -146,11 +146,15 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       $file_size = $file_object->getSize();
       if ($file_size > 0) {
       
-        // Check that the file MIME type is on of the supported types
-        // the importer is configured to process.
+        // Check that both the file extension and file MIME type
+        // are supported by the importer.
         $file_mime_type = $file_object->getMimeType();
+        $file_filename  = $file_object->getFileName();
+        $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
+
+        $supported_file_extensions = $this->getSupportedFileExtensions();
         $supported_mime_types = $this->getSupportedMimeTypes();
-        if (in_array($file_mime_type, $supported_mime_types)) {
+        if (in_array($file_mime_type, $supported_mime_types) && in_array($file_extension, $supported_file_extensions)) {
           
           // Check that the file can be opened.
           $file_uri  = $file_object->getFileUri();

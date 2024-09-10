@@ -143,7 +143,7 @@ class DataFileInputTest extends ChadoTestKernelBase {
       $file->save();
       $file_uri = $file->getFileUri();
       $file_id  = $file->id();
-      
+
       // Write contents into the file.
       if (!empty($file_properties['content'])) {
         file_put_contents($file_uri, $file_properties['content']);
@@ -353,26 +353,24 @@ class DataFileInputTest extends ChadoTestKernelBase {
     
     // Test file scenario using the file uri as filename parameter (first parameter).
     $validation_status = $this->validator_instance->validateFile($file_input['file_uri'], NULL);
-    $expected['filename']['failedItems']['filename'] = $file_input['file_uri'];
+    // If validation status valid key is true (no error), the failed item is an empty array,
+    // otherwise the failed item is the value provided to the parameter filename.
+    $expected['filename']['failedItems'] = ($expected['filename']['valid']) ? [] : ['filename' => $file_input['file_uri']];
 
     foreach($validation_status as $key => $value) {
-      if ($key == 'valid' && $value) {
-        $expected['filename']['failedItems'] = [];
-      }
-
-      $this->assertEquals($value, $expected['filename'][ $key ], $file_input['file_uri'] . 'The validation status using parameter filename, does not match expected status for parameter filename in scenario: ' . $scenario);
+      $this->assertEquals($value, $expected['filename'][ $key ], $file_input['file_uri'] . 
+        'The validation status using parameter filename, does not match expected status for parameter filename in scenario: ' . $scenario);
     } 
     
     // Test file scenario using the file id as fid parameter (second parameter).
     $validation_status = $this->validator_instance->validateFile('', $file_input['file_id']);
-    $expected['fid']['failedItems']['file_id'] = $file_input['file_id'];
+    // If validation status valid key is true (no error), the failed item is an empty array,
+    // otherwise the failed item is the value provided to the parameter fid.
+    $expected['fid']['failedItems'] = ($expected['fid']['valid']) ? [] : ['file_id' => $file_input['file_id']];
 
     foreach($validation_status as $key => $value) {
-      if ($key == 'valid' && $value) {
-        $expected['fid']['failedItems'] = [];
-      }
-
-      $this->assertEquals($value, $expected['fid'][ $key ], 'The validation status using parameter fid, does not match expected status for parameter fid in scenario: ' . $scenario);
+      $this->assertEquals($value, $expected['fid'][ $key ], 
+        'The validation status using parameter fid, does not match expected status for parameter fid in scenario: ' . $scenario);
     }
   }
 }
