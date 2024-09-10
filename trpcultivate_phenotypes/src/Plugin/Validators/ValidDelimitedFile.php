@@ -12,15 +12,15 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Validate that project exits.
+ * Validate a line in a data file is properly delimited.
  *
  * @TripalCultivatePhenotypesValidator(
  *   id = "trpcultivate_phenotypes_validator_valid_tsv_data_file",
  *   validator_name = @Translation("Valid TSV Data File Validator"),
- *   input_types = {"header"}
+ *   input_types = {"header", "raw-row"}
  * )
  */
-class validTsvFile extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
   /**
    * Constructor.
    */
@@ -40,38 +40,47 @@ class validTsvFile extends TripalCultivatePhenotypesValidatorBase implements Con
   }
 
   /**
-   * Perform file validation specific to a tab-separated values (tsv) data file.
+   * Perform validation of a line in a data file.
+   * Checks include:
+   *  - Line is not empty.
+   *  - It has some delimiter used to separate values.
+   *  - Other delimiters used in the same data file are escaped and/or in a quote.
+   *  - When split, the number of values returned is equal to the expected number of values.
    * 
-   * @param string $row_values
-   *   The contents of the file's first row (header row) where each value within a cell is
-   *   stored as an array element.
+   * @param string $raw_row
+   *   A line in the data file that can be the headers row (line no. 1) or a data row.
    * 
    * @return array
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
    *     - valid: either TRUE or FALSE depending on if the header row is tab-separated or not.
-   *     - failedItems: the failed header row. This will be empty if the file was valid.
+   *     - failedItems: the failed header row. This will be an empty array if the file was valid.
    */
-  public function validateRow($row_values, $context) {
-    // @TODO: Remove context parameter (marked deprecated).
+  public function validateRawRow($raw_row) {
     
     // Validator response values for a valid header row.
     $case = 'Data file content is valid tab-separated values (tsv)';
     $valid = TRUE;
-    $failed_items = '';
-   
-    $items = str_getcsv($row_values, "\t");
-    // @TODO: a way to get the count of importer expected column headers.
-    $expected_column_count = 7;
+    $failed_items = [];
     
-    // Tab check by comparing the number of items from splitting the string
-    // by tab to the number of items expected.
-    if (count($items) != $expected_column_count) {
-      $case = 'Data file header row is not a tab-separated values';
-      $valid = FALSE;
-      $failed_items = $row_values;
-    }
+    // Check if the line is empty.
+    if (empty(trim($raw_row))) {
+      
+      // Check if the line has some delimiter used.
 
+        // Check if the line uses other delimiter and values are properly escaped and wrapped in quotes.
+
+           // Split the line and see if the number of values returned equals to the expected number of values.
+
+
+    }
+    else {
+      // The line provided is an empty string.
+      $case = 'Raw line is empty';
+      $valid = FALSE;
+      $failed_items = ['raw_row' => $raw_row];
+    }
+    
     return [
       'case' => $case,
       'valid' => $valid,
