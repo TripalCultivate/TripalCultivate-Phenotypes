@@ -2,6 +2,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
@@ -337,7 +338,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * DATA PROVIDER: tests the split row by providing mime type to delimiter options.
-   * 
+   *
    * @return array
    *   Each test scenario is an array with the following values.
    *
@@ -369,10 +370,10 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * Data Provider: provide test data (mime types) to file delimiter getter method.
-   * 
+   *
    * @return array
    *   Each test scenario is an array with the following values.
-   * 
+   *
    *   - A string, human-readable short description of the test scenario.
    *   - A string, mime type input.
    *   - Boolean value, indicates if the scenario is expecting an exception thrown (TRUE) or not (FALSE).
@@ -421,7 +422,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * Test line or row split method.
-   * 
+   *
    * @param $expected_mime_type
    *   Mime type input to the split row method.
    * @param $expected_delimiter
@@ -511,7 +512,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**
    * Test validator base file delimiter getter method.
-   * 
+   *
    * @param $scenario
    *   Human-readable text description of the test scenario.
    * @param $mime_type_input
@@ -522,15 +523,15 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
    *   The exception message if the test scenario is expected to throw an exception.
    * @param $expected
    *   The returned file delimiter.
-   * 
+   *
    * @dataProvider provideMimeTypesForFileDelimiterGetter
    */
   public function testFileDelimiterGetter($scenario, $mime_type_input, $has_exception, $exception_message, $expected) {
-    
+
     $exception_caught = FALSE;
     $exception_get_message = '';
     $delimiter = FALSE;
-    
+
     try {
       $delimiter = TripalCultivatePhenotypesValidatorBase::getFileDelimiters($mime_type_input);
     }
@@ -538,7 +539,7 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       $exception_caught = TRUE;
       $exception_get_message = $e->getMessage();
     }
-    
+
     $this->assertEquals($exception_caught, $has_exception, 'An exception was expected by file delimiter getter method for scenario:' . $scenario);
     $this->assertStringContainsString(
       $exception_message,
@@ -585,6 +586,80 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       $expected_exception_message,
       $exception_message,
       'Expected exception message does not match message when splitRowIntoColumns() could not split line because there are too many supported delimiters.'
+    );
+  }
+
+  /**
+   * Tests the ValidatorBase::setLogger() setter
+   *       and ValidatorBase::getLogger() getter
+   *
+   * @return void
+   */
+  public function testTripalLoggerGetterSetter() {
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Try to get the logger before it has been set
+    // Exception message should trigger
+    $expected_message = 'Cannot retrieve the Tripal Logger property as one has not been set for this validator using the setLogger() method.';
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $instance->getLogger();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Calling getLogger() before the setLogger() method should have thrown an exception but did not.');
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      "The exception thrown does not have the message we expected when trying to get the Tripal Logger property but it hasn't been set yet."
+    );
+
+    // Create a TripalLogger object and set it using setLogger()
+    $my_logger = \Drupal::service('tripal.logger');
+
+    $exception_caught = FALSE;
+    try {
+      $instance->setLogger($my_logger);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling setLogger() with a valid TripalLogger object should not have thrown an exception but it threw '$exception_message'"
+    );
+
+    // Now make sure we can get the logger that was set
+    $grabbed_logger = NULL;
+    $exception_caught = FALSE;
+    try {
+      $grabbed_logger = $instance->getLogger();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling getLogger() after being set with setLogger() should not have thrown an exception but it threw '$exception_message'"
+    );
+    $this->assertEquals(
+      $my_logger,
+      $grabbed_logger,
+      'Could not grab the TripalLogger object using getLogger() despite having called setLogger() on it.'
     );
   }
 }

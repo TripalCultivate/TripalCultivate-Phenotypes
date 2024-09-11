@@ -36,7 +36,7 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
   /**
    * Test projects with reference to project id and project name
    * keyed by project_id and name, respectively.
-   * 
+   *
    * @var array
    */
   protected array $test_project;
@@ -67,9 +67,9 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
         'name' => $project_name
       ])
       ->execute();
-    
+
     $this->assertIsNumeric($project_id, "We were not able to create an project for testing.");
-    
+
     $this->test_project = [
       'project_id' => $project_id,
       'name' => $project_name
@@ -90,6 +90,23 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
       $plugin_definition
     );
 
+    // We need to mock the logger to test the progress reporting.
+    $mock_logger = $this->getMockBuilder(\Drupal\tripal\Services\TripalLogger::class)
+      ->onlyMethods(['notice', 'error'])
+      ->getMock();
+    $mock_logger->method('notice')
+    ->willReturnCallback(function ($message, $context, $options) {
+      print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    $mock_logger->method('error')
+    ->willReturnCallback(function ($message, $context, $options) {
+      print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    // Finally, use setLogger() for this validator instance
+    $instance->setLogger($mock_logger);
+
     $this->assertIsObject(
       $instance,
       "Unable to create $validator_id validator instance to test the Project trait."
@@ -107,13 +124,14 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
   public function testProjectSetterGetter() {
     // Test getter will trigger an error when attempting to get a project
     // prior to a call to project setter method.
-    
+
     // Exception message when failed to set a project.
+    $exception_caught = FALSE;
     $expected_message = 'Cannot retrieve project from the context array as one has not been set by setProject() method.';
 
     try {
       $this->instance->getProject();
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -125,87 +143,130 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
       $exception_message,
       'Expected exception message does not match the message when trying to get unset project.'
     );
-    
 
-    // Test invalid project will trigger an exception.
+    // Test that invalid projects will log an error
 
     // Not valid project id: 0
+    $printed_output = '';
+    $expected_message = 'The Project Trait requires project id number to be a number greater than 0.';
+    ob_start();
+    $this->instance->setProject(0);
+    $printed_output = ob_get_clean();
+    $this->assertStringContainsString(
+      $expected_message,
+      $printed_output,
+      'The logged error message does not have the message we expected when project id of 0 was passed to the setProject() method.'
+    );
+
+    // Test the getter method after calling setProject but it failed.
     $exception_caught = FALSE;
-    $exception_message = '';
-      
+    $expected_message = 'Cannot retrieve project from the context array as one has not been set by setProject() method.';
+
     try {
-      $this->instance->setProject(0);
-    } 
-    catch (\Exception $e) {
+      $this->instance->getProject();
+    } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    
-    $this->assertTrue($exception_caught, 'Project setter method should throw an exception for project id 0.');
+
+    $this->assertTrue($exception_caught, 'Project getter method should throw an exception for unset project.');
     $this->assertStringContainsString(
+      $expected_message,
       $exception_message,
-      'The Project Trait requires project id number to be a number greater than 0.',
-      'Expected exception message does not match the message when project id of 0 was passed to the project setter method.'
+      'Expected exception message does not match the message when trying to get unset project.'
     );
 
     // Not valid project name: Empty string.
+    $printed_output = '';
+    $expected_message = 'The Project Trait requires project name to be a non-empty string value.';
+    ob_start();
+    $this->instance->setProject('');
+    $printed_output = ob_get_clean();
+    $this->assertStringContainsString(
+      $expected_message,
+      $printed_output,
+      'The logged error message does not have the message we expected when project name of empty string was passed to the setProject() method.'
+    );
+
+    // Test the getter method after calling setProject but it failed.
     $exception_caught = FALSE;
-    $exception_message = '';
-      
+    $expected_message = 'Cannot retrieve project from the context array as one has not been set by setProject() method.';
+
     try {
-      $this->instance->setProject('');
-    } 
-    catch (\Exception $e) {
+      $this->instance->getProject();
+    } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    
-    $this->assertTrue($exception_caught, 'Project setter method should throw an exception for empty string project name.');
+
+    $this->assertTrue($exception_caught, 'Project getter method should throw an exception for unset project.');
     $this->assertStringContainsString(
+      $expected_message,
       $exception_message,
-      'The Project Trait requires project name to be a non-empty string value.',
-      'Expected exception message does not match the message when project name of empty string was passed to the project setter method.'
+      'Expected exception message does not match the message when trying to get unset project.'
     );
 
     // A non-existent project id (integer).
-    $exception_message = '';
+    $printed_output = '';
+    $expected_message = 'The Project Trait requires a project that exists in the database.';
+    ob_start();
+    $this->instance->setProject(14344);
+    $printed_output = ob_get_clean();
+    $this->assertStringContainsString(
+      $expected_message,
+      $printed_output,
+      'The logged error message does not have the message we expected when non-existent project id was passed to the setProject() method.'
+    );
+
+    // Test the getter method after calling setProject but it failed.
+    $exception_caught = FALSE;
+    $expected_message = 'Cannot retrieve project from the context array as one has not been set by setProject() method.';
 
     try {
-      $this->instance->setProject(14344);
-    } 
-    catch (\Exception $e) {
+      $this->instance->getProject();
+    } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
 
-    $this->assertTrue($exception_caught, 'Project setter method should throw an exception for non-existent project id.');
+    $this->assertTrue($exception_caught, 'Project getter method should throw an exception for unset project.');
     $this->assertStringContainsString(
+      $expected_message,
       $exception_message,
-      'The Project Trait requires a project that exists in the database.',
-      'Expected exception message does not match the message when non-existent project id was passed to the project setter method.'
+      'Expected exception message does not match the message when trying to get unset project.'
     );
 
     // A non-existent project name (string).
+    $printed_output = '';
+    $expected_message = 'The Project Trait requires a project that exists in the database.';
+    ob_start();
+    $this->instance->setProject('IP: Incognito Project');
+    $printed_output = ob_get_clean();
+    $this->assertStringContainsString(
+      $expected_message,
+      $printed_output,
+      'The logged error message does not have the message we expected when a non-existent project name was passed to the setProject() method.'
+    );
+
+    // Test the getter method after calling setProject but it failed.
     $exception_caught = FALSE;
-    $exception_message = '';
-    
+    $expected_message = 'Cannot retrieve project from the context array as one has not been set by setProject() method.';
+
     try {
-      $this->instance->setProject('IP: Incognito Project');
-    } 
-    catch (\Exception $e) {
+      $this->instance->getProject();
+    } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
-    
-    $this->assertTrue($exception_caught, 'Project setter method should throw an exception for non-existent project name.');
+
+    $this->assertTrue($exception_caught, 'Project getter method should throw an exception for unset project.');
     $this->assertStringContainsString(
+      $expected_message,
       $exception_message,
-      'The Project Trait requires a project that exists in the database.',
-      'Expected exception message does not match the message when non-existent project name was passed to the project setter method.'
+      'Expected exception message does not match the message when trying to get unset project.'
     );
 
-    
-    // Test that an existing project set, the getter will return
+    // Test that with an existing project set, the getter will return
     // back the same value using the getter method. The project name or id
     // has been resolved to correct project id and name.
 
@@ -214,8 +275,8 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
 
     $project = $this->instance->getProject();
     $this->assertEquals(
-      $project, 
-      $this->test_project, 
+      $project,
+      $this->test_project,
       'The set project does not match the project returned by the project getter method.'
     );
 
@@ -224,8 +285,8 @@ class ValidatorTraitProjectTest extends ChadoTestKernelBase {
 
     $project = $this->instance->getProject();
     $this->assertEquals(
-      $project, 
-      $this->test_project, 
+      $project,
+      $this->test_project,
       'The set project does not match the project returned by the project getter method.'
     );
   }
