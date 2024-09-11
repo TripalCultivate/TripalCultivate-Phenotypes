@@ -52,7 +52,7 @@ trait FileTypes {
       // Since this is checking a user-provided value, the error is going to be
       // logged and then checked by a validator so that the error can be passed
       // to the user in a friendly way.
-      $this->logger->error("The setFileMimeType() setter requires a supported mime-type but '" . $mime_type . "' is unsupported.");
+      $this->logger->error("The setFileMimeType() setter requires a supported mime-type but '$mime_type' is unsupported.");
     }
     else {
       // Set the mime-type

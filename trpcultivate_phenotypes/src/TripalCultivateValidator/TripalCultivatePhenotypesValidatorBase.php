@@ -370,7 +370,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   }
 
   /**
-   * The TripalLogger service used to report status and errors to both site users
+   * The TripalLogger service is used to report status and errors to both site users
    * and administrators through the server log.
    *
    * @var TripalLogger
