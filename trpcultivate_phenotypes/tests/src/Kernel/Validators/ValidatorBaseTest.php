@@ -632,7 +632,6 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $my_logger = \Drupal::service('tripal.logger');
 
     $exception_caught = FALSE;
-    $exception_message = 'NONE';
     try {
       $instance->setLogger($my_logger);
     } catch (\Exception $e) {
@@ -647,7 +646,6 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     // Now make sure we can get the logger that was set
     $grabbed_logger = NULL;
     $exception_caught = FALSE;
-    $exception_message = 'NONE';
     try {
       $grabbed_logger = $instance->getLogger();
     } catch (\Exception $e) {
