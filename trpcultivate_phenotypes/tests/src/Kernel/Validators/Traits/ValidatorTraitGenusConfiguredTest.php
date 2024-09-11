@@ -122,6 +122,24 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
       $this->chado_connection,
       $this->container->get('trpcultivate_phenotypes.genus_ontology')
     );
+
+    // We need to mock the logger to test the progress reporting.
+    $mock_logger = $this->getMockBuilder(\Drupal\tripal\Services\TripalLogger::class)
+      ->onlyMethods(['notice', 'error'])
+      ->getMock();
+    $mock_logger->method('notice')
+    ->willReturnCallback(function ($message, $context, $options) {
+      print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    $mock_logger->method('error')
+    ->willReturnCallback(function ($message, $context, $options) {
+      print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    // Finally, use setLogger() for this validator instance
+    $instance->setLogger($mock_logger);
+
     $this->assertIsObject(
       $instance,
       "Unable to create $validator_id validator instance to test the GenusConfigured trait."
@@ -140,23 +158,15 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
 
     // Check a NOT EXISTENT genus in a well setup validator.
     $genus = uniqid();
-    $expected_message = "genus '$genus' does not exist in chado";
-    $exception_caught = FALSE;
-    $exception_message = 'NONE';
-    try {
-      $this->instance->setConfiguredGenus($genus);
-    } catch (\Exception $e) {
-      $exception_caught = TRUE;
-      $exception_message = $e->getMessage();
-    }
-    $this->assertTrue(
-      $exception_caught,
-      "Calling setConfiguredGenus() with genus that is not in chado should have thrown an exception but didn't."
-    );
+    $printed_output = '';
+    $expected_message = "The genus '$genus' does not exist in chado";
+    ob_start();
+    $this->instance->setConfiguredGenus($genus);
+    $printed_output = ob_get_clean();
     $this->assertStringContainsString(
       $expected_message,
-      $exception_message,
-      "The exception thrown does not have the message we expected for a genus that doesn't even exist in chado."
+      $printed_output,
+      "The logged error message does not have the message we expected for a genus that doesn't even exist in chado."
     );
 
     // Check that a genus has NOT been set by using getConfguredGenus()
@@ -200,23 +210,15 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     );
 
     // Check a NOT CONFIGURED genus in a well setup validator.
-    $expected_message = "genus '" . $this->existing_genus . "' is not configured";
-    $exception_caught = FALSE;
-    $exception_message = 'NONE';
-    try {
-      $this->instance->setConfiguredGenus($this->existing_genus);
-    } catch (\Exception $e) {
-      $exception_caught = TRUE;
-      $exception_message = $e->getMessage();
-    }
-    $this->assertTrue(
-      $exception_caught,
-      "Calling setConfiguredGenus() with an existing genus that is not configured should have thrown an exception but didn't."
-    );
+    $printed_output = '';
+    $expected_message = "The genus '" . $this->existing_genus . "' is not configured";
+    ob_start();
+    $this->instance->setConfiguredGenus($this->existing_genus);
+    $printed_output = ob_get_clean();
     $this->assertStringContainsString(
       $expected_message,
-      $exception_message,
-      "The exception thrown does not have the message we expected for a genus existing in chado that is not configured."
+      $printed_output,
+      "The logged error message does not have the message we expected for a genus existing in chado that is not configured."
     );
 
     // Check that a genus still has NOT been set by using getConfguredGenus()

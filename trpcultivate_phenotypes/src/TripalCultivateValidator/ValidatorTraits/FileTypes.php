@@ -47,15 +47,17 @@ trait FileTypes {
       throw new \Exception("The setFileMimeType() setter requires a string of the input file's mime-type and must not be empty.");
     }
 
-    /** @TODO: Log the below message instead of throwing an exception
-     *         This check should occur in the DataFile validator
+    // Check if mime-type is in our mapping array
     if (!isset(self::$mime_to_delimiter_mapping[ $mime_type ])) {
-      throw new \Exception('The FileTypes Trait requires a supported mime-type but ' . $mime_type . ' is unsupported.');
+      // Since this is checking a user-provided value, the error is going to be
+      // logged and then checked by a validator so that the error can be passed
+      // to the user in a friendly way.
+      $this->logger->error("The setFileMimeType() setter requires a supported mime-type but '$mime_type' is unsupported.");
     }
-    */
-
-    // Set the mime-type
-    $this->context['file_mime_type'] = $mime_type;
+    else {
+      // Set the mime-type
+      $this->context['file_mime_type'] = $mime_type;
+    }
   }
 
   /**
@@ -148,7 +150,7 @@ trait FileTypes {
   /**
    * Gets the file mime-type of the input file.
    *
-   * @return array
+   * @return string
    *   The file mime-type set by the setFileMimeType() setter method.
    *
    * @throws \Exception
