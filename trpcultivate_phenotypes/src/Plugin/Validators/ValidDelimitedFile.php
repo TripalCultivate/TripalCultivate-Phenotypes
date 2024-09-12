@@ -153,7 +153,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
   }
 
   /**
-   * Set the number of columns.
+   * Set a number of required columns.
    * 
    * @param integer $number_of_columns
    * @param bool $strict
