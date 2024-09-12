@@ -22,7 +22,7 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsServic
  * @TripalCultivatePhenotypesValidator(
  *   id = "duplicate_traits",
  *   validator_name = @Translation("Duplicate Traits Validator"),
- *   validator_scope = "FILE ROW",
+ *   input_types = {"data-row"},
  * )
  */
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {

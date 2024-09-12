@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @TripalCultivatePhenotypesValidator(
  *   id = "empty_cell",
  *   validator_name = @Translation("Empty Cell Validator"),
- *   validator_scope = "FILE ROW",
+ *   input_types = {"header-row", "data-row"},
  * )
  */
 class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
