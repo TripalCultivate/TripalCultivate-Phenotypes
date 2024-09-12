@@ -213,15 +213,15 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // - The combination of Trait Name, Method Short Name and Unit is unique
     $instance = $manager->createInstance('duplicate_traits');
+    // Set the logger since this validator uses a setter (setConfiguredGenus)
+    // which may log messages
+    $instance->setLogger($this->logger);
     $instance->setConfiguredGenus($genus);
     $instance->setIndices([
       'Trait Name' => $header_index['Trait Name'],
       'Method Short Name' => $header_index['Method Short Name'],
       'Unit' => $header_index['Unit']
     ]);
-    // Set the logger since this validator uses a setter (setConfiguredGenus)
-    // which may log messages
-    $instance->setLogger($this->logger);
     $validators['data-row']['duplicate_traits'] = $instance;
 
     //$this->validatorObjects = $validators;
