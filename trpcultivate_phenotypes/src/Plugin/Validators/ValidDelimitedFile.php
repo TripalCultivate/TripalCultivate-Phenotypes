@@ -15,7 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate a line in a data file is properly delimited.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_valid_delimited_file",
+ *   id = "valid_delimited_file",
  *   validator_name = @Translation("Valid Delimiter File Validator"),
  *   input_types = {"raw-row"}
  * )
