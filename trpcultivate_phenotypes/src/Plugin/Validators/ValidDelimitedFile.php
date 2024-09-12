@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @TripalCultivatePhenotypesValidator(
  *   id = "valid_delimited_file",
- *   validator_name = @Translation("Valid Delimiter File Validator"),
+ *   validator_name = @Translation("Valid Delimited File Validator"),
  *   input_types = {"raw-row"}
  * )
  */
