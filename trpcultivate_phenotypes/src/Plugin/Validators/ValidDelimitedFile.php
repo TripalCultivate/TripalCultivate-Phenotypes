@@ -8,6 +8,7 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\FileTypes;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -21,6 +22,23 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+  
+  /**
+   * This validator requires the following validator traits:
+   * - FileTypes - getFileMimeType: get the MIME type of the input file.
+   */
+  use FileTypes;
+  
+  /**
+   * The key used by the setter method to create a validator configuration element 
+   * in the context array, as well as the key used by the getter method 
+   * to reference and retrieve the element values. 
+   * 
+   * @var string
+   */
+  private $validator_context_key = 'ValidDelimitedFile';
+
+
   /**
    * Constructor.
    */
@@ -40,12 +58,12 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
   }
 
   /**
-   * Perform validation of a line in a data file.
+   * Perform validation of a data file raw row.
    * Checks include:
    *  - Line is not empty.
    *  - It has some delimiter used to separate values.
-   *  - Other delimiters used in the same data file are escaped and/or in a quote.
-   *  - When split, the number of values returned is equal to the expected number of values.
+   *  - When split, the number of values returned is equal to the expected number of values
+   *    set by the validator setter method.
    * 
    * @param string $raw_row
    *   A line in the data file that can be the headers row (line no. 1) or a data row.
@@ -53,96 +71,80 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
    * @return array
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
-   *     - valid: either TRUE or FALSE depending on if the header row is tab-separated or not.
-   *     - failedItems: the failed header row. This will be an empty array if the file was valid.
+   *     - valid: either TRUE or FALSE depending on if the raw row is delimited or not.
+   *     - failedItems: the failed raw row. This will be an empty array if the line was delimited.
    */
   public function validateRawRow($raw_row) {
     
-    // Validator response values for a valid header row.
-    $case = 'Data file content is valid tab-separated values (tsv)';
+    // Validator response values for a valid raw row.
+    $case = 'Data file raw row is delimited';
     $valid = TRUE;
     $failed_items = [];
     
     // Check if the line is empty.
-    if (empty(trim($raw_row))) {
-      
+    if ($raw_row) {
       $expected_columns = $this->getExpectedColumns();
 
-      if ($expected_columns['number_of_columns'] > 1) 
-        // Check if the line has some delimiter used (only if number of expected columns > 1)
-        // Specifically the line includes at least one of the delimiters returned by the get file delimiter method. 
-        $file_mime_type = $this->getFileMimeType();
-        $file_delimiters = $this->getFileDelimiters($file_mime_type);
+      if ($expected_columns['number_of_columns'] > 1) {
         
-        $delimiter_used = [];
-        foreach($file_delimiters as $delimiter) {
+        // Check if the line has some delimiters used (only if number of expected columns is greater than 1).
+        // Specifically, check the line includes at least one of the delimiters returned by the get file delimiter method.
+        $input_file_mime_type = $this->getFileMimeType();
+        $input_file_type_delimiters = $this->getFileDelimiters($input_file_mime_type);
+
+        $delimiters_used = [];
+        foreach($input_file_type_delimiters as $delimiter) {
           if (strpos($raw_row, $delimiter)) {
-            array_push($delimiter_used, $delimiter);
+            array_push($delimiters_used, $delimiter);
           }
         }
-       
-        // Split the line and see if the number of values returned equals to the expected number of values.
-        $delimiter_check = [];
+        
+        if ($delimiters_used) {
+      
+          // Split the line and see if the number of values returned equals to the expected number of columns.
+          // Use the strict flag of the validator columns configuration to compare the columns returned by
+          // split method and the configured columns.
+          
+          // A strict set to True means exact match whereas False requires at least the configured columns.
+          $delimiters_checked = [];
+          foreach($delimiters_used as $delimiter) {
+            $columns = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($raw_row, $input_file_mime_type);
 
-        if ($delimiter_used) {
-          foreach($delimiter_used as $delimiter) {
-            $columns = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($raw_row, $file_mime_type);
-            
             if ($expected_columns['strict']) {
-              // Strict comparison. Exact match (no more, no less).
-
-              if(count($columns) != $expected_columns['number_of_columns']) {
-                // Delimiter maybe established, continue the loop.
-                // If all delimiters satisfy the count check then it is safe to assume that the line is properly
-                // delimited and one of the delimiters was used.
-
-                // Line is delimited correctly.
-                continue;
-              }
-              else {
-                // Line split failed, save the delimiter.
-                array_push($delimiter_failed, $delimiter); 
+              // A strict comparison - exact match only.
+              if (count($columns) != $expected_columns['number_of_columns']) {
+                array_push($delimiters_checked, $delimiter);
               }
             }
             else {
-              // Not strict comparison. At least x number of columns.
-
+              // Not a strict comparison - at least x number of columns.
               if (count($columns) < $expected_columns['number_of_columns']) {
-                // Delimiter maybe established, continue the loop.
-                // If all delimiters satisfy the count check then safe to assume that the line is properly
-                // delimited and one of the delimiters was used.
-
-                // Line is delimited correctly.
-                continue;
-              }
-              else {
-                // Line split failed, save the delimiter.
-                array_push($delimiter_check, $delimiter);
+                array_push($delimiters_checked, $delimiter);
               }
             }
           }
 
-          // If all delimiters failed the checks then the line failed due to none of the delimiter
-          // was able to split the line into expected number of values.
-          if ($delimiter_used == $delimiter_check) {
-            $case = 'Line is not delimited correctly';
+          // If all delimiters failed the checks, then the line failed due to none of the
+          // delimiter was able to split the line into the expected number of columns.
+          if ($delimiters_used == $delimiters_checked) {
+            $case = 'Raw row is not delimited';
             $valid = FALSE;
             $failed_items = ['raw_row' => $raw_row];
           }
         }
         else {
-          // Not using any one of the supported delimiters.
-          $case = 'No delimiter used';
+          // Neither of the supported delimiters for the file was detected in the raw row.
+          $case = 'None of the delimiters supported by the file type was used';
           $valid = FALSE;
           $failed_items = ['raw_row' => $raw_row];
         }
-      }          
+      }      
     }
     else {
       // The line provided is an empty string.
-      $case = 'Raw line is empty';
+      $case = 'Raw row is empty';
       $valid = FALSE;
-      $failed_items = ['raw_row' => $raw_row];
+      $failed_items = ['raw_row' => 'is an empty string value'];
     }
     
     return [
@@ -156,19 +158,25 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
    * Set a number of required columns.
    * 
    * @param integer $number_of_columns
+   *   An integer value greater than zero.  
    * @param bool $strict
+   *   This will indicate how to compare the the number of columns set against
+   *   the number of columns returned by the split line method.
+   * 
+   *   A true value represents an exact match, while a false indicates 
+   *   a minimum number of columns required.
    * 
    * @return void
    * 
    * @throws \Exception
-   *  - A 0 number of columns
+   *  - The value 0 as number of columns.
    */
   public function setExpectedColumns($number_of_columns, $strict = FALSE) {
 
-    $context_key = get_class();
+    $context_key = $this->validator_context_key;
 
     if ($number_of_columns <= 0) {
-      throw new \Exception('The setter method in ' . $context_key . ' requires an integer value greater than zero.' );
+      throw new \Exception('The setter method in ' . $context_key . ' requires an integer value greater than zero.');
     }
 
     $this->context[ $context_key ] = [
@@ -180,20 +188,24 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
   /**
    * Get the number of columns set.
    * 
-   * @return array.
+   * @return array
+   *   The expected column number and strict flag validator configuration
+   *   set by the setter method, keyed by:
+   *   - number_of_columns: the number of expected column number.
+   *   - strict: strict comparison flag.
    * 
    * @throws \Exception
-   *  - Column numbers not set. 
+   *  - The column number was not configured by the setter method.
    */
   public function getExpectedColumns() {
 
-    $context_key = get_class();
+    $context_key = $this->validator_context_key;
 
     if (array_key_exists($context_key, $this->context)) {
       return $this->context[ $context_key ];
     }
     else {
-      throw new \Exception('Cannot retrieve the values set by ' . $context_key . ' setter method.');
+      throw new \Exception('Cannot retrieve the values set by the ' . $context_key . ' setter method.');
     }
   }
 }

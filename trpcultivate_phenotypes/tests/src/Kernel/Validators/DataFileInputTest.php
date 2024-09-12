@@ -358,8 +358,8 @@ class DataFileInputTest extends ChadoTestKernelBase {
     $expected['filename']['failedItems'] = ($expected['filename']['valid']) ? [] : ['filename' => $file_input['file_uri']];
 
     foreach($validation_status as $key => $value) {
-      $this->assertEquals($value, $expected['filename'][ $key ], $file_input['file_uri'] . 
-        'The validation status using parameter filename, does not match expected status for parameter filename in scenario: ' . $scenario);
+      $this->assertEquals($value, $expected['filename'][ $key ],
+        'The validation status using parameter filename, does not match expected status (key: ' . $key . ') for parameter filename in scenario: ' . $scenario);
     } 
     
     // Test file scenario using the file id as fid parameter (second parameter).
@@ -370,7 +370,7 @@ class DataFileInputTest extends ChadoTestKernelBase {
 
     foreach($validation_status as $key => $value) {
       $this->assertEquals($value, $expected['fid'][ $key ], 
-        'The validation status using parameter fid, does not match expected status for parameter fid in scenario: ' . $scenario);
+        'The validation status using parameter fid, does not match expected status (key: ' . $key . ') for parameter fid in scenario: ' . $scenario);
     }
   }
 }
