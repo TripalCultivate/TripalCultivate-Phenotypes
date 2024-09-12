@@ -53,34 +53,38 @@ trait GenusConfigured {
     }
 
     // Check that the genus is present in at least one chado organism.
+    $genus_exists = FALSE;
     $query = $this->chado_connection->select('1:organism', 'o')
       ->fields('o', ['organism_id'])
       ->condition('o.genus', $genus);
     $exists = $query->execute()->fetchObject();
     if (!is_object($exists)) {
-
-      // @TODO: This is a user provided value, should be logged message
-      //        and checked by a validator.
-
-      //throw new \Exception("The genus '$genus' does not exist in chado and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
+      // Since this is a user-provided value, the error is going to be logged
+      // instead of thrown as an exception and then checked by a validator so
+      // that the error can be passed to the user in a friendly way.
+      $this->logger->error("The genus '$genus' does not exist in chado and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
+    } else {
+      $genus_exists = TRUE;
     }
 
     // Check that the genus is configured + get that configuration while we are at it.
     $configuration_values = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
     if (!is_array($configuration_values) OR empty($configuration_values)) {
-
-      // @TODO: This is a user provided value, should be logged message
-      //        and checked by a validator.
-
-      //throw new \Exception("The genus '$genus' is not configured and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
+      // Since this is a user-provided value, the error is going to be logged
+      // instead of thrown as an exception and then checked by a validator so
+      // that the error can be passed to the user in a friendly way.
+      $this->logger->error("The genus '$genus' is not configured and GenusConfigured Trait requires it both exist and be configured to work with phenotypes. The validators using this trait should not be called if previous validators checking for a configured genus fail.");
     }
+    // Only set the context array if we know that both:
+    // - configuration_values exists
+    // - genus exists
+    else if ($genus_exists) {
+      // Set configured values
+      $this->context['genus']['ontology_terms'] = $configuration_values;
 
-    // Now we finally get to set things up for the validator!
-    // Set configured values
-    $this->context['genus']['ontology_terms'] = $configuration_values;
-
-    // Set the configured genus
-    $this->context['genus']['name'] = $genus;
+      // Set the configured genus
+      $this->context['genus']['name'] = $genus;
+    }
   }
 
   /**

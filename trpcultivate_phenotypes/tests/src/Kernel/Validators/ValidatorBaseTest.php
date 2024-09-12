@@ -2,6 +2,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
@@ -600,6 +601,80 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       $expected_exception_message,
       $exception_message,
       'Expected exception message does not match message when splitRowIntoColumns() could not split line because there are too many supported delimiters.'
+    );
+  }
+
+  /**
+   * Tests the ValidatorBase::setLogger() setter
+   *       and ValidatorBase::getLogger() getter
+   *
+   * @return void
+   */
+  public function testTripalLoggerGetterSetter() {
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Try to get the logger before it has been set
+    // Exception message should trigger
+    $expected_message = 'Cannot retrieve the Tripal Logger property as one has not been set for this validator using the setLogger() method.';
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $instance->getLogger();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Calling getLogger() before the setLogger() method should have thrown an exception but did not.');
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      "The exception thrown does not have the message we expected when trying to get the Tripal Logger property but it hasn't been set yet."
+    );
+
+    // Create a TripalLogger object and set it using setLogger()
+    $my_logger = \Drupal::service('tripal.logger');
+
+    $exception_caught = FALSE;
+    try {
+      $instance->setLogger($my_logger);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling setLogger() with a valid TripalLogger object should not have thrown an exception but it threw '$exception_message'"
+    );
+
+    // Now make sure we can get the logger that was set
+    $grabbed_logger = NULL;
+    $exception_caught = FALSE;
+    try {
+      $grabbed_logger = $instance->getLogger();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling getLogger() after being set with setLogger() should not have thrown an exception but it threw '$exception_message'"
+    );
+    $this->assertEquals(
+      $my_logger,
+      $grabbed_logger,
+      'Could not grab the TripalLogger object using getLogger() despite having called setLogger() on it.'
     );
   }
 }

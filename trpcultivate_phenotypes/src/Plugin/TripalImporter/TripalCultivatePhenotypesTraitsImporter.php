@@ -219,6 +219,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       'Method Short Name' => $header_index['Method Short Name'],
       'Unit' => $header_index['Unit']
     ]);
+    // Set the logger since this validator uses a setter (setConfiguredGenus)
+    // which may log messages
+    $instance->setLogger($this->logger);
     $validators['data-row']['duplicate_traits'] = $instance;
 
     //$this->validatorObjects = $validators;
