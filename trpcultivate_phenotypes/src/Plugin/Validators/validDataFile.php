@@ -18,7 +18,7 @@ use Drupal\file\Entity\File;
  * Validate data file.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_valid_data_file",
+ *   id = "valid_data_file",
  *   validator_name = @Translation("Valid Data File Validator"),
  *   input_types = {"file"}
  * )
