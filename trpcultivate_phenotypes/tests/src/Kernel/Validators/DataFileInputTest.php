@@ -62,7 +62,7 @@ class DataFileInputTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_valid_data_file';
+    $validator_id = 'valid_data_file';
     $this->validator_instance = \Drupal::service('plugin.manager.trpcultivate_validator')
       ->createInstance($validator_id);
 
