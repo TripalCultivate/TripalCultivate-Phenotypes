@@ -8,14 +8,17 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePheno
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 
- /**
-  * Tests Tripal Cultivate Phenotypes Validator Plugins that are specific to
-  * the Trait Importer (ie. they are not also used by other importers)
-  *
-  * @group trpcultivate_phenotypes
-  * @group validators
-  */
-class ValidatorTraitImporterTest extends ChadoTestKernelBase {
+/**
+ * Tests the Duplicate Traits validator
+ * NOTE: This validator is specific to the Trait Importer
+ * (ie. it is not also used by other importers)
+ *
+ * @group trpcultivate_phenotypes
+ * @group validators
+ * @group row_validators
+ * @group trait_importer_validators
+ */
+class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
 
