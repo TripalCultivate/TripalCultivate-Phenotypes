@@ -2,8 +2,10 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 
  /**
   * Tests Tripal Cultivate Phenotypes Validator Base functions
@@ -157,6 +159,11 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
     $returned_allownew = $instance->getConfigAllowNew();
     $this->assertEquals($expected_allownew, $returned_allownew,
       "We did not get the status for Allowing New configuration that we expected through the $validator_id validator.");
+
+    // check that the validator scope is not returned when it is not set.
+    // @deprecated Remove in issue #91
+    $scope = $instance->getValidatorScope();
+    $this->assertNull($scope, "The validator scope is not set for the $validator_id therefore no scope should be returned.");
   }
 
   /**
@@ -206,7 +213,8 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test the validate methods: validateMetadata(), validateFile(), validateRow(), validate().
+   * Test the validate methods: validateMetadata(), validateFile(),
+   * validateRawRow(), validateRow(), validate().
    *
    * NOTE: These should all thrown an exception in the base class.
    */
@@ -267,13 +275,33 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       "We did not get the exception message we expected when calling BasicallyBase::validateFile()"
     );
 
+    // Tests Base Class validateRawRow().
+    $exception_caught = NULL;
+    $exception_message = NULL;
+    try {
+      $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
+      $row_string = implode("\t", $row_values);
+      $instance->validateRawRow($row_string);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expect to have an exception thrown when calling BasicallyBase::validateRawRow() since it should use the base class version."
+    );
+    $this->assertStringContainsString(
+      'Method validateRawRow() from base class',
+      $exception_message,
+      "We did not get the exception message we expected when calling BasicallyBase::validateRawRow()"
+    );
+
     // Tests Base Class validateRow().
     $exception_caught = NULL;
     $exception_message = NULL;
     try {
       $row_values = ['col1', 'col2', 'col3', 'col4', 'col5'];
-      $context = [];
-      $instance->validateRow($row_values, $context);
+      $instance->validateRow($row_values);
     } catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -305,6 +333,333 @@ class ValidatorBaseTest extends ChadoTestKernelBase {
       'Method validate() from base class',
       $exception_message,
       "We did not get the exception message we expected when calling BasicallyBase::validate()"
+    );
+  }
+
+  /**
+   * DATA PROVIDER: tests the split row by providing mime type to delimiter options.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values.
+   *
+   *   - Mime type input.
+   *   - Expected delimiter associated to the mime type provided.
+   */
+  public function provideMimeTypeDelimiters() {
+    $sets = [];
+
+    $sets[] = [
+      'text/tab-separated-values',
+      "\t",
+    ];
+
+    $sets[] = [
+      'text/csv',
+      ','
+    ];
+
+    /* Not currently supported as multiple delimiters match this mime-type
+    $sets[] = [
+      'text/plain',
+      ','
+    ];
+    */
+
+    return $sets;
+  }
+
+  /**
+   * Data Provider: provide test data (mime types) to file delimiter getter method.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values.
+   *
+   *   - A string, human-readable short description of the test scenario.
+   *   - A string, mime type input.
+   *   - Boolean value, indicates if the scenario is expecting an exception thrown (TRUE) or not (FALSE).
+   *   - The expected exception message thrown by the getter method on failed request.
+   *   - The expected delimiter returned.
+   */
+  public function provideMimeTypesForFileDelimiterGetter() {
+    return [
+      [
+        'test empty string mime type input',
+        '',
+        TRUE,
+        'The getFileDelimiters() getter requires a string of the input file\'s mime-type and must not be empty.',
+        FALSE
+      ],
+      [
+        'test tab-separated values mime type (tsv)',
+        'text/tab-separated-values',
+        FALSE,
+        '',
+        ["\t"]
+      ],
+      [
+        'test comma-separated values mime type (csv)',
+        'text/csv',
+        FALSE,
+        '',
+        [',']
+      ],
+      [
+        'test tab-separated values mime type (txt)',
+        'text/plain',
+        FALSE,
+        '',
+        ["\t", ',']
+      ],
+      [
+        'test unsupported mime types (docx)',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        TRUE,
+        'Cannot retrieve file delimiters for the mime-type provided: application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        FALSE
+      ]
+    ];
+  }
+
+  /**
+   * Test line or row split method.
+   *
+   * @param $expected_mime_type
+   *   Mime type input to the split row method.
+   * @param $expected_delimiter
+   *   The delimiter associated to the mime type in the mime type - delimiter mapping array.
+   *
+   * @dataProvider provideMimeTypeDelimiters
+   */
+  public function testSplitRowIntoColumns(string $expected_mime_type, string $expected_delimiter) {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Create a data row.
+    // This line captures data values with single/double quotes and leading/trailing spaces.
+    $good_line = $raw_line = ['Value A', 'Value "B"', 'Value \'C\'', 'Value D ', ' Value E', ' Value F ', ' Value G           '];
+    // Sanitize the values so that the expected split values would be:
+    // Value A, Value B, Value C, Value D, Value E, Value F and Value G.
+    foreach($good_line as &$l) {
+      $l = trim(str_replace(['"','\''], '', $l));
+    }
+
+    // At this point line is sanitized and sparkling*
+
+    // Test:
+    // 1. Failed to specify a delimiter.
+    // 2. Test that delimiter could not split the line.
+    // 3. Line values and split values match.
+    // 4. Some other delimiter.
+
+    // Unsupported mime type and thus unknown delimiter.
+    $delimiter = '~';
+    $str_line = implode($delimiter, $raw_line);
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+
+    try {
+      TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($str_line, 'text/uncertain');
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when no delimiter defined in splitRowIntoColumns().');
+    $this->assertStringContainsString(
+      'mime type "text/uncertain" passed into splitRowIntoColumns() is not supported', $exception_message,
+      'We did not get the expected message when an unknown mime type is passed into splitRowIntoColumns().');
+
+    // Delimiter is not present in the line and could not split the line.
+    // This case will return the original line.
+    $delimiter = '<not_the_delimiter>';
+    $str_line = implode($delimiter, $raw_line);
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+
+    try {
+      TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($str_line, $expected_mime_type);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line using the delimiter.');
+    $this->assertStringContainsString(
+      'line provided could not be split into columns', $exception_message,
+      'Expected exception message does not match message when splitRowIntoColumns() could not split line using the delimiter.');
+
+    // Test that the sanitized line is the same as the split values.
+    $delimiter = $expected_delimiter;
+    $str_line = implode($delimiter, $raw_line);
+    $values = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($str_line, $expected_mime_type);
+    $this->assertEquals($good_line, $values, 'Line values does not match expected split values.');
+  }
+
+  /**
+   * Test validator base file delimiter getter method.
+   *
+   * @param $scenario
+   *   Human-readable text description of the test scenario.
+   * @param $mime_type_input
+   *   Mime type input.
+   * @param $has_exception
+   *   Indicates if the test scenario will throw an exception (TRUE) or not (FALSE).
+   * @param $exception_message
+   *   The exception message if the test scenario is expected to throw an exception.
+   * @param $expected
+   *   The returned file delimiter.
+   *
+   * @dataProvider provideMimeTypesForFileDelimiterGetter
+   */
+  public function testFileDelimiterGetter($scenario, $mime_type_input, $has_exception, $exception_message, $expected) {
+
+    $exception_caught = FALSE;
+    $exception_get_message = '';
+    $delimiter = FALSE;
+
+    try {
+      $delimiter = TripalCultivatePhenotypesValidatorBase::getFileDelimiters($mime_type_input);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_get_message = $e->getMessage();
+    }
+
+    $this->assertEquals($exception_caught, $has_exception, 'An exception was expected by file delimiter getter method for scenario:' . $scenario);
+    $this->assertStringContainsString(
+      $exception_message,
+      $exception_get_message,
+      'The expected exception message thrown by file delimiter getter does not match message thrown for test scenario: ' . $scenario
+    );
+
+    $this->assertEquals($delimiter, $expected, 'Value returned does not match expected value for scenario:' . $scenario);
+  }
+
+  /**
+   * Quickly test that mime-types with multiple delimiters are handled.
+   */
+  public function testSplitRowIntoColumnsMultiDelimiter() {
+
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    $str_line = 'Line does not actually matter here as test/plain is not supported.';
+    $expected_mime_type = 'text/plain';
+    $expected_exception_message = "We don't currently support splitting mime types with multiple delimiter options";
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+    try {
+      $instance->splitRowIntoColumns($str_line, $expected_mime_type);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Failed to catch exception when splitRowIntoColumns() could not split line because text/plain has two supported delimiters and we dont yet know how to pick the right one reliably.');
+    $this->assertStringContainsString(
+      $expected_exception_message,
+      $exception_message,
+      'Expected exception message does not match message when splitRowIntoColumns() could not split line because there are too many supported delimiters.'
+    );
+  }
+
+  /**
+   * Tests the ValidatorBase::setLogger() setter
+   *       and ValidatorBase::getLogger() getter
+   *
+   * @return void
+   */
+  public function testTripalLoggerGetterSetter() {
+    $configuration = [];
+    $validator_id = 'fake_basically_base';
+    $plugin_definition = [
+      'id' => $validator_id,
+      'validator_name' => 'Basically Base Validator',
+      'input_types' => ['header-row', 'data-row'],
+    ];
+    $instance = new BasicallyBase($configuration, $validator_id, $plugin_definition);
+    $this->assertIsObject(
+      $instance,
+      "Unable to create fake_basically_base validator instance to test the base class."
+    );
+
+    // Try to get the logger before it has been set
+    // Exception message should trigger
+    $expected_message = 'Cannot retrieve the Tripal Logger property as one has not been set for this validator using the setLogger() method.';
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $instance->getLogger();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Calling getLogger() before the setLogger() method should have thrown an exception but did not.');
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      "The exception thrown does not have the message we expected when trying to get the Tripal Logger property but it hasn't been set yet."
+    );
+
+    // Create a TripalLogger object and set it using setLogger()
+    $my_logger = \Drupal::service('tripal.logger');
+
+    $exception_caught = FALSE;
+    try {
+      $instance->setLogger($my_logger);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling setLogger() with a valid TripalLogger object should not have thrown an exception but it threw '$exception_message'"
+    );
+
+    // Now make sure we can get the logger that was set
+    $grabbed_logger = NULL;
+    $exception_caught = FALSE;
+    try {
+      $grabbed_logger = $instance->getLogger();
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertFalse(
+      $exception_caught,
+      "Calling getLogger() after being set with setLogger() should not have thrown an exception but it threw '$exception_message'"
+    );
+    $this->assertEquals(
+      $my_logger,
+      $grabbed_logger,
+      'Could not grab the TripalLogger object using getLogger() despite having called setLogger() on it.'
     );
   }
 }

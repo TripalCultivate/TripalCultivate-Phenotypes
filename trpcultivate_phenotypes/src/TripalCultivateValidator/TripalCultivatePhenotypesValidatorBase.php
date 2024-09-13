@@ -3,6 +3,7 @@
 namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator;
 
 use Drupal\Component\Plugin\PluginBase;
+use Drupal\tripal\Services\TripalLogger;
 
 abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase implements TripalCultivatePhenotypesValidatorInterface {
 
@@ -45,6 +46,37 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   }
 
   /**
+   * An associative array containing the needed context, which is dependant
+   * on the validator. For example, instead of validating each cell by default,
+   * a validator may need a list of indices which correspond to the columns in
+   * the row for which the validator should act on.
+   *
+   * Key-value pairs are set by the setter methods in ValidatorTraits.
+   */
+  protected array $context = [];
+
+  /**
+   * A mapping of supported file mime-types and their supported delimiters.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime-type passed in. For example, the mime-type
+   * "text/tab-separated-values" maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases, this is a
+   * one-to-one mapping.
+   *
+   * @var array
+   */
+  public static array $mime_to_delimiter_mapping = [
+    'text/tab-separated-values' => ["\t"],
+    'text/csv' => [','],
+    'text/plain' => ["\t", ','],
+  ];
+
+
+  /**
    * {@inheritdoc}
    */
   public function validateMetadata(array $form_values) {
@@ -66,6 +98,14 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
   public function validateRow(array $row_values) {
     $plugin_name = $this->getValidatorName();
     throw new \Exception("Method validateRow() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateRawRow(string $raw_row) {
+    $plugin_name = $this->getValidatorName();
+    throw new \Exception("Method validateRawRow() from base class called for $plugin_name. If this plugin wants to support this type of validation then they need to override it.");
   }
 
   /**
@@ -150,7 +190,7 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
    *   The validator plugin scope annotation definition value.
    */
   public function getValidatorScope() {
-    return $this->pluginDefinition['validator_scope'];
+    return (array_key_exists('validator_scope', $this->pluginDefinition)) ? $this->pluginDefinition['validator_scope'] : NULL;
   }
 
   /**
@@ -200,5 +240,172 @@ abstract class TripalCultivatePhenotypesValidatorBase extends PluginBase impleme
       ->get('trpcultivate.phenotypes.ontology.allownew');
 
     return $allownew;
+  }
+
+  /**
+   * Split or explode a data file line/row values into an array using a delimiter.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime type passed in. For example, the mime type text/tab-separated-values
+   * maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases this is a
+   * one-to-one mapping. If it is not a one-to-one mapping then we loop through
+   * the options.
+   *
+   * @param string $row
+   *   A line in the data file which has not yet been split into columns.
+   * @param string $mime_type
+   *   The mime type of the file currently being validated or imported (i.e. the
+   *   mime type of the file this line is from).
+   *
+   * @return array
+   *   An array containing the values extracted from the line after splitting it based
+   *   on a delimiter value.
+   */
+  public static function splitRowIntoColumns(string $row, string $mime_type) {
+
+    $mime_to_delimiter_mapping = self::$mime_to_delimiter_mapping;
+
+    // Ensure that the mime type is in our delimiter mapping...
+    if (!array_key_exists($mime_type, $mime_to_delimiter_mapping)) {
+      throw new \Exception('The mime type "' . $mime_type . '" passed into splitRowIntoColumns() is not supported. We support the following mime types:' . implode(', ', array_keys($mime_to_delimiter_mapping)) . '.');
+    }
+
+    // Determine the delimiter we should use based on the mime type.
+    $supported_delimiters = self::getFileDelimiters($mime_type);
+
+    $delimiter = NULL;
+    // If there is only one supported delimiter then we can simply split the row!
+    if (sizeof($supported_delimiters) === 1) {
+      $delimiter = end($supported_delimiters);
+      $columns = str_getcsv($row, $delimiter);
+    }
+    // Otherwise we will have to try to determine which one is "right"?!?
+    // Points to remember in the future:
+    //  - We can't use the one that splits into the most columns as a text column
+    // could include multiple commas which could overpower the overall number of
+    // tabs in a tab-delimited plain text file.
+    // - It would be good to confirm we are getting the same number of columns
+    // for each line in a file but since this needs to be a static method we
+    // would pass that information in.
+    // - If we try to check for the same number of columns as expected, we have
+    // to remember that researchers routinely add "Comments" columns to the end,
+    // sometimes without a header.
+    // - If going based on the number of columns in the header, the point above
+    // still impacts this, plus this method is called when splitting the header
+    // before any validators run!
+    else {
+
+      throw new \Exception("We don't currently support splitting mime types with multiple delimiter options as its not trivial to choose the correct one.");
+
+      // $results = [];
+      // $counts = [];
+      // foreach ($supported_delimiters as $delimiter) {
+      //   $results[$delimiter] = str_getcsv($row, $delimiter);
+      //   $counts[$delimiter] = count($results[$delimiter]);
+      // }
+
+      // // Now lets choose the one with the most columns --shrugs-- not ideal
+      // // but I'm not sure there is a better option. asort() is from smallest
+      // // to largest preserving the keys so we want to choose the last element.
+      // asort($counts);
+      // $winning_delimiter = array_key_last($counts);
+      // $columns = $results[ $winning_delimiter ];
+      // $delimiter = $winning_delimiter;
+    }
+
+    // Now lets double check that we got some values...
+    if (count($columns) == 1 && $columns[0] === $row) {
+      // The delimiter failed to split the row and returned the original row.
+      throw new \Exception('The data row or line provided could not be split into columns. The supported delimiter(s) are "' . implode('", "', $supported_delimiters) . '".');
+    }
+
+    // Sanitize values.
+    foreach($columns as &$value) {
+      if ($value) {
+        $value = trim(str_replace(['"','\''], '', $value));
+      }
+    }
+
+    return $columns;
+  }
+
+  /**
+   * Gets the list of delimiters supported by the input file's mime-type that
+   * was provided to the setter.
+   *
+   * NOTE: This method is static to allow for it to also be used by the static
+   * method splitRowIntoColumns().
+   *
+   * @param string $mime_type
+   *   A string that is the mime-type of the input file.
+   *
+   *   HINT: You can get the mime-type of a file from the 'mime-type' property
+   *   of a file object.
+   *
+   * @return array
+   *   The list of delimiters that are supported by the file mime-type.
+   *
+   * @throws \Exception
+   *   - If mime_type does not exist as a key in the mime_to_delimiter_mapping
+   *     array.
+   */
+  public static function getFileDelimiters(string $mime_type) {
+
+    // Check if mime type is an empty string.
+    if (empty($mime_type)) {
+      throw new \Exception("The getFileDelimiters() getter requires a string of the input file's mime-type and must not be empty.");
+    }
+
+    // Grab the delimiters for this mime-type.
+    if (array_key_exists($mime_type, self::$mime_to_delimiter_mapping)) {
+      return self::$mime_to_delimiter_mapping[$mime_type];
+    }
+    else {
+      throw new \Exception('Cannot retrieve file delimiters for the mime-type provided: ' . $mime_type);
+    }
+  }
+
+  /**
+   * The TripalLogger service is used to report status and errors to both site users
+   * and administrators through the server log.
+   *
+   * @var TripalLogger
+   */
+  public TripalLogger $logger;
+
+  /**
+   * Sets the TripalLogger instance for the importer using this validator.
+   *
+   * @param TripalLogger $logger
+   *   The TripalLogger instance. In the case of validation done on the form
+   *   the job will not be set but in the case of any validation done in the
+   *   import run job, the job will be set.
+   */
+  public function setLogger(TripalLogger $logger) {
+    $this->logger = $logger;
+  }
+
+  /**
+   * Provides a configured TripalLogger instance for reporting things to
+   * site maintainers.
+   *
+   * @return TripalLogger
+   *   An instance of the Tripal logger.
+   *
+   * @throws \Exception
+   *   If the $logger property has not been set by the setLogger() method.
+   */
+  public function getLogger() {
+    if(!empty($this->logger)) {
+      return $this->logger;
+    }
+    else {
+      throw new \Exception('Cannot retrieve the Tripal Logger property as one has not been set for this validator using the setLogger() method.');
+    }
+
   }
 }

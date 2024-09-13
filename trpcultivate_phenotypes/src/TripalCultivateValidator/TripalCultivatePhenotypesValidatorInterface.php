@@ -52,10 +52,10 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of information to customize messages for the UI.
-   *      For example, if this validator checks a specific set of form elements
+   *  - 'failedItems': an array of information to customize messages for the UI.
+   *      For example, if this validator checks a specific set of form elements,
    *      then this array should be keyed by the form element key and the value
-   *      match that provided by the user input in form_values.
+   *      matches what was provided by the user input in form_values.
    *  The old style keys we are deprecating are:
    *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
@@ -80,8 +80,8 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of information to customize messages for the UI.
-   *      For example, if this validator checks the permissions of the file then
+   *  - 'failedItems': an array of information to customize messages for the UI.
+   *      For example, if this validator checks the permissions of the file, then
    *      this array might contain the permissions the file actually had that
    *      did not match what was expected.
    *  The old style keys we are deprecating are:
@@ -106,13 +106,12 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *      (i.e. no record in chado matching project name). If the data is
    *      is valid then this is not required but could be 'data verified'.
    *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
-   *  - 'failedIems': an array of the items that failed validation. For example,
-   *      if this validator validates that a number of indicies are not emptya then
+   *      'failedItems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indices are not empty, then
    *      this will be an array of indices that were empty. Another example is
-   *      that if this validator checks that a number of indices have values in
-   *      a specific list, then this array would use the index as the key and
-   *      the value the column actually had that was not in the list for each
-   *      failed column.
+   *      if this validator checks that a number of indices have values in a
+   *      specific list, then this array would use the index as the key and
+   *      the value the column actually had, for each failed column.
    *  The old style keys we are deprecating are:
    *    @deprecated Remove in issue #91
    *  - title: the title of the validation (shown both when passes or fails).
@@ -120,6 +119,40 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *  - status: one of 'pass' or 'fail'
    */
   public function validateRow(array $row_values);
+
+  /**
+   * Validates rows within the data file submitted to an importer.
+   *
+   * Note: This should only be used when validating the format of the row.
+   * If you are validating the content of the columns then you should use
+   * validateRow() instead.
+   *
+   * NOTE: Currently this method assumes it will not be passed empty lines or
+   * comment lines... to the point it will throw an exception if it is. We should
+   * rethink this at a later point. Example: Many file formats have comments. These
+   * are not data rows and will not split properly BUT we may want to validate them
+   * in other ways and at a mimimum we may not want to say they are an error ;-p
+   *
+   * @param string $raw_row
+   *  A single line or row extracted from the data file
+   *  containing data entries, values or column headers, with each value
+   *  delimited by a character specified by the importer class.
+   *
+   * @return array
+   *  An array of information about the validity of the data passed in.
+   *  The supported keys are:
+   *  - 'case': a developer code describing the case triggered
+   *      (i.e. no record in chado matching project name). If the data is
+   *      is valid then this is not required but could be 'data verified'.
+   *  - 'valid': a boolean indicating the data is valid (TRUE) or not (FALSE)
+   *  - 'failedItems': an array of the items that failed validation. For example,
+   *      if this validator validates that a number of indices are not empty, then
+   *      this will be an array of indices that were empty. Another example is
+   *      if this validator checks that a number of indices have values in
+   *      a specific list, then this array would use the index as the key and
+   *      the value the column actually had, for each failed column.
+   */
+  public function validateRawRow(string $raw_row);
 
   /**
    * Given an array of values (that represents a single row in an input file),
@@ -195,4 +228,47 @@ interface TripalCultivatePhenotypesValidatorInterface extends PluginInspectionIn
    *   validation error and will not permit creation of terms.
    */
   public function getConfigAllowNew();
+  
+  /**
+   * Split or explode a data file line/row values into an array using a delimiter.
+   *
+   * More specifically, the file is split based on the appropriate delimiter
+   * for the mime type passed in. For example, the mime type text/tab-separated-values
+   * maps to the tab (i.e. "\t") delimiter.
+   *
+   * By using this mapping approach we can actually support a number of different
+   * file types with different delimiters for the same importer while keeping
+   * the performance hit to a minimum. Especially as in many cases this is a
+   * one-to-one mapping. If it is not a one-to-one mapping then we loop through
+   * the options.
+   *
+   * @param string $row
+   *   A line in the data file which has not yet been split into columns.
+   * @param string $mime_type
+   *   The mime type of the file currently being validated or imported (i.e. the
+   *   mime type of the file this line is from).
+   *
+   * @return array
+   *   An array containing the values extracted from the line after splitting it based
+   *   on a delimiter value.
+   */
+  public static function splitRowIntoColumns(string $row, string $mime_type);
+
+  /**
+   * Gets the list of delimiters supported by the input file's mime-type that
+   * was provided to the setter.
+   *
+   * NOTE: This method is static to allow for it to also be used by the static
+   * method splitRowIntoColumns().
+   *
+   * @param string $mime_type
+   *   A string that is the mime-type of the input file.
+   *
+   *   HINT: You can get the mime-type of a file from the 'mime-type' property
+   *   of a file object.
+   *
+   * @return array
+   *   The list of delimiters that are supported by the file mime-type.
+   */
+  public static function getFileDelimiters(string $mime_type);
 }
