@@ -17,7 +17,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  * Validate that genus exists and is configured.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_genus_exists",
+ *   id = "genus_exists",
  *   validator_name = @Translation("Genus Exists and Configured Validator"),
  *   input_types = {"metadata"}
  * )

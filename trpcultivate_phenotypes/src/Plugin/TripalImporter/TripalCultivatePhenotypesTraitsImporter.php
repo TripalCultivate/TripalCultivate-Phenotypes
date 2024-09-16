@@ -58,6 +58,44 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     'Type' => 'One of "Qualitative" or "Quantitative".'
   ];
 
+
+  /*
+  
+  private $headers = [
+    [
+      'name' => 'Trait Name',
+      'description' => 'The name of the trait, as you would like it to appear to the user (e.g. Days to Flower)',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Trait Description',
+      'description' => 'A full description of the trait. This is recommended to be at least one paragraph.',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Method Short Name',
+      'description' => 'A full, unique title for the method (e.g. Days till 10% of plants/plot have flowers)',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Collection Method',
+      'description' => 'A full description of how the trait was collected. This is also recommended to be at least one paragraph.',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Unit',
+      'description' => 'The full name of the unit used (e.g. days, centimeters)',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Type',
+      'description' => 'One of "Qualitative" or "Quantitative".',
+      'type' => 'required'
+    ]
+  ];
+  
+  */
+
   // Service: Make the following services available to all stages.
   // Genus Ontology configuration service.
   protected $service_genusontology;
@@ -151,6 +189,23 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // - Genus matches the configured project
     // @TODO: In a future PR, create instance for the genus-project validator
     //        and configure it
+    
+    /*
+
+    $instance = $manager->createInstance('genus_exists');
+    
+    // Set the logger since this validator uses a setter (setConfiguredGenus)
+    // which may log messages.
+    $instance->setLogger($this->logger);
+    $instance->setConfigGenus($genus);
+
+    $validators['metadata']['genus'] = $instance;
+
+
+    // Project is not required by this Trait Importer instance.
+    // Nothing to set here.
+
+    */
 
     // -----------------------------------------------------
     // File level
@@ -162,6 +217,22 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
     // @TODO: Rename according to the new validator_id for scope 'FILE'
     $validators['file']['FILE'] = $instance;
+
+    /*
+    
+    // Validator for data file - scan file for file-level compliance check.
+    $instance = $manager->createInstance('valid_data_file');
+    $validators['file']['data_file'] = $instance;
+
+    // Set importer supported mime types.
+    $supported_mime_types = [
+      'tsv', // Tab-separated values.
+      'txt'  // Plain text.
+    ];
+
+    $instance->setSupportedMimeTypes($supported_mime_types);
+    
+    */
 
     // -----------------------------------------------------
     // Header Level
@@ -188,6 +259,21 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
     // @TODO: Rename according to the new validator_id for scope 'HEADERS'
     $validators['header-row']['HEADERS'] = $instance;
+
+
+    /*
+
+    // Perform a raw-row validation to see if header line is delimited.
+    
+    // Validator for headers - ensure no headers are missing and headers are in the correct order.
+    $instance = $manager->createInstance('valid_headers');
+    $validators['header-row']['headers'] = $instance;
+
+    // Set the headers.
+    $headers = $this->headers;
+    $instance->setHeaders($headers);
+
+    */
 
     // -----------------------------------------------------
     // Data Row Level
@@ -432,6 +518,25 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $failed_validator = TRUE;
         //$failures['metadata'][$key] = $result['failedItems'];
       }
+
+
+      /*
+      
+      foreach ($validators['metadata'] as $key => $validator) {
+        // Validate metadata input value.
+        $result = $validator->validateMetadata($form_values);
+        // Store the validation result by metadata key (ie. genus or project).
+        $validation[ $key ] = $result;
+
+        // Check that validation status result and stop subsequent validation steps 
+        // when a validator returned a failed status.
+        if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+          $failed_validator = TRUE;
+          break;
+        }
+      }
+
+      */
     }
 
     // Check if any previous validators failed before moving on to the next

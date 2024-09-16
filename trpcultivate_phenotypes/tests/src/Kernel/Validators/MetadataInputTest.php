@@ -155,7 +155,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
    */
   public function testGenusInput() {
     // Create a plugin instance for this validator
-    $validator_id = 'trpcultivate_phenotypes_validator_genus_exists';
+    $validator_id = 'genus_exists';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Test items that will throw exception:
