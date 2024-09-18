@@ -137,7 +137,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
             'empty_indices' => [ 2 ]
           ]
         ],
-        'valid_data_type' => ['status' => 'pass'],
+        'valid_data_type' => ['valid' => TRUE],
         'duplicate_traits' => ['valid' => TRUE]
       ]
     ];
@@ -152,8 +152,11 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['valid' => TRUE],
         'valid_data_type' => [
-          'status' => 'fail',
-          'details' => 'Column "type" violates required values at row #: 2'
+          'case' => 'Invalid value(s) in required column(s)',
+          'valid' => FALSE,
+          'failedItems' => [
+            5 => 'incorrect'
+          ]
         ],
         'duplicate_traits' => ['valid' => TRUE]
       ]
@@ -167,7 +170,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['valid' => TRUE],
-        'valid_data_type' => ['status' => 'pass'],
+        'valid_data_type' => ['valid' => TRUE],
         'duplicate_traits' => [
           'case' => 'A duplicate trait was found within the input file.',
           'valid' => FALSE,

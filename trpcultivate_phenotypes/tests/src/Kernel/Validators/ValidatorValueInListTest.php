@@ -84,53 +84,128 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
     ];
 
     // Case #1: Check for a valid value in a single column
-    $expected_status = 'pass';
+    $expected_valid = TRUE;
+    $expected_case = 'Values in required column(s) are valid';
     $indices = [ 5 ];
     $valid_values = [ 'Qualitative', 'Quantitative' ];
+    $expected_failedItems = [];
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to pass when provided a cell with a valid value in the list.");
-    $this->assertStringContainsString('Value at index 5 was one of:', $validation_status['details'], "Value in list validation details did not report that index 5 contained a valid value.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Value in list validation was expected to pass when provided a cell with a valid value in the list."
+    );
+    $this->assertStringContainsString(
+      $expected_case,
+      $validation_status['case'],
+      "Value in list validation case message did not report that values in the specified columns were valid."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Value in list validation failed items was expected to be empty since validation passed."
+    );
 
     // Case #2: Check for an invalid value in a single column
-    $expected_status = 'fail';
+    $expected_valid = FALSE;
+    $expected_case = 'Invalid value(s) in required column(s)';
     $indices = [ 2 ];
     $valid_values = [ 'Qualitative', 'Quantitative' ];
+    $expected_failedItems = [ 2 => 'My method' ];
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to fail when provided a cell with a value not in the provided list.");
-    $this->assertStringEndsWith(': 2', $validation_status['details'], "Value in list validation details did not contain the index of the cell with an invalid value.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Value in list validation was expected to fail when provided a cell with a value not in the provided list."
+    );
+    $this->assertStringEndsWith(
+      $expected_case,
+      $validation_status['case'],
+      "Value in list validation case message did not report that the value in the specified column was invalid"
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Value in list validation failed items was expected to contain one item since validation failed."
+    );
 
     // Case #3: Check for a valid value in multiple columns
-    $expected_status = 'pass';
+    $expected_valid = TRUE;
+    $expected_case = 'Values in required column(s) are valid';
     $indices = [ 0, 2, 4 ];
     $valid_values = [ 'My trait', 'My method', 'My unit' ];
+    $expected_failedItems = [];
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to pass when provided a cell with a valid value in the list.");
-    $this->assertStringContainsString('Value at index 0, 2, 4 was one of:', $validation_status['details'], "Value in list validation details did not report that indices 0, 2, 4 all contained a valid value.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Value in list validation was expected to pass when provided multiple cells all containing valid values.");
+    $this->assertStringContainsString(
+      $expected_case,
+      $validation_status['case'],
+      "Value in list validation case message did not report that all indices contained a valid value."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Value in list validation failed items was expected to be empty since validation passed."
+    );
 
     // Case #4: Check for 1 column with a valid value, 1 with invalid value
-    $expected_status = 'fail';
+    $expected_valid = FALSE;
+    $expected_case = 'Invalid value(s) in required column(s)';
     $indices = [ 0, 3 ];
     $valid_values = [ 'My trait description', 'My method description' ];
+    $expected_failedItems = [ 0 => 'My trait' ];
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to fail when provided 2 cells; 1 with with valid input and 1 invalid.");
-    $this->assertStringEndsWith(': 0', $validation_status['details'], "Value in list validation details did not contain the index of the cell with an invalid value.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Value in list validation was expected to fail when provided 2 cells; 1 with with valid input and 1 invalid."
+    );
+    $this->assertStringEndsWith(
+      $expected_case,
+      $validation_status['case'],
+      "Value in list validation case message did not report that there was a cell with an invalid value."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Value in list validation failed items was expected to contain one item since validation failed."
+    );
+
 
     // Case #5: Check for 1 column that has the wrong case compared to the valid values
-    $expected_status = 'fail';
+    $expected_valid = FALSE;
+    $expected_case = 'Invalid value(s) in required column(s) with >=1 case insensitive match';
     $indices = [ 1 ];
     $valid_values = [ 'My Trait Description' ];
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
+    $expected_failedItems = [ 1 => 'My trait description' ];
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Value in list validation was expected to fail when provided 1 cell with the same text but wrong case as the one valid value provided.");
-    $this->assertStringEndsWith('with >=1 case insensitive match', $validation_status['title'], "Value in list validation title did not specify that a case insensitive match was found.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Value in list validation was expected to fail when provided 1 cell with the same text but wrong case as the one valid value provided."
+    );
+    $this->assertStringEndsWith(
+      $expected_case,
+      $validation_status['case'],
+      "Value in list validation case message did not specify that a case insensitive match was found."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Value in list validation failed items was expected to contain one item since validation failed."
+    );
   }
 }

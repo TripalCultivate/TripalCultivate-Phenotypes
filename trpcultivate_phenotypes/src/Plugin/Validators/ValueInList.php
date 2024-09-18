@@ -61,9 +61,12 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
    *
    * @return array
    *   An associative array with the following keys.
-   *   - title: string, section or title of the validation as it appears in the result window.
-   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
-   *   - details: details about the offending field/value.
+   *   - case: a developer focused string describing the case checked.
+   *   - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *   - failedItems: an array of "items" that failed, to be used in the message
+   *     to the user. This is an empty array if the data row input was valid.
+   *     The array contains key => value pairs that map to the index => cell value(s)
+   *     that failed validation.
    */
   public function validateRow($row_values) {
 
@@ -78,7 +81,7 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
     $valid_values = $this->getValidValues();
 
     $valid = TRUE;
-    $failed_indices = [];
+    $failed_items = [];
     // Keep track if we find a value that is the same but the wrong case (for
     // example, all caps was used when only title case is valid). This flag will
     // contribute to our error case reporting.
@@ -99,28 +102,25 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
             $wrong_case = TRUE;
           }
           $valid = FALSE;
-          array_push($failed_indices, $index);
+          $failed_items[$index] = $cell;
         }
       }
     }
     // Check if any values were invalid
     if (!$valid) {
-      $failed_list = implode(', ', $failed_indices);
       $validator_status = [
-        'title' => 'Invalid value(s) in required column(s)',
-        'status' => 'fail',
-        'details' => 'Invalid value(s) at index: ' . $failed_list
+        'case' => 'Invalid value(s) in required column(s)',
+        'valid' => FALSE,
+        'failedItems' => $failed_items
       ];
       if ($wrong_case) {
-        $validator_status['title'] .= ' with >=1 case insensitive match';
+        $validator_status['case'] .= ' with >=1 case insensitive match';
       }
     } else {
-      $passed_list = implode(', ', $indices);
-      $values = implode(', ', $valid_values);
       $validator_status = [
-        'title' => 'Values in required column(s) were valid',
-        'status' => 'pass',
-        'details' => 'Value at index ' . $passed_list . ' was one of: ' . $values . '.'
+        'case' => 'Values in required column(s) are valid',
+        'valid' => TRUE,
+        'failedItems' => []
       ];
     }
     return $validator_status;
