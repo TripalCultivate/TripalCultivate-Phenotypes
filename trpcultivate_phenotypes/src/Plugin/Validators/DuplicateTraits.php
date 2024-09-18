@@ -110,10 +110,17 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *   stored as an array element.
    *
    * @return array
-   *   An associative array with the following keys:
-   *   - title: string, section or title of the validation as it appears in the result window.
-   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
-   *   - details: details about the offending field/value.
+   *   An associative array with the following keys.
+   *   - case: a developer focused string describing the case checked.
+   *   - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *   - failedItems: an array of "items" that failed with the following keys, to
+   *     be used in the message to the user. This is an empty array if the data row input was valid.
+   *     - combo_provided: The combo of trait, method, and unit provided in the file.
+   *       The keys used are the same name of the column header for the cell containing
+   *       the desired value.
+   *       - Trait Name: The trait name provided in the file
+   *       - Method Short Name: The method name provided in the file
+   *       - Unit: The unit provided in the file
    */
   public function validateRow($row_values) {
 
@@ -127,23 +134,28 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // case as well.
     $this->checkIndices($row_values, $indices);
 
+    // These are the key names we expect in our indices array
+    $trait_key = 'Trait Name';
+    $method_key = 'Method Short Name';
+    $unit_key = 'Unit';
+
     // Grab our trait, method and unit values from the $row_values array
     // using our configured $indices array
     // We need to ensure that each array key we expect in $indices
     // exists, otherwise throw an exception
-    if (!isset($indices['Trait Name'])) {
+    if (!isset($indices[$trait_key])) {
       throw new \Exception('The trait name (key: Trait Name) was not set by setIndices()');
     }
-    if (!isset($indices['Method Short Name'])) {
+    if (!isset($indices[$method_key])) {
       throw new \Exception('The method name (key: Method Short Name) was not set by setIndices()');
     }
-    if (!isset($indices['Unit'])) {
+    if (!isset($indices[$unit_key])) {
       throw new \Exception('The unit (key: Unit) was not set by setIndices()');
     }
 
-    $trait = $row_values[$indices['Trait Name']];
-    $method = $row_values[$indices['Method Short Name']];
-    $unit = $row_values[$indices['Unit']];
+    $trait = $row_values[$indices[$trait_key]];
+    $method = $row_values[$indices[$method_key]];
+    $unit = $row_values[$indices[$unit_key]];
 
     // Set our flags for tracking database and input file duplicates
     $duplicate_in_file = FALSE;
@@ -178,32 +190,50 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
       if ($duplicate_in_db) {
         // This row is a duplicate of another row AND in the database
         $validator_status = [
-          'title' => 'Duplicate trait combo in file + database',
-          'status' => 'fail',
-          'details' => 'A duplicate trait was found within both the input file and the database.'
+          'case' => 'A duplicate trait was found within both the input file and the database.',
+          'valid' => FALSE,
+          'failedItems' => [
+            'combo_provided' => [
+              $trait_key => $trait,
+              $method_key => $method,
+              $unit_key => $unit
+            ]
+          ]
         ];
       }
       else {
         $validator_status = [
-          'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
-          'status' => 'fail',
-          'details' => 'A duplicate trait was found within the input file'
+          'case' => 'A duplicate trait was found within the input file.',
+          'valid' => FALSE,
+          'failedItems' => [
+            'combo_provided' => [
+              $trait_key => $trait,
+              $method_key => $method,
+              $unit_key => $unit
+            ]
+          ]
         ];
       }
     }
     else if ($duplicate_in_db) {
       $validator_status = [
-        'title' => 'Duplicate Trait Name + Method Short Name + Unit combination',
-        'status' => 'fail',
-        'details' => 'The combination of ' . $trait . ', ' . $method . ', and ' . $unit . ' is already found in the database.'
+        'case' => 'A duplicate trait was found in the database.',
+        'valid' => FALSE,
+        'failedItems' => [
+          'combo_provided' => [
+            $trait_key => $trait,
+            $method_key => $method,
+            $unit_key => $unit
+          ]
+        ]
       ];
     }
     // If not seen before in the file or in the database, then set the validation to pass
     else {
       $validator_status = [
-        'title' => 'Unique Trait Name + Method Short Name + Unit combination',
-        'status' => 'pass',
-        'details' => 'Confirmed that the current trait being validated is unique.'
+        'case' => 'Confirmed that the current trait being validated is unique.',
+        'valid' => TRUE,
+        'failed_items' => []
       ];
     }
     return $validator_status;
