@@ -85,26 +85,72 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     ];
 
     // Case #1: Provide a list of indices for cells that are not empty
-    $expected_status = 'pass';
+    $expected_valid = TRUE;
+    $expected_case = 'No empty values found in required column(s).';
     $indices = [ 0, 2, 4 ];
+    $expected_failedItems = [];
     $instance->setIndices($indices);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to pass when provided only non-empty cells to check.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Empty cell validation was expected to pass when provided only non-empty cells to check."
+    );
+    $this->assertStringContainsString(
+      $expected_case,
+      $validation_status['case'],
+      "Empty cell validation case message did not match the expected when provided only non-empty cells to check."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Empty cell validation failed items should have been empty since validation passed."
+    );
 
     // Case #2: Provide a list of indices that includes only empty cells
-    $expected_status = 'fail';
+    $expected_valid = FALSE;
+    $expected_case = 'Empty value found in required column(s).';
     $indices = [ 1, 3, 5 ];
+    $expected_failedItems = ['empty_indices' => $indices];
     $instance->setIndices($indices);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided 3 empty cells to check.");
-    $this->assertStringEndsWith(': 1, 3, 5', $validation_status['details'], "Empty cell validation details did not contain the index of the empty cell.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+      "Empty cell validation was expected to fail when provided a list of 3 empty cells to check."
+    );
+    $this->assertStringContainsString(
+      $expected_case,
+      $validation_status['case'],
+      "Empty cell validation case message did not match the expected when provided a list of 3 empty cells to check."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Empty cell validation failed items did not contain the correct list of indices with empty cells."
+    );
 
     // Case #3: Provide a list of indices for the entire row (mixture of 3 empty and 3 non-empty cells)
-    $expected_status = 'fail';
+    $expected_valid = FALSE;
+    $expected_case = 'Empty value found in required column(s).';
     $indices = [ 0, 1, 2, 3, 4, 5 ];
+    $expected_failedItems = ['empty_indices' => [ 1, 3, 5 ]];
     $instance->setIndices($indices);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals($expected_status, $validation_status['status'], "Empty cell validation was expected to fail when provided a mixture of 3 empty and 3 non-empty cells to check.");
-    $this->assertStringEndsWith(': 1, 3, 5', $validation_status['details'], "Empty cell validation details did not contain the indices of the empty cells.");
+    $this->assertEquals(
+      $expected_valid,
+      $validation_status['valid'],
+       "Empty cell validation was expected to fail when provided a mixture of 3 empty and 3 non-empty cells to check."
+    );
+    $this->assertStringContainsString(
+      $expected_case,
+      $validation_status['case'],
+      "Empty cell validation case message did not match the expected when provided a mixture of 3 empty and 3 non-empty cells to check."
+    );
+    $this->assertEquals(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Empty cell validation failed items list did not contain the correct list of indices with empty cells."
+    );
   }
 }

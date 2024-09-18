@@ -57,9 +57,11 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *
    * @return array
    *   An associative array with the following keys.
-   *   - title: string, section or title of the validation as it appears in the result window.
-   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
-   *   - details: details about the offending field/value.
+   *   - case: a developer focused string describing the case checked.
+   *   - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *   - failedItems: an array of "items" that failed with the following keys, to
+   *     be used in the message to the user. This is an empty array if the data row input was valid.
+   *     - empty_indices: A list of indices which were checked and found to be empty
    */
   public function validateRow($row_values) {
 
@@ -88,17 +90,18 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     }
     // Check if empty values were found that should not be empty
     if ($empty) {
-      $failed_list = implode(', ', $failed_indices);
       $validator_status = [
-        'title' => 'Empty value found in required column(s)',
-        'status' => 'fail',
-        'details' => 'Empty values at index: ' . $failed_list
+        'case' => 'Empty value found in required column(s).',
+        'valid' => FALSE,
+        'failedItems' => [
+          'empty_indices' => $failed_indices
+        ]
       ];
     } else {
       $validator_status = [
-        'title' => 'No empty values found in required column(s)',
-        'status' => 'pass',
-        'details' => ''
+        'case' => 'No empty values found in required column(s).',
+        'valid' => 'pass',
+        'failedItems' => []
       ];
     }
     return $validator_status;

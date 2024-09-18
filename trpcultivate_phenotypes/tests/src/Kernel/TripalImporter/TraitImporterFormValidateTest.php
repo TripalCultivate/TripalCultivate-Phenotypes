@@ -131,8 +131,11 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
-          'status' => 'fail',
-          'details' => 'One or more required columns was empty at row #: 3'
+          'case' => 'Empty value found in required column(s).',
+          'valid' => FALSE,
+          'failedItems' => [
+            'empty_indices' => [ 2 ]
+          ]
         ],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['valid' => TRUE]
@@ -147,7 +150,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'empty_cell' => ['status' => 'pass'],
+        'empty_cell' => ['valid' => TRUE],
         'valid_data_type' => [
           'status' => 'fail',
           'details' => 'Column "type" violates required values at row #: 2'
@@ -163,7 +166,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'empty_cell' => ['status' => 'pass'],
+        'empty_cell' => ['valid' => TRUE],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => [
           'case' => 'A duplicate trait was found within the input file.',
