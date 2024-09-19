@@ -131,7 +131,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
-          'case' => 'Empty value found in required column(s).',
+          'case' => 'Empty value found in required column(s)',
           'valid' => FALSE,
           'failedItems' => [
             'empty_indices' => [ 2 ]

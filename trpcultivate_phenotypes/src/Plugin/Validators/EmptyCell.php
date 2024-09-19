@@ -91,7 +91,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     // Check if empty values were found that should not be empty
     if ($empty) {
       $validator_status = [
-        'case' => 'Empty value found in required column(s).',
+        'case' => 'Empty value found in required column(s)',
         'valid' => FALSE,
         'failedItems' => [
           'empty_indices' => $failed_indices
@@ -99,7 +99,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
       ];
     } else {
       $validator_status = [
-        'case' => 'No empty values found in required column(s).',
+        'case' => 'No empty values found in required column(s)',
         'valid' => 'pass',
         'failedItems' => []
       ];

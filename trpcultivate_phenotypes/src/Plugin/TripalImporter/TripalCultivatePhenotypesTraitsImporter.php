@@ -352,6 +352,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // of one validator. Then within that we expect line number
     $failures = [];
     // Preset the fail messages for the data-row validators
+    /*
     $failures['data-row'] = [
       'empty_cell' => [
         'fail_title' => 'Required columns were found to be empty',
@@ -369,6 +370,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         'failed_rows' => []
       ]
     ];
+    */
 
     // Array to hold all validation result for each level.
     // Each result is keyed by the validator scope or id.
@@ -391,16 +393,25 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         'details' => ''
       ],
       'empty_cell' => [
+        'case' => 'No empty values found in required column(s)',
+        'valid' => TRUE,
+        'failedItems' => [],
         'title' => 'Genus exists and/or matches the project/experiment',
         'status' => 'todo',
         'details' => ''
       ],
       'valid_data_type' => [
+        'case' => 'Values in required column(s) are valid',
+        'valid' => TRUE,
+        'failedItems' => [],
         'title' => 'Genus exists and/or matches the project/experiment',
         'status' => 'todo',
         'details' => ''
       ],
       'duplicate_traits' => [
+        'case' => 'All trait-method-unit combinations are unique',
+        'valid' => TRUE,
+        'failedItems' => [],
         'title' => 'Genus exists and/or matches the project/experiment',
         'status' => 'todo',
         'details' => ''
@@ -514,35 +525,27 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
             $result = $validator->validateRow($data_row);
-            $validation[$validator_name] = $result;
-            // Check for old style...
-            if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
+            // Check if validation failed
+            if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
               $failed_validator = TRUE;
-              array_push($failures['data-row'][$validator_name]['failed_rows'], $line_no);
-            }
-            // Then new style.
-            elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failed_validator = TRUE;
-              //$failures['data-row'][$validator_name][$line_no] = $result;
-              array_push($failures['data-row'][$validator_name]['failed_rows'], $line_no);
+              $failures['data-row'][$validator_name][$line_no] = $result;
             }
           }
         }
       }
+
+      // @todo: Convert the following into a method
       // For each data-row validator, check if the validation status failed.
       // If so, format the validation message and set the status to 'fail'.
-      if ($failed_validator === TRUE) {
-        foreach($failures['data-row'] as $validator_name => $validator_messages) {
-          if (!empty($validator_messages['failed_rows'])) {
+      if (($failed_validator === TRUE) && (array_key_exists('data-row', $failures))) {
+        foreach($validators['data-row'] as $validator_name => $validator) {
+          if (array_key_exists($validator_name, $failures['data-row'])) {
+            $first_failed_row = array_key_first($failures['data-row'][$validator_name]);
+            $message = $failures['data-row'][$validator_name][$first_failed_row]['case'] . 'at row #: ' . $first_failed_row;
             $validation[$validator_name] = [
-              // Old return values
-              'title' => $validator_messages['fail_title'],
-              'status' => 'fail',
-              'details' => $validator_messages['fail_details'] . implode(', ', $validator_messages['failed_rows']),
-              // New return values
-              'case' => $validator_messages['fail_details'],
+              'case' => $message,
               'valid' => FALSE,
-              'failedItems' => $validator_messages['failed_rows']
+              'failedItems' => $failures['data-row'][$validator_name][$first_failed_row]['failedItems']
             ];
           }
         }

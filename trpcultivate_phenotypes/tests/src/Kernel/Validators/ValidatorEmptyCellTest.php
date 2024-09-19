@@ -86,7 +86,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
 
     // Case #1: Provide a list of indices for cells that are not empty
     $expected_valid = TRUE;
-    $expected_case = 'No empty values found in required column(s).';
+    $expected_case = 'No empty values found in required column(s)';
     $indices = [ 0, 2, 4 ];
     $expected_failedItems = [];
     $instance->setIndices($indices);
@@ -109,7 +109,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
 
     // Case #2: Provide a list of indices that includes only empty cells
     $expected_valid = FALSE;
-    $expected_case = 'Empty value found in required column(s).';
+    $expected_case = 'Empty value found in required column(s)';
     $indices = [ 1, 3, 5 ];
     $expected_failedItems = ['empty_indices' => $indices];
     $instance->setIndices($indices);
@@ -132,7 +132,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
 
     // Case #3: Provide a list of indices for the entire row (mixture of 3 empty and 3 non-empty cells)
     $expected_valid = FALSE;
-    $expected_case = 'Empty value found in required column(s).';
+    $expected_case = 'Empty value found in required column(s)';
     $indices = [ 0, 1, 2, 3, 4, 5 ];
     $expected_failedItems = ['empty_indices' => [ 1, 3, 5 ]];
     $instance->setIndices($indices);
