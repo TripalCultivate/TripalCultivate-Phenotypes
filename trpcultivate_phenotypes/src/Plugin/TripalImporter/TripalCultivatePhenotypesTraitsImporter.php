@@ -523,7 +523,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
             // Then new style.
             elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
               $failed_validator = TRUE;
-              //array_push($failures['data-row'][$validator_name]['failed_rows'], $line_no);
+              //$failures['data-row'][$validator_name][$line_no] = $result;
+              array_push($failures['data-row'][$validator_name]['failed_rows'], $line_no);
             }
           }
         }
@@ -534,9 +535,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         foreach($failures['data-row'] as $validator_name => $validator_messages) {
           if (!empty($validator_messages['failed_rows'])) {
             $validation[$validator_name] = [
+              // Old return values
               'title' => $validator_messages['fail_title'],
               'status' => 'fail',
-              'details' => $validator_messages['fail_details'] . implode(', ', $validator_messages['failed_rows'])
+              'details' => $validator_messages['fail_details'] . implode(', ', $validator_messages['failed_rows']),
+              // New return values
+              'case' => $validator_messages['fail_details'],
+              'valid' => FALSE,
+              'failedItems' => $validator_messages['failed_rows']
             ];
           }
         }
