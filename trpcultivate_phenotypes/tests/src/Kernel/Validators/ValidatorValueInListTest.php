@@ -92,7 +92,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Value in list validation was expected to pass when provided a cell with a valid value in the list."
@@ -102,7 +102,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
       $validation_status['case'],
       "Value in list validation case message did not report that values in the specified columns were valid."
     );
-    $this->assertEquals(
+    $this->assertSame(
       $expected_failedItems,
       $validation_status['failedItems'],
       "Value in list validation failed items was expected to be empty since validation passed."
@@ -117,7 +117,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Value in list validation was expected to fail when provided a cell with a value not in the provided list."
@@ -127,7 +127,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
       $validation_status['case'],
       "Value in list validation case message did not report that the value in the specified column was invalid"
     );
-    $this->assertEquals(
+    $this->assertSame(
       $expected_failedItems,
       $validation_status['failedItems'],
       "Value in list validation failed items was expected to contain one item since validation failed."
@@ -142,7 +142,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Value in list validation was expected to pass when provided multiple cells all containing valid values.");
@@ -151,7 +151,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
       $validation_status['case'],
       "Value in list validation case message did not report that all indices contained a valid value."
     );
-    $this->assertEquals(
+    $this->assertSame(
       $expected_failedItems,
       $validation_status['failedItems'],
       "Value in list validation failed items was expected to be empty since validation passed."
@@ -166,7 +166,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
     $instance->setIndices($indices);
     $instance->setValidValues($valid_values);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Value in list validation was expected to fail when provided 2 cells; 1 with with valid input and 1 invalid."
@@ -176,7 +176,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
       $validation_status['case'],
       "Value in list validation case message did not report that there was a cell with an invalid value."
     );
-    $this->assertEquals(
+    $this->assertSame(
       $expected_failedItems,
       $validation_status['failedItems'],
       "Value in list validation failed items was expected to contain one item since validation failed."
@@ -192,7 +192,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
     $instance->setValidValues($valid_values);
     $expected_failedItems = [ 1 => 'My trait description' ];
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Value in list validation was expected to fail when provided 1 cell with the same text but wrong case as the one valid value provided."
@@ -202,7 +202,7 @@ class ValidatorValueInListTest extends ChadoTestKernelBase {
       $validation_status['case'],
       "Value in list validation case message did not specify that a case insensitive match was found."
     );
-    $this->assertEquals(
+    $this->assertSame(
       $expected_failedItems,
       $validation_status['failedItems'],
       "Value in list validation failed items was expected to contain one item since validation failed."

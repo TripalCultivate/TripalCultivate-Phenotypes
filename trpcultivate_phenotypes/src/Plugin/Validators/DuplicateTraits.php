@@ -190,7 +190,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
       if ($duplicate_in_db) {
         // This row is a duplicate of another row AND in the database
         $validator_status = [
-          'case' => 'A duplicate trait was found within both the input file and the database.',
+          'case' => 'A duplicate trait was found within both the input file and the database',
           'valid' => FALSE,
           'failedItems' => [
             'combo_provided' => [
@@ -203,7 +203,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
       }
       else {
         $validator_status = [
-          'case' => 'A duplicate trait was found within the input file.',
+          'case' => 'A duplicate trait was found within the input file',
           'valid' => FALSE,
           'failedItems' => [
             'combo_provided' => [
@@ -217,7 +217,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     }
     else if ($duplicate_in_db) {
       $validator_status = [
-        'case' => 'A duplicate trait was found in the database.',
+        'case' => 'A duplicate trait was found in the database',
         'valid' => FALSE,
         'failedItems' => [
           'combo_provided' => [
@@ -231,7 +231,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     // If not seen before in the file or in the database, then set the validation to pass
     else {
       $validator_status = [
-        'case' => 'Confirmed that the current trait being validated is unique.',
+        'case' => 'Confirmed that the current trait being validated is unique',
         'valid' => TRUE,
         'failed_items' => []
       ];

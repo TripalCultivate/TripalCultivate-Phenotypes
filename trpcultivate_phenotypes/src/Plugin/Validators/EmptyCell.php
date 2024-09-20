@@ -100,7 +100,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     } else {
       $validator_status = [
         'case' => 'No empty values found in required column(s)',
-        'valid' => 'pass',
+        'valid' => TRUE,
         'failedItems' => []
       ];
     }

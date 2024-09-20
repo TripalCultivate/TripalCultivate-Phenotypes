@@ -91,7 +91,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     $expected_failedItems = [];
     $instance->setIndices($indices);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Empty cell validation was expected to pass when provided only non-empty cells to check."
@@ -114,7 +114,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     $expected_failedItems = ['empty_indices' => $indices];
     $instance->setIndices($indices);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Empty cell validation was expected to fail when provided a list of 3 empty cells to check."
@@ -137,7 +137,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     $expected_failedItems = ['empty_indices' => [ 1, 3, 5 ]];
     $instance->setIndices($indices);
     $validation_status = $instance->validateRow($file_row);
-    $this->assertEquals(
+    $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
        "Empty cell validation was expected to fail when provided a mixture of 3 empty and 3 non-empty cells to check."
