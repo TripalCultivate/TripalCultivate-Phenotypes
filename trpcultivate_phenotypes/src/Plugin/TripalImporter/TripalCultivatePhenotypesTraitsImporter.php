@@ -168,7 +168,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // - All header row cells are not empty.
     // @TODO: Uncomment the following code when the Headers validator has been
     //        updated and no longer uses the validate() method.
-    // $instance = $manager->createInstance('empty_cell');
+    // $instance = $manager->createInstance('empty_header_cell');
     // $context['indices'] = [
     //   $header_index['Trait Name'],
     //   $header_index['Trait Description'],
@@ -178,7 +178,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     //   $header_index['Type']
     // ];
     // $instance->context = $context;
-    // $validators['header-row']['empty_cell'] = $instance;
+    // $validators['header-row']['empty_header_cell'] = $instance;
 
     // - All column headers match expected header format
     // @deprecated getValidatorIdWithScope in issue #91
@@ -351,72 +351,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // which is not just the validator id as there can be multiple instances
     // of one validator. Then within that we expect line number
     $failures = [];
-    // Preset the fail messages for the data-row validators
-    /*
-    $failures['data-row'] = [
-      'empty_cell' => [
-        'fail_title' => 'Required columns were found to be empty',
-        'fail_details' => 'One or more required columns was empty at row #: ',
-        'failed_rows' => []
-      ],
-      'valid_data_type' => [
-        'fail_title' => 'Value in column "type" was not one of "Quantitative" or "Qualitative"',
-        'fail_details' => 'Column "type" violates required values at row #: ',
-        'failed_rows' => []
-      ],
-      'duplicate_traits' => [
-        'fail_title' => 'Identical Trait Name + Method Short Name + Unit combination found',
-        'fail_details' => 'Traits that already exist in the input file or in the database were detected at row #: ',
-        'failed_rows' => []
-      ]
-    ];
-    */
-
-    // Array to hold all validation result for each level.
-    // Each result is keyed by the validator scope or id.
-    // @TODO: This will not be hardcoded when issue #85 is resolved (that
-    // implements using the configuration setters from issue #93)
-    $validation = [
-      'GENUS' => [
-        'title' => 'Genus exists and/or matches the project/experiment',
-        'status' => 'todo',
-        'details' => ''
-      ],
-      'FILE' => [
-        'title' => 'File is a valid tsv or txt',
-        'status' => 'todo',
-        'details' => ''
-      ],
-      'HEADERS' => [
-        'title' => 'File has all of the column headers expected',
-        'status' => 'todo',
-        'details' => ''
-      ],
-      'empty_cell' => [
-        'case' => 'No empty values found in required column(s)',
-        'valid' => TRUE,
-        'failedItems' => [],
-        'title' => 'Genus exists and/or matches the project/experiment',
-        'status' => 'todo',
-        'details' => ''
-      ],
-      'valid_data_type' => [
-        'case' => 'Values in required column(s) are valid',
-        'valid' => TRUE,
-        'failedItems' => [],
-        'title' => 'Genus exists and/or matches the project/experiment',
-        'status' => 'todo',
-        'details' => ''
-      ],
-      'duplicate_traits' => [
-        'case' => 'All trait-method-unit combinations are unique',
-        'valid' => TRUE,
-        'failedItems' => [],
-        'title' => 'Genus exists and/or matches the project/experiment',
-        'status' => 'todo',
-        'details' => ''
-      ]
-    ];
 
     // Configure the validators
     $validators = $this->configureValidators($form_values);
@@ -428,7 +362,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // @TODO: Update to use the validateMetadata() method
       $result = $validator->validate();
       // $validation_results['metadata'][$key] = $result;
-      $validation[$key] = $result;
+      //$validation[$key] = $result;
       // Check for old return style...
       if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
         $failed_validator = TRUE;
@@ -451,7 +385,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // @TODO: Update to use the validateFile() method
         //$result = $validator->validateFile($form_value['filename'], $form_values['fid']);
         $result = $validator->validate();
-        $validation[$key] = $result;
+        //$validation[$key] = $result;
         // Check for old return style...
         if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
           $failed_validator = TRUE;
@@ -496,7 +430,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           foreach ($validators['header-row'] as $key => $validator) {
             // @TODO: Update to use the validateRow() method and use the split $header_row above.
             $result = $validator->validate();
-            $validation[$key] = $result;
+            //$validation[$key] = $result;
             // Check for old style...
             if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
               $failed_validator = TRUE;
@@ -533,29 +467,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           }
         }
       }
-
-      // @todo: Convert the following into a method
-      // For each data-row validator, check if the validation status failed.
-      // If so, format the validation message and set the status to 'fail'.
-      if (($failed_validator === TRUE) && (array_key_exists('data-row', $failures))) {
-        foreach($validators['data-row'] as $validator_name => $validator) {
-          if (array_key_exists($validator_name, $failures['data-row'])) {
-            $first_failed_row = array_key_first($failures['data-row'][$validator_name]);
-            $message = $failures['data-row'][$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
-            $validation[$validator_name] = [
-              'case' => $message,
-              'valid' => FALSE,
-              'failedItems' => $failures['data-row'][$validator_name][$first_failed_row]['failedItems']
-            ];
-          }
-        }
-      }
     }
+
+    $validation_feedback = $this->processValidationMessages($failures);
 
     // Save all validation results in Drupal storage to be used by
     // validation window to create summary report.
     $storage = $form_state->getStorage();
-    $storage[ $this->validation_result ] = $validation;
+    $storage[ $this->validation_result ] = $validation_feedback;
     $form_state->setStorage($storage);
 
     if ($failed_validator === TRUE) {
@@ -564,6 +483,86 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // in the storage system.
       $form_state->setRebuild(TRUE);
     }
+  }
+
+  /**
+   * Configures and processes the validation messages that will be shown to the
+   * user of the importer
+   *
+   * @param array $failures
+   *   An array containing the return values from any failed validators, keyed
+   *   by the unique name assigned to each validator-input type combination
+   *
+   * @return array
+   *   An array of all the final return values for all of the validators used by
+   *   this importer, keyed by a string that is associated with a line in the
+   *   validate UI. Specifically:
+   *   - 'validation_line': A string assocaited with a line that will be
+   *     displayed to the user in the validate UI
+   *     - 'title': A user-focussed message describing the validation that took
+   *       place.
+   *     - 'details': A user-focussed message describing the failure that
+   *       occurred and any relevant details to help the user fix it.
+   *     - 'status': One of 'pass' or 'fail'.
+   *     - 'raw_results': A nested array keyed by validator name, which contains
+   *       the raw return values when validation failed. Essentially, the
+   *       contents of $failures['validator_name'].
+   */
+  public function processValidationMessages($failures) {
+    // Array to hold all validation result for each validator.
+    // @todo: Remove the keys 'title', 'status' and 'details' once the old
+    // return style is fully deprecated.
+    $validation = [
+      'GENUS' => [
+        'title' => 'Genus exists and/or matches the project/experiment',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'FILE' => [
+        'title' => 'File is a valid tsv or txt',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'HEADERS' => [
+        'title' => 'File has all of the column headers expected',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'empty_cell' => [
+        'title' => 'Required cells contain a value',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'valid_data_type' => [
+        'title' => 'Values in required cells are valid',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      'duplicate_traits' => [
+        'title' => 'All trait-method-unit combinations are unique',
+        'status' => 'todo',
+        'details' => ''
+      ]
+    ];
+
+    foreach($validation as $validator_name => $results) {
+      // Check if this validator reported a failure
+      if (array_key_exists($validator_name, $failures)) {
+        $first_failed_row = array_key_first($failures[$validator_name]);
+        $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+        $validation[$validator_name] = [
+          'case' => $message,
+          'valid' => FALSE,
+          'failedItems' => $failures[$validator_name][$first_failed_row]['failedItems']
+        ];
+      }
+      // Otherwise, now format the
+      else {
+
+      }
+    }
+
+    return $validation;
   }
 
   /**
