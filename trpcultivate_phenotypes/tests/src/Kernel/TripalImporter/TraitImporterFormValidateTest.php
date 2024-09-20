@@ -131,14 +131,12 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
-          'case' => 'Empty value found in required column(s)',
-          'valid' => FALSE,
-          'failedItems' => [
-            'empty_indices' => [ 2 ]
-          ]
+          'title' => 'Empty value found in required column(s)',
+          'status' => 'fail',
+          'details' => ''
         ],
-        'valid_data_type' => ['valid' => TRUE],
-        'duplicate_traits' => ['valid' => TRUE]
+        'valid_data_type' => ['status' => 'pass'],
+        'duplicate_traits' => ['status' => 'pass']
       ]
     ];
 
@@ -150,15 +148,13 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'empty_cell' => ['valid' => TRUE],
+        'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => [
-          'case' => 'Invalid value(s) in required column(s)',
-          'valid' => FALSE,
-          'failedItems' => [
-            5 => 'incorrect'
-          ]
+          'title' => 'Invalid value(s) in required column(s)',
+          'status' => 'fail',
+          'details' => ''
         ],
-        'duplicate_traits' => ['valid' => TRUE]
+        'duplicate_traits' => ['status' => 'pass']
       ]
     ];
 
@@ -169,18 +165,12 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
-        'empty_cell' => ['valid' => TRUE],
-        'valid_data_type' => ['valid' => TRUE],
+        'empty_cell' => ['status' => 'pass'],
+        'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => [
-          'case' => 'A duplicate trait was found within the input file',
-          'valid' => FALSE,
-          'failedItems' => [
-            'combo_provided' => [
-              'Trait Name' => 'trait1',
-              'Method Short Name' => 'method1',
-              'Unit' => 'unit1'
-            ]
-          ]
+          'title' => 'A duplicate trait was found within the input file',
+          'status' => 'fail',
+          'details' => ''
         ]
       ]
     ];

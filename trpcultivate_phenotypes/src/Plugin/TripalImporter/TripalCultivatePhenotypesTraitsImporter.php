@@ -358,20 +358,21 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // ************************************************************************
     // Metadata Validation
     // ************************************************************************
-    foreach ($validators['metadata'] as $key => $validator) {
+    foreach ($validators['metadata'] as $validator_name => $validator) {
+      // Set failures for this validator name to an empty array to signal that
+      // this validator has been run
+      $failures[$validator_name] = [];
       // @TODO: Update to use the validateMetadata() method
       $result = $validator->validate();
-      // $validation_results['metadata'][$key] = $result;
-      //$validation[$key] = $result;
       // Check for old return style...
       if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
         $failed_validator = TRUE;
-        //$failures['metadata'][$key] = $result['details'];
+        $failures[$validator_name] = $result;
       }
       // Then new return style.
       elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
         $failed_validator = TRUE;
-        //$failures['metadata'][$key] = $result['failedItems'];
+        $failures[$validator_name] = $result;
       }
     }
 
@@ -381,20 +382,22 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // **********************************************************************
       // File Validation
       // **********************************************************************
-      foreach ($validators['file'] as $key => $validator) {
+      foreach ($validators['file'] as $validator_name => $validator) {
+        // Set failures for this validator name to an empty array to signal that
+        // this validator has been run
+        $failures[$validator_name] = [];
         // @TODO: Update to use the validateFile() method
         //$result = $validator->validateFile($form_value['filename'], $form_values['fid']);
         $result = $validator->validate();
-        //$validation[$key] = $result;
         // Check for old return style...
         if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
           $failed_validator = TRUE;
-          //$failures['file'][$key] = $result['details'];
+          $failures[$validator_name] = $result;
         }
         // Then new return style.
         elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
           $failed_validator = TRUE;
-          //$failures['file'][$key] = $result['failedItems'];
+          $failures[$validator_name] = $result;
         }
       }
     }
@@ -427,31 +430,31 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // Split line into an array using the delimiter defined by this importer
           // in the configure values method above.
           $header_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
-          foreach ($validators['header-row'] as $key => $validator) {
+          foreach ($validators['header-row'] as $validator_name => $validator) {
+            // Set failures for this validator name to an empty array to signal that
+            // this validator has been run
+            $failures[$validator_name] = [];
             // @TODO: Update to use the validateRow() method and use the split $header_row above.
             $result = $validator->validate();
-            //$validation[$key] = $result;
+
             // Check for old style...
             if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
               $failed_validator = TRUE;
-              // If the header row fails validation, break out of the while loop
-              // since we don't want to continue validating the data rows.
-              break 2;
-              //$failures['header-row'][$key][$line_no] = $result['details'];
+              $failures[$validator_name] = $result;
             }
             // Then new style.
             elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
               $failed_validator = TRUE;
-              break 2;
-              //$failures['header-row'][$key][$line_no] = $result['failedItems'];
+              $failures[$validator_name] = $result;
             }
           }
         }
+
         // ********************************************************************
         // Data Row Validation
         // ********************************************************************
-        // Skip empty lines
-        else if (!empty(trim($line))) {
+        // Skip if there were failures in the header row
+        else if ($failed_validator === FALSE) {
           // Split line into an array using the delimiter defined by this importer
           // in the configure values method above.
           $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
@@ -462,7 +465,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
             // Check if validation failed
             if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
               $failed_validator = TRUE;
-              $failures['data-row'][$validator_name][$line_no] = $result;
+              $failures[$validator_name][$line_no] = $result;
             }
           }
         }
@@ -512,7 +515,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Array to hold all validation result for each validator.
     // @todo: Remove the keys 'title', 'status' and 'details' once the old
     // return style is fully deprecated.
-    $validation = [
+    $messages = [
       'GENUS' => [
         'title' => 'Genus exists and/or matches the project/experiment',
         'status' => 'todo',
@@ -545,24 +548,45 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ]
     ];
 
-    foreach($validation as $validator_name => $results) {
-      // Check if this validator reported a failure
+    foreach($messages as $validator_name => $default_messages) {
+      // Check if this validator exists in the failures array, which indicates
+      // that it was run.
       if (array_key_exists($validator_name, $failures)) {
-        $first_failed_row = array_key_first($failures[$validator_name]);
-        $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
-        $validation[$validator_name] = [
-          'case' => $message,
-          'valid' => FALSE,
-          'failedItems' => $failures[$validator_name][$first_failed_row]['failedItems']
-        ];
-      }
-      // Otherwise, now format the
-      else {
-
+        // Check if $failures[$validator_name] is empty, which indicates there
+        // are no errors to report for this validator.
+        if (count($failures[$validator_name]) === 0 ) {
+          $messages[$validator_name] = [
+            'status' => 'pass',
+          ];
+        }
+        // Check if $failures[$validator_name] contains one of the results
+        // keys, indicating that this is not a row-level validator and therefore
+        // doesn't keep track of line numbers.
+        else if (array_key_exists('case', $failures[$validator_name])) {
+          // @todo: Update this to not use the 'case' string and to incorporate
+          // the 'failed_details'
+          $message = $failures[$validator_name]['case'];
+          $messages[$validator_name] = [
+            'status' => 'fail',
+            'details' => $message
+          ];
+        }
+        // Lastly, assume this is a validator that keeps track of line numbers.
+        else {
+          // @todo: Update this current approach to not report only the first
+          // failure, but instead collect all the cases and faileditems and
+          // formulate one concise, helpful feedback message.
+          $first_failed_row = array_key_first($failures[$validator_name]);
+          $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+          $messages[$validator_name] = [
+            'status' => 'fail',
+            'details' => $message
+          ];
+        }
       }
     }
 
-    return $validation;
+    return $messages;
   }
 
   /**
