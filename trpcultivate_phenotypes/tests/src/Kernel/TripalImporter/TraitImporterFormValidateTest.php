@@ -172,7 +172,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'empty_cell' => ['valid' => TRUE],
         'valid_data_type' => ['valid' => TRUE],
         'duplicate_traits' => [
-          'case' => 'A duplicate trait was found within the input file.',
+          'case' => 'A duplicate trait was found within the input file',
           'valid' => FALSE,
           'failedItems' => [
             'combo_provided' => [

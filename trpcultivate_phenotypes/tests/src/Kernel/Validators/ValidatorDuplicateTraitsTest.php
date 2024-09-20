@@ -138,12 +138,24 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
     // Default case: Enter a single row of data
     $expected_valid = TRUE;
+    $expected_case = 'Confirmed that the current trait being validated is unique';
+    $expected_failedItems = [];
     $instance->setIndices(['Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4]);
     $validation_status = $instance->validateRow($file_row);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Duplicate Trait validation was expected to pass when provided the first row of values to validate."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message did not confirm that the very first trait being validated was unique."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to be empty since validation passed."
     );
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo(
@@ -154,11 +166,23 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
     // Case #1: Re-renter the same details of the default case, should fail since it's a duplicate of the previous row
     $expected_valid = FALSE;
+    $expected_case = 'A duplicate trait was found within the input file';
+    $expected_failedItems = ['combo_provided' => ['Trait Name' => 'My trait', 'Method Short Name' => 'My method', 'Unit' => 'My unit']];
     $validation_status = $instance->validateRow($file_row);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Validation was expected to fail when passed in a duplicate trait name + method + unit combination."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message was expected to report a duplicate trait within the file."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to contain the trait, method and unit column headers and contents since this was a duplicate in the file."
     );
 
     // Case #2: Provide an incorrect key to $context['indices']
@@ -194,12 +218,24 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     ];
 
     $expected_valid = TRUE;
+    $expected_case = 'Confirmed that the current trait being validated is unique';
+    $expected_failedItems = [];
     $instance->setIndices([ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 5 ]);
     $validation_status = $instance->validateRow($file_row_2);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Validation was expected to pass for row #2 which contains a unique trait name + method + unit combination."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message did not confirm that a second unique trait combo being validated was unique."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to be empty since validation passed."
     );
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo(
@@ -220,12 +256,24 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     ];
 
     $expected_valid = TRUE;
+    $expected_case = 'Confirmed that the current trait being validated is unique';
+    $expected_failedItems = [];
     $instance->setIndices([ 'Trait Name' => 0, 'Method Short Name' => 2, 'Unit' => 4 ]);
     $validation_status = $instance->validateRow($file_row_3);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Validation was expected to pass for row #3 which contains a unique trait name + method + unit combination."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message did not confirm that a third unique trait combo being validated was unique."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to be empty since validation passed."
     );
     $unique_traits = $instance->getUniqueTraits();
     $this->assertArrayHasUniqueCombo(
@@ -270,11 +318,23 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
     // Default case: Validate a single row and check against an empty database
     $expected_valid = TRUE;
+    $expected_case = 'Confirmed that the current trait being validated is unique';
+    $expected_failedItems = [];
     $validation_status = $instance->validateRow($file_row);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Duplicate Trait validation was expected to pass when provided the first row of values to validate and an empty database."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message did not confirm that the very first trait combo being validated was unique."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to be empty since validation passed."
     );
 
     // Verify this trait isn't in the database
@@ -309,11 +369,29 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     // Now that the trait is confirmed to be in the database, our validator should
     // return a fail status when trying to validate the same trait again
     $expected_valid = FALSE;
+    $expected_case = 'A duplicate trait was found in the database';
+    $expected_failedItems = [
+      'combo_provided' => [
+        'Trait Name' => 'My trait 1',
+        'Method Short Name' => 'My method 1',
+        'Unit' => 'My unit 1'
+      ]
+    ];
     $validation_status = $instance->validateRow($file_row_1);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Duplicate Trait validation was expected to fail when provided a row of values for which there already exists a trait+method+unit combo in the database."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message was expected to report a duplicate trait within the database."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to contain the trait, method and unit column headers and contents since this was a duplicate in the database."
     );
 
     // Case #2: Validate trait details where trait name and method name already
@@ -329,11 +407,23 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     $file_row_2 = array_values($file_row_case_2);
 
     $expected_valid = TRUE;
+    $expected_case = 'Confirmed that the current trait being validated is unique';
+    $expected_failedItems = [];
     $validation_status = $instance->validateRow($file_row_2);
     $this->assertSame(
       $expected_valid,
       $validation_status['valid'],
       "Duplicate Trait validation was expected to pass when provided the second row of values to validate the situation where trait and method are in the database but the unit is not."
+    );
+    $this->assertEquals(
+      $expected_case,
+      $validation_status['case'],
+      "Duplicate Trait validation case message did not confirm that the second unique trait combo being validated was unique."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to be empty since validation passed."
     );
 
     // Verify this combo does not exist in the database yet
@@ -360,6 +450,13 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     $combo_ids_3 = $this->service_traits->insertTrait($file_row_case_3);
     $expected_valid = FALSE;
     $expected_case = 'A duplicate trait was found in the database';
+    $expected_failedItems = [
+      'combo_provided' => [
+        'Trait Name' => 'My trait 3',
+        'Method Short Name' => 'My method 3',
+        'Unit' => 'My unit 3'
+      ]
+    ];
     $validation_status = $instance->validateRow($file_row_3);
     $this->assertSame(
       $expected_valid,
@@ -372,12 +469,24 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
       $validation_status['case'],
       "Duplicate Trait validation did not report that there was a duplicate in the database when validating the third row."
     );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to contain the trait, method and unit column headers and contents of the third row since this was a duplicate in the database."
+    );
 
     // Now try validating a row with the exact same values as the previous one
     $file_row_4 = $file_row_3;
 
     $expected_valid = FALSE;
     $expected_case = 'A duplicate trait was found within both the input file and the database';
+    $expected_failedItems = [
+      'combo_provided' => [
+        'Trait Name' => 'My trait 3',
+        'Method Short Name' => 'My method 3',
+        'Unit' => 'My unit 3'
+      ]
+    ];
     $validation_status = $instance->validateRow($file_row_4);
     $this->assertEquals(
       $expected_valid,
@@ -388,6 +497,11 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
       $expected_case,
       $validation_status['case'],
       "Duplicate Trait validation did not report that there was a duplicate in the file AND the database when validating the fourth row."
+    );
+    $this->assertSame(
+      $expected_failedItems,
+      $validation_status['failedItems'],
+      "Duplicate Trait validation failed items was expected to contain the trait, method and unit column headers and contents of the fourth row since this was a duplicate in the database AND file."
     );
   }
 

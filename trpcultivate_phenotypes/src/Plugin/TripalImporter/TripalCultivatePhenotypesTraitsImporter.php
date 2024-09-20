@@ -541,7 +541,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         foreach($validators['data-row'] as $validator_name => $validator) {
           if (array_key_exists($validator_name, $failures['data-row'])) {
             $first_failed_row = array_key_first($failures['data-row'][$validator_name]);
-            $message = $failures['data-row'][$validator_name][$first_failed_row]['case'] . 'at row #: ' . $first_failed_row;
+            $message = $failures['data-row'][$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
             $validation[$validator_name] = [
               'case' => $message,
               'valid' => FALSE,

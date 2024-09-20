@@ -233,7 +233,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
       $validator_status = [
         'case' => 'Confirmed that the current trait being validated is unique',
         'valid' => TRUE,
-        'failed_items' => []
+        'failedItems' => []
       ];
     }
     return $validator_status;
