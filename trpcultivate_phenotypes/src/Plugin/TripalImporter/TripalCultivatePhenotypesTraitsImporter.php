@@ -448,19 +448,27 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
               $failures[$validator_name] = $result;
             }
           }
+          // If a header validator failed, skip validation of the data rows
+          if ($failed_validator === TRUE) {
+            break;
+          }
         }
 
         // ********************************************************************
         // Data Row Validation
         // ********************************************************************
-        // Skip if there were failures in the header row
-        else if ($failed_validator === FALSE) {
+        else if ($line_no > 1) {
           // Split line into an array using the delimiter defined by this importer
           // in the configure values method above.
           $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
 
           // Call each validator on this row of the file
           foreach($validators['data-row'] as $validator_name => $validator) {
+            // Set failures for this validator name to an empty array to signal that
+            // this validator has been run, ONLY if it doesn't already exist.
+            if(!array_key_exists($validator_name, $failures)) {
+              $failures[$validator_name] = [];
+            }
             $result = $validator->validateRow($data_row);
             // Check if validation failed
             if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
@@ -471,7 +479,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         }
       }
     }
-
     $validation_feedback = $this->processValidationMessages($failures);
 
     // Save all validation results in Drupal storage to be used by
@@ -563,9 +570,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // keys, indicating that this is not a row-level validator and therefore
         // doesn't keep track of line numbers.
         else if (array_key_exists('case', $failures[$validator_name])) {
-          // @todo: Update this to not use the 'case' string and to incorporate
-          // the 'failed_details'
+          // @todo: Update this to not use the 'case' string by default and to
+          // incorporate the 'failed_details'
           $message = $failures[$validator_name]['case'];
+          $messages[$validator_name] = [
+            'status' => 'fail',
+            'details' => $message
+          ];
+        }
+        // @todo: Remove this if when old validators GENUS, FILE, and HEADERS are
+        // removed
+        else if (array_key_exists('details', $failures[$validator_name])){
+          $message = $failures[$validator_name]['details'];
           $messages[$validator_name] = [
             'status' => 'fail',
             'details' => $message

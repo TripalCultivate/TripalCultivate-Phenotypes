@@ -113,6 +113,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => [
+          'title' => 'File has all of the column headers expected',
           'status' => 'fail',
           'details' => 'Trait Description is/are missing in the file',
         ],
@@ -131,9 +132,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
-          'title' => 'Empty value found in required column(s)',
+          'title' => 'Required cells contain a value',
           'status' => 'fail',
-          'details' => ''
+          'details' => 'Empty value found in required column(s) at row #: 3'
         ],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['status' => 'pass']
@@ -150,9 +151,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => [
-          'title' => 'Invalid value(s) in required column(s)',
+          'title' => 'Values in required cells are valid',
           'status' => 'fail',
-          'details' => ''
+          'details' => 'Invalid value(s) in required column(s) at row #: 2'
         ],
         'duplicate_traits' => ['status' => 'pass']
       ]
@@ -168,9 +169,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => [
-          'title' => 'A duplicate trait was found within the input file',
+          'title' => 'All trait-method-unit combinations are unique',
           'status' => 'fail',
-          'details' => ''
+          'details' => 'A duplicate trait was found within the input file at row #: 3'
         ]
       ]
     ];
@@ -241,33 +242,20 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
     // Now check our expectations are met.
     foreach ($expectations as $validation_plugin => $expected) {
-      // Check if this plugin has been updated to use valid instead of status,
-      // and preferrentially use that one as the key
-      // @todo: Remove this line and update the assert to ONLY check for 'valid'
-      // once all plugins have been updated
-      $status_or_valid_key = isset($expected['valid']) ? 'valid' : 'status';
-      $this->assertEquals($expected[$status_or_valid_key], $validation_element_data[$validation_plugin][$status_or_valid_key],
-        "We expected the form validation element to indicate the $validation_plugin plugin had the specified status.");
-      // Check this plugin's case message
-      // @todo: Remove the check for 'case' in $expected once all plugins' return values
-      // have been updated
-      if (array_key_exists('case', $expected)) {
-        $this->assertStringContainsString(
-          $expected['case'],
-          $validation_element_data[$validation_plugin]['case'],
-          "We expected the case message for $validation_plugin to include a specific string but it did not."
-        );
-      }
-      // @todo: Remove this entire if block once all plugins' return values have been updated
+      $this->assertEquals(
+        $expected['status'],
+        $validation_element_data[$validation_plugin]['status'],
+        "We expected the form validation element to indicate the $validation_plugin plugin had the specified status."
+      );
       if (array_key_exists('details', $expected)) {
-        $this->assertStringContainsString($expected['details'], $validation_element_data[$validation_plugin]['details'],
-          "We expected the details for $validation_plugin to include a specific string but it did not.");
-      }
-      if (array_key_exists('failedItems', $expected)) {
-        $this->assertEquals(
-          $expected['failedItems'],
-          $validation_element_data[$validation_plugin]['failedItems'],
-          "We expected the array of failed items for $validation_plugin to include all failed items but it did not."
+        $this->assertNotEmpty(
+          $expected['details'],
+          "A non-empty string was a provided with a 'details' key within the data provider - trust me, don't do that!"
+        );
+        $this->assertStringContainsString(
+          $expected['details'],
+          $validation_element_data[$validation_plugin]['details'],
+          "We expected the details for $validation_plugin to include a specific string but it did not."
         );
       }
     }
