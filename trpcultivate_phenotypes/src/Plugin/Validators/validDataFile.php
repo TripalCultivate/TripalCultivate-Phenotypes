@@ -70,7 +70,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
    *  - File can be opened.
    * 
    * @param string $filename
-   *   The location of a file within the file system. 
+   *   The full path to a file within the file system (Absolute file path).
    * @param integer $fid
    *   The unique identifier (fid) of a file that is managed by Drupal File System.    
    * 
@@ -91,7 +91,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       return [
         'case' => 'Filename is empty',
         'valid' => FALSE,
-        'failedItems' => ['filename' => $filename]
+        'failedItems' => ['filename' => $filename, 'fid' => $fid]
       ];
     }
     
@@ -100,23 +100,21 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       return [
         'case' => 'Invalid file id number',
         'valid' => FALSE,
-        'failedItems' => ['file_id' => $fid]
+        'failedItems' => ['filename' => $filename, 'fid' => $fid]
       ];
     } 
 
     // File input.
-    $file_input = (is_null($fid)) ? $filename : $fid;
+    $file_object = NULL;
     
     // Load file object.
-    if (is_numeric($file_input)) {
+    if (is_numeric($fid) && $fid > 0) {
       // The file input is integer value, the file id number.
       // Load the file object by fid number.
       $file_id = $fid;
       $file_object = File::load($file_id);
-
-      $input_key = 'file_id';
     }
-    else {
+    elseif ($filename) {
       // The file input is a string value, a path to the file.
       // Locate the file entity by uri and load the file object using
       // the returned file id number that matched.
@@ -131,67 +129,71 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         $file_id = $file_entity->get('fid')->value;
         $file_object = File::load($file_id);
       }
+    }
 
-      $input_key = 'filename';
+    if (!$file_object) {
+      // The file failed to load a file object.
+      return [
+        'case' => 'Filename or file id failed to load a file object',
+        'valid' => FALSE,
+        'failedItems' => ['filename' => $filename, 'fid' => $fid]
+      ];
     }
     
+    // File object has loaded successfully.  
+    $file_filename = $file_object->getFileName();
+    $file_fid = $file_object->id();
+    
+    // Check that the file is not blank by inspecting the file size
+    // to see if it is greater than 0.
+    $file_size = $file_object->getSize();
+    if (!$file_size) {
+      return [
+        'case' => 'The file has no data and is an empty file',
+        'valid' => FALSE,
+        'failedItems' => $failed_items = ['filename' => $file_filename, 'fid' => $file_fid]
+      ];
+    }
 
-    // Validate data file:
+    // Check that both the file extension and file MIME type
+    // are supported by the importer.
+    $file_mime_type = $file_object->getMimeType();
+    $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
 
-    if ($file_object) {
-      // File object has loaded successfully.
-      
-      // Check that the file is not blank by inspecting the file size
-      // to see if it is greater than 0.
-      $file_size = $file_object->getSize();
-      if ($file_size > 0) {
-      
-        // Check that both the file extension and file MIME type
-        // are supported by the importer.
-        $file_mime_type = $file_object->getMimeType();
-        $file_filename  = $file_object->getFileName();
-        $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
+    $supported_file_extensions = $this->getSupportedFileExtensions();
+    $supported_mime_types = $this->getSupportedMimeTypes();
 
-        $supported_file_extensions = $this->getSupportedFileExtensions();
-        $supported_mime_types = $this->getSupportedMimeTypes();
-        if (in_array($file_mime_type, $supported_mime_types) && in_array($file_extension, $supported_file_extensions)) {
-          
-          // Check that the file can be opened.
-          $file_uri  = $file_object->getFileUri();
-          $file_handle = @fopen($file_uri, 'r');
-          if (!$file_handle) {
-            $case = 'The file cannot be opened';
-            $valid = FALSE;
-            $failed_items = [$input_key => $file_input];
-          }
-
-          fclose($file_handle);
-        }
-        else {
-          // The file is not one of the MIME types supported by the importer.
-          $case = 'The file is not the prescribed file type';
-          $valid = FALSE;
-          $failed_items = [$input_key => $file_input]; 
-        }
+    if (!in_array($file_mime_type, $supported_mime_types)) {
+      if (in_array($file_extension, $supported_file_extensions)) {
+        // MIME type is incorrect but the extension is correct.
+        return [
+          'case' => 'Unsupported file MIME type',
+          'valid' => FALSE,
+          'failedItems' => ['mime' => $file_mime_type, 'extension' => $file_extension]
+        ];
       }
       else {
-        // The file size is 0 or less indicating that it is an empty file.
-        $case = 'The file has no data and is an empty file';
-        $valid = FALSE;
-        $failed_items = [$input_key => $file_input]; 
+        // Both MIME type and file extension are incorrect.
+        return [
+          'case' => 'Unsupported file mime type and mismatched extension',
+          'valid' => FALSE,
+          'failedItems' => ['mime' => $file_mime_type, 'extension' => $file_extension]
+        ];
       }
     }
-    else {
-      // The file failed to load a file object.
-      $case = 'Filename or file id failed to load a file object';
-      $valid = FALSE;
-      $failed_items = [$input_key => $file_input]; 
+
+    // Check that the file can be opened.
+    $file_uri  = $file_object->getFileUri();
+    $file_handle = @fopen($file_uri, 'r');
+    
+    if (!$file_handle) {
+      return [
+        'case' => 'The file cannot be opened',
+        'valid' => FALSE,
+        'failedItems' => $failed_items = ['filename' => $file_filename, 'fid' => $file_fid]
+      ];
     }
 
-    return [
-      'case' => $case,
-      'valid' => $valid,
-      'failedItems' => $failed_items
-    ];
+    fclose($file_handle);
   }
 }

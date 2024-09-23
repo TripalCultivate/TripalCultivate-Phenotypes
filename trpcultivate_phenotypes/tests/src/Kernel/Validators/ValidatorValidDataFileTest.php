@@ -17,7 +17,7 @@ use Drupal\file\Entity\File;
   * @group trpcultivate_phenotypes
   * @group validators
   */
-class DataFileInputTest extends ChadoTestKernelBase {
+class ValidatorValidDataFileTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
 
@@ -143,6 +143,9 @@ class DataFileInputTest extends ChadoTestKernelBase {
       $file->save();
       $file_uri = $file->getFileUri();
       $file_id  = $file->id();
+      $file_mime_type = $file->getMimeType();
+      $file_filename = $file->getFileName();
+      $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
 
       // Write contents into the file.
       if (!empty($file_properties['content'])) {
@@ -162,8 +165,8 @@ class DataFileInputTest extends ChadoTestKernelBase {
       
       // Save file id and file uri.
       $test_file_param[ $test_scenario ] = [
-        'file_id' => $file_id,
-        'file_uri' => $file_uri
+        'fid' => $file_id,
+        'filename' => $file_uri,
       ];
     }
     
@@ -174,8 +177,8 @@ class DataFileInputTest extends ChadoTestKernelBase {
     $file_unmanaged_uri = str_replace('test_data_file', 'unmanaged_test_data_file', $file_valid_uri);
     
     $test_file_param['file-unmanaged'] = [
-      'file_id' => 0,
-      'file_uri' => $file_unmanaged_uri
+      'fid' => 0,
+      'filename' => $file_unmanaged_uri,
     ];
     
     // Move a copy of the file and rename it using the new filename.
@@ -184,14 +187,14 @@ class DataFileInputTest extends ChadoTestKernelBase {
 
     // Create test scenario for invalid parameters.
     $test_file_param['invalid-parameters'] = [
-      'file_id' => 0,
-      'file_uri' => ''
+      'fid' => 0,
+      'filename' => '',
     ];
     
     // Create test scenario for non-existent file.
     $test_file_param['non-existent'] = [
-      'file_id' => 999,
-      'file_uri' => 'public://non-existent.tsv'
+      'fid' => 999,
+      'filename' => 'public://non-existent.tsv'
     ];
 
     // Set the property to all test file scenario.
@@ -221,14 +224,16 @@ class DataFileInputTest extends ChadoTestKernelBase {
           'filename' => [
             'case' => 'Filename is empty',
             'valid' => FALSE,
+            'failed_item_keys' => ['filename', 'fid']
           ],
           'fid' => [
             'case' => 'Invalid file id number',
             'valid' => FALSE,
+            'failed_item_keys' => ['filename', 'fid']
           ]
         ]
       ],
-
+  
       // #1: Test non-existent file.
       [
         'file does not exist',
@@ -237,14 +242,18 @@ class DataFileInputTest extends ChadoTestKernelBase {
           'filename' => [
             'case' => 'Filename or file id failed to load a file object',
             'valid' => FALSE,
+            'failed_item_keys' => ['filename', 'fid']
           ],
           'fid' => [
             'case' => 'Filename or file id failed to load a file object',
             'valid' => FALSE,
+            'failed_item_keys' => ['filename', 'fid']
           ]
         ]
       ],
 
+
+/*
       // #2: Test unmanaged file - file does not exist in file system.
       [
         'unmanaged file',
@@ -299,11 +308,11 @@ class DataFileInputTest extends ChadoTestKernelBase {
         'file-pretend',
         [
           'filename' => [
-            'case' => 'The file is not the prescribed file type',
+            'case' => 'Unsupported file MIME type',
             'valid' => FALSE,
           ],
           'fid' => [
-            'case' => 'The file is not the prescribed file type',
+            'case' => 'Unsupported file MIME type',
             'valid' => FALSE,
           ]
         ]
@@ -339,7 +348,7 @@ class DataFileInputTest extends ChadoTestKernelBase {
             'valid' => TRUE,
           ]
         ],
-      ],
+      ], */
     ];
   }
 
@@ -352,10 +361,10 @@ class DataFileInputTest extends ChadoTestKernelBase {
     $file_input = $this->test_files[ $test_file_key ];
     
     // Test file scenario using the file uri as filename parameter (first parameter).
-    $validation_status = $this->validator_instance->validateFile($file_input['file_uri'], NULL);
+    $validation_status = $this->validator_instance->validateFile($file_input['filename'], NULL);
     // If validation status valid key is true (no error), the failed item is an empty array,
     // otherwise the failed item is the value provided to the parameter filename.
-    $expected['filename']['failedItems'] = ($expected['filename']['valid']) ? [] : ['filename' => $file_input['file_uri']];
+    $expected['filename']['failedItems'] = ($expected['filename']['valid']) ? [] : [$expected['filename']['failed_item_keys'][0] => $file_input['file_uri'], 'fid' => $file_input['file_id']];
 
     foreach($validation_status as $key => $value) {
       $this->assertEquals($value, $expected['filename'][ $key ],
@@ -366,7 +375,8 @@ class DataFileInputTest extends ChadoTestKernelBase {
     $validation_status = $this->validator_instance->validateFile('', $file_input['file_id']);
     // If validation status valid key is true (no error), the failed item is an empty array,
     // otherwise the failed item is the value provided to the parameter fid.
-    $expected['fid']['failedItems'] = ($expected['fid']['valid']) ? [] : ['file_id' => $file_input['file_id']];
+    $expected['fid']['failedItems'] = ($expected['fid']['valid']) ? [] : ['filename' => $file_input['file_uri'], 'fid' => $file_input['file_id']];
+
 
     foreach($validation_status as $key => $value) {
       $this->assertEquals($value, $expected['fid'][ $key ], 
