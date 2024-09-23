@@ -315,7 +315,7 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $exception_message,
       $exception['getter'],
-      'Exception message does not match the expected message when trying to get expected number of columns in scenario ' . $scenario
+      'Exception message does not match the expected message when trying to call ValidDelimitedFile::getExpectedColumns() in scenario ' . $scenario
     );
 
     $this->assertEquals(
