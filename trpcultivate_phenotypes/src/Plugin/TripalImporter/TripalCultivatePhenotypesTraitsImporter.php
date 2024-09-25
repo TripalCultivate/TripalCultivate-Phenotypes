@@ -168,7 +168,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // - All header row cells are not empty.
     // @TODO: Uncomment the following code when the Headers validator has been
     //        updated and no longer uses the validate() method.
-    // $instance = $manager->createInstance('empty_header_cell');
+    // $instance = $manager->createInstance('empty_cell');
     // $context['indices'] = [
     //   $header_index['Trait Name'],
     //   $header_index['Trait Description'],
@@ -478,9 +478,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   by the unique name assigned to each validator-input type combination
    *
    * @return array
-   *   An array of all the final return values for all of the validators used by
-   *   this importer, keyed by a string that is associated with a line in the
-   *   validate UI. Specifically:
+   *   An array of feedback to provide to the user which summarizes the validation results 
+   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed 
+   *   by a string that is associated with a line in the validate UI. Specifically,
    *   - 'validation_line': A string associated with a line that will be
    *     displayed to the user in the validate UI
    *     - 'title': A user-focussed message describing the validation that took
@@ -493,7 +493,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *       contents of $failures['validator_name'].
    */
   public function processValidationMessages($failures) {
-    // Array to hold all validation results for each validator. Everything is
+    // Array to hold all the user feedback. Currently this includes an entry for each 
+    // validator. However, in future designs we may combine more then one validator into a
+    // single line in the validate UI and, thus, a single entry in this array. Everything is
     // set to status of 'todo' to start and will only change to one of 'pass' or
     // 'fail' if the $failures[] array is defined for that validator, indicating
     // that validation did take place.
