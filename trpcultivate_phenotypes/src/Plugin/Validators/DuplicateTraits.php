@@ -112,7 +112,7 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    * @return array
    *   An associative array with the following keys.
    *   - case: a developer focused string describing the case checked.
-   *   - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *   - valid: TRUE if the trait is unique and FALSE if it already exists.
    *   - failedItems: an array of "items" that failed with the following keys, to
    *     be used in the message to the user. This is an empty array if the data row input was valid.
    *     - combo_provided: The combo of trait, method, and unit provided in the file.

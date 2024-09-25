@@ -58,7 +58,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    * @return array
    *   An associative array with the following keys.
    *   - case: a developer focused string describing the case checked.
-   *   - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *   - valid: FALSE if any of the cells being checked are empty and TRUE otherwise.
    *   - failedItems: an array of "items" that failed with the following keys, to
    *     be used in the message to the user. This is an empty array if the data row input was valid.
    *     - empty_indices: A list of indices which were checked and found to be empty

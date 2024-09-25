@@ -62,7 +62,8 @@ class ValueInList extends TripalCultivatePhenotypesValidatorBase implements Cont
    * @return array
    *   An associative array with the following keys.
    *   - case: a developer focused string describing the case checked.
-   *   - valid: either TRUE or FALSE depending on if the genus value is valid or not.
+   *   - valid: FALSE if any of the cells being checked contain a value not in the 
+   *     configured list of approved values and TRUE otherwise.
    *   - failedItems: an array of "items" that failed, to be used in the message
    *     to the user. This is an empty array if the data row input was valid.
    *     The array contains key => value pairs that map to the index => cell value(s)
