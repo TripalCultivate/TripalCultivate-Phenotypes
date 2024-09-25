@@ -81,20 +81,16 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
    *    - failedItems: an array of "items" that failed to be used in the message to the user. This is an empty array if the file input was valid.
    */
   public function validateFile($filename, $fid = NULL) {
-    // Validator response values for a valid file.
-    $case = 'Data file is valid';
-    $valid = TRUE;
-    $failed_items = [];
 
     // Parameter check, verify that the filename/file path is valid.
     if (empty($filename) && is_null($fid)) {
       return [
-        'case' => 'Filename is empty',
+        'case' => 'Filename is empty string',
         'valid' => FALSE,
-        'failedItems' => ['filename' => $filename, 'fid' => $fid]
+        'failedItems' => ['filename' => '', 'fid' => $fid]
       ];
     }
-    
+
     // Parameter check, verify the file id number is not 0 or negative values.
     if (!is_null($fid) && $fid <= 0) {
       return [
@@ -102,37 +98,33 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         'valid' => FALSE,
         'failedItems' => ['filename' => $filename, 'fid' => $fid]
       ];
-    } 
+    }
 
-    // File input.
+    // Holds the file object when file is a managed file.
     $file_object = NULL;
-    
+
     // Load file object.
     if (is_numeric($fid) && $fid > 0) {
-      // The file input is integer value, the file id number.
-      // Load the file object by fid number.
-      $file_id = $fid;
-      $file_object = File::load($file_id);
+      // The file input is integer value, the file id number. Load the file object by fid number.
+      $file_object = File::load($fid);
     }
     elseif ($filename) {
-      // The file input is a string value, a path to the file.
-      // Locate the file entity by uri and load the file object using
-      // the returned file id number that matched.
+      // The file input is a string value, a path to the file. Locate the file entity
+      // by uri and load the file object using the returned file id number that matched.
       $file_entities = $this->service_EntityTypeManager
         ->getStorage('file')
         ->loadByProperties(['uri' => $filename]);
-      
+
       $file_entity = reset($file_entities);
-      $file_object = 0;
-      
+
       if ($file_entity) {
-        $file_id = $file_entity->get('fid')->value;
-        $file_object = File::load($file_id);
+        $fid = $file_entity->get('fid')->value;
+        $file_object = File::load($fid);
       }
     }
 
-    if (!$file_object) {
-      // The file failed to load a file object.
+    // Check that the file input provided returned a file object.
+    if (is_null($file_object)) {
       return [
         'case' => 'Filename or file id failed to load a file object',
         'valid' => FALSE,
@@ -140,12 +132,12 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       ];
     }
     
-    // File object has loaded successfully.  
+    // File object has loaded successfully. Any subsequent failed test from this point
+    // will reference the filename and file id from the established file object.
     $file_filename = $file_object->getFileName();
     $file_fid = $file_object->id();
-    
-    // Check that the file is not blank by inspecting the file size
-    // to see if it is greater than 0.
+
+    // Check that the file is not blank by inspecting the file size to see if it is greater than 0.
     $file_size = $file_object->getSize();
     if (!$file_size) {
       return [
@@ -154,18 +146,18 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         'failedItems' => $failed_items = ['filename' => $file_filename, 'fid' => $file_fid]
       ];
     }
-
-    // Check that both the file extension and file MIME type
-    // are supported by the importer.
+    
+    // Check that both the file MIME type and file extension are supported.
     $file_mime_type = $file_object->getMimeType();
     $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
-
+    
+    // Reference supported MIME types and file extensions values set by the importer instance.
     $supported_file_extensions = $this->getSupportedFileExtensions();
     $supported_mime_types = $this->getSupportedMimeTypes();
 
     if (!in_array($file_mime_type, $supported_mime_types)) {
       if (in_array($file_extension, $supported_file_extensions)) {
-        // MIME type is incorrect but the extension is correct.
+        // The file extension is supported but the MIME type is not.
         return [
           'case' => 'Unsupported file MIME type',
           'valid' => FALSE,
@@ -173,7 +165,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         ];
       }
       else {
-        // Both MIME type and file extension are incorrect.
+        // Both MIME type and file extension are not supported.
         return [
           'case' => 'Unsupported file mime type and mismatched extension',
           'valid' => FALSE,
@@ -195,5 +187,12 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
     }
 
     fclose($file_handle);
+
+    // Validator response values if data file is valid.
+    return [
+      'case' => 'Data file is valid',
+      'valid' => TRUE,
+      'failedItems' => []
+    ];
   }
 }
