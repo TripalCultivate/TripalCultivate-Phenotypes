@@ -558,9 +558,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           $message = $failures[$validator_name]['case'];
           $messages[$validator_name] = [
             'status' => 'fail',
-            'details' => $message
+            'details' => $message,
+            'raw_results' => $failures[$validator_name],
           ];
-          $messages['raw_results'] = $failures[$validator_name];
         }
         // @todo: Remove this if block when old validators GENUS, FILE, and
         // HEADERS are removed.
@@ -568,9 +568,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           $message = $failures[$validator_name]['details'];
           $messages[$validator_name] = [
             'status' => 'fail',
-            'details' => $message
+            'details' => $message,
+            'raw_results' => $failures[$validator_name],
           ];
-          $messages['raw_results'] = $failures[$validator_name];
         }
         // @todo: Check if this is a validator that keeps track of line numbers.
         // @assumption: Only data-row validators enter this else
@@ -593,9 +593,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
           $messages[$validator_name] = [
             'status' => 'fail',
-            'details' => $message
+            'details' => $message,
+            'raw_results' => $failures[$validator_name],
           ];
-          $messages['raw_results'] = $failures[$validator_name];
         }
       }
     }
