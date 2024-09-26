@@ -17,7 +17,7 @@ use Drupal\file\Entity\File;
   * @group trpcultivate_phenotypes
   * @group validators
   */
-class ValidHeadersTest extends ChadoTestKernelBase {
+class ValidatorValidHeadersTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
 
@@ -93,7 +93,7 @@ class ValidHeadersTest extends ChadoTestKernelBase {
    *   - Expected validation result.
    */
   public function provideHeadersToHeadersValidator() {
-  
+
     return [
       // #0: The headers input is an empty array.
       [
@@ -167,7 +167,7 @@ class ValidHeadersTest extends ChadoTestKernelBase {
    */
   public function testHeaders($scenario, $headers_input, $expected) {
     $validation_status = $this->validator_instance->validateRow($headers_input);
-  
+
     foreach($validation_status as $key => $value) {
       $this->assertEquals($value, $expected[ $key ],
         'The validation status key: ' . $key . ' does not match the same key in the expected status of scenario: ' . $scenario);

@@ -66,68 +66,64 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
    */
   public function validateRow($headers) {
 
-    // Validator response values for a valid raw row.
-    $case = 'Headers exist and match expected headers';
-    $valid = TRUE;
-    $failed_items = [];
-
-    // Check that the headers array is not empty.
-    if ($headers) {
-
-      // Check that no headers are missing by verifying that all expected headers are present.
-      // Get all the headers defined by the importer regardless of type.
-      $expected_headers = $this->getHeaders();
-      $expected_header_names = array_values($expected_headers);
-
-      $missing_headers = array_filter($expected_header_names, function($names) use($headers) {
-        return (!in_array($names, $headers));
-      });
-
-      if (!$missing_headers) {
-  
-        // Check that the sequence of headers specified by the Importer is the same as the order
-        // of headers as in the headers array.
-        $not_in_order = [];
-
-        foreach($expected_headers as $index => $header) {
-          if (isset($headers[ $index ]) && $headers[ $index ] != $header) {
-            // Check that in this index in the expected headers, the header name is the same as the name
-            // in the headers array in the same position or index.
-            
-            // Save only the header that does not match.
-            array_push($not_in_order, $header);
-          }
-        }
-
-        if ($not_in_order) {
-          // Headers not in the correct order.
-          $not_in_order = implode(', ', $not_in_order);
-
-          $case = 'Headers not in the correct order';
-          $valid = FALSE;
-          $failed_items = ['headers' => $not_in_order];
-        }
-      }
-      else {
-        // Expected header/s are missing.
-        $missing_headers = implode(', ', $missing_headers);
-
-        $case = 'Missing expected headers';
-        $valid = FALSE;
-        $failed_items = ['headers' => $missing_headers];
-      }
-    }
-    else {
+    // Parameter check, verify that the headers array input is not an empty array.
+    if (empty($headers)) {
       // Headers array is an empty array.
-      $case = 'Header row is an empty value';
-      $valid = FALSE;
-      $failed_items = ['headers' => 'headers array is an empty array'];
+      return [
+        'case' => 'Header row is an empty value',
+        'valid' => FALSE,
+        'failedItems' => ['headers' => 'headers array is an empty array']
+      ];
     }
 
+    // Check that no headers are missing by verifying that all expected headers are present.
+    // Get all the headers defined by the importer regardless of type.
+    $expected_headers = $this->getHeaders();
+    $expected_header_names = array_values($expected_headers);
+
+    $missing_headers = array_filter($expected_header_names, function ($names) use ($headers) {
+      return (!in_array($names, $headers));
+    });
+
+    if ($missing_headers) {
+      $missing_headers = implode(', ', $missing_headers);
+
+      return [
+        'case' => 'Missing expected headers',
+        'valid' => FALSE,
+        'failedItems' => ['headers' => $missing_headers]
+      ];
+    }
+
+    // Check that the sequence of headers specified by the Importer is the same as the order
+    // of headers as in the headers array.
+    $not_in_order = [];
+
+    foreach ($expected_headers as $index => $header) {
+      if (isset($headers[$index]) && $headers[$index] != $header) {
+        // Check that in this index in the expected headers, the header name is the same as the name
+        // in the headers array in the same position or index.
+
+        // Save only the header that does not match.
+        array_push($not_in_order, $header);
+      }
+    }
+
+    if ($not_in_order) {
+      $not_in_order = implode(', ', $not_in_order);
+
+      return [
+        'case' => 'Headers not in the correct order',
+        'valid' => FALSE,
+        'failedItems' => ['headers' => $not_in_order]
+      ];
+    }
+
+    // Validator response values if headers array is valid.
     return [
-      'case' => $case,
-      'valid' => $valid,
-      'failedItems' => $failed_items
+      'case' => 'Headers exist and match expected headers',
+      'valid' => TRUE,
+      'failedItems' => []
     ];
   }
 }
