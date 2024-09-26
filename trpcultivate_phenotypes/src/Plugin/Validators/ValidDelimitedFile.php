@@ -76,81 +76,82 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
    */
   public function validateRawRow($raw_row) {
     
-    // Validator response values for a valid raw row.
-    $case = 'Data file raw row is delimited';
-    $valid = TRUE;
-    $failed_items = [];
-    
-    // Check if the line is empty.
-    if ($raw_row) {
-      $expected_columns = $this->getExpectedColumns();
+    // Parameter check, verify that raw row is not an empty string value.
+    if (empty(trim($raw_row))) {
+      return [
+        'case' => 'Raw row is empty',
+        'valid' => FALSE,
+        'failedItems' => ['raw_row' => 'is an empty string value']
+      ];
+    }
 
-      if ($expected_columns['number_of_columns'] > 1) {
-        
-        // Check if the line has some delimiters used (only if number of expected columns is greater than 1).
-        // Specifically, check the line includes at least one of the delimiters returned by the get file delimiter method.
-        $input_file_mime_type = $this->getFileMimeType();
-        $input_file_type_delimiters = $this->getFileDelimiters($input_file_mime_type);
+    // Check if the line has some delimiters used (only if number of expected columns is greater than 1).
+    $expected_columns = $this->getExpectedColumns();
+    if ($expected_columns['number_of_columns'] == 1) {
+      return [
+        'case' => 'Data file raw row is delimited',
+        'valid' => TRUE,
+        'failedItems' => []
+      ];
+    }
 
-        $delimiters_used = [];
-        foreach($input_file_type_delimiters as $delimiter) {
-          if (strpos($raw_row, $delimiter)) {
-            array_push($delimiters_used, $delimiter);
-          }
-        }
-        
-        if ($delimiters_used) {
+    // Specifically, check the line includes at least one of the delimiters returned by the get file delimiter method. 
+    $input_file_mime_type = $this->getFileMimeType();
+    $input_file_type_delimiters = $this->getFileDelimiters($input_file_mime_type);
+
+    $delimiters_used = [];
+    foreach($input_file_type_delimiters as $delimiter) {
+      if (strpos($raw_row, $delimiter)) {
+        array_push($delimiters_used, $delimiter);
+      }
+    }
       
-          // Split the line and see if the number of values returned equals to the expected number of columns.
-          // Use the strict flag of the validator columns configuration to compare the columns returned by
-          // split method and the configured columns.
-          
-          // A strict set to True means exact match whereas False requires at least the configured columns.
-          $delimiters_checked = [];
-          foreach($delimiters_used as $delimiter) {
-            $columns = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($raw_row, $input_file_mime_type);
-
-            if ($expected_columns['strict']) {
-              // A strict comparison - exact match only.
-              if (count($columns) != $expected_columns['number_of_columns']) {
-                array_push($delimiters_checked, $delimiter);
-              }
-            }
-            else {
-              // Not a strict comparison - at least x number of columns.
-              if (count($columns) < $expected_columns['number_of_columns']) {
-                array_push($delimiters_checked, $delimiter);
-              }
-            }
-          }
-
-          // If all delimiters failed the checks, then the line failed due to none of the
-          // delimiter was able to split the line into the expected number of columns.
-          if ($delimiters_used == $delimiters_checked) {
-            $case = 'Raw row is not delimited';
-            $valid = FALSE;
-            $failed_items = ['raw_row' => $raw_row];
-          }
-        }
-        else {
-          // Neither of the supported delimiters for the file was detected in the raw row.
-          $case = 'None of the delimiters supported by the file type was used';
-          $valid = FALSE;
-          $failed_items = ['raw_row' => $raw_row];
-        }
-      }      
+    // Not one of the supported delimiters was detected in the raw row.
+    if (empty($delimiters_used)) {
+      return [
+        'case' => 'None of the delimiters supported by the file type was used',
+        'valid' => FALSE,
+        'failedItems' => ['raw_row' => $raw_row]
+      ];
     }
-    else {
-      // The line provided is an empty string.
-      $case = 'Raw row is empty';
-      $valid = FALSE;
-      $failed_items = ['raw_row' => 'is an empty string value'];
+
+    // Split the line and see if the number of values returned equals to the expected number of columns.
+    // Use the strict flag of the validator columns configuration to compare the columns returned by
+    // split method and the configured columns.
+
+    // A strict flag set to True means exact match whereas False requires at least the configured columns.
+    $delimiters_checked = [];
+    foreach($delimiters_used as $delimiter) {
+      $columns = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($raw_row, $input_file_mime_type);
+
+      if ($expected_columns['strict']) {
+        // A strict comparison - exact match only.
+        if (count($columns) != $expected_columns['number_of_columns']) {
+          array_push($delimiters_checked, $delimiter);
+        }
+      }
+      else {
+        // Not a strict comparison - at least x number of columns.
+        if (count($columns) < $expected_columns['number_of_columns']) {
+          array_push($delimiters_checked, $delimiter);
+        }
+      }
     }
-    
+
+    // If all delimiters failed the checks, then the line failed due to none of the
+    // delimiter was able to split the line into the expected number of columns.
+    if ($delimiters_used == $delimiters_checked) {
+      return [  
+        'case' => 'Raw row is not delimited',
+        'valid' => FALSE,
+        'failedItems' => ['raw_row' => $raw_row]
+      ];
+    }
+
     return [
-      'case' => $case,
-      'valid' => $valid,
-      'failedItems' => $failed_items
+      'case' => 'Data file raw row is delimited',
+      'valid' => TRUE,
+      'failedItems' => []
     ];
   }
 
@@ -176,7 +177,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
     $context_key = $this->validator_context_key;
 
     if ($number_of_columns <= 0) {
-      throw new \Exception('setExpectedColumns() requires an integer value greater than zero.');
+      throw new \Exception('setExpectedColumns() in validator requires an integer value greater than zero.');
     }
 
     $this->context[ $context_key ] = [
@@ -205,7 +206,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
       return $this->context[ $context_key ];
     }
     else {
-      throw new \Exception('Cannot retrieve the number of expected columns as one hasn't been set by setExpectedColumns().');
+      throw new \Exception('Cannot retrieve the number of expected columns as one has not been set by setExpectedColumns().');
     }
   }
 }

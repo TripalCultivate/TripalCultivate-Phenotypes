@@ -16,7 +16,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
   * @group trpcultivate_phenotypes
   * @group validators
   */
-class DataFileDelimitedTest extends ChadoTestKernelBase {
+class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
 
@@ -94,7 +94,7 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
 
         ]
       ],
-
+      
       // #1: None of the supported delimiter for the file type was used.
       [
         'no delimiter',
@@ -213,13 +213,13 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
    *   - Number of expected colum input (first parameter to the setter method).
    *   - Strict condition flag input (second parameter to the setter method).
    *   - Expected values set:
-   *     - number_of_columns: the number of columns to expect.
-   *     - strict: strict comparison flag.
+   *    - number_of_columns: the number of columns to expect.
+   *    - strict: strict comparison flag.
    *   - Expected exception message for both setter and getter:
    *    - setter: setter exception message.
    *    - getter: getter exception message.
    */
-  public function provideValidatorConfigurationValues() {
+  public function provideExpectedColumnsForSetter() {
     return [
       // #0: A zero number of expected column.
       [
@@ -228,8 +228,8 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
         FALSE,
         NULL,
         [
-          'setter' => 'The setter method in ValidDelimitedFile requires an integer value greater than zero.',
-          'getter' => 'Cannot retrieve the values set by the ValidDelimitedFile setter method.'
+          'setter' => 'setExpectedColumns() in validator requires an integer value greater than zero.',
+          'getter' => 'Cannot retrieve the number of expected columns as one has not been set by setExpectedColumns().'
         ]
       ],
 
@@ -266,10 +266,10 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
       $exception_message = $e->getMessage();
     }
 
-    $this->assertTrue($exception_caught, 'ValidDelimitedFile::getExpectedColumns() method should throw an exception when trying to get expected number of columns before setting them.');
+    $this->assertTrue($exception_caught, 'getExpectedColumns() method should throw an exception when trying to get expected number of columns before setting them.');
     $this->assertEquals(
       $exception_message,
-      'Cannot retrieve the values set by the ValidDelimitedFile setter method.',
+      'Cannot retrieve the number of expected columns as one has not been set by setExpectedColumns().',
       'Exception message does not match the expected message when trying to get expected number of columns before setting them.'
     );
   }
@@ -277,7 +277,7 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
   /**
    * Test getter method to get expected columns.
    * 
-   * @dataProvider provideValidatorConfigurationValues
+   * @dataProvider provideExpectedColumnsForSetter
    */
   public function testValidatorSetterAndGetter($scenario, $column_numbers_input, $strict_input, $expected, $exception) {
     
@@ -296,7 +296,7 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $exception_message,
       $exception['setter'],
-      'Exception message does not match the expected message when trying to call ValidDelimitedFile::setExpectedColumns() in scenario ' . $scenario
+      'Exception message does not match the expected message when trying to call setExpectedColumns() in scenario ' . $scenario
     );
 
     // Test getter method.
@@ -315,7 +315,7 @@ class DataFileDelimitedTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $exception_message,
       $exception['getter'],
-      'Exception message does not match the expected message when trying to call ValidDelimitedFile::getExpectedColumns() in scenario ' . $scenario
+      'Exception message does not match the expected message when trying to call getExpectedColumns() in scenario ' . $scenario
     );
 
     $this->assertEquals(
