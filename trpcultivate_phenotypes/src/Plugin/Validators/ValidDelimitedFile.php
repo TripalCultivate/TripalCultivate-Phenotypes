@@ -176,7 +176,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
     $context_key = $this->validator_context_key;
 
     if ($number_of_columns <= 0) {
-      throw new \Exception('The setter method in ' . $context_key . ' requires an integer value greater than zero.');
+      throw new \Exception('setExpectedColumns() requires an integer value greater than zero.');
     }
 
     $this->context[ $context_key ] = [
