@@ -205,7 +205,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
       return $this->context[ $context_key ];
     }
     else {
-      throw new \Exception('Cannot retrieve the values set by the ' . $context_key . ' setter method.');
+      throw new \Exception('Cannot retrieve the number of expected columns as one hasn't been set by setExpectedColumns().');
     }
   }
 }
