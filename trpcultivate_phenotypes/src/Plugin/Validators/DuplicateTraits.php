@@ -171,11 +171,9 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
     }
 
     // Check if our trait combo exists at the database level
-    // First make sure to get our genus and then set it in our Traits Service
-    // before we can grab our trait combo
-    $genus = $this->getConfiguredGenus();
-    $this->service_PhenoTraits->setTraitGenus($genus);
-    // Grab our traits service
+    // NOTE: The trait service was configured to use this genus by
+    // the GenusConfigured trait when the genus was set.
+    // Grab our trait combo.
     $trait_combo = $this->service_PhenoTraits->getTraitMethodUnitCombo($trait, $method, $unit);
     if (!empty($trait_combo)) {
       // Duplicate found
