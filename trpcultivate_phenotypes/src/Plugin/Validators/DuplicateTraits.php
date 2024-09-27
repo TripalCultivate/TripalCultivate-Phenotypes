@@ -121,6 +121,13 @@ class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements 
    *       - Trait Name: The trait name provided in the file
    *       - Method Short Name: The method name provided in the file
    *       - Unit: The unit provided in the file
+   *
+   * @throws \Exception
+   *  - If the $indices array grabbed by getIndices() is missing any of the
+   *    following keys (ie. these were not set by setIndices() in the importer):
+   *    - 'Trait Name'
+   *    - 'Method Short Name'
+   *    - 'Unit'
    */
   public function validateRow($row_values) {
 

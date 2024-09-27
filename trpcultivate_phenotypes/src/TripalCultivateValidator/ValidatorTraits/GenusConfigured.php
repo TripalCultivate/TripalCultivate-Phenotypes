@@ -47,8 +47,9 @@ trait GenusConfigured {
    * @return void
    *
    * @throws \Exception
-   *  - If the genus does not match at least one record in the chado.organism table.
-   *  - If the genus is not configured to work with this module.
+   *  - If the PhenoGenusOntology service is not accessible
+   *  - If the PhenoTraits service is not accessible
+   *  - If an instance of ChadoConnection is not accessible
    */
   public function setConfiguredGenus(string $genus) {
 
