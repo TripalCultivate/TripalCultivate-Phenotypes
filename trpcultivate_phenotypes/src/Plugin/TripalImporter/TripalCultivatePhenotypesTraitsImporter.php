@@ -478,8 +478,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   by the unique name assigned to each validator-input type combination
    *
    * @return array
-   *   An array of feedback to provide to the user which summarizes the validation results 
-   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed 
+   *   An array of feedback to provide to the user which summarizes the validation results
+   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed
    *   by a string that is associated with a line in the validate UI. Specifically,
    *   - 'validation_line': A string associated with a line that will be
    *     displayed to the user in the validate UI
@@ -493,7 +493,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *       contents of $failures['validator_name'].
    */
   public function processValidationMessages($failures) {
-    // Array to hold all the user feedback. Currently this includes an entry for each 
+    // Array to hold all the user feedback. Currently this includes an entry for each
     // validator. However, in future designs we may combine more then one validator into a
     // single line in the validate UI and, thus, a single entry in this array. Everything is
     // set to status of 'todo' to start and will only change to one of 'pass' or
@@ -536,6 +536,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ]
     ];
 
+    $has_failed = FALSE;
+
     foreach($messages as $validator_name => $default_messages) {
       // Check if this validator exists in the failures array, which indicates
       // that it was run.
@@ -545,9 +547,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Check if $failures[$validator_name] is empty, which indicates there
         // are no errors to report for this validator.
         if (count($failures[$validator_name]) === 0 ) {
-          $messages[$validator_name] = [
-            'status' => 'pass',
-          ];
+          $status = ($has_failed) ? 'todo' : 'pass';
+          $messages[$validator_name]['status'] = $status;
         }
 
         // ----------------------------- FAIL ----------------------------------
@@ -557,22 +558,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         else if (array_key_exists('case', $failures[$validator_name])) {
           // @todo: Update the message to not use the 'case' string by default
           // and to incorporate the 'failed_details'.
-          $message = $failures[$validator_name]['case'];
-          $messages[$validator_name] = [
-            'status' => 'fail',
-            'details' => $message,
-            'raw_results' => $failures[$validator_name],
-          ];
+          $messages[$validator_name]['status'] = 'fail';
+          $messages[$validator_name]['details'] = $failures[$validator_name]['case'];
+          $messages[$validator_name]['raw_results'] = $failures[$validator_name];
         }
         // @todo: Remove this if block when old validators GENUS, FILE, and
         // HEADERS are removed.
         else if (array_key_exists('details', $failures[$validator_name])){
-          $message = $failures[$validator_name]['details'];
-          $messages[$validator_name] = [
-            'status' => 'fail',
-            'details' => $message,
-            'raw_results' => $failures[$validator_name],
-          ];
+          $messages[$validator_name]['status'] = 'fail';
+          $messages[$validator_name]['details'] = $failures[$validator_name]['details'];
+          $messages[$validator_name]['raw_results'] = $failures[$validator_name];
         }
         // @todo: Check if this is a validator that keeps track of line numbers.
         // @assumption: Only data-row validators enter this else
@@ -587,17 +582,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // also are valid but this scenario should have already been caught by
         // the previous if block.
         else {
+          // A validator has failed. Subsequent input type will be marked todo.
+          $has_failed = TRUE;
+
           // @todo: Update this current approach to not report only the first
           // failure, but instead collect all the cases and failedItems and
           // formulate one concise, helpful feedback message.
           // foreach ($failures[$validator_name] as $line_no => $validator_results) {
           $first_failed_row = array_key_first($failures[$validator_name]);
-          $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
-          $messages[$validator_name] = [
-            'status' => 'fail',
-            'details' => $message,
-            'raw_results' => $failures[$validator_name],
-          ];
+
+          $messages[$validator_name]['status'] = 'fail';
+          $messages[$validator_name]['details'] = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+          $messages[$validator_name]['raw_results'] = $failures[$validator_name];
         }
       }
     }
