@@ -24,16 +24,16 @@ use Drupal\file\Entity\File;
  * )
  */
 class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
-  
+
   /**
    * This validator requires the following validator traits:
    * - FileTypes: Gets an array of all supported MIME types the importer is configured to process.
    */
   use FileTypes;
-  
+
   /**
    * Entity Type Manager service.
-   * 
+   *
    * @var EntityTypeManagerInterface
    */
   protected EntityTypeManagerInterface $service_EntityTypeManager;
@@ -43,7 +43,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-  
+
     // Set the Entity type manager service.
     $this->service_EntityTypeManager = $entity_type_manager;
   }
@@ -68,19 +68,19 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
    *  - Valid file extension and file mime type configured by the file importer instance.
    *  - File exists and not empty.
    *  - File can be opened.
-   * 
+   *
    * @param string $filename
    *   The full path to a file within the file system (Absolute file path).
    * @param integer $fid
-   *   The unique identifier (fid) of a file that is managed by Drupal File System.    
-   * 
+   *   [OPTIONAL] The unique identifier (fid) of a file that is managed by Drupal File System.
+   *
    * @return array
    *   An associative array with the following keys.
    *    - case: a developer focused string describing the case checked.
    *    - valid: either TRUE or FALSE depending on if the file is valid or not.
    *    - failedItems: an array of "items" that failed to be used in the message to the user. This is an empty array if the file input was valid.
    */
-  public function validateFile($filename, $fid = NULL) {
+  public function validateFile(string $filename, int|null $fid = NULL) {
 
     // Parameter check, verify that the filename/file path is valid.
     if (empty($filename) && is_null($fid)) {
@@ -131,7 +131,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         'failedItems' => ['filename' => $filename, 'fid' => $fid]
       ];
     }
-    
+
     // File object has loaded successfully. Any subsequent failed test from this point
     // will reference the filename and file id from the established file object.
     $file_filename = $file_object->getFileName();
@@ -146,11 +146,11 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
         'failedItems' => $failed_items = ['filename' => $file_filename, 'fid' => $file_fid]
       ];
     }
-    
+
     // Check that both the file MIME type and file extension are supported.
     $file_mime_type = $file_object->getMimeType();
     $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
-    
+
     // Reference supported MIME types and file extensions values set by the importer instance.
     $supported_file_extensions = $this->getSupportedFileExtensions();
     $supported_mime_types = $this->getSupportedMimeTypes();
@@ -177,10 +177,10 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
     // Check that the file can be opened.
     $file_uri  = $file_object->getFileUri();
     $file_handle = @fopen($file_uri, 'r');
-    
+
     if (!$file_handle) {
       return [
-        'case' => 'The file cannot be opened',
+        'case' => 'Data file cannot be opened',
         'valid' => FALSE,
         'failedItems' => $failed_items = ['filename' => $file_filename, 'fid' => $file_fid]
       ];

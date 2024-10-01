@@ -22,7 +22,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
   /**
    * An instance of the data file delimiter validator.
-   * 
+   *
    * @var object
    */
   protected $validator_instance;
@@ -63,10 +63,10 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
   /**
    * Data provider: provides test data file raw row.
-   * 
+   *
    * @return array
    *   Each scenario/element is an array with the following values.
-   *   
+   *
    *   - A string, human-readable short description of the test scenario.
    *   - A single line of string value.
    *   - Validator configuration:
@@ -78,7 +78,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
    */
   public function provideRawRowToDelimitedFileValidator() {
     return [
-      
+
       // # 0: Raw row line is an empty string.
       [
         'empty raw row',
@@ -94,7 +94,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
         ]
       ],
-      
+
       // #1: None of the supported delimiter for the file type was used.
       [
         'no delimiter',
@@ -150,7 +150,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
           'strict' => FALSE
         ],
         [
-          'case' => 'Data file raw row is delimited',
+          'case' => 'Raw row is delimited',
           'valid' => TRUE,
           'failedItems' => []
         ]
@@ -165,7 +165,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
           'strict' => TRUE
         ],
         [
-          'case' => 'Data file raw row is delimited',
+          'case' => 'Raw row is delimited',
           'valid' => TRUE,
           'failedItems' => []
         ]
@@ -180,22 +180,37 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
           'strict' => FALSE
         ],
         [
-          'case' => 'Data file raw row is delimited',
+          'case' => 'Raw row is delimited',
           'valid' => TRUE,
           'failedItems' => []
         ]
       ],
 
-      // #7: Raw row just has one column.
+      // #7: Raw row just has one column with strict flag set to FALSE (mininum).
       [
-        'one column',
+        'one column with strict set to false',
         "Data Value One",
         [
           'number_of_columns' => 1,
           'strict' => FALSE
         ],
         [
-          'case' => 'Data file raw row is delimited',
+          'case' => 'Raw row has expected number of columns',
+          'valid' => TRUE,
+          'failedItems' => []
+        ]
+      ],
+
+      // #8: Raw row just has one column with strict flag set to TRUE (exact match).
+      [
+        'one column with strict flag set to true',
+        "Data Value One",
+        [
+          'number_of_columns' => 1,
+          'strict' => TRUE
+        ],
+        [
+          'case' => 'Raw row has expected number of columns',
           'valid' => TRUE,
           'failedItems' => []
         ]
@@ -205,10 +220,10 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
   /**
    * Data provider: provides test data validator expected column and strict comparison.
-   * 
+   *
    * @return array
    *   Each scenario/element is an array with the following values.
-   *   
+   *
    *   - A string, human-readable short description of the test scenario.
    *   - Number of expected colum input (first parameter to the setter method).
    *   - Strict condition flag input (second parameter to the setter method).
@@ -255,10 +270,10 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
    * the setter method first.
    */
   public function testGetExpectedColumns() {
-    
+
     $exception_caught = FALSE;
     $exception_message = '';
-    
+
     try {
       $this->validator_instance->getExpectedColumns();
     } catch (\Exception $e) {
@@ -276,11 +291,11 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
   /**
    * Test getter method to get expected columns.
-   * 
+   *
    * @dataProvider provideExpectedColumnsForSetter
    */
   public function testValidatorSetterAndGetter($scenario, $column_numbers_input, $strict_input, $expected, $exception) {
-    
+
     // Test the setter method.
     $exception_caught = FALSE;
     $exception_message = '';
@@ -327,7 +342,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
   /**
    * Test data file row is properly delimited.
-   * 
+   *
    * @dataProvider provideRawRowToDelimitedFileValidator
    */
   public function testDataFileRowIsDelimited($scenario, $raw_row_input, $validator_config, $expected) {
@@ -338,6 +353,6 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
     foreach($validation_status as $key => $value) {
       $this->assertEquals($value, $expected[ $key ],
         'The validation status key ' . $key . ' does not match the same status key in scenario: ' . $scenario);
-    } 
+    }
   }
 }

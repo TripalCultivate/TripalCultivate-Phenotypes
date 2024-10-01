@@ -22,7 +22,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
-   * An array of input test file. Each element is keyed by short description and the value 
+   * An array of input test file. Each element is keyed by short description and the value
    * is an array with the following keys:
    *  - test_param: is a list of parameter combination that will be passed to the validate method.
    *    each item in the list is an array of 2 elements where the first element is parameter to filename
@@ -31,15 +31,15 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
    *  - filename: filename or the value as provided to the filename parameter.
    *  - fid: the file id number.
    *  - mime: the file MIME type.
-   *  - extension: the file extension. 
-   * 
+   *  - extension: the file extension.
+   *
    * @var array
    */
   protected $test_files;
 
   /**
    * An instance of the data file validator.
-   * 
+   *
    * @var object
    */
   protected $validator_instance;
@@ -71,7 +71,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
 
     // Create test files.
     $this->installEntitySchema('file');
-    
+
     // Set the supported mime types for this test.
     $this->validator_instance->setSupportedMimeTypes([
       'tsv', // text/tab-separated-values
@@ -86,7 +86,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3']),
         'filesize' => 1024
       ],
-      
+
       // A valid file type, an empty file.
       'file-empty' => [
         'ext' => 'tsv',
@@ -94,7 +94,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => '',
         'filesize' => 0
       ],
-      
+
       // An alternative file type.
       'file-alternative' => [
         'ext' => 'txt',
@@ -102,7 +102,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3']),
         'filesize' => 1024,
       ],
-      
+
       // Not valid file.
       'file-image' => [
         'ext' => 'png',
@@ -111,7 +111,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'filesize' => 1024,
         'file' => 'png.png' // Can be found in the test Fixtures folder.
       ],
-      
+
       // Pretend tsv file.
       'file-pretend' => [
         'ext' => 'tsv',
@@ -129,7 +129,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'lock' => TRUE
       ]
     ];
-    
+
     // Array to hold the file id and file uri of the generated files
     // that will be used as parameters to the validator (filename or fid).
     $test_file_param = [];
@@ -144,9 +144,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'uri' => 'public://' . $filename,
         'status' => 0
       ]);
-      
+
       // Update test scenario file properties.
-      
+
       // Set the file size.
       if (isset($file_properties['filesize'])) {
         $file->setSize($file_properties['filesize']);
@@ -167,7 +167,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         file_put_contents($file_uri, $file_properties['content']);
       }
 
-      // If an existing file was specified, move the file fixture into the uri 
+      // If an existing file was specified, move the file fixture into the uri
       // to override the created file and use it in lieu of the created file.
       if (!empty($file_properties['file'])) {
         $path_to_fixtures = __DIR__ . '/../../Fixtures/';
@@ -177,7 +177,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
 
         copy($full_path, $file_uri);
       }
-      
+
       // If file should be locked.
       if (isset($file_properties['lock']) && $file_properties['lock']) {
         chmod($file_uri, 0000);
@@ -198,9 +198,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         ]
       ];
     }
-    
 
-    // Create an unmanaged file copy of the valid test file scenario 
+
+    // Create an unmanaged file copy of the valid test file scenario
     // to use as input for validating a file without a file id (unmanaged file).
     $file_valid_uri = $test_file_param['file-valid']['test_param']['filename'][0];
     // Rename the duplicate copy as unmanaged_test_data_file.
@@ -221,8 +221,8 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'extension' => 'tsv'
       ]
     ];
-    
-    
+
+
     // Create test scenario file input where the filename is an empty string value.
     $test_file_param['invalid-filename-parameter'] = [
       'test_param' => [
@@ -230,13 +230,13 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       ],
 
       'test_file' => [
-        'filename' => '', 
+        'filename' => '',
         'fid' => NULL,
         'mime' => '',
         'extension' => ''
       ]
     ];
-    
+
 
     // Create test scenario file input where the fid is zero.
     $test_file_param['invalid-fid-parameter'] = [
@@ -245,7 +245,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       ],
 
       'test_file' => [
-        'filename' => '', 
+        'filename' => '',
         'fid' => 0,
         'mime' => '',
         'extension' => ''
@@ -260,14 +260,14 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       ],
 
       'test_file' => [
-        'filename' => 'public://non-existent.tsv', 
+        'filename' => 'public://non-existent.tsv',
         'fid' => NULL,
         'mime' => '',
         'extension' => ''
       ]
     ];
 
-    
+
     // Create test scenario file input where the file id does not exist.
     $test_file_param['non-existent-fid'] = [
       'test_param' => [
@@ -275,13 +275,13 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       ],
 
       'test_file' => [
-        'filename' => '', 
+        'filename' => '',
         'fid' => 999,
         'mime' => '',
         'extension' => ''
       ]
     ];
-    
+
 
     // Set the property to all test file input scenario.
     $this->test_files = $test_file_param;
@@ -289,10 +289,10 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
 
   /**
    * Data provider: provides test data file input.
-   * 
+   *
    * @return array
    *   Each scenario/element is an array with the following values.
-   *   
+   *
    *   - A string, human-readable short description of the test scenario.
    *   - Test scenario array key set in the $test_files property. The key corresponds to a pair of file input (filename and fid).
    *   - Expected validation response for using either parameters. An empty array value indicates test for the parameter has not been performed.
@@ -302,10 +302,10 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
    *     - filename: filename or the value as provided to the filename parameter.
    *     - fid: the file id number.
    *     - mime: the file MIME type.
-   *     - extension: the file extension. 
+   *     - extension: the file extension.
    */
   public function provideFileForDataFileValidator() {
-        
+
     return [
       // #0: Test an invalid empty string value to the filename parameter.
       [
@@ -323,7 +323,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
           ]
         ]
       ],
-      
+
       // #1: Test an invalid zero value to the fid parameter.
       [
         'invalid fid parameter',
@@ -340,7 +340,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
           ]
         ]
       ],
-  
+
       // #2: Test non-existent filename.
       [
         'filename does not exist',
@@ -391,7 +391,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
           ]
         ]
       ],
-      
+
       // #5: Test an empty file.
       [
         'file is empty',
@@ -411,7 +411,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
           ]
         ]
       ],
-      
+
       // #6: Test file that is not the right MIME type.
       [
         'incorrect mime type',
@@ -451,7 +451,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
           ]
         ]
       ],
-      
+
       // #8. Test a valid file - primary type (tsv).
       [
         'valid tsv file',
@@ -492,11 +492,11 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'file-locked',
         [
           'filename' => [
-            'case' => 'The file cannot be opened',
+            'case' => 'Data file cannot be opened',
             'valid' => FALSE,
           ],
           'fid' => [
-            'case' => 'The file cannot be opened',
+            'case' => 'Data file cannot be opened',
             'valid' => FALSE,
           ],
           'failed_items_key' => [
@@ -510,12 +510,12 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
 
   /**
    * Test data file input validator.
-   * 
+   *
    * @dataProvider provideFileForDataFileValidator
    */
   public function testDataFileInput($scenario, $test_file_key, $expected) {
     $file_input = $this->test_files[ $test_file_key ];
-    
+
     foreach($file_input['test_param'] as $input_type => $test_param) {
       list($filename, $fid) = $test_param;
       $validation_status = $this->validator_instance->validateFile($filename, $fid);
@@ -527,7 +527,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       foreach($expected['failed_items_key'] as $item) {
         $failed_items[ $item ] = $file_input['test_file'][ $item ];
       }
-      
+
       $expected[ $input_type ]['failedItems'] = ($validation_status['valid']) ? [] : $failed_items;
 
       foreach($validation_status as $key => $value) {
