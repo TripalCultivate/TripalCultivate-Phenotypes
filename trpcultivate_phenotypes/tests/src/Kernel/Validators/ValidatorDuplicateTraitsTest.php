@@ -113,14 +113,15 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: Provides a set of indices for different scenarios that would
-   *   trigger an exception in the DuplicateTraits validator
+   * Data Provider: Provides a set of indices for different scenarios. Each
+   *   scenario is expected to trigger an exception during validation for
+   *   having provided an incorrect key to setIndices()
    *
    * For each scenario we have:
-   * -- a label, which is the name of the index key that we're trying to trigger
+   * -- a label, which is the same as the index key that we're trying to trigger
    *    an exception message for
-   * -- an array containing the 2 of the following 3 key-value pairs (whichever
-   *    one doesn't match the label, that one will be appended with 'WRONG KEY')
+   * -- an array containing 2 of the following 3 key-value pairs (whichever
+   *    one matches the label, that one will be appended with 'WRONG KEY')
    *    - 'Trait Name' => 0
    *    - 'Method Short Name' => 2
    *    - 'Unit' => 4
@@ -167,13 +168,12 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
    * for the DuplicateTraits Validator
    *
    * @param string $label
-   *   The expected name of the index key that will be failing in its scenario.
+   *   The expected index key that will be failing in its scenario.
    *   It is used to check the exception message that gets thrown and to
    *   provide better feedback messages if any of the asserts fail.
    * @param array $indices
-   *   The array that gets provided to setIndices for this instance of the
-   *   DuplicateTraits validator. Each scenario provides an incorrect key in
-   *   their array for a different index.
+   *   The array that gets provided to setIndices() for this instance of the
+   *   DuplicateTraits validator. Each scenario has a different incorrect index.
    *
    * @return void
    *
@@ -215,7 +215,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       $expected_message,
       $exception_message,
-      "Did not get the expected exception message when providing the wrong index key '" . $label . "'"
+      "Did not get the expected exception message when providing the wrong index key '" . $label . "'."
     );
   }
 
