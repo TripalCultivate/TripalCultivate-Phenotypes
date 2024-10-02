@@ -113,6 +113,113 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Data Provider: Provides a set of indices for different scenarios. Each
+   *   scenario is expected to trigger an exception during validation for
+   *   having provided an incorrect key to setIndices()
+   *
+   * For each scenario we have:
+   * -- a label, which is the same as the index key that we're trying to trigger
+   *    an exception message for
+   * -- an array containing 2 of the following 3 key-value pairs (whichever
+   *    one matches the label, that one will be appended with 'WRONG KEY')
+   *    - 'Trait Name' => 0
+   *    - 'Method Short Name' => 2
+   *    - 'Unit' => 4
+   *
+   * @return $scenarios
+   */
+  public function provideWrongIndexKeys() {
+
+    $scenarios = [
+      // #0: Incorrect 'Trait Name' key
+      [
+        "Trait Name",
+        [
+          'Trait Name WRONG KEY' => 0,
+          'Method Short Name' => 2,
+          'Unit' => 4
+        ]
+      ],
+      // #1: Incorrect 'Method Short Name' key
+      [
+        "Method Short Name",
+        [
+          'Trait Name' => 0,
+          'Method Short Name WRONG KEY' => 2,
+          'Unit' => 4
+        ]
+      ],
+      // #2: Incorrect 'Unit' key
+      [
+        "Unit",
+        [
+          'Trait Name' => 0,
+          'Method Short Name' => 2,
+          'Unit WRONG KEY' => 4
+        ]
+      ]
+    ];
+
+    return $scenarios;
+  }
+
+  /**
+   * Test for the required keys in the indices array set by SetIndices()
+   * for the DuplicateTraits Validator
+   *
+   * @param string $label
+   *   The expected index key that will be failing in its scenario.
+   *   It is used to check the exception message that gets thrown and to
+   *   provide better feedback messages if any of the asserts fail.
+   * @param array $indices
+   *   The array that gets provided to setIndices() for this instance of the
+   *   DuplicateTraits validator. Each scenario has a different incorrect index.
+   *
+   * @return void
+   *
+   * @dataProvider provideWrongIndexKeys
+   */
+  public function testIndexKeyExceptions($label, $indices) {
+
+    // Create a plugin instance for this validator
+    $validator_id = 'duplicate_traits';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Set the genus
+    $instance->setConfiguredGenus($this->genus);
+
+    // Simulates a row within the Trait Importer
+    $file_row = [
+      'My trait',
+      'My trait description',
+      'My method',
+      'My method description',
+      'My unit',
+      'Quantitative'
+    ];
+
+    $instance->setIndices($indices);
+    $exception_caught = FALSE;
+    $exception_message = '';
+    $expected_message = "key: " . $label . ") was not set by setIndices()";
+    try {
+      $validation_status = $instance->validateRow($file_row);
+    } catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "Did not catch exception that should have occurred due to passing in the incorrect '" . $label . "' to setIndices()."
+    );
+    $this->assertStringContainsString(
+      $expected_message,
+      $exception_message,
+      "Did not get the expected exception message when providing the wrong index key '" . $label . "'."
+    );
+  }
+
+  /**
    * Test Duplicate Traits Plugin Validator at the file level
    * -- ONLY tests with the context of traits that are being imported and
    *    compared to other traits that exist within the same input file
@@ -185,28 +292,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
       "Duplicate Trait validation failed items was expected to contain the trait, method and unit column headers and contents since this was a duplicate in the file."
     );
 
-    // Case #2: Provide an incorrect key to $context['indices']
-    $instance->setIndices([ 'Trait Name' => 0, 'method name' => 2, 'Unit' => 3 ]);
-    $exception_caught = FALSE;
-    $exception_message = '';
-    try {
-      $validation_status = $instance->validateRow($file_row);
-    }
-    catch ( \Exception $e ) {
-      $exception_caught = TRUE;
-      $exception_message = $e->getMessage();
-    }
-    $this->assertTrue(
-      $exception_caught,
-      'Did not catch exception that should have occurred due to passing in the wrong index key "method name" to $context[\'indices\'].'
-    );
-    $this->assertStringContainsString(
-      'The method name (key: Method Short Name) was not set',
-      $exception_message,
-      "Did not get the expected exception message when providing the wrong index key \"method name\"."
-    );
-
-    // Case #3: Enter a second unique row and check our global $unique_traits array
+    // Case #2: Enter a second unique row and check our global $unique_traits array
     // Note: unit is at a different index
     $file_row_2 = [
       'My trait 2',
@@ -244,7 +330,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
       'Failed to find expected key within the global $unique_traits array for combo #2.'
     );
 
-    // Case #4: Enter a third row that has same trait name and method name as row #1, and same unit as row #2.
+    // Case #3: Enter a third row that has same trait name and method name as row #1, and same unit as row #2.
     // Technically this combo is considered unique and should pass
     $file_row_3 = [
       'My trait',
