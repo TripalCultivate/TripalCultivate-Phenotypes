@@ -88,12 +88,27 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
   /**
    * Data Provider: provides files with expected validation result.
+   *
+   * For each scenario we expect the following:
+   * -- the filename of the test file used for this scenario (test files are
+   *    located in: tests/src/Fixtures/TraitImporterFiles/)
+   * -- an array indicating the expected validation results
+   *    - Each key is the unique name of a feedback line provided to the validator UI 
+   *      by the processValidationMessages(). Currently there is a feedback line for 
+   *      each unique validator instance that was instantiated by the 
+   *      configureValidators() method in the Traits Importer class
+   *      - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'
+   *      - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
+   *        title set in processValidationMessages() method in the Trait Importer
+   *        class for this validator instance.
+   *      - 'details': [REQUIRED if 'status' = 'fail'] A string that is passed
+   *        to the user through the UI if this validation instance failed.
    */
   public function provideFilesForValidation() {
     $senarios = [];
 
     // #0: Contains correct header but no data
-    // Never reaches the validators for file row since file content is empty
+    // Never reaches the validators for data-row since file content is empty
     $senarios[] = [
       'correct_header_no_data.tsv',
       [
@@ -113,6 +128,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'GENUS' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => [
+          'title' => 'File has all of the column headers expected',
           'status' => 'fail',
           'details' => 'Trait Description is/are missing in the file',
         ],
@@ -123,7 +139,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     ];
 
     // #2: Contains correct header and one line of correct data,
-    // 2nd line has an empty method
+    // 2nd line has an empty 'Short Method Name'
     $senarios[] = [
       'correct_header_emptycell_method.tsv',
       [
@@ -131,8 +147,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
+          'title' => 'Required cells contain a value',
           'status' => 'fail',
-          'details' => 'One or more required columns was empty at row #: 3'
+          'details' => 'Empty value found in required column(s) at row #: 3'
         ],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['status' => 'pass']
@@ -140,7 +157,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     ];
 
     // #3: Contains correct header and two lines of data
-    // First line has an invalid value for "Type" column
+    // First line has an invalid value for 'Type' column
     $senarios[] = [
       'correct_header_invalid_datatype.tsv',
       [
@@ -149,14 +166,15 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => [
+          'title' => 'Values in required cells are valid',
           'status' => 'fail',
-          'details' => 'Column "type" violates required values at row #: 2'
+          'details' => 'Invalid value(s) in required column(s) at row #: 2'
         ],
         'duplicate_traits' => ['status' => 'pass']
       ]
     ];
 
-    // #4: Contains correct header and duplicate trait-method-unit combo
+    // #4: Contains correct header and a duplicate trait-method-unit combo
      $senarios[] = [
       'correct_header_duplicate_traitMethodUnit.tsv',
       [
@@ -166,19 +184,35 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => [
+          'title' => 'All trait-method-unit combinations are unique',
           'status' => 'fail',
-          'details' => 'Traits that already exist in the input file or in the database were detected at row #: 3'
+          'details' => 'A duplicate trait was found within the input file at row #: 3'
         ]
       ]
     ];
-
-    // Contains correct header but data types are mismatched
 
     return $senarios;
   }
 
   /**
    * Tests the validation aspect of the trait importer form.
+   *
+   * @param string $filename
+   *   The name of the file being tested. This file is located in: tests/src/Fixtures/TraitImporterFiles/
+   * @param array $expectations
+   *   An array that is keyed by the unique name of each validator instance
+   *   (these keys are declared in the configureValidators() method in the Traits
+   *   Importer class). Each validator instance in the array is further keyed by
+   *   the following. Some are required but others are optional, dependent upon
+   *   the expected validation results.
+   *   - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'
+   *   - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
+   *     title set in processValidationMessages() method in the Trait Importer
+   *     class for this validator instance.
+   *   - 'details': [REQUIRED if 'status' = 'fail'] A string that is passed to
+   *     the user through the UI if this validation instance failed.
+   *
+   * @return void
    *
    * @dataProvider provideFilesForValidation
    */
@@ -238,11 +272,28 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
     // Now check our expectations are met.
     foreach ($expectations as $validation_plugin => $expected) {
-      $this->assertEquals($expected['status'], $validation_element_data[$validation_plugin]['status'],
-        "We expected the form validation element to indicate the $validation_plugin plugin had the specified status.");
+      // Check status
+      $this->assertEquals(
+        $expected['status'],
+        $validation_element_data[$validation_plugin]['status'],
+        "We expected the form validation element to indicate the $validation_plugin plugin had the specified status."
+      );
+      // We don't want the value of 'details' in $expectations (from the data
+      // provider) to be empty since assertStringContainsString() will evaluate
+      // to true in that scenario. It can be tempting to set it to empty and
+      // then come back to it when you figure out what the expected string
+      // should be- just don't do it!
       if (array_key_exists('details', $expected)) {
-        $this->assertStringContainsString($expected['details'], $validation_element_data[$validation_plugin]['details'],
-          "We expected the details for $validation_plugin to include a specific string but it did not.");
+        $this->assertNotEmpty(
+          $expected['details'],
+          "An empty string was provided with a 'details' key within the data provider - trust me, don't do that!"
+        );
+        // Now check details
+        $this->assertStringContainsString(
+          $expected['details'],
+          $validation_element_data[$validation_plugin]['details'],
+          "We expected the details for $validation_plugin to include a specific string but it did not."
+        );
       }
     }
   }

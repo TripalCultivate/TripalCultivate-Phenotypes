@@ -4,6 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTrait
 
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 
 /**
  * Provides setters focused on configuring a validator to use a specific genus
@@ -23,6 +24,13 @@ trait GenusConfigured {
   protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology;
 
   /**
+   * Traits Service
+   *
+   * @var TripalCultivatePhenotypesTraitsService
+   */
+  protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
+
+  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var ChadoConnection
@@ -39,14 +47,18 @@ trait GenusConfigured {
    * @return void
    *
    * @throws \Exception
-   *  - If the genus does not match at least one record in the chado.organism table.
-   *  - If the genus is not configured to work with this module.
+   *  - If the PhenoGenusOntology service is not accessible
+   *  - If the PhenoTraits service is not accessible
+   *  - If an instance of ChadoConnection is not accessible
    */
   public function setConfiguredGenus(string $genus) {
 
     // Check we have the services we need.
     if (!isset($this->service_PhenoGenusOntology)) {
       throw new \Exception('The GenusConfigured Trait needs the Genus ontology (trpcultivate_phenotypes.genus_ontology) service injected via the create() and set to $this->service_PhenoGenusOntology in the constructor.');
+    }
+    if (!isset($this->service_PhenoTraits)) {
+      throw new \Exception('The GenusConfigured Trait needs the Trait (trpcultivate_phenotypes.traits) service injected via the create() and set to $this->service_PhenoTraits in the constructor.');
     }
     if (!isset($this->chado_connection)) {
       throw new \Exception('The GenusConfigured Trait needs an instance of ChadoConnection (tripal_chado.database) injected via the create() and set to $this->chado_connection.');
@@ -84,6 +96,9 @@ trait GenusConfigured {
 
       // Set the configured genus
       $this->context['genus']['name'] = $genus;
+
+      // Configure the trait service to use this genus.
+      $this->service_PhenoTraits->setTraitGenus($genus);
     }
   }
 
