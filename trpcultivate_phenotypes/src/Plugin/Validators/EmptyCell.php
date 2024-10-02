@@ -8,6 +8,7 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ColumnIndices;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -17,21 +18,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @TripalCultivatePhenotypesValidator(
  *   id = "empty_cell",
  *   validator_name = @Translation("Empty Cell Validator"),
- *   validator_scope = "FILE ROW",
+ *   input_types = {"header-row", "data-row"},
  * )
  */
 class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
-   *   An associative array containing the needed context, which is dependant
-   *   on the validator. For example, instead of validating each cell by default,
-   *   a validator may need a list of indices which correspond to the columns in
-   *   the row for which the validator should act on.
-   *
-   *   This validator requires the following keys:
-   *   - indices => an array of indices corresponding to the cells in $row_values to act on
+   * This validator requires the following validator traits:
+   * - ColumnIndices: Gets an array of indices corresponding to the cells in
+   *     $row_values to act on.
    */
-  public array $context = [];
+  use ColumnIndices;
 
   /**
    * Constructor.
@@ -60,18 +57,20 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
    *
    * @return array
    *   An associative array with the following keys.
-   *   - title: string, section or title of the validation as it appears in the result window.
-   *   - status: string, pass if it passed the validation check/test, fail string otherwise and todo string if validation was not applied.
-   *   - details: details about the offending field/value.
+   *   - case: a developer focused string describing the case checked.
+   *   - valid: FALSE if any of the cells being checked are empty and TRUE otherwise.
+   *   - failedItems: an array of "items" that failed with the following keys, to
+   *     be used in the message to the user. This is an empty array if the data row input was valid.
+   *     - empty_indices: A list of indices which were checked and found to be empty
    */
   public function validateRow($row_values) {
 
-    // Set our context which was configured for this validator
-    $context = $this->context;
+    // Grab our indices
+    $indices = $this->getIndices();
 
     // Check the indices provided are valid in the context of the row.
     // Will throw an exception if there's a problem
-    $this->checkIndices($row_values, $context['indices']);
+    $this->checkIndices($row_values, $indices);
 
     $empty = FALSE;
     $failed_indices = [];
@@ -79,7 +78,7 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     foreach($row_values as $index => $cell) {
       // Only validate the values in which their index is also within our
       // context array of indices
-      if (in_array($index, $context['indices'])) {
+      if (in_array($index, $indices)) {
         // First trim the contents of our cell in case we have whitespace
         $cell = trim($cell);
         // Check if our content is empty and report an error if it is
@@ -91,17 +90,18 @@ class EmptyCell extends TripalCultivatePhenotypesValidatorBase implements Contai
     }
     // Check if empty values were found that should not be empty
     if ($empty) {
-      $failed_list = implode(', ', $failed_indices);
       $validator_status = [
-        'title' => 'Empty value found in required column(s)',
-        'status' => 'fail',
-        'details' => 'Empty values at index: ' . $failed_list
+        'case' => 'Empty value found in required column(s)',
+        'valid' => FALSE,
+        'failedItems' => [
+          'empty_indices' => $failed_indices
+        ]
       ];
     } else {
       $validator_status = [
-        'title' => 'No empty values found in required column(s)',
-        'status' => 'pass',
-        'details' => ''
+        'case' => 'No empty values found in required column(s)',
+        'valid' => TRUE,
+        'failedItems' => []
       ];
     }
     return $validator_status;
