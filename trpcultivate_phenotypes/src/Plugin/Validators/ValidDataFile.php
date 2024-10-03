@@ -167,7 +167,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       else {
         // Both MIME type and file extension are not supported.
         return [
-          'case' => 'Unsupported file mime type and mismatched extension',
+          'case' => 'Unsupported file mime type and unsupported extension',
           'valid' => FALSE,
           'failedItems' => ['mime' => $file_mime_type, 'extension' => $file_extension]
         ];
