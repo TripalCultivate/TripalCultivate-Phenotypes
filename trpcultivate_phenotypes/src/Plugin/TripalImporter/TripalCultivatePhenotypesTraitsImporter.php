@@ -60,7 +60,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
 
   /*
-  
+
   private $headers = [
     [
       'name' => 'Trait Name',
@@ -93,7 +93,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       'type' => 'required'
     ]
   ];
-  
+
   */
 
   // Service: Make the following services available to all stages.
@@ -177,35 +177,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // -----------------------------------------------------
     // Metadata
-    // - Genus Exists
-    // @deprecated getValidatorIdWithScope in issue #91
-    $validator = $manager->getValidatorIdWithScope('GENUS');
-    $instance = $manager->createInstance($validator);
-    // @deprecated loadAssets in issue #93
-    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
-    // @TODO: Rename according to the new validator_id for scope 'GENUS'
-    $validators['metadata']['GENUS'] = $instance;
-
-    // - Genus matches the configured project
-    // @TODO: In a future PR, create instance for the genus-project validator
-    //        and configure it
-    
-    /*
-
+    // - Genus exists and is configured
     $instance = $manager->createInstance('genus_exists');
-    
-    // Set the logger since this validator uses a setter (setConfiguredGenus)
-    // which may log messages.
-    $instance->setLogger($this->logger);
-    $instance->setConfigGenus($genus);
-
-    $validators['metadata']['genus'] = $instance;
-
-
-    // Project is not required by this Trait Importer instance.
-    // Nothing to set here.
-
-    */
+    $validators['metadata']['genus_exists'] = $instance;
 
     // -----------------------------------------------------
     // File level
@@ -219,7 +193,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $validators['file']['FILE'] = $instance;
 
     /*
-    
+
     // Validator for data file - scan file for file-level compliance check.
     $instance = $manager->createInstance('valid_data_file');
     $validators['file']['data_file'] = $instance;
@@ -231,7 +205,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     ];
 
     $instance->setSupportedMimeTypes($supported_mime_types);
-    
+
     */
 
     // -----------------------------------------------------
@@ -264,7 +238,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     /*
 
     // Perform a raw-row validation to see if header line is delimited.
-    
+
     // Validator for headers - ensure no headers are missing and headers are in the correct order.
     $instance = $manager->createInstance('valid_headers');
     $validators['header-row']['headers'] = $instance;
@@ -420,37 +394,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Set failures for this validator name to an empty array to signal that
       // this validator has been run.
       $failures[$validator_name] = [];
-      // @TODO: Update to use the validateMetadata() method
-      $result = $validator->validate();
-      // Check for old return style...
-      if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
+      // Validate metadata input value.
+      $result = $validator->validateMetadata($form_values);
+
+      // Check if validation failed and save the results if it did
+      if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
         $failed_validator = TRUE;
         $failures[$validator_name] = $result;
       }
-      // Then new return style.
-      elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-        $failed_validator = TRUE;
-        $failures[$validator_name] = $result;
-      }
-
-
-      /*
-      
-      foreach ($validators['metadata'] as $key => $validator) {
-        // Validate metadata input value.
-        $result = $validator->validateMetadata($form_values);
-        // Store the validation result by metadata key (ie. genus or project).
-        $validation[ $key ] = $result;
-
-        // Check that validation status result and stop subsequent validation steps 
-        // when a validator returned a failed status.
-        if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-          $failed_validator = TRUE;
-          break;
-        }
-      }
-
-      */
     }
 
     // Check if any previous validators failed before moving on to the next
@@ -583,8 +534,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   by the unique name assigned to each validator-input type combination
    *
    * @return array
-   *   An array of feedback to provide to the user which summarizes the validation results 
-   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed 
+   *   An array of feedback to provide to the user which summarizes the validation results
+   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed
    *   by a string that is associated with a line in the validate UI. Specifically,
    *   - 'validation_line': A string associated with a line that will be
    *     displayed to the user in the validate UI
@@ -598,7 +549,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *       contents of $failures['validator_name'].
    */
   public function processValidationMessages($failures) {
-    // Array to hold all the user feedback. Currently this includes an entry for each 
+    // Array to hold all the user feedback. Currently this includes an entry for each
     // validator. However, in future designs we may combine more then one validator into a
     // single line in the validate UI and, thus, a single entry in this array. Everything is
     // set to status of 'todo' to start and will only change to one of 'pass' or
