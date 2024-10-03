@@ -5,6 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\GenusConfigured;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
@@ -12,12 +13,12 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  * Used to test the base class.
  *
  * @TripalCultivatePhenotypesValidator(
- * id = "validator_requiring_configured_genus_no_service",
+ * id = "validator_configured_genus_no_service_genusontology",
  * validator_name = @Translation("Validator Using GenusConfigured Trait"),
  * input_types = {"header-row", "data-row"}
  * )
  */
-class ValidatorGenusConfiguredNOService extends TripalCultivatePhenotypesValidatorBase {
+class ValidatorGenusConfiguredNOServiceGenusontology extends TripalCultivatePhenotypesValidatorBase {
 
   use GenusConfigured;
 
@@ -36,13 +37,21 @@ class ValidatorGenusConfiguredNOService extends TripalCultivatePhenotypesValidat
   protected ChadoConnection $chado_connection;
 
   /**
+   * Traits Service
+   *
+   * @var TripalCultivatePhenotypesTraitsService
+   */
+  protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
+
+  /**
    * Constructor.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, ChadoConnection $chado_connection, TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, ChadoConnection $chado_connection, TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology, TripalCultivatePhenotypesTraitsService $service_PhenoTraits) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->chado_connection = $chado_connection;
     // $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_PhenoTraits = $service_PhenoTraits;
   }
 
   /**
@@ -54,7 +63,8 @@ class ValidatorGenusConfiguredNOService extends TripalCultivatePhenotypesValidat
       $plugin_id,
       $plugin_definition,
       $container->get('tripal_chado.databse'),
-      $container->get('trpcultivate_phenotypes.genus_ontology')
+      $container->get('trpcultivate_phenotypes.genus_ontology'),
+      $container->get('trpcultivate_phenotypes.traits')
     );
   }
 }

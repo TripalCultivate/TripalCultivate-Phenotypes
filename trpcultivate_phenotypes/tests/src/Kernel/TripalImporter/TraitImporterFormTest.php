@@ -83,6 +83,19 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     // Create and log-in a user.
     $this->setUpCurrentUser();
 
+    // We need to mock the logger to test the progress reporting.
+    $container = \Drupal::getContainer();
+    $mock_logger = $this->getMockBuilder(\Drupal\tripal\Services\TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+    $mock_logger->method('error')
+    ->willReturnCallback(function ($message, $context, $options) {
+      // @todo: Revisit print out of log messages, but perhaps setting an option
+      // for log messages to not print to the UI?
+      //print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    $container->set('tripal.logger', $mock_logger);
   }
 
   /**

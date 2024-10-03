@@ -13,12 +13,12 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  * Used to test the base class.
  *
  * @TripalCultivatePhenotypesValidator(
- * id = "validator_requiring_configured_genus",
+ * id = "validator_configured_genus_no_service_trait",
  * validator_name = @Translation("Validator Using GenusConfigured Trait"),
  * input_types = {"header-row", "data-row"}
  * )
  */
-class ValidatorGenusConfigured extends TripalCultivatePhenotypesValidatorBase {
+class ValidatorGenusConfiguredNOServiceTraits extends TripalCultivatePhenotypesValidatorBase {
 
   use GenusConfigured;
 
@@ -51,7 +51,7 @@ class ValidatorGenusConfigured extends TripalCultivatePhenotypesValidatorBase {
 
     $this->chado_connection = $chado_connection;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
-    $this->service_PhenoTraits = $service_PhenoTraits;
+    // $this->service_PhenoTraits = $service_PhenoTraits;
   }
 
   /**
@@ -62,7 +62,7 @@ class ValidatorGenusConfigured extends TripalCultivatePhenotypesValidatorBase {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('tripal_chado.database'),
+      $container->get('tripal_chado.databse'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.traits')
     );
