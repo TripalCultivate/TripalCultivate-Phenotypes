@@ -143,7 +143,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       return [
         'case' => 'The file has no data and is an empty file',
         'valid' => FALSE,
-        'failedItems' => $failed_items = ['filename' => $file_filename, 'fid' => $file_fid]
+        'failedItems' => ['filename' => $file_filename, 'fid' => $file_fid]
       ];
     }
 
