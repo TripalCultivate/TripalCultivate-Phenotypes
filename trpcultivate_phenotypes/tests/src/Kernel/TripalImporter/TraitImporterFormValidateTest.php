@@ -84,18 +84,33 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     $this->installSchema('tripal', ['tripal_import', 'tripal_jobs']);
     // Create and log-in a user.
     $this->setUpCurrentUser();
+
+    // We need to mock the logger to test the progress reporting.
+    $container = \Drupal::getContainer();
+    $mock_logger = $this->getMockBuilder(\Drupal\tripal\Services\TripalLogger::class)
+      ->onlyMethods(['notice', 'error'])
+      ->getMock();
+    $mock_logger->method('error')
+    ->willReturnCallback(function ($message, $context, $options) {
+      // @todo: Revisit print out of log messages, but perhaps setting an option
+      // for log messages to not print to the UI?
+      //print str_replace(array_keys($context), $context, $message);
+      return NULL;
+    });
+    $container->set('tripal.logger', $mock_logger);
   }
 
   /**
    * Data Provider: provides files with expected validation result.
    *
    * For each scenario we expect the following:
+   * -- the genus name that gets selected in the dropdown of the form
    * -- the filename of the test file used for this scenario (test files are
    *    located in: tests/src/Fixtures/TraitImporterFiles/)
    * -- an array indicating the expected validation results
-   *    - Each key is the unique name of a feedback line provided to the validator UI 
-   *      by the processValidationMessages(). Currently there is a feedback line for 
-   *      each unique validator instance that was instantiated by the 
+   *    - Each key is the unique name of a feedback line provided to the validator UI
+   *      by the processValidationMessages(). Currently there is a feedback line for
+   *      each unique validator instance that was instantiated by the
    *      configureValidators() method in the Traits Importer class
    *      - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'
    *      - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
@@ -103,29 +118,62 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    *        class for this validator instance.
    *      - 'details': [REQUIRED if 'status' = 'fail'] A string that is passed
    *        to the user through the UI if this validation instance failed.
+   * -- an integer of the number of form validation messages we expect to see
+   *    when the form is submitted. NOTE: These validation messages are produced
+   *    by the form via Drupal and are not related to this module's use of
+   *    validator plugins.
    */
   public function provideFilesForValidation() {
-    $senarios = [];
 
-    // #0: Contains correct header but no data
+    $valid_genus = 'Tripalus';
+    $invalid_genus = 'INVALID';
+    // Set our number of expected validation messages to 0, since only the
+    // 'genus_exists' validator should cause this number to change.
+    $num_form_validation_messages = 0;
+
+    $scenarios = [];
+
+    #0: File is valid but genus is not
+    $scenarios[] = [
+      $invalid_genus,
+      'simple_example.txt',
+      [
+        'genus_exists' => [
+          'title' => 'The genus is valid',
+          'status' => 'fail',
+          'details' => 'Genus does not exist'
+        ],
+        'FILE' => ['status' => 'todo'],
+        'HEADERS' => ['status' => 'todo'],
+        'empty_cell' => ['status' => 'todo'],
+        'valid_data_type' => ['status' => 'todo'],
+        'duplicate_traits' => ['status' => 'todo']
+      ],
+      1 // Since selecting an invalid genus should be impossible, 1 form validation error is expected
+    ];
+
+    // #1: Contains correct header but no data
     // Never reaches the validators for data-row since file content is empty
-    $senarios[] = [
+    $scenarios[] = [
+      $valid_genus,
       'correct_header_no_data.tsv',
       [
-        'GENUS' => ['status' => 'pass'],
+        'genus_exists' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
-      ]
+      ],
+      $num_form_validation_messages
     ];
 
-    // #1: Contains incorrect header and one line of correct data
-    $senarios[] = [
+    // #2: Contains incorrect header and one line of correct data
+    $scenarios[] = [
+      $valid_genus,
       'incorrect_header_with_data.tsv',
       [
-        'GENUS' => ['status' => 'pass'],
+        'genus_exists' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => [
           'title' => 'File has all of the column headers expected',
@@ -135,15 +183,17 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
-      ]
+      ],
+      $num_form_validation_messages
     ];
 
-    // #2: Contains correct header and one line of correct data,
+    // #3: Contains correct header and one line of correct data,
     // 2nd line has an empty 'Short Method Name'
-    $senarios[] = [
+    $scenarios[] = [
+      $valid_genus,
       'correct_header_emptycell_method.tsv',
       [
-        'GENUS' => ['status' => 'pass'],
+        'genus_exists' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
@@ -153,15 +203,17 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => ['status' => 'pass']
-      ]
+      ],
+      $num_form_validation_messages
     ];
 
-    // #3: Contains correct header and two lines of data
+    // #4: Contains correct header and two lines of data
     // First line has an invalid value for 'Type' column
-    $senarios[] = [
+    $scenarios[] = [
+      $valid_genus,
       'correct_header_invalid_datatype.tsv',
       [
-        'GENUS' => ['status' => 'pass'],
+        'genus_exists' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
@@ -171,14 +223,16 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'details' => 'Invalid value(s) in required column(s) at row #: 2'
         ],
         'duplicate_traits' => ['status' => 'pass']
-      ]
+      ],
+      $num_form_validation_messages
     ];
 
-    // #4: Contains correct header and a duplicate trait-method-unit combo
-     $senarios[] = [
+    // #5: Contains correct header and a duplicate trait-method-unit combo
+     $scenarios[] = [
+      $valid_genus,
       'correct_header_duplicate_traitMethodUnit.tsv',
       [
-        'GENUS' => ['status' => 'pass'],
+        'genus_exists' => ['status' => 'pass'],
         'FILE' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
@@ -188,18 +242,22 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'A duplicate trait was found within the input file at row #: 3'
         ]
-      ]
+      ],
+      $num_form_validation_messages
     ];
 
-    return $senarios;
+    return $scenarios;
   }
 
   /**
    * Tests the validation aspect of the trait importer form.
    *
+   * @param string $submitted_genus
+   *   The name of the genus that is submitted with the form.
    * @param string $filename
-   *   The name of the file being tested. This file is located in: tests/src/Fixtures/TraitImporterFiles/
-   * @param array $expectations
+   *   The name of the file being tested. This file is located in:
+   *   tests/src/Fixtures/TraitImporterFiles/
+   * @param array $expected_validator_results
    *   An array that is keyed by the unique name of each validator instance
    *   (these keys are declared in the configureValidators() method in the Traits
    *   Importer class). Each validator instance in the array is further keyed by
@@ -211,12 +269,17 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    *     class for this validator instance.
    *   - 'details': [REQUIRED if 'status' = 'fail'] A string that is passed to
    *     the user through the UI if this validation instance failed.
+   * @param integer $expected_num_form_validation_errors
+   *   The number of form validation messages we expect to see
+   *   when the form is submitted. NOTE: These validation messages are produced
+   *   by the form via Drupal and are not related to this module's use of
+   *   validator plugins.
    *
    * @return void
    *
    * @dataProvider provideFilesForValidation
    */
-  public function testTraitFormValidation($filename, $expectations) {
+  public function testTraitFormValidation($submitted_genus, $filename, $expected_validator_results, $expected_num_form_validation_errors) {
 
     $formBuilder = \Drupal::formBuilder();
     $form_id = 'Drupal\tripal\Form\TripalImporterForm';
@@ -244,7 +307,11 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     // Setup the form_state.
     $form_state = new \Drupal\Core\Form\FormState();
     $form_state->addBuildInfo('args', [$plugin_id]);
-    $form_state->setValue('genus', $genus);
+
+    // Submit our genus
+    $form_state->setValue('genus', $submitted_genus);
+
+    // Submit our file
     $form_state->setValue('file_upload', $file->id());
 
     // Now try validation!
@@ -257,21 +324,27 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     // Check that we did validation.
     $this->assertTrue($form_state->isValidationComplete(),
       "We expect the form state to have been updated to indicate that validation is complete.");
+
     // Looking for form validation errors
     $form_validation_messages = $form_state->getErrors();
     $helpful_output = [];
     foreach ($form_validation_messages as $element => $markup) {
       $helpful_output[] = $element . " => " . (string) $markup;
     }
-    $this->assertCount(0, $form_validation_messages,
-      "We should not have any form state errors but instead we have: " . implode(" AND ", $helpful_output));
+
+    // Compare the number of form validation errors we received to the number we expect
+    $this->assertCount(
+      $expected_num_form_validation_errors,
+      $form_validation_messages,
+      "The number of form state errors we expected (" . $expected_num_form_validation_errors . ") does not match what we received: " . implode(" AND ", $helpful_output)
+    );
     // Confirm that there is a validation window open
     $this->assertArrayHasKey('validation_result', $form,
       "We expected a validation failure reported via our plugin setup but it's not showing up in the form.");
     $validation_element_data = $form['validation_result']['#data']['validation_result'];
 
     // Now check our expectations are met.
-    foreach ($expectations as $validation_plugin => $expected) {
+    foreach ($expected_validator_results as $validation_plugin => $expected) {
       // Check status
       $this->assertEquals(
         $expected['status'],

@@ -557,8 +557,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // that validation did take place.
     $messages = [
       // ----------------------------- METADATA --------------------------------
-      'GENUS' => [
-        'title' => 'Genus exists and/or matches the project/experiment',
+      'genus_exists' => [
+        'title' => 'The genus is valid',
         'status' => 'todo',
         'details' => ''
       ],
