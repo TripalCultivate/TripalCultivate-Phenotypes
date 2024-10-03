@@ -120,7 +120,8 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
       $validator_id,
       $plugin_definition,
       $this->chado_connection,
-      $this->container->get('trpcultivate_phenotypes.genus_ontology')
+      $this->container->get('trpcultivate_phenotypes.genus_ontology'),
+      $this->container->get('trpcultivate_phenotypes.traits')
     );
 
     // We need to mock the logger to test the progress reporting.
