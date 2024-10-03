@@ -12,7 +12,6 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\File
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\file\Entity\File;
 
 /**
  * Validate data file.
@@ -106,36 +105,47 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
     // Load file object.
     if (is_numeric($fid) && $fid > 0) {
       // The file input is integer value, the file id number. Load the file object by fid number.
-      $file_object = File::load($fid);
+      $file_object = $this->service_EntityTypeManager
+        ->getStorage('file')
+        ->load($fid);
     }
     elseif ($filename) {
       // The file input is a string value, a path to the file. Locate the file entity
       // by uri and load the file object using the returned file id number that matched.
-      $file_entities = $this->service_EntityTypeManager
+      $file_object = $this->service_EntityTypeManager
         ->getStorage('file')
         ->loadByProperties(['uri' => $filename]);
-
-      $file_entity = reset($file_entities);
-
-      if ($file_entity) {
-        $fid = $file_entity->get('fid')->value;
-        $file_object = File::load($fid);
-      }
+      $file_object = reset($file_object);
     }
 
     // Check that the file input provided returned a file object.
-    if (is_null($file_object)) {
-      return [
-        'case' => 'Filename or file id failed to load a file object',
-        'valid' => FALSE,
-        'failedItems' => ['filename' => $filename, 'fid' => $fid]
-      ];
+    if (!$file_object) {
+      if (is_null($fid)) {
+        return [
+          'case' => 'Filename failed to load a file object',
+          'valid' => FALSE,
+          'failedItems' => ['filename' => $filename]
+        ];
+      }
+      else {
+        return [
+          'case' => 'File id failed to load a file object',
+          'valid' => FALSE,
+          'failedItems' => ['fid' => $fid]
+        ];
+      }
     }
 
     // File object has loaded successfully. Any subsequent failed test from this point
     // will reference the filename and file id from the established file object.
     $file_filename = $file_object->getFileName();
+    $file_input_filename = pathinfo($file_filename, PATHINFO_FILENAME);
     $file_fid = $file_object->id();
+
+    // Verify that the provided filename matches the filename in the file object returned by the file id.
+    if ((!empty($filename) && $fid > 0) && $file_filename != $file_input_filename) {
+      throw new \Exception('The filename provided does not match the filename set in the file object.');
+    }
 
     // Check that the file is not blank by inspecting the file size to see if it is greater than 0.
     $file_size = $file_object->getSize();

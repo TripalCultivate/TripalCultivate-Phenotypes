@@ -347,13 +347,12 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'non-existent-filename',
         [
           'filename' => [
-            'case' => 'Filename or file id failed to load a file object',
+            'case' => 'Filename failed to load a file object',
             'valid' => FALSE,
           ],
           'fid' => [],
           'failed_items_key' => [
             'filename',
-            'fid'
           ]
         ]
       ],
@@ -365,11 +364,10 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         [
           'filename' => [],
           'fid' => [
-            'case' => 'Filename or file id failed to load a file object',
+            'case' => 'File id failed to load a file object',
             'valid' => FALSE,
           ],
           'failed_items_key' => [
-            'filename',
             'fid'
           ]
         ]
@@ -381,13 +379,12 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'file-unmanaged',
         [
           'filename' => [
-            'case' => 'Filename or file id failed to load a file object',
+            'case' => 'Filename failed to load a file object',
             'valid' => FALSE,
           ],
           'fid' => [],
           'failed_items_key' => [
             'filename',
-            'fid'
           ]
         ]
       ],
@@ -418,11 +415,11 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'file-image',
         [
           'filename' => [
-            'case' => 'Unsupported file mime type and mismatched extension',
+            'case' => 'Unsupported file mime type and unsupported extension',
             'valid' => FALSE,
           ],
           'fid' => [
-            'case' => 'Unsupported file mime type and mismatched extension',
+            'case' => 'Unsupported file mime type and unsupported extension',
             'valid' => FALSE,
           ],
           'failed_items_key' => [
@@ -506,6 +503,33 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         ]
       ]
     ];
+  }
+
+  /**
+   * Test data file input validator case that throws an exception.
+   */
+  public function testDataFileExceptionCase() {
+    // The filename is set to a different name than the set filename of valid-file test file input scenario.
+    $filename = 'not-the-filename.tsv'; 
+    $fid = $this->test_files['file-valid']['test_file']['fid'];
+
+    $exception_caught = FALSE;
+    $exception_message = '';
+    
+    try {
+      $this->validator_instance->validateFile($filename, $fid);
+    } 
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+
+    $this->assertTrue($exception_caught, 'Data File validator expects an exception thrown when filenames do not match.');
+    $this->assertStringContainsString(
+      $exception_message,
+      'The filename provided does not match the filename set in the file object.',
+      'The exception message thrown by data file validator filename mismatch case does not match excepted message'
+    );  
   }
 
   /**
