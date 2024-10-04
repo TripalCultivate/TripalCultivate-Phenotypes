@@ -94,7 +94,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
     $input_file_type_delimiters = $this->getFileDelimiters($input_file_mime_type);
 
     // Check if the line has some delimiters used, specifically, check the line
-    // includes at least one of the delimiters returned by the get file delimiter method.
+    // includes at least one of the delimiters returned by getFileDelimiters().
     $delimiters_used = [];
     foreach($input_file_type_delimiters as $delimiter) {
       if (strpos($raw_row, $delimiter)) {
