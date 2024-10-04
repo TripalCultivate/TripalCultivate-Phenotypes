@@ -105,7 +105,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
     // Not one of the supported delimiters was detected in the raw row.
     if (empty($delimiters_used)) {
 
-      // Return a valid response if the raw raw is not delimited value
+      // Return a valid response if the raw row is not delimited value
       // and the expected number of columns is set to 1.
       if ($expected_columns['number_of_columns'] == 1) {
         return [
