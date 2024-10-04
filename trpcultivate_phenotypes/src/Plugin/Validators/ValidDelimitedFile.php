@@ -168,7 +168,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
    *   An integer value greater than zero.
    * @param bool $strict
    *   This will indicate whether the value $number_of_columns is the minimum
-   *   number of columns required in an input file's row, or if it is strictly the only.
+   *   number of columns required in an input file's row, or if it is strictly the only
    *   acceptable number of columns.
    *   - FALSE (default) = minimum number of columns.
    *   - TRUE = the strict number of required columns.
