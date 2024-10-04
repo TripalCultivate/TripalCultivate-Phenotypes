@@ -183,30 +183,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // -----------------------------------------------------
     // File level
-    // - File exists
-    // @deprecated getValidatorIdWithScope in issue #91
-    $validator = $manager->getValidatorIdWithScope('FILE');
-    $instance = $manager->createInstance($validator);
-    // @deprecated loadAssets in issue #93
-    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
-    // @TODO: Rename according to the new validator_id for scope 'FILE'
-    $validators['file']['FILE'] = $instance;
-
-    /*
-
-    // Validator for data file - scan file for file-level compliance check.
+    // - File exists and is the expected type
     $instance = $manager->createInstance('valid_data_file');
-    $validators['file']['data_file'] = $instance;
-
-    // Set importer supported mime types.
+    // Set supported mime-types using the valid file extensions supported by this
+    // importer.
     $supported_mime_types = [
       'tsv', // Tab-separated values.
       'txt'  // Plain text.
     ];
-
     $instance->setSupportedMimeTypes($supported_mime_types);
-
-    */
+    $validators['file']['valid_data_file'] = $instance;
 
     // -----------------------------------------------------
     // Header Level
@@ -236,8 +222,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
 
     /*
-
-    // Perform a raw-row validation to see if header line is delimited.
 
     // Validator for headers - ensure no headers are missing and headers are in the correct order.
     $instance = $manager->createInstance('valid_headers');
@@ -414,16 +398,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Set failures for this validator name to an empty array to signal that
         // this validator has been run
         $failures[$validator_name] = [];
-        // @TODO: Update to use the validateFile() method
-        //$result = $validator->validateFile($form_value['filename'], $form_values['fid']);
-        $result = $validator->validate();
-        // Check for old return style...
-        if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
-          $failed_validator = TRUE;
-          $failures[$validator_name] = $result;
-        }
-        // Then new return style.
-        elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+        $result = $validator->validateFile('', $file_id);
+
+        // Check if validation failed and save the results if it did
+        if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
           $failed_validator = TRUE;
           $failures[$validator_name] = $result;
         }
@@ -563,8 +541,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         'details' => ''
       ],
       // ------------------------------- FILE ----------------------------------
-      'FILE' => [
-        'title' => 'File is a valid tsv or txt',
+      'valid_data_file' => [
+        'title' => 'File is valid and not empty',
         'status' => 'todo',
         'details' => ''
       ],

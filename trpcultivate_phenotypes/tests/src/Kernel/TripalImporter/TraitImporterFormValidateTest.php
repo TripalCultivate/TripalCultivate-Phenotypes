@@ -143,7 +143,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Genus does not exist'
         ],
-        'FILE' => ['status' => 'todo'],
+        'valid_data_file' => ['status' => 'todo'],
         'HEADERS' => ['status' => 'todo'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
@@ -159,7 +159,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       'correct_header_no_data.tsv',
       [
         'genus_exists' => ['status' => 'pass'],
-        'FILE' => ['status' => 'pass'],
+        'valid_data_file' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
@@ -174,7 +174,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       'incorrect_header_with_data.tsv',
       [
         'genus_exists' => ['status' => 'pass'],
-        'FILE' => ['status' => 'pass'],
+        'valid_data_file' => ['status' => 'pass'],
         'HEADERS' => [
           'title' => 'File has all of the column headers expected',
           'status' => 'fail',
@@ -194,7 +194,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       'correct_header_emptycell_method.tsv',
       [
         'genus_exists' => ['status' => 'pass'],
-        'FILE' => ['status' => 'pass'],
+        'valid_data_file' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => [
           'title' => 'Required cells contain a value',
@@ -214,7 +214,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       'correct_header_invalid_datatype.tsv',
       [
         'genus_exists' => ['status' => 'pass'],
-        'FILE' => ['status' => 'pass'],
+        'valid_data_file' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => [
@@ -233,7 +233,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       'correct_header_duplicate_traitMethodUnit.tsv',
       [
         'genus_exists' => ['status' => 'pass'],
-        'FILE' => ['status' => 'pass'],
+        'valid_data_file' => ['status' => 'pass'],
         'HEADERS' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
