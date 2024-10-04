@@ -72,7 +72,7 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
    *   An associative array with the following keys.
    *     - case: a developer focused string describing the case checked.
    *     - valid: either TRUE or FALSE depending on if the raw row is delimited or not.
-   *     - failedItems: an associative array indicating the the failed raw row under the 'raw_row' key. This will be an empty array if the line was delimited.
+   *     - failedItems: an associative array indicating the failed raw row under the 'raw_row' key. This will be an empty array if the line was delimited.
    */
   public function validateRawRow(string $raw_row) {
 
