@@ -78,6 +78,10 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
    *    - case: a developer focused string describing the case checked.
    *    - valid: either TRUE or FALSE depending on if the file is valid or not.
    *    - failedItems: an associative array indicating the filename and fid for an invalid file. This is an empty array if the file input was valid.
+   *
+   * @throws \Exception
+   *   - If both parameters $filename and $fid are provided, but do not point to
+   *     the same file object
    */
   public function validateFile(string $filename, int|null $fid = NULL) {
 
