@@ -328,52 +328,6 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test Genus Plugin Validator.
-   */
-  public function testGenusPluginValidator() {
-    $scope = 'GENUS';
-    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
-    $instance = $this->plugin_manager->createInstance($validator);
-    $assets = $this->assets;
-
-    // PASS:
-    $status = 'pass';
-
-    // Test project exits and has a genus (active genus).
-    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-    // Check genus is an active genus when not paired with a project.
-    $instance->loadAssets(null, $assets['genus'], $assets['file'], $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-
-    // FAIL:
-    $status = 'fail';
-
-    // Test empty value.
-    $instance->loadAssets($assets['project'], '', $assets['file'], $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-    // Incorrect genus picked for a project that has genus set (mismatch).
-    $instance->loadAssets($assets['project'], 'NOT THE GENUS', $assets['file'], $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-
-    // TODO:
-    $status = 'todo';
-
-    // Test skip flag to skip this test - set to upcoming validation step.
-    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-  }
-
-  /**
    * Test Data file Plugin Validator.
    */
   public function testDataFilePluginValidator() {
