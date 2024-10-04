@@ -76,46 +76,65 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
       ];
     }
 
-    // Check that no headers are missing by verifying that all expected headers are present.
-    // Get all the headers defined by the importer regardless of type.
+    // Reference the list of expected headers.
     $expected_headers = $this->getHeaders();
-    $expected_header_names = array_values($expected_headers);
+    
+    
+    // @TODO: needs a check if headers array has less or more than the expected headers? 
 
-    $missing_headers = array_filter($expected_header_names, function ($names) use ($headers) {
-      return (!in_array($names, $headers));
-    });
+    
+    // Array to store missing headers.
+    $missing_headers = []; 
+    // Array to store headers in the wrong order.
+    $wrong_order_headers = [];
 
-    if ($missing_headers) {
-      $missing_headers = implode(', ', $missing_headers);
+    foreach ($expected_headers as $index => $header) {
+      // Each header name in the expected headers array will be verified for both 
+      // index order and presence in the headers provided.
 
+      if (!in_array($header, $headers)) {
+        // Missing header.
+        array_push($missing_headers, $header);
+      }
+      else {
+        if (isset($headers[ $index ]) && $headers[ $index ] != $header) {
+          // Header in the wrong order.
+          array_push($wrong_order_headers, $header);
+        }
+      }
+    }
+    
+    // The headers array contains both missing and wrong order headers.
+    if ($missing_headers && $wrong_order_headers) {
       return [
-        'case' => 'Missing expected headers',
+        'case' => 'Missing expected headers and headers not in the correct order',
         'valid' => FALSE,
-        'failedItems' => ['headers' => $missing_headers]
+        'failedItems' => [
+          'missing' => $missing_headers,
+          'wrong_order' => $wrong_order_headers
+        ]
       ];
     }
 
-    // Check that the sequence of headers specified by the Importer is the same as the order
-    // of headers as in the headers array.
-    $not_in_order = [];
-
-    foreach ($expected_headers as $index => $header) {
-      if (isset($headers[$index]) && $headers[$index] != $header) {
-        // Check that in this index in the expected headers, the header name is the same as the name
-        // in the headers array in the same position or index.
-
-        // Save only the header that does not match.
-        array_push($not_in_order, $header);
-      }
+    // The headers array contains missing headers only.
+    if ($missing_headers) {
+      return [
+        'case' => 'Missing expected headers',
+        'valid' => FALSE,
+        'failedItems' => [
+          'missing' => $missing_headers
+        ]
+      ];
     }
 
-    if ($not_in_order) {
-      $not_in_order = implode(', ', $not_in_order);
-
+    // The headers array contains only headers in the wrong order.
+    if ($wrong_order_headers) {
       return [
         'case' => 'Headers not in the correct order',
         'valid' => FALSE,
-        'failedItems' => ['headers' => $not_in_order]
+        'failedItems' => [
+          'wrong_order' => $wrong_order_headers
+        ]
       ];
     }
 
