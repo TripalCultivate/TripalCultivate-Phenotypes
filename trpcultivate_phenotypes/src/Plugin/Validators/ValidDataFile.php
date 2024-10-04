@@ -108,6 +108,11 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
       $file_object = $this->service_EntityTypeManager
         ->getStorage('file')
         ->load($fid);
+
+      // Verify that the filename (if provided) matches the filename in the file object returned by the file id.
+      if (!empty($filename) && $file_object->getFileName() != pathinfo($filename, PATHINFO_FILENAME)) {
+        throw new \Exception('The filename provided does not match the filename set in the file object.');
+      }
     }
     elseif ($filename) {
       // The file input is a string value, a path to the file. Locate the file entity
@@ -139,13 +144,7 @@ class ValidDataFile extends TripalCultivatePhenotypesValidatorBase implements Co
     // File object has loaded successfully. Any subsequent failed test from this point
     // will reference the filename and file id from the established file object.
     $file_filename = $file_object->getFileName();
-    $file_input_filename = pathinfo($file_filename, PATHINFO_FILENAME);
     $file_fid = $file_object->id();
-
-    // Verify that the provided filename matches the filename in the file object returned by the file id.
-    if ((!empty($filename) && $fid > 0) && $file_filename != $file_input_filename) {
-      throw new \Exception('The filename provided does not match the filename set in the file object.');
-    }
 
     // Check that the file is not blank by inspecting the file size to see if it is greater than 0.
     $file_size = $file_object->getSize();
