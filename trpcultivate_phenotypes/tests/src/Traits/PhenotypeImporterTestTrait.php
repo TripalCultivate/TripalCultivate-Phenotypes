@@ -165,6 +165,7 @@ trait PhenotypeImporterTestTrait {
    *     - mime: the file type (e.g. text/plain, text/tab-separated-values)
    *     - filename: the name including extension to create attached to the
    *         managed file.
+   *     - filesize: the size of the file being created in bytes
    *     - is_temporary: either TRUE or FALSE to indicate whether to put the
    *         file in the temporary or public files directory.
    *     - content[string]: the content to copy into the file as a string
