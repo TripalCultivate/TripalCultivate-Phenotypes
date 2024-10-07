@@ -161,6 +161,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $project = 0;
     $genus = $form_values['genus'];
     $file_id = $form_values['file_upload'];
+    // Open the file
+    $file = File::load($file_id);
 
     // Make the header columns into a simplified array where the header names
     // are the values
@@ -187,12 +189,26 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $instance = $manager->createInstance('valid_data_file');
     // Set supported mime-types using the valid file extensions supported by this
     // importer.
-    $supported_mime_types = [
+    $supported_file_extensions = [
       'tsv', // Tab-separated values.
       'txt'  // Plain text.
     ];
-    $instance->setSupportedMimeTypes($supported_mime_types);
+    $instance->setSupportedMimeTypes($supported_file_extensions);
     $validators['file']['valid_data_file'] = $instance;
+
+    // -----------------------------------------------------
+    // Raw row level
+    // - File rows are properly delimited
+    $instance = $manager->createInstance('valid_delimited_file');
+    // Count the number of columns and configure it for this validator. We want
+    // this number to be strict = TRUE, thus no extra columns are allowed.
+    $num_columns = count($this->headers);
+    $instance->setExpectedColumns($num_columns, TRUE);
+    // Set the MIME type of this input file
+    $file_mime_type = $file->getMimeType();
+    $instance->setFileMimeType($file_mime_type);
+
+    $validators['raw-row']['valid_delimited_file'] = $instance;
 
     // -----------------------------------------------------
     // Header Level
@@ -432,11 +448,33 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         $line_no++;
 
         // ********************************************************************
+        // Raw Row Validation
+        // ********************************************************************
+        foreach ($validators['raw-row'] as $validator_name => $validator) {
+          // Set failures for this validator name to an empty array to signal that
+          // this validator has been run
+          $failures[$validator_name] = [];
+          $result = $validator->validateRawRow($line);
+
+          // Check if validation failed and save the results if it did
+          if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+            $failed_validator = TRUE;
+            $failures[$validator_name] = $result;
+          }
+        }
+
+        // If any raw-row validators failed, skip further validation
+        if ($failed_validator === TRUE) {
+          break;
+        }
+
+        // ********************************************************************
         // Header Row Validation
         // ********************************************************************
         if ($line_no == 1) {
           // Split line into an array of values.
           $header_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+
           foreach ($validators['header-row'] as $validator_name => $validator) {
             // Set failures for this validator name to an empty array to signal
             // that this validator has been run
@@ -543,6 +581,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // ------------------------------- FILE ----------------------------------
       'valid_data_file' => [
         'title' => 'File is valid and not empty',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      // ----------------------------- RAW ROW ---------------------------------
+      'valid_delimited_file' => [
+        'title' => 'Row is properly delimited',
         'status' => 'todo',
         'details' => ''
       ],
