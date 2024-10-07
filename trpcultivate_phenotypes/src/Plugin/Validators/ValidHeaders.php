@@ -75,14 +75,52 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
         'failedItems' => ['headers' => 'headers array is an empty array']
       ];
     }
+    
+    // @TODO: call getter method in valid delimited file validator. 
+    /*
+    // Reference the expected number of headers and strict comparison flag.
+    $expected_columns = Drupal::service('trpcultivate_phenotypes.valid_delimited_file')
+      ->getExpectedColumns();
+
+    // If header count does not match the expected number of headers/columns while strict comparison
+    // then the headers array is invalid.
+    if ($expected_columns['strict'] && count($headers) != $expected_columns['number_of_columns']) {
+      return [
+        'case' => 'Headers provided does not have expected number of headers',
+        'valid' => FALSE,
+        'failedItems' => ['headers' => $headers]
+      ];
+    }
+    */
+    
 
     // Reference the list of expected headers.
     $expected_headers = $this->getHeaders();
     
-    
-    // @TODO: needs a check if headers array has less or more than the expected headers? 
+    // Pull missing headers.
+    $missing_headers = [];
+    foreach ($expected_headers as $index => $header) {
+      if (!in_array($header, $headers)) {
+        $missing_headers[ $index ] = $header;
+      }
+    }
 
-    
+    // Pull headers not in the correct order.
+    $wrong_order_headers = [];
+    foreach($headers as $index => $header) {
+      // @TODO: If the header name in the index is does not match the name 
+      // in the expected header in the same index then is it missing?
+      // or another case is required for unexpected header name.
+
+      // Report when missing, not in order and unexpected header have values.
+      
+      if (isset($expected_headers[ $index ]) && $header != $expected_headers[ $index ]) {
+        array_push($wrong_order_headers, $headers);
+      }
+    }
+
+
+    /*
     // Array to store missing headers.
     $missing_headers = []; 
     // Array to store headers in the wrong order.
@@ -97,12 +135,13 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
         array_push($missing_headers, $header);
       }
       else {
-        if (isset($headers[ $index ]) && $headers[ $index ] != $header) {
+        if ((isset($headers[ $index ]) && $headers[ $index ] != $header) || !isset($headers[ $index ])) {
           // Header in the wrong order.
           array_push($wrong_order_headers, $header);
         }
       }
-    }
+    } 
+    */
     
     // The headers array contains both missing and wrong order headers.
     if ($missing_headers && $wrong_order_headers) {

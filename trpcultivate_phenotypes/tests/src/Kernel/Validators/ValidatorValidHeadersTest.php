@@ -111,15 +111,18 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
         'missing header',
         [
           'Header 0',
-          'Header 1',
+          'Header !1',
           'Header 2',
+          'Header !3',
           'Header 4',
+          'Header !5',
         ],
         [
           'case' => 'Missing expected headers',
           'valid' => FALSE,
           'failedItems' => [
             'missing' => [
+              'Header 1',
               'Header 5', 
               'Header 3'
             ]
@@ -144,6 +147,35 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
           'failedItems' => [
             'wrong_order' => [
               'Header 1', 
+              'Header 2'
+            ]
+          ]
+        ]
+      ],
+
+      // Headers missing and not in order.
+      [
+        'missing and not in order',
+        [
+          'Header !0',
+          'Header 1',
+          'Header 5',
+          'Header !3',
+          //'Header 2'
+        ],
+        [
+          'case' => 'Missing expected headers and headers not in the correct order',
+          'valid' => FALSE,
+          'failedItems' => [
+            'missing' => [
+              'Header 0',
+              'Header 2',
+              'Header 3',
+              'Header 4'
+            ],
+            'wrong_order' => [
+              'Header 5',
+              'Header 4',
               'Header 2'
             ]
           ]
