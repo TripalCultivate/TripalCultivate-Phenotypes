@@ -8,6 +8,7 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ColumnCount;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\Headers;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -26,8 +27,9 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
   /**
    * This validator requires the following validator traits:
    * - Headers - getHeaders: get all headers.
+   * - ColumnCount - getExpectedColumns: get the expected number of columns and strict comparison flag.
    */
-  use Headers;
+  use Headers, ColumnCount;
 
   /**
    * Constructor.
@@ -79,6 +81,8 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
 
     // Reference the list of expected headers.
     $expected_headers = $this->getHeaders();
+    dpm($expected_headers, 'Expected headers');
+    dpm($headers, 'Input Headers');
 
     foreach ($expected_headers as $header) {
       // Each header name in the expected headers array will be verified for both
@@ -88,14 +92,30 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
       // Take one item from the headers input and compare it to
       // the current expected header.
       $cur_input_header = array_shift($input_headers);
+      dpm($header . ' --- ' . $cur_input_header);
 
-      if ($cur_input_header && $header != $cur_input_header) {
+      if ($cur_input_header && $header != trim($cur_input_header)) {
         return [
-          'case' => 'Headers do not match expected headers',
+          'case' => 'Headers do not match expected headers >' . $header . $cur_input_header,
           'valid' => FALSE,
           'failedItems' => $headers
         ];
       }
+    }
+
+    // Reference the expected number of columns and strict comparison flag.
+    $expected_columns =  $this->getExpectedColumns();
+
+    if ($expected_columns['strict'] && $expected_columns['number_of_columns'] != count($headers)) {
+      // The importer specified a strict requirement for the headers input array
+      // to have a specific number of elements, and this check found more or less
+      // than the required.
+
+      return [
+        'case' => 'Headers provided does not have the expected number of headers',
+        'valid' => FALSE,
+        'failedItems' => $headers
+      ];
     }
 
     // At this point the headers input array is valid.

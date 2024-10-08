@@ -9,7 +9,6 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
-use Drupal\file\Entity\File;
 
  /**
   * Tests Tripal Cultivate Phenotypes Headers Validator Plugin.
@@ -27,6 +26,10 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
    * @var object
    */
   protected $validator_instance;
+
+  /**
+   *
+   */
 
   /**
    * Modules to enable.
@@ -91,6 +94,7 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
    *   - A string, human-readable short description of the test scenario.
    *   - Headers input array.
    *   - Expected validation result.
+   *   - An array containing the expected number of columns and strict comparison flag.
    */
   public function provideHeadersToHeadersValidator() {
 
@@ -103,82 +107,182 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
           'case' => 'Header row is an empty value',
           'valid' => FALSE,
           'failedItems' => ['headers' => 'headers array is an empty array']
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
         ]
       ],
 
-      // #1: Missing some headers.
+      // #1: Missing a header.
       [
-        'missing header',
+        'missing header by an altered name',
         [
           'Header 0',
-          'Header !1',
+          'Header 1',
           'Header 2',
-          'Header !3',
+          'Header 3',
           'Header 4',
           'Header !5',
         ],
         [
-          'case' => 'Missing expected headers',
+          'case' => 'Headers do not match expected headers',
           'valid' => FALSE,
           'failedItems' => [
-            'missing' => [
-              'Header 1',
-              'Header 5', 
-              'Header 3'
-            ]
+            'Header 0',
+            'Header 1',
+            'Header 2',
+            'Header 3',
+            'Header 4',
+            'Header !5',
           ]
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
         ]
       ],
 
-      // #2: Header not in the right order.
+      // #2: Missing a few headers, but validation will fail on first encounter of missing header.
       [
-        'not in the order',
+        'missing header by few altered names',
         [
           'Header 0',
+          'Header 1',
+          'Header !2',
+          'Header !3',
+          'Header !4',
+          'Header !5',
+        ],
+        [
+          'case' => 'Headers do not match expected headers',
+          'valid' => FALSE,
+          'failedItems' => [
+            'Header 0',
+            'Header 1',
+            'Header !2',
+            'Header !3',
+            'Header !4',
+            'Header !5',
+          ]
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
+        ]
+      ],
+
+      // #3: Physically missing.
+      [
+        'missing header by omission',
+        [
+          'Header 0',
+          'Header 1',
+          'Header 2',
+          'Header 4',
+          'Header 5',
+        ],
+        [
+          'case' => 'Headers do not match expected headers',
+          'valid' => FALSE,
+          'failedItems' => [
+            'Header 0',
+            'Header 1',
+            'Header 2',
+            'Header 4',
+            'Header 5',
+          ]
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
+        ]
+      ],
+
+      // #4: A couple of headers not in order.
+      [
+        'couple headers not in order',
+        [
+          'Header 0',
+          'Header 1',
+          'Header 3',
+          'Header 2',
+          'Header 4',
+          'Header 5',
+        ],
+        [
+          'case' => 'Headers do not match expected headers',
+          'valid' => FALSE,
+          'failedItems' => [
+            'Header 0',
+            'Header 1',
+            'Header 3',
+            'Header 2',
+            'Header 4',
+            'Header 5',
+          ]
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
+        ]
+      ],
+
+      // #5: All headers not in order and validator will fail in the first ecounter missing/wrong order.
+      [
+        'multiple not in the order',
+        [
+          'Header 5',
+          'Header 4',
+          'Header 3',
           'Header 2',
           'Header 1',
+          'Header 0'
+        ],
+        [
+          'case' => 'Headers do not match expected headers',
+          'valid' => FALSE,
+          'failedItems' => [
+            'Header 5',
+            'Header 4',
+            'Header 3',
+            'Header 2',
+            'Header 1',
+            'Header 0',
+          ]
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
+        ]
+      ],
+
+      // #6: A valid header but the expected column strict comparison flag is set to exact match (TRUE).
+      [
+        'not have expected number',
+        [
+          'Header 0',
+          'Header 1',
+          'Header 2',
           'Header 3',
           'Header 4',
           'Header 5'
         ],
         [
-          'case' => 'Headers not in the correct order',
+          'case' => 'Headers provided does not have the expected number of headers',
           'valid' => FALSE,
           'failedItems' => [
-            'wrong_order' => [
-              'Header 1', 
-              'Header 2'
-            ]
+            'Header 0',
+            'Header 1',
+            'Header 2',
+            'Header 3',
+            'Header 4',
+            'Header 5',
           ]
-        ]
-      ],
-
-      // Headers missing and not in order.
-      [
-        'missing and not in order',
-        [
-          'Header !0',
-          'Header 1',
-          'Header 5',
-          'Header !3',
-          //'Header 2'
         ],
         [
-          'case' => 'Missing expected headers and headers not in the correct order',
-          'valid' => FALSE,
-          'failedItems' => [
-            'missing' => [
-              'Header 0',
-              'Header 2',
-              'Header 3',
-              'Header 4'
-            ],
-            'wrong_order' => [
-              'Header 5',
-              'Header 4',
-              'Header 2'
-            ]
-          ]
+          'number_of_columns' => 6,
+          'strict' => TRUE
         ]
       ],
 
@@ -197,8 +301,12 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
           'case' => 'Headers exist and match expected headers',
           'valid' => TRUE,
           'failedItems' => []
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
         ]
-      ],      
+      ],
     ];
   }
 
@@ -207,7 +315,9 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideHeadersToHeadersValidator
    */
-  public function testHeaders($scenario, $headers_input, $expected) {
+  public function testHeaders($scenario, $headers_input, $expected, $expected_columns) {
+
+    $this->validator_instance->setExpectedColumns($expected_columns['number_of_columns'], $expected_columns['strict']);
     $validation_status = $this->validator_instance->validateRow($headers_input);
 
     foreach($validation_status as $key => $value) {
