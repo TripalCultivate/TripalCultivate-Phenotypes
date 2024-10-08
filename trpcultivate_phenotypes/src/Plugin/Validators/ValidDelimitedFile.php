@@ -9,6 +9,7 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\FileTypes;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ColumnCount;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -26,8 +27,9 @@ class ValidDelimitedFile extends TripalCultivatePhenotypesValidatorBase implemen
   /**
    * This validator requires the following validator traits:
    * - FileTypes - getFileMimeType: get the MIME type of the input file.
+   * - ColumnCount - getExpectedColumns: get the expected number of columns and strict comparison flag.
    */
-  use FileTypes;
+  use FileTypes, ColumnCount;
 
   /**
    * Constructor.
