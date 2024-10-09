@@ -9,7 +9,6 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
-use Drupal\file\Entity\File;
 
  /**
   * Tests Tripal Cultivate Phenotypes Data File Validator Plugins.
@@ -83,7 +82,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       'file-valid' => [
         'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
-        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3']),
+        'content' => [
+          'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
+        ],
         'filesize' => 1024
       ],
 
@@ -91,7 +92,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       'file-empty' => [
         'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
-        'content' => '',
+        'content' => [
+          'string' => ''
+        ],
         'filesize' => 0
       ],
 
@@ -99,7 +102,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       'file-alternative' => [
         'ext' => 'txt',
         'mime' => 'text/plain',
-        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3']),
+        'content' => [
+          'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
+        ],
         'filesize' => 1024,
       ],
 
@@ -107,7 +112,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       'file-image' => [
         'ext' => 'png',
         'mime' => 'image/png',
-        'content' => '',
+        'content' => [
+          'string' => ''
+        ],
         'filesize' => 1024,
         'file' => 'png.png' // Can be found in the test Fixtures folder.
       ],
@@ -124,9 +131,11 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       'file-locked' => [
         'ext' => 'tsv',
         'mime' => 'text/tab-separated-values',
-        'content' => implode("\t", ['Header 1', 'Header 2', 'Header 3']),
+        'content' => [
+          'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
+        ],
         'filesize' => 1024,
-        'lock' => TRUE
+        'permissions' => 'none'
       ]
     ];
 
@@ -137,22 +146,9 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
     // Create the file for each test file scenario.
     foreach($test_file_scenario as $test_scenario => $file_properties) {
       $filename = 'test_data_file_' . $test_scenario . '.' . $file_properties['ext'];
+      $file_properties['filename'] = $filename;
 
-      $file = File::create([
-        'filename' => $filename,
-        'filemime' => $file_properties['mime'],
-        'uri' => 'public://' . $filename,
-        'status' => 0
-      ]);
-
-      // Update test scenario file properties.
-
-      // Set the file size.
-      if (isset($file_properties['filesize'])) {
-        $file->setSize($file_properties['filesize']);
-      }
-
-      $file->save();
+      $file = $this->createTestFile($file_properties);
 
       // Reference relevant file properties that will be used
       // to indicate attributes of the file that failed the validation.
@@ -161,27 +157,6 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       $file_mime_type = $file->getMimeType();
       $file_filename = $file->getFileName();
       $file_extension = pathinfo($file_filename, PATHINFO_EXTENSION);
-
-      // Write contents into the file.
-      if (!empty($file_properties['content'])) {
-        file_put_contents($file_uri, $file_properties['content']);
-      }
-
-      // If an existing file was specified, move the file fixture into the uri
-      // to override the created file and use it in lieu of the created file.
-      if (!empty($file_properties['file'])) {
-        $path_to_fixtures = __DIR__ . '/../../Fixtures/';
-        $full_path = $path_to_fixtures . $file_properties['file'];
-        $this->assertFileIsReadable($full_path,
-          "Unable to setup FILE ". $test_scenario . " because cannot access Fixture file at $full_path.");
-
-        copy($full_path, $file_uri);
-      }
-
-      // If file should be locked.
-      if (isset($file_properties['lock']) && $file_properties['lock']) {
-        chmod($file_uri, 0000);
-      }
 
       // Create a test scenario file input parameter and attach the file properties.
       $test_file_param[ $test_scenario ] = [
@@ -510,15 +485,15 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
    */
   public function testDataFileExceptionCase() {
     // The filename is set to a different name than the set filename of valid-file test file input scenario.
-    $filename = 'not-the-filename.tsv'; 
+    $filename = 'not-the-filename.tsv';
     $fid = $this->test_files['file-valid']['test_file']['fid'];
 
     $exception_caught = FALSE;
     $exception_message = '';
-    
+
     try {
       $this->validator_instance->validateFile($filename, $fid);
-    } 
+    }
     catch (\Exception $e) {
       $exception_caught = TRUE;
       $exception_message = $e->getMessage();
@@ -529,7 +504,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       $exception_message,
       'The filename provided does not match the filename set in the file object.',
       'The exception message thrown by data file validator filename mismatch case does not match excepted message'
-    );  
+    );
   }
 
   /**
