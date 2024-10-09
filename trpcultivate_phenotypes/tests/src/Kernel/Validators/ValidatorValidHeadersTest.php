@@ -223,7 +223,7 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      // #5: All headers not in order and validator will fail in the first ecounter missing/wrong order.
+      // #5: All headers not in order and validator will fail in the first encounter of missing/wrong order.
       [
         'multiple not in the order',
         [
