@@ -286,7 +286,56 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
         ]
       ],
 
-      // #3: A valid header (list and order).
+      // #7: Missing header with string index values.
+      [
+        'string index invalid',
+        [
+          'zero' => 'Header 0',
+          'one' => 'Header 1',
+          'three' => 'Header 3',
+          'four' => 'Header 4',
+          'five' => 'Header 5'
+        ],
+        [
+          'case' => 'Headers do not match expected headers',
+          'valid' => FALSE,
+          'failedItems' => [
+            'zero' => 'Header 0',
+            'one' => 'Header 1',
+            'three' => 'Header 3',
+            'four' => 'Header 4',
+            'five' => 'Header 5'
+          ]
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
+        ]
+      ],
+
+      // #8: A valid header with string index values.
+      [
+        'string index valid',
+        [
+          'zero' => 'Header 0',
+          'one' => 'Header 1',
+          'two' => 'Header 2',
+          'three' => 'Header 3',
+          'four' => 'Header 4',
+          'five' => 'Header 5'
+        ],
+        [
+          'case' => 'Headers exist and match expected headers',
+          'valid' => TRUE,
+          'failedItems' => []
+        ],
+        [
+          'number_of_columns' => 6,
+          'strict' => FALSE
+        ]
+      ],
+
+      // #9: A valid header (list and order).
       [
         'valid headers',
         [
