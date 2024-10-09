@@ -94,6 +94,8 @@ trait Headers {
 
       // With the header type already verified to be one of the valid types,
       // create a header entry where it contains only the name and type keys.
+      // This is needed because there is nothing stopping the input $headers
+      // array from containing additional keys.
       $context_headers[ $index ] = [
         'name' => $header['name'],
         'type' => $header['type']
