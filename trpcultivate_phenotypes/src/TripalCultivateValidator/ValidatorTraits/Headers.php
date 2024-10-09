@@ -190,8 +190,7 @@ trait Headers {
 
     // Prepare fullset/subset of the importer headers where each header type matches
     // the header type requested. The final list of headers generated will maintain
-    // the index and order of the header as they appear in headers
-    // set by in the setHeaders method.
+    // the index and order of the original array provided to setHeaders().
     $requested_headers = [];
 
     foreach($this->context[ $this->context_key ] as $index => $header) {
