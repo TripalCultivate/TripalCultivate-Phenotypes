@@ -281,7 +281,7 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
           ]
         ],
         [
-          'number_of_columns' => 6,
+          'number_of_columns' => 50,
           'strict' => TRUE
         ]
       ],

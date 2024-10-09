@@ -81,8 +81,6 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
 
     // Reference the list of expected headers.
     $expected_headers = $this->getHeaders();
-    dpm($expected_headers, 'Expected headers');
-    dpm($headers, 'Input Headers');
 
     foreach ($expected_headers as $header) {
       // Each header name in the expected headers array will be verified for both
@@ -92,11 +90,10 @@ class ValidHeaders extends TripalCultivatePhenotypesValidatorBase implements Con
       // Take one item from the headers input and compare it to
       // the current expected header.
       $cur_input_header = array_shift($input_headers);
-      dpm($header . ' --- ' . $cur_input_header);
 
       if ($cur_input_header && $header != trim($cur_input_header)) {
         return [
-          'case' => 'Headers do not match expected headers >' . $header . $cur_input_header,
+          'case' => 'Headers do not match expected headers',
           'valid' => FALSE,
           'failedItems' => $headers
         ];
