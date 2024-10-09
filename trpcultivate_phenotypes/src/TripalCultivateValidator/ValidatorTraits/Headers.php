@@ -200,6 +200,6 @@ trait Headers {
       }
     }
 
-    return ($requested_headers) ? $requested_headers : [];
+    return $requested_headers;
   }
 }
