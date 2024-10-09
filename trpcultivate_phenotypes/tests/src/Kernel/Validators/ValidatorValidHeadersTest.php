@@ -26,11 +26,6 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
    * @var object
    */
   protected $validator_instance;
-
-  /**
-   *
-   */
-
   /**
    * Modules to enable.
    */
