@@ -328,63 +328,6 @@ class PluginValidatorTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test Headers Plugin Validator.
-   */
-  public function testColumnHeaderPluginValidator() {
-    $scope = 'HEADERS';
-    $validator = $this->plugin_manager->getValidatorIdWithScope($scope);
-    $instance = $this->plugin_manager->createInstance($validator);
-    $assets = $this->assets;
-
-    // PASS:
-    $status = 'pass';
-
-    // File headers match the expected headers.
-    $file_id = $this->test_files['file-6']['ID'];
-    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-
-    // FAIL:
-    $status = 'fail';
-
-    // Change the contents of the tsv_file so the headers do not match the headers asset;
-    $file = File::load($file_id);
-    $file_uri = $file->getFileUri();
-    file_put_contents($file_uri, 'NOT THE HEADERS EXPECTED');
-
-    // File headers do not match the expected headers - Extra Headers.
-    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-    // File headers do not match the expected headers - Less/Missing Headers.
-    unset($assets['headers'][2]); // Removes Header 3.
-    file_put_contents($file_uri, $assets['headers']);
-
-    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-    // Header row is missing.
-    file_put_contents($file_uri, '');
-
-    $instance->loadAssets($assets['project'], $assets['genus'], $file_id, $assets['headers'], $assets['skip']);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-
-
-    // TODO:
-    $status = 'todo';
-
-    // Test skip flag to skip this test - set to upcoming validation step.
-    $instance->loadAssets($assets['project'], $assets['genus'], $assets['file'], $assets['headers'], 1);
-    $validation[ $scope ] = $instance->validate();
-    $this->assertEquals($validation[ $scope ]['status'], $status);
-  }
-
-  /**
    * Template.
    * Test SCOPE Plugin Validator.
    *//*

@@ -174,8 +174,6 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     ];
 
     // #2: 2nd row of file is improperly delimited
-    // Since the header row has the correct number of columns, validation for
-    // valid_headers is expected to pass
     $scenarios[] = [
       $valid_genus,
       'correct_header_improperly_delimited_data_row.tsv',
@@ -187,6 +185,8 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Raw row is not delimited'
         ],
+        // Since the header row has the correct number of columns, validation for
+        // valid_header is expected to pass
         'valid_header' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],

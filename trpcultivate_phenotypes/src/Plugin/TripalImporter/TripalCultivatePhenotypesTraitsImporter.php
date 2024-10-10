@@ -339,6 +339,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Get the mime type which is used to validate the file and split the rows
     $file_mime_type = $file->getMimeType();
 
+    // Configure the validators.
+    $validators = $this->configureValidators($form_values, $file_mime_type);
+
     // A FLAG to keep track if any validator fails.
     // We will only continue to the next input-type if all validators of the
     // current input-type pass.
@@ -350,9 +353,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // instances of one validator. For file-row input-type validators, this will
     // be further keyed by line number.
     $failures = [];
-
-    // Configure the validators.
-    $validators = $this->configureValidators($form_values, $file_mime_type);
 
     // ************************************************************************
     // Metadata Validation
