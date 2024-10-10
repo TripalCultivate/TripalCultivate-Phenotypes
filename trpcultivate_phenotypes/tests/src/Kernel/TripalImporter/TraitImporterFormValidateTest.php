@@ -145,7 +145,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         'valid_data_file' => ['status' => 'todo'],
         'valid_delimited_file' => ['status' => 'todo'],
-        'valid_headers' => ['status' => 'todo'],
+        'valid_header' => ['status' => 'todo'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -165,7 +165,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'details' => 'The file has no data and is an empty file'
         ],
         'valid_delimited_file' => ['status' => 'todo'],
-        'valid_headers' => ['status' => 'todo'],
+        'valid_header' => ['status' => 'todo'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -175,7 +175,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
     // #2: 2nd row of file is improperly delimited
     // Since the header row has the correct number of columns, validation for
-    // the header is expected to pass
+    // valid_headers is expected to pass
     $scenarios[] = [
       $valid_genus,
       'correct_header_improperly_delimited_data_row.tsv',
@@ -187,7 +187,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Raw row is not delimited'
         ],
-        'valid_headers' => ['status' => 'pass'],
+        'valid_header' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -204,7 +204,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'valid_headers' => ['status' => 'pass'],
+        'valid_header' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -220,7 +220,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'valid_headers' => [
+        'valid_header' => [
           'title' => 'File has all of the column headers expected',
           'status' => 'fail',
           'details' => 'Headers do not match expected headers',
@@ -241,7 +241,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'valid_headers' => ['status' => 'pass'],
+        'valid_header' => ['status' => 'pass'],
         'empty_cell' => [
           'title' => 'Required cells contain a value',
           'status' => 'fail',
@@ -262,7 +262,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'valid_headers' => ['status' => 'pass'],
+        'valid_header' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => [
           'title' => 'Values in required cells are valid',
@@ -282,7 +282,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'valid_headers' => ['status' => 'pass'],
+        'valid_header' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => [

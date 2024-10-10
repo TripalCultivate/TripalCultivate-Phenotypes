@@ -213,7 +213,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $instance = $manager->createInstance('valid_headers');
     $instance->setHeaders($this->headers);
     $instance->setExpectedColumns($num_columns, TRUE);
-    $validators['header-row']['valid_headers'] = $instance;
+    $validators['header-row']['valid_header'] = $instance;
 
     // -----------------------------------------------------
     // Data Row Level
@@ -553,7 +553,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         'details' => ''
       ],
       // ---------------------------- HEADER ROW -------------------------------
-      'valid_headers' => [
+      'valid_header' => [
         'title' => 'File has all of the column headers expected',
         'status' => 'todo',
         'details' => ''
