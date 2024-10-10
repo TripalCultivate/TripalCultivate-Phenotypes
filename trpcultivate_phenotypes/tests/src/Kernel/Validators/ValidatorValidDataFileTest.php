@@ -85,7 +85,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
         ],
-        'filesize' => 1024
+        // 'filesize' => 1024
       ],
 
       // A valid file type, an empty file.
@@ -105,7 +105,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
         ],
-        'filesize' => 1024,
+        // 'filesize' => 1024,
       ],
 
       // Not valid file.
@@ -115,7 +115,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => ''
         ],
-        'filesize' => 1024,
+        // 'filesize' => 1024,
         'file' => 'png.png' // Can be found in the test Fixtures folder.
       ],
 
@@ -123,7 +123,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
       'file-pretend' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        'filesize' => 1024,
+        // 'filesize' => 1024,
         'file' => 'pdf.txt' // Can be found in the test Fixtures folder.
       ],
 
@@ -134,7 +134,7 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
         ],
-        'filesize' => 1024,
+        // 'filesize' => 1024,
         'permissions' => 'none'
       ]
     ];
