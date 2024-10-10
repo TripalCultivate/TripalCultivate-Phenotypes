@@ -145,7 +145,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         'valid_data_file' => ['status' => 'todo'],
         'valid_delimited_file' => ['status' => 'todo'],
-        'HEADERS' => ['status' => 'todo'],
+        'valid_headers' => ['status' => 'todo'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -165,7 +165,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'details' => 'The file has no data and is an empty file'
         ],
         'valid_delimited_file' => ['status' => 'todo'],
-        'HEADERS' => ['status' => 'todo'],
+        'valid_headers' => ['status' => 'todo'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -187,7 +187,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Raw row is not delimited'
         ],
-        'HEADERS' => ['status' => 'pass'],
+        'valid_headers' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -204,7 +204,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass'],
+        'valid_headers' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
         'duplicate_traits' => ['status' => 'todo']
@@ -220,10 +220,10 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'HEADERS' => [
+        'valid_headers' => [
           'title' => 'File has all of the column headers expected',
           'status' => 'fail',
-          'details' => 'Trait Description is/are missing in the file',
+          'details' => 'Headers do not match expected headers',
         ],
         'empty_cell' => ['status' => 'todo'],
         'valid_data_type' => ['status' => 'todo'],
@@ -241,7 +241,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass'],
+        'valid_headers' => ['status' => 'pass'],
         'empty_cell' => [
           'title' => 'Required cells contain a value',
           'status' => 'fail',
@@ -262,7 +262,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass'],
+        'valid_headers' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => [
           'title' => 'Values in required cells are valid',
@@ -282,7 +282,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'genus_exists' => ['status' => 'pass'],
         'valid_data_file' => ['status' => 'pass'],
         'valid_delimited_file' => ['status' => 'pass'],
-        'HEADERS' => ['status' => 'pass'],
+        'valid_headers' => ['status' => 'pass'],
         'empty_cell' => ['status' => 'pass'],
         'valid_data_type' => ['status' => 'pass'],
         'duplicate_traits' => [
