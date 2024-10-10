@@ -16,12 +16,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate that project exists.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_project_exists",
+ *   id = "project_exists",
  *   validator_name = @Translation("Project Exists Validator"),
  *   input_types = {"metadata"}
  * )
  */
-class projectExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class ProjectExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
    * Constructor.
