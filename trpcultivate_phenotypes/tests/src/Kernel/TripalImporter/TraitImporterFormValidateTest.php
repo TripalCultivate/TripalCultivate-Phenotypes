@@ -93,9 +93,9 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    * -- the filename of the test file used for this scenario (test files are
    *    located in: tests/src/Fixtures/TraitImporterFiles/)
    * -- an array indicating the expected validation results
-   *    - Each key is the unique name of a feedback line provided to the validator UI 
-   *      by the processValidationMessages(). Currently there is a feedback line for 
-   *      each unique validator instance that was instantiated by the 
+   *    - Each key is the unique name of a feedback line provided to the validator UI
+   *      by the processValidationMessages(). Currently there is a feedback line for
+   *      each unique validator instance that was instantiated by the
    *      configureValidators() method in the Traits Importer class
    *      - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'
    *      - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
@@ -151,8 +151,8 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Empty value found in required column(s) at row #: 3'
         ],
-        'valid_data_type' => ['status' => 'pass'],
-        'duplicate_traits' => ['status' => 'pass']
+        'valid_data_type' => ['status' => 'todo'],
+        'duplicate_traits' => ['status' => 'todo']
       ]
     ];
 
@@ -170,7 +170,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
           'status' => 'fail',
           'details' => 'Invalid value(s) in required column(s) at row #: 2'
         ],
-        'duplicate_traits' => ['status' => 'pass']
+        'duplicate_traits' => ['status' => 'todo']
       ]
     ];
 
