@@ -98,9 +98,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         TRUE,
         [
           'setter' => 'The Headers Trait requires an array of headers and must not be empty.',
-          'getter-all' => 'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method.',
-          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
-          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'
         ],
         [
           'all' => FALSE,
@@ -122,9 +122,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         TRUE,
         [
           'setter' => 'Headers Trait requires the header key: name when defining headers.',
-          'getter-all' => 'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method.',
-          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
-          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'
         ],
         [
           'all' => FALSE,
@@ -146,9 +146,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         TRUE,
         [
           'setter' => 'Headers Trait requires the header key: type when defining headers.',
-          'getter-all' => 'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method.',
-          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
-          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'
         ],
         [
           'all' => FALSE,
@@ -170,9 +170,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         TRUE,
         [
           'setter' => 'Headers Trait requires the header key: name to be have a value.',
-          'getter-all' => 'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method.',
-          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
-          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'
         ],
         [
           'all' => FALSE,
@@ -194,9 +194,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         TRUE,
         [
           'setter' => 'Headers Trait requires the header key: type to be have a value.',
-          'getter-all' => 'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method.',
-          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
-          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'
         ],
         [
           'all' => FALSE,
@@ -218,9 +218,9 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
         TRUE,
         [
           'setter' => 'Headers Trait requires the header key: type value to be one of',
-          'getter-all' => 'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method.',
-          'getter-required' => 'Cannot retrieve required headers from the context array as one has not been set by setHeaders() method.',
-          'getter-optional' => 'Cannot retrieve optional headers from the context array as one has not been set by setHeaders() method.'
+          'getter-all' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-required' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
+          'getter-optional' => 'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.'
         ],
         [
           'all' => FALSE,
@@ -403,7 +403,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
       $this->assertTrue($exception_caught, 'Header type ' . $type . ' getter method should throw an exception for unset header.');
       $this->assertStringContainsString(
-        'Cannot retrieve ' . $type . ' headers from the context array as one has not been set by setHeaders() method.',
+        'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
         $exception_message,
         'Expected exception message does not match the message when trying to get headers of type ' . $type . ' on unset headers.'
       );
@@ -421,7 +421,7 @@ class ValidatorTraitHeadersTest extends ChadoTestKernelBase {
 
     $this->assertTrue($exception_caught, 'Header getter method should throw an exception for unset header.');
     $this->assertStringContainsString(
-      'Cannot retrieve requested headers as the headers key was not set in the context array, or one or more types were not set by setHeaders() method',
+      'Cannot retrieve headers from the context array as one has not been set by setHeaders() method.',
       $exception_message,
       'Expected exception message does not match the message when trying to get headers.'
     );
