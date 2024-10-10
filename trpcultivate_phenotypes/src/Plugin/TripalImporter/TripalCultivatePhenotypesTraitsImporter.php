@@ -153,26 +153,20 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Setup the plugin manager
     $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
-    // Importer assets.
-    // All values will be accessible to every instance of the validator Plugin.
-    // This importer does not require a project and this variable is set to 0
-    // instruct validators Project + Genus that relations project-genus can be ignored.
-    $project = 0;
+    // Grab the genus from our form to use in configuring some validators
     $genus = $form_values['genus'];
-    $file_id = $form_values['file_upload'];
 
-    // Make the header columns into a simplified array where the header names
-    // are the values
-    $headers = array_keys($this->old_headers);
-
-    // Take our simplified headers array and flip the array keys and values
-    // This is the format that the validators will expect to know which indices
-    // in the row of data to act on
-    // For example: ['Trait Name'] => 0
-    $header_index = array_flip($headers);
-
-    // Set $skip to 0 since no validation is being done within this method
-    $skip = 0;
+    // Make the header columns into a simplified array
+    //  - Keyed by the column header name
+    //  - Values are the column header's poition in the $headers property (ie. its
+    //    index if we assume no keys were assigned)
+    $header_index = [];
+    $headers = $this->headers;
+    $i = 0;
+    foreach ($headers as $column_details) {
+      $header_index[$column_details['name']] = $i;
+      $i++;
+    }
 
     // -----------------------------------------------------
     // Metadata
@@ -203,15 +197,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $instance->setExpectedColumns($num_columns, TRUE);
     // Set the MIME type of this input file
     $instance->setFileMimeType($file_mime_type);
-
     $validators['raw-row']['valid_delimited_file'] = $instance;
 
     // -----------------------------------------------------
     // Header Level
     // - All column headers match expected header format
-    // Validator for headers - ensure no headers are missing and headers are in the correct order.
     $instance = $manager->createInstance('valid_headers');
+    // Use our $headers property to configure what we expect for a header in the
+    // input file
     $instance->setHeaders($this->headers);
+    // Configure the expected number of columns and set it to be strict
     $instance->setExpectedColumns($num_columns, TRUE);
     $validators['header-row']['valid_header'] = $instance;
 
@@ -597,20 +592,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         else if (array_key_exists('case', $failures[$validator_name])) {
           // @todo: Update the message to not use the 'case' string by default
           // and to incorporate the 'failed_details'.
-          $message = $failures[$validator_name]['case'];
+          $case_message = $failures[$validator_name]['case'];
           $messages[$validator_name] = [
             'status' => 'fail',
-            'details' => $message,
-            'raw_results' => $failures[$validator_name],
-          ];
-        }
-        // @todo: Remove this if block when old validators GENUS, FILE, and
-        // HEADERS are removed.
-        else if (array_key_exists('details', $failures[$validator_name])){
-          $message = $failures[$validator_name]['details'];
-          $messages[$validator_name] = [
-            'status' => 'fail',
-            'details' => $message,
+            'details' => $case_message,
             'raw_results' => $failures[$validator_name],
           ];
         }
@@ -632,10 +617,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // formulate one concise, helpful feedback message.
           // foreach ($failures[$validator_name] as $line_no => $validator_results) {
           $first_failed_row = array_key_first($failures[$validator_name]);
-          $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+          $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
           $messages[$validator_name] = [
             'status' => 'fail',
-            'details' => $message,
+            'details' => $case_message,
             'raw_results' => $failures[$validator_name],
           ];
         }
