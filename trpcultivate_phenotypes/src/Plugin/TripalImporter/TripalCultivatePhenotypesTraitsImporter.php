@@ -48,7 +48,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   // system using this variable.
   private $validation_result = 'validation_result';
 
-  // Headers required by this importer.
+  // @TODO: Remove this once all dependencies have been updated to use the new
+  //        $headers property below
   private $old_headers = [
     'Trait Name' => 'The name of the trait, as you would like it to appear to the user (e.g. Days to Flower)',
     'Trait Description' => 'A full description of the trait. This is recommended to be at least one paragraph.',
@@ -58,6 +59,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     'Type' => 'One of "Qualitative" or "Quantitative".'
   ];
 
+  // Headers required by this importer.
   private $headers = [
     [
       'name' => 'Trait Name',
@@ -653,6 +655,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Line counter.
     $line_no = 0;
     // Headers.
+    // @TODO: Update this to use the new $headers property which is a defferent format
     $headers = array_keys($this->old_headers);
     $headers_count = count($headers);
 
@@ -707,6 +710,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
+    // @TODO: Update this to use the new $headers property which is a defferent format
     $column_headers = array_keys($this->old_headers);
 
     $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
@@ -722,6 +726,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
+        // @TODO: Update this to use the new $headers property which is a defferent format
         'headers' => $this->old_headers,
         'notes' => $notes,
         'template_file' => $file_link
