@@ -327,7 +327,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFilesForValidation
    */
-  public function testTraitFormValidation($submitted_genus, $filename, $expected_validator_results, $expected_num_form_validation_errors) {
+  public function testTraitFormValidation(string $submitted_genus, string $filename, array $expected_validator_results, int $expected_num_form_validation_errors) {
 
     $formBuilder = \Drupal::formBuilder();
     $form_id = 'Drupal\tripal\Form\TripalImporterForm';
@@ -366,7 +366,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
     $formBuilder->submitForm($form_id, $form_state);
     // And retrieve the form that would be shown after the above submit.
     $form = $formBuilder->retrieveForm($form_id, $form_state);
-    // And the for form state storage where our importers store their validation.
+    // And the form state storage where our importers store their validation.
     $storage = $form_state->getStorage();
 
     // Check that we did validation.

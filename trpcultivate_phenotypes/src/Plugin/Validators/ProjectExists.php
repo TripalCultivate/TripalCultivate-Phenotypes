@@ -64,7 +64,7 @@ class ProjectExists extends TripalCultivatePhenotypesValidatorBase implements Co
 
     // Failed to locate the project field element.
     if (!array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception('Failed to locate project field element. projectExists validator expects a form field element name project.');
+      throw new \Exception('Failed to locate project field element. ProjectExists validator expects a form field element name project.');
     }
 
     // Validator response values for a valid project value (exists).

@@ -82,7 +82,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // Failed to locate the project and genus field element.
     foreach($expected_field_key as $field) {
       if (!array_key_exists($field, $form_values)) {
-        throw new \Exception('Failed to locate ' . $field . ' field element. projectGenusMatch validator expects a form field element name ' . $field . '.');
+        throw new \Exception('Failed to locate ' . $field . ' field element. ProjectGenusMatch validator expects a form field element name ' . $field . '.');
       }
     }
 
