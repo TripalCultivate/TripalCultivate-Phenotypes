@@ -180,12 +180,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // File level
     // - File exists and is the expected type
     $instance = $manager->createInstance('valid_data_file');
-    // Set supported mime-types using the valid file extensions supported by this
-    // importer.
-    $supported_file_extensions = [
-      'tsv', // Tab-separated values.
-      'txt'  // Plain text.
-    ];
+    // Set supported mime-types using the valid file extensions (file_types) as
+    // defined in the annotation for this importer on line 27
+    $supported_file_extensions = $this->plugin_definition['file_types'];
     $instance->setSupportedMimeTypes($supported_file_extensions);
     $validators['file']['valid_data_file'] = $instance;
 
