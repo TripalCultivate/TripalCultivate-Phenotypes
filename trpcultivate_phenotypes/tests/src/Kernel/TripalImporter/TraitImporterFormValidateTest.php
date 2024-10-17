@@ -133,7 +133,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
     $scenarios = [];
 
-    #0: File is valid but genus is not
+    // #0: File is valid but genus is not
     $scenarios[] = [
       $invalid_genus,
       'simple_example.txt',
@@ -153,7 +153,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       1 // Since selecting an invalid genus should be impossible, 1 form validation error is expected
     ];
 
-    #1: File is empty
+    // #1: File is empty
     $scenarios[] = [
       $valid_genus,
       'empty_file.txt',
