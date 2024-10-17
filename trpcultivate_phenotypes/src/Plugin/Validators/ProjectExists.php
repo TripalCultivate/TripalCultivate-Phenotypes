@@ -16,12 +16,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Validate that project exists.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_project_exists",
+ *   id = "project_exists",
  *   validator_name = @Translation("Project Exists Validator"),
  *   input_types = {"metadata"}
  * )
  */
-class projectExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class ProjectExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
    * Constructor.
@@ -64,7 +64,7 @@ class projectExists extends TripalCultivatePhenotypesValidatorBase implements Co
 
     // Failed to locate the project field element.
     if (!array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception('Failed to locate project field element. projectExists validator expects a form field element name project.');
+      throw new \Exception('Failed to locate project field element. ProjectExists validator expects a form field element name project.');
     }
 
     // Validator response values for a valid project value (exists).

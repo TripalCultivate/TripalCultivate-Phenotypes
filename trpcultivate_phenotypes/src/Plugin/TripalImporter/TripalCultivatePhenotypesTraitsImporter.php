@@ -48,14 +48,49 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   // system using this variable.
   private $validation_result = 'validation_result';
 
-  // Headers required by this importer.
-  private $headers = [
+  // @TODO: Remove this once all dependencies have been updated to use the new
+  //        $headers property below
+  private $old_headers = [
     'Trait Name' => 'The name of the trait, as you would like it to appear to the user (e.g. Days to Flower)',
     'Trait Description' => 'A full description of the trait. This is recommended to be at least one paragraph.',
     'Method Short Name' => 'A full, unique title for the method (e.g. Days till 10% of plants/plot have flowers)',
     'Collection Method' => 'A full description of how the trait was collected. This is also recommended to be at least one paragraph.',
     'Unit' => 'The full name of the unit used (e.g. days, centimeters)',
     'Type' => 'One of "Qualitative" or "Quantitative".'
+  ];
+
+  // Headers required by this importer.
+  private $headers = [
+    [
+      'name' => 'Trait Name',
+      'description' => 'The name of the trait, as you would like it to appear to the user (e.g. Days to Flower)',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Trait Description',
+      'description' => 'A full description of the trait. This is recommended to be at least one paragraph.',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Method Short Name',
+      'description' => 'A full, unique title for the method (e.g. Days till 10% of plants/plot have flowers)',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Collection Method',
+      'description' => 'A full description of how the trait was collected. This is also recommended to be at least one paragraph.',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Unit',
+      'description' => 'The full name of the unit used (e.g. days, centimeters)',
+      'type' => 'required'
+    ],
+    [
+      'name' => 'Type',
+      'description' => 'One of "Qualitative" or "Quantitative".',
+      'type' => 'required'
+    ]
   ];
 
   // Service: Make the following services available to all stages.
@@ -102,6 +137,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *
    * @param array $form_values
    *   An array of the importer form values provided to formValidate.
+   * @param string $file_mime_type
+   *   A string of the MIME type of the input file, usually grabbed from the
+   *   file object using $file->getMimeType()
+   *
    * @return array
    *   A listing of configured validator objects first keyed by
    *   their inputType. More specifically,
@@ -109,85 +148,66 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *     associative array although the keys do indicate what
    *     order they should be run in.
    */
-  public function configureValidators($form_values) {
+  public function configureValidators(array $form_values, string $file_mime_type) {
 
     $validators = [];
 
     // Setup the plugin manager
     $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
-    // Importer assets.
-    // All values will be accessible to every instance of the validator Plugin.
-    // This importer does not require a project and this variable is set to 0
-    // instruct validators Project + Genus that relations project-genus can be ignored.
-    $project = 0;
+    // Grab the genus from our form to use in configuring some validators
     $genus = $form_values['genus'];
-    $file_id = $form_values['file_upload'];
 
-    // Make the header columns into a simplified array where the header names
-    // are the values
-    $headers = array_keys($this->headers);
-
-    // Take our simplified headers array and flip the array keys and values
-    // This is the format that the validators will expect to know which indices
-    // in the row of data to act on
-    // For example: ['Trait Name'] => 0
-    $header_index = array_flip($headers);
-
-    // Set $skip to 0 since no validation is being done within this method
-    $skip = 0;
+    // Make the header columns into a simplified array
+    //  - Keyed by the column header name
+    //  - Values are the column header's poition in the $headers property (ie. its
+    //    index if we assume no keys were assigned)
+    $header_index = [];
+    $headers = $this->headers;
+    $i = 0;
+    foreach ($headers as $column_details) {
+      $header_index[$column_details['name']] = $i;
+      $i++;
+    }
 
     // -----------------------------------------------------
     // Metadata
-    // - Genus Exists
-    // @deprecated getValidatorIdWithScope in issue #91
-    $validator = $manager->getValidatorIdWithScope('GENUS');
-    $instance = $manager->createInstance($validator);
-    // @deprecated loadAssets in issue #93
-    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
-    // @TODO: Rename according to the new validator_id for scope 'GENUS'
-    $validators['metadata']['GENUS'] = $instance;
-
-    // - Genus matches the configured project
-    // @TODO: In a future PR, create instance for the genus-project validator
-    //        and configure it
+    // - Genus exists and is configured
+    $instance = $manager->createInstance('genus_exists');
+    $validators['metadata']['genus_exists'] = $instance;
 
     // -----------------------------------------------------
     // File level
-    // - File exists
-    // @deprecated getValidatorIdWithScope in issue #91
-    $validator = $manager->getValidatorIdWithScope('FILE');
-    $instance = $manager->createInstance($validator);
-    // @deprecated loadAssets in issue #93
-    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
-    // @TODO: Rename according to the new validator_id for scope 'FILE'
-    $validators['file']['FILE'] = $instance;
+    // - File exists and is the expected type
+    $instance = $manager->createInstance('valid_data_file');
+    // Set supported mime-types using the valid file extensions (file_types) as
+    // defined in the annotation for this importer on line 27
+    $supported_file_extensions = $this->plugin_definition['file_types'];
+    $instance->setSupportedMimeTypes($supported_file_extensions);
+    $validators['file']['valid_data_file'] = $instance;
+
+    // -----------------------------------------------------
+    // Raw row level
+    // - File rows are properly delimited
+    $instance = $manager->createInstance('valid_delimited_file');
+    // Count the number of columns and configure it for this validator. We want
+    // this number to be strict = TRUE, thus no extra columns are allowed.
+    $num_columns = count($this->headers);
+    $instance->setExpectedColumns($num_columns, TRUE);
+    // Set the MIME type of this input file
+    $instance->setFileMimeType($file_mime_type);
+    $validators['raw-row']['valid_delimited_file'] = $instance;
 
     // -----------------------------------------------------
     // Header Level
-    // - All header row cells are not empty.
-    // @TODO: Uncomment the following code when the Headers validator has been
-    //        updated and no longer uses the validate() method.
-    // $instance = $manager->createInstance('empty_cell');
-    // $context['indices'] = [
-    //   $header_index['Trait Name'],
-    //   $header_index['Trait Description'],
-    //   $header_index['Method Short Name'],
-    //   $header_index['Collection Method'],
-    //   $header_index['Unit'],
-    //   $header_index['Type']
-    // ];
-    // $instance->context = $context;
-    // $validators['header-row']['empty_header_cell'] = $instance;
-
     // - All column headers match expected header format
-    // @deprecated getValidatorIdWithScope in issue #91
-    $validator = $manager->getValidatorIdWithScope('HEADERS');
-    $instance = $manager->createInstance($validator);
-    // @deprecated loadAssets in issue #93
-    $instance->loadAssets($project, $genus, $file_id, $headers, $skip);
-    // @TODO: Rename according to the new validator_id for scope 'HEADERS'
-    $validators['header-row']['HEADERS'] = $instance;
+    $instance = $manager->createInstance('valid_headers');
+    // Use our $headers property to configure what we expect for a header in the
+    // input file
+    $instance->setHeaders($this->headers);
+    // Configure the expected number of columns and set it to be strict
+    $instance->setExpectedColumns($num_columns, TRUE);
+    $validators['header-row']['valid_header'] = $instance;
 
     // -----------------------------------------------------
     // Data Row Level
@@ -312,6 +332,15 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     $file_id = $form_values['file_upload'];
 
+    // Load our file object
+    $file = File::load($file_id);
+
+    // Get the mime type which is used to validate the file and split the rows
+    $file_mime_type = $file->getMimeType();
+
+    // Configure the validators.
+    $validators = $this->configureValidators($form_values, $file_mime_type);
+
     // A FLAG to keep track if any validator fails.
     // We will only continue to the next input-type if all validators of the
     // current input-type pass.
@@ -324,8 +353,21 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // be further keyed by line number.
     $failures = [];
 
-    // Configure the validators.
-    $validators = $this->configureValidators($form_values);
+    // @TODO:
+    // Compute the total_raw_row_failed and total_row_failed.
+
+    // Keep track of counts pertaining to validators that handle data row.
+    $count = [
+      'total_rows' => 0,      // The total number of rows in the data file.
+      'total_failed' => 0,    // The total number of rows that failed validation. // No need
+      'total_passed'  => 0,   // The total number of rows that passed validation.
+      'total_unchecked' => 0, // Total number of rows that have not been checked. // No need
+    ];
+
+    // @TODO:
+    // Total Failed:
+    // total_raw_row_failed  // The total number of rows that failed validateRawRow() validation.
+    // total_row_failed      // The total number of rows that failed validateRow() validation.
 
     // ************************************************************************
     // Metadata Validation
@@ -334,15 +376,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Set failures for this validator name to an empty array to signal that
       // this validator has been run.
       $failures[$validator_name] = [];
-      // @TODO: Update to use the validateMetadata() method
-      $result = $validator->validate();
-      // Check for old return style...
-      if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
-        $failed_validator = TRUE;
-        $failures[$validator_name] = $result;
-      }
-      // Then new return style.
-      elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+      // Validate metadata input value.
+      $result = $validator->validateMetadata($form_values);
+
+      // Check if validation failed and save the results if it did
+      if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
         $failed_validator = TRUE;
         $failures[$validator_name] = $result;
       }
@@ -358,16 +396,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Set failures for this validator name to an empty array to signal that
         // this validator has been run
         $failures[$validator_name] = [];
-        // @TODO: Update to use the validateFile() method
-        //$result = $validator->validateFile($form_value['filename'], $form_values['fid']);
-        $result = $validator->validate();
-        // Check for old return style...
-        if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
-          $failed_validator = TRUE;
-          $failures[$validator_name] = $result;
-        }
-        // Then new return style.
-        elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+        $result = $validator->validateFile('', $file_id);
+
+        // Check if validation failed and save the results if it did
+        if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
           $failed_validator = TRUE;
           $failures[$validator_name] = $result;
         }
@@ -378,24 +410,57 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // input-type validation.
     if ($failed_validator === FALSE) {
 
-      // Open the file so we can iterate through the rows
-      $file = File::load($file_id);
-
       // Open and read file in this uri.
       $file_uri = $file->getFileUri();
       $handle = fopen($file_uri, 'r');
-
-      // Get the mime type which is used to split the row.
-      $file_mime_type = $file->getMimeType();
 
       // Line counter.
       $line_no = 0;
 
       // Begin column and row validation.
       while(!feof($handle)) {
+        // This variable will indicate if the validator has failed. It is set to
+        // FALSE for every row to indicate the the line is valid to start with,
+        // then execute the tests below to prove otherwise.
+        $row_has_failed = FALSE;
+
         // Current row.
         $line = fgets($handle);
+
         $line_no++;
+
+        // ********************************************************************
+        // Raw Row Validation
+        // ********************************************************************
+        foreach ($validators['raw-row'] as $validator_name => $validator) {
+          // Set failures for this validator name to an empty array to signal that
+          // this validator has been run
+          if (!array_key_exists($validator_name, $failures)) {
+            $failures[$validator_name] = [];
+          }
+
+          $result = $validator->validateRawRow($line);
+
+          // Check if validation failed and save the results if it did
+          if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+            if (!$row_has_failed) {
+              $row_has_failed = TRUE;
+            }
+
+            $failures[$validator_name][$line_no] = $result;
+          }
+        }
+
+        // If any raw-row validators failed, skip further validation and move
+        // on to the next row in the data file.
+        if ($row_has_failed === TRUE) {
+          if ($line_no > 1) {
+            // @TODO: needs update.
+            $count['total_unchecked']++;
+          }
+
+          continue;
+        }
 
         // ********************************************************************
         // Header Row Validation
@@ -403,28 +468,27 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         if ($line_no == 1) {
           // Split line into an array of values.
           $header_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+
           foreach ($validators['header-row'] as $validator_name => $validator) {
             // Set failures for this validator name to an empty array to signal
             // that this validator has been run
-            $failures[$validator_name] = [];
-            // @TODO: Update to use the validateRow() method and use the split
-            // $header_row above.
-            $result = $validator->validate();
-
-            // Check for old style...
-            if (array_key_exists('status', $result) && ($result['status'] == 'fail')) {
-              $failed_validator = TRUE;
-              $failures[$validator_name] = $result;
+            if (!array_key_exists($validator_name, $failures)) {
+              $failures[$validator_name] = [];
             }
-            // Then new style.
-            elseif (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failed_validator = TRUE;
+
+            $result = $validator->validateRow($header_row);
+
+            // Check if validation failed and save the results if it did
+            if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+              $row_has_failed = TRUE;
               $failures[$validator_name] = $result;
             }
           }
-          // If any header-row validators failed, skip validation of the data
-          // rows.
-          if ($failed_validator === TRUE) {
+
+          // If any header-row validators failed, skip validation of the data rows
+          // and stop entire validation.
+          if ($row_has_failed === TRUE) {
+            $failed_validator = TRUE;
             break;
           }
         }
@@ -448,18 +512,41 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
             $result = $validator->validateRow($data_row);
             // Check if validation failed.
             if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failed_validator = TRUE;
+              if (!$row_has_failed) {
+                $row_has_failed = TRUE;
+                // @TODO: needs update.
+                $count['total_failed']++;
+              }
+
               $failures[$validator_name][$line_no] = $result;
             }
           }
+
+          if ($row_has_failed === FALSE) {
+            // @TODO: needs update.
+            $count['total_passed']++;
+          }
         }
       }
+
+      // The final line no validated is the total rows.
+      $count['total_rows'] = $line_no;
+
+      // Close the file.
+      fclose($handle);
+
+      if ($count['total_failed'] > 0) {
+        $failed_validator = TRUE;
+      }
     }
+
+    // @TODO: needs update.
+    $count['total_unchecked'] = $count['total_rows'] - ($count['total_failed'] + $count['total_passed']);
     $validation_feedback = $this->processValidationMessages($failures);
 
     // Save all validation results in Drupal storage to create a summary report.
     $storage = $form_state->getStorage();
-    $storage[ $this->validation_result ] = $validation_feedback;
+    $storage[$this->validation_result] = $validation_feedback;
     $form_state->setStorage($storage);
 
     if ($failed_validator === TRUE) {
@@ -478,8 +565,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   by the unique name assigned to each validator-input type combination
    *
    * @return array
-   *   An array of feedback to provide to the user which summarizes the validation results 
-   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed 
+   *   An array of feedback to provide to the user which summarizes the validation results
+   *   reported by the validators in the formValidate (i.e. $failures). This array is keyed
    *   by a string that is associated with a line in the validate UI. Specifically,
    *   - 'validation_line': A string associated with a line that will be
    *     displayed to the user in the validate UI
@@ -493,7 +580,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *       contents of $failures['validator_name'].
    */
   public function processValidationMessages($failures) {
-    // Array to hold all the user feedback. Currently this includes an entry for each 
+    // Array to hold all the user feedback. Currently this includes an entry for each
     // validator. However, in future designs we may combine more then one validator into a
     // single line in the validate UI and, thus, a single entry in this array. Everything is
     // set to status of 'todo' to start and will only change to one of 'pass' or
@@ -501,19 +588,25 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // that validation did take place.
     $messages = [
       // ----------------------------- METADATA --------------------------------
-      'GENUS' => [
-        'title' => 'Genus exists and/or matches the project/experiment',
+      'genus_exists' => [
+        'title' => 'The genus is valid',
         'status' => 'todo',
         'details' => ''
       ],
       // ------------------------------- FILE ----------------------------------
-      'FILE' => [
-        'title' => 'File is a valid tsv or txt',
+      'valid_data_file' => [
+        'title' => 'File is valid and not empty',
+        'status' => 'todo',
+        'details' => ''
+      ],
+      // ----------------------------- RAW ROW ---------------------------------
+      'valid_delimited_file' => [
+        'title' => 'Row is properly delimited',
         'status' => 'todo',
         'details' => ''
       ],
       // ---------------------------- HEADER ROW -------------------------------
-      'HEADERS' => [
+      'valid_header' => [
         'title' => 'File has all of the column headers expected',
         'status' => 'todo',
         'details' => ''
@@ -545,9 +638,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Check if $failures[$validator_name] is empty, which indicates there
         // are no errors to report for this validator.
         if (count($failures[$validator_name]) === 0 ) {
-          $messages[$validator_name] = [
-            'status' => 'pass',
-          ];
+          $messages[$validator_name]['status'] = 'pass';
         }
 
         // ----------------------------- FAIL ----------------------------------
@@ -557,20 +648,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         else if (array_key_exists('case', $failures[$validator_name])) {
           // @todo: Update the message to not use the 'case' string by default
           // and to incorporate the 'failed_details'.
-          $message = $failures[$validator_name]['case'];
+          $case_message = $failures[$validator_name]['case'];
           $messages[$validator_name] = [
+            'title' => $default_messages['title'],
             'status' => 'fail',
-            'details' => $message,
-            'raw_results' => $failures[$validator_name],
-          ];
-        }
-        // @todo: Remove this if block when old validators GENUS, FILE, and
-        // HEADERS are removed.
-        else if (array_key_exists('details', $failures[$validator_name])){
-          $message = $failures[$validator_name]['details'];
-          $messages[$validator_name] = [
-            'status' => 'fail',
-            'details' => $message,
+            'details' => $case_message,
             'raw_results' => $failures[$validator_name],
           ];
         }
@@ -592,10 +674,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // formulate one concise, helpful feedback message.
           // foreach ($failures[$validator_name] as $line_no => $validator_results) {
           $first_failed_row = array_key_first($failures[$validator_name]);
-          $message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+          $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
           $messages[$validator_name] = [
+            'title' => $default_messages['title'],
             'status' => 'fail',
-            'details' => $message,
+            'details' => $case_message,
             'raw_results' => $failures[$validator_name],
           ];
         }
@@ -628,7 +711,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Line counter.
     $line_no = 0;
     // Headers.
-    $headers = array_keys($this->headers);
+    // @TODO: Update this to use the new $headers property which is a defferent format
+    $headers = array_keys($this->old_headers);
     $headers_count = count($headers);
 
     while(!feof($handle)) {
@@ -682,7 +766,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
-    $column_headers = array_keys($this->headers);
+    // @TODO: Update this to use the new $headers property which is a defferent format
+    $column_headers = array_keys($this->old_headers);
 
     $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
       ->generateFile($importer_id, $column_headers);
@@ -697,7 +782,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
-        'headers' => $this->headers,
+        // @TODO: Update this to use the new $headers property which is a defferent format
+        'headers' => $this->old_headers,
         'notes' => $notes,
         'template_file' => $file_link
       ]
