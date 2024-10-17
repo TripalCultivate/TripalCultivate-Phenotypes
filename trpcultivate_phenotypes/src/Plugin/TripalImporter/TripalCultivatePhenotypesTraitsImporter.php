@@ -353,6 +353,22 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // be further keyed by line number.
     $failures = [];
 
+    // @TODO:
+    // Compute the total_raw_row_failed and total_row_failed.
+
+    // Keep track of counts pertaining to validators that handle data row.
+    $count = [
+      'total_rows' => 0,      // The total number of rows in the data file.
+      'total_failed' => 0,    // The total number of rows that failed validation. // No need
+      'total_passed'  => 0,   // The total number of rows that passed validation.
+      'total_unchecked' => 0, // Total number of rows that have not been checked. // No need
+    ];
+
+    // @TODO:
+    // Total Failed:
+    // total_raw_row_failed  // The total number of rows that failed validateRawRow() validation.
+    // total_row_failed      // The total number of rows that failed validateRow() validation.
+
     // ************************************************************************
     // Metadata Validation
     // ************************************************************************
@@ -403,8 +419,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
       // Begin column and row validation.
       while(!feof($handle)) {
+        // This variable will indicate if the validator has failed. It is set to
+        // FALSE for every row to indicate the the line is valid to start with,
+        // then execute the tests below to prove otherwise.
+        $row_has_failed = FALSE;
+
         // Current row.
         $line = fgets($handle);
+
         $line_no++;
 
         // ********************************************************************
@@ -413,19 +435,31 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         foreach ($validators['raw-row'] as $validator_name => $validator) {
           // Set failures for this validator name to an empty array to signal that
           // this validator has been run
-          $failures[$validator_name] = [];
+          if (!array_key_exists($validator_name, $failures)) {
+            $failures[$validator_name] = [];
+          }
+
           $result = $validator->validateRawRow($line);
 
           // Check if validation failed and save the results if it did
           if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-            $failed_validator = TRUE;
-            $failures[$validator_name] = $result;
+            if (!$row_has_failed) {
+              $row_has_failed = TRUE;
+            }
+
+            $failures[$validator_name][$line_no] = $result;
           }
         }
 
-        // If any raw-row validators failed, skip further validation
-        if ($failed_validator === TRUE) {
-          break;
+        // If any raw-row validators failed, skip further validation and move
+        // on to the next row in the data file.
+        if ($row_has_failed === TRUE) {
+          if ($line_no > 1) {
+            // @TODO: needs update.
+            $count['total_unchecked']++;
+          }
+
+          continue;
         }
 
         // ********************************************************************
@@ -438,18 +472,23 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           foreach ($validators['header-row'] as $validator_name => $validator) {
             // Set failures for this validator name to an empty array to signal
             // that this validator has been run
-            $failures[$validator_name] = [];
+            if (!array_key_exists($validator_name, $failures)) {
+              $failures[$validator_name] = [];
+            }
+
             $result = $validator->validateRow($header_row);
 
             // Check if validation failed and save the results if it did
             if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failed_validator = TRUE;
+              $row_has_failed = TRUE;
               $failures[$validator_name] = $result;
             }
           }
-          // If any header-row validators failed, skip validation of the data
-          // rows.
-          if ($failed_validator === TRUE) {
+
+          // If any header-row validators failed, skip validation of the data rows
+          // and stop entire validation.
+          if ($row_has_failed === TRUE) {
+            $failed_validator = TRUE;
             break;
           }
         }
@@ -473,21 +512,41 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
             $result = $validator->validateRow($data_row);
             // Check if validation failed.
             if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
-              $failed_validator = TRUE;
+              if (!$row_has_failed) {
+                $row_has_failed = TRUE;
+                // @TODO: needs update.
+                $count['total_failed']++;
+              }
+
               $failures[$validator_name][$line_no] = $result;
             }
           }
+
+          if ($row_has_failed === FALSE) {
+            // @TODO: needs update.
+            $count['total_passed']++;
+          }
         }
       }
+
+      // The final line no validated is the total rows.
+      $count['total_rows'] = $line_no;
+
       // Close the file.
       fclose($handle);
+
+      if ($count['total_failed'] > 0) {
+        $failed_validator = TRUE;
+      }
     }
 
+    // @TODO: needs update.
+    $count['total_unchecked'] = $count['total_rows'] - ($count['total_failed'] + $count['total_passed']);
     $validation_feedback = $this->processValidationMessages($failures);
 
     // Save all validation results in Drupal storage to create a summary report.
     $storage = $form_state->getStorage();
-    $storage[ $this->validation_result ] = $validation_feedback;
+    $storage[$this->validation_result] = $validation_feedback;
     $form_state->setStorage($storage);
 
     if ($failed_validator === TRUE) {
@@ -579,9 +638,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Check if $failures[$validator_name] is empty, which indicates there
         // are no errors to report for this validator.
         if (count($failures[$validator_name]) === 0 ) {
-          $messages[$validator_name] = [
-            'status' => 'pass',
-          ];
+          $messages[$validator_name]['status'] = 'pass';
         }
 
         // ----------------------------- FAIL ----------------------------------
@@ -593,6 +650,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // and to incorporate the 'failed_details'.
           $case_message = $failures[$validator_name]['case'];
           $messages[$validator_name] = [
+            'title' => $default_messages['title'],
             'status' => 'fail',
             'details' => $case_message,
             'raw_results' => $failures[$validator_name],
@@ -618,6 +676,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           $first_failed_row = array_key_first($failures[$validator_name]);
           $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
           $messages[$validator_name] = [
+            'title' => $default_messages['title'],
             'status' => 'fail',
             'details' => $case_message,
             'raw_results' => $failures[$validator_name],
