@@ -362,6 +362,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       'total_failed' => 0,    // The total number of rows that failed validation. // No need
       'total_passed'  => 0,   // The total number of rows that passed validation.
       'total_unchecked' => 0, // Total number of rows that have not been checked. // No need
+      'total_rows_read' => 0, // Total number of rows read.
     ];
 
     // @TODO:
@@ -529,8 +530,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         }
       }
 
+      // @TODO: needs update.
       // The final line no validated is the total rows.
-      $count['total_rows'] = $line_no;
+      $count['total_rows_read'] = $line_no;
 
       // Close the file.
       fclose($handle);
@@ -542,7 +544,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     // @TODO: needs update.
     $count['total_unchecked'] = $count['total_rows'] - ($count['total_failed'] + $count['total_passed']);
-    $validation_feedback = $this->processValidationMessages($failures);
+    $validation_feedback = $this->processValidationMessages($failures, $count);
 
     // Save all validation results in Drupal storage to create a summary report.
     $storage = $form_state->getStorage();
@@ -579,7 +581,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *       the raw return values when validation failed. Essentially, the
    *       contents of $failures['validator_name'].
    */
-  public function processValidationMessages($failures) {
+  public function processValidationMessages($failures, $count) {
     // Array to hold all the user feedback. Currently this includes an entry for each
     // validator. However, in future designs we may combine more then one validator into a
     // single line in the validate UI and, thus, a single entry in this array. Everything is
@@ -629,7 +631,79 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ]
     ];
 
-    foreach($messages as $validator_name => $default_messages) {
+    $raw_row_validators = [
+      'valid_delimited_file'
+    ];
+
+    $row_validators = [
+      'empty_cell',
+      'valid_data_type',
+      'duplicate_traits'
+    ];
+
+    $set_status = '';
+    $not_delimited = FALSE;
+
+
+    foreach(array_keys($messages) as $validator_name) {
+      if (!array_key_exists($validator_name, $failures)) {
+        continue;
+      }
+
+      if (in_array($validator_name, $raw_row_validators) || in_array($validator_name, $row_validators)) {
+        if (in_array($validator_name, $raw_row_validators)) {
+          if (empty($failures[$validator_name])) {
+            $messages[$validator_name]['status'] = ($set_status == 'todo') ? 'todo' : 'pass';
+          }
+          else {
+            $messages[$validator_name]['status'] = 'fail';
+
+            if ($count['total_rows_read'] == 1) {
+              $set_status = 'todo';
+            }
+            else {
+              $not_delimited = TRUE;
+            }
+          }
+        }
+        else {
+          if (empty($failures[$validator_name])) {
+            $messages[$validator_name]['status'] = ($not_delimited || $set_status == 'todo') ? 'todo' : 'pass';
+          }
+          else {
+            $messages[$validator_name]['status'] = 'fail';
+          }
+        }
+      }
+      else {
+        if (empty($failures[$validator_name])) {
+          $messages[$validator_name]['status'] = ($set_status == 'todo') ? 'todo' : 'pass';
+        }
+        else {
+          $messages[$validator_name]['status'] = 'fail';
+          $set_status = 'todo';
+        }
+      }
+
+      if (array_key_exists('case', $failures[$validator_name])) {
+        $case_message = $failures[$validator_name]['case'];
+        $messages[$validator_name]['details'] = $case_message;
+        $messages[$validator_name]['raw_results'] = $failures[$validator_name];
+      }
+      else {
+        $first_failed_row = array_key_first($failures[$validator_name]);
+
+        if ($first_failed_row) {
+          $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+          $messages[$validator_name]['details'] = $case_message;
+          $messages[$validator_name]['raw_results'] = $failures[$validator_name];
+        }
+      }
+
+
+      /*
+
+
       // Check if this validator exists in the failures array, which indicates
       // that it was run.
       if (array_key_exists($validator_name, $failures)) {
@@ -683,6 +757,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           ];
         }
       }
+
+
+      */
     }
 
     return $messages;
