@@ -17,12 +17,12 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  * Validate that genus exists and is configured.
  *
  * @TripalCultivatePhenotypesValidator(
- *   id = "trpcultivate_phenotypes_validator_genus_exists",
+ *   id = "genus_exists",
  *   validator_name = @Translation("Genus Exists and Configured Validator"),
  *   input_types = {"metadata"}
  * )
  */
-class genusExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class GenusExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
    * Genus Ontology Service;
@@ -66,7 +66,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
   }
 
   /**
-   * Validate that genus provided exists and configured.
+   * Validate that genus provided exists and is configured.
    *
    * @param array $form_values
    *   The values entered to any form field elements implemented by the importer.
@@ -88,7 +88,7 @@ class genusExists extends TripalCultivatePhenotypesValidatorBase implements Cont
 
     // Failed to locate the genus field element.
     if (!array_key_exists($expected_field_key, $form_values)) {
-      throw new \Exception('Failed to locate genus field element. genusExists validator expects a form field element name genus.');
+      throw new \Exception('Failed to locate genus field element. GenusExists validator expects a form field element name genus.');
     }
 
     // Validator response values for a valid genus value.

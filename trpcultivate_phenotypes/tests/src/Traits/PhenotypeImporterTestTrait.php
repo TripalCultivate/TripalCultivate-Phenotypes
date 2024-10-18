@@ -165,6 +165,7 @@ trait PhenotypeImporterTestTrait {
    *     - mime: the file type (e.g. text/plain, text/tab-separated-values)
    *     - filename: the name including extension to create attached to the
    *         managed file.
+   *     - filesize: the size of the file being created in bytes
    *     - is_temporary: either TRUE or FALSE to indicate whether to put the
    *         file in the temporary or public files directory.
    *     - content[string]: the content to copy into the file as a string
@@ -187,12 +188,19 @@ trait PhenotypeImporterTestTrait {
     $details['is_temporary'] = @$details['is_temporary'] ?: FALSE;
     $details['content'] = @$details['content'] ?: ['string' => uniqid()];
 
+    // Determine the fullpath to test files for use later
+    if (array_key_exists('file', $details['content'])) {
+      $path_to_fixtures = __DIR__ . '/../Fixtures/';
+      $full_path = $path_to_fixtures . $details['content']['file'];
+    }
+
     $directory = ($details['is_temporary']) ? 'temporary://' : 'public://';
+    $uri = $directory . $details['filename'];
 
     $file = File::create([
       'filename' => $details['filename'],
       'filemime' => $details['mime'],
-      'uri' => $directory . $details['filename'],
+      'uri' => $uri,
       'status' => 0,
     ]);
 
@@ -200,6 +208,12 @@ trait PhenotypeImporterTestTrait {
     // This is usually used if the file is empty in which case this is 0
     if (isset($details['filesize'])) {
       $file->setSize($details['filesize']);
+    }
+    else if (array_key_exists('file', $details['content'])) {
+      $size = @filesize($full_path);
+      // Set size unless there was an error.
+      $this->assertNotFalse($size, 'Unable to determine size of test file: ' . $full_path);
+      $file->setSize($size);
     }
 
     // Save the file to Drupal.
@@ -216,8 +230,6 @@ trait PhenotypeImporterTestTrait {
     if (!empty($details['content']['file'])) {
       $fileuri = $file->getFileUri();
 
-      $path_to_fixtures = __DIR__ . '/../Fixtures/';
-      $full_path = $path_to_fixtures . $details['content']['file'];
       $this->assertFileIsReadable($full_path,
         "Unable to setup FILE ". $id . " because cannot access Fixture file at $full_path.");
 
