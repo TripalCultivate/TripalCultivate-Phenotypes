@@ -653,6 +653,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // In every name, set the status to either pass, or todo only if the override
     // todo status has been set. Further check is required to account for the
     // presence of failed items to prioritize failed items when available.
+
+    // All validators names are set to todo by default.
+
     foreach(array_keys($messages) as $validator_name) {
       // Check if this validator exists in the failures array, which
       // indicates that it was run.
@@ -662,15 +665,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
       // An indicator if the validator has failed items in the failures array.
       $validator_has_failures = ($failures[$validator_name]) ? TRUE : FALSE;
+      $validator_status = ($validator_has_failures) ? 'fail' : 'pass';
 
       if (in_array($validator_name, $raw_row_validators)) {
         // This is a raw row validator.
 
-        $validator_status = ($set_todo) ? 'todo' : 'pass';
-
         if ($validator_has_failures) {
-          $validator_status = 'fail';
-
           if ($count['total_rows_read'] == 1) {
             // Header row has failed raw row validation.
             $set_todo = TRUE;
@@ -686,20 +686,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       elseif (in_array($validator_name, $row_validators)) {
         // This is a data row validator.
 
-        $validator_status = ($not_delimited || $set_todo) ? 'todo' : 'pass';
-
-        if ($validator_has_failures) {
-          $validator_status = 'fail';
+        if ($not_delimited || $set_todo) {
+          continue;
         }
+
       }
       else {
         // This is a metadata validator.
 
-        $validator_status = ($set_todo) ? 'todo' : 'pass';
-
         if ($validator_has_failures) {
           // A metadata entry has failed, set all validator to todo status.
-          $validator_status = 'fail';
           $set_todo = TRUE;
         }
       }
