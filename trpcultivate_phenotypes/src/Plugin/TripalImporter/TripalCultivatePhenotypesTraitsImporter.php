@@ -631,6 +631,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ]
     ];
 
+    // @TODO: an alternative way to identify the validators input type.
     $raw_row_validators = [
       'valid_delimited_file'
     ];
@@ -641,56 +642,85 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       'duplicate_traits'
     ];
 
-    $set_status = '';
+    // Set the value to TRUE to override pass or fail status if required.
+    $set_todo = FALSE;
+
+    // Set the value to TRUE if a row has failed raw row to indicate to
+    // data row validator that it cannot validate.
     $not_delimited = FALSE;
 
-
+    // Determine the input type of every validator name.
+    // In every name, set the status to either pass, or todo only if the override
+    // todo status has been set. Further check is required to account for the
+    // presence of failed items to prioritize failed items when available.
     foreach(array_keys($messages) as $validator_name) {
+      // Check if this validator exists in the failures array, which
+      // indicates that it was run.
       if (!array_key_exists($validator_name, $failures)) {
         continue;
       }
 
-      if (in_array($validator_name, $raw_row_validators) || in_array($validator_name, $row_validators)) {
-        if (in_array($validator_name, $raw_row_validators)) {
-          if (empty($failures[$validator_name])) {
-            $messages[$validator_name]['status'] = ($set_status == 'todo') ? 'todo' : 'pass';
+      // An indicator if the validator has failed items in the failures array.
+      $validator_has_failures = ($failures[$validator_name]) ? TRUE : FALSE;
+
+      if (in_array($validator_name, $raw_row_validators)) {
+        // This is a raw row validator.
+
+        $validator_status = ($set_todo) ? 'todo' : 'pass';
+
+        if ($validator_has_failures) {
+          $validator_status = 'fail';
+
+          if ($count['total_rows_read'] == 1) {
+            // Header row has failed raw row validation.
+            $set_todo = TRUE;
           }
           else {
-            $messages[$validator_name]['status'] = 'fail';
-
-            if ($count['total_rows_read'] == 1) {
-              $set_status = 'todo';
-            }
-            else {
-              $not_delimited = TRUE;
-            }
+            // Data row has failed raw row validation.
+            // Flag the line is not properly delimited to instruct subsequent
+            // data row validators to use the status todo.
+            $not_delimited = TRUE;
           }
         }
-        else {
-          if (empty($failures[$validator_name])) {
-            $messages[$validator_name]['status'] = ($not_delimited || $set_status == 'todo') ? 'todo' : 'pass';
-          }
-          else {
-            $messages[$validator_name]['status'] = 'fail';
-          }
+      }
+      elseif (in_array($validator_name, $row_validators)) {
+        // This is a data row validator.
+
+        $validator_status = ($not_delimited || $set_todo) ? 'todo' : 'pass';
+
+        if ($validator_has_failures) {
+          $validator_status = 'fail';
         }
       }
       else {
-        if (empty($failures[$validator_name])) {
-          $messages[$validator_name]['status'] = ($set_status == 'todo') ? 'todo' : 'pass';
-        }
-        else {
-          $messages[$validator_name]['status'] = 'fail';
-          $set_status = 'todo';
+        // This is a metadata validator.
+
+        $validator_status = ($set_todo) ? 'todo' : 'pass';
+
+        if ($validator_has_failures) {
+          // A metadata entry has failed, set all validator to todo status.
+          $validator_status = 'fail';
+          $set_todo = TRUE;
         }
       }
 
+      // Set the status of the current validator name.
+      $messages[$validator_name]['status'] = $validator_status;
+
+      // Append additional validation message entries.
       if (array_key_exists('case', $failures[$validator_name])) {
+        // Check if $failures[$validator_name] contains one of the results
+        // keys, indicating that this is not a row-level validator and therefore
+        // doesn't keep track of line numbers.
         $case_message = $failures[$validator_name]['case'];
+
         $messages[$validator_name]['details'] = $case_message;
         $messages[$validator_name]['raw_results'] = $failures[$validator_name];
       }
       else {
+        // @todo: Update this current approach to not report only the first
+        // failure, but instead collect all the cases and failedItems and
+        // formulate one concise, helpful feedback message.
         $first_failed_row = array_key_first($failures[$validator_name]);
 
         if ($first_failed_row) {
@@ -702,7 +732,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
 
       /*
-
 
       // Check if this validator exists in the failures array, which indicates
       // that it was run.
@@ -758,8 +787,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         }
       }
 
-
       */
+
     }
 
     return $messages;
