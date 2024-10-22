@@ -731,32 +731,36 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       */
 
     foreach (array_keys($messages) as $validator_name) {
-
       // Check if this validator exists in the failures array, which indicates
       // that it was run.
-      if (array_key_exists($validator_name, $failures)) {
+      if (!array_key_exists($validator_name, $failures)) {
+        continue;
+      }
 
-        // ----------------------------- PASS ----------------------------------
+      // ----------------------------- PASS ----------------------------------
+      if (empty($failures[$validator_name])) {
         // Check if $failures[$validator_name] is empty, which indicates there
         // are no errors to report for this validator.
-        if (count($failures[$validator_name]) === 0 ) {
-          if(!$raw_row_failed) {
-            $messages[$validator_name]['status'] = 'pass';
-          }
+        if (!$raw_row_failed) {
+          $messages[$validator_name]['status'] = 'pass';
         }
+      }
 
-        // ----------------------------- FAIL ----------------------------------
+      // ----------------------------- FAIL ----------------------------------
+      elseif (array_key_exists('case', $failures[$validator_name])) {
         // Check if $failures[$validator_name] contains one of the results
         // keys, indicating that this is not a row-level validator and therefore
         // doesn't keep track of line numbers.
-        elseif (array_key_exists('case', $failures[$validator_name])) {
-          // @todo: Update the message to not use the 'case' string by default
-          // and to incorporate the 'failed_details'.
-          $case_message = $failures[$validator_name]['case'];
-          $messages[$validator_name]['status'] = 'fail';
-          $messages[$validator_name]['details'] = $case_message;
-          $messages[$validator_name]['raw_results'] = $failures[$validator_name];
-        }
+
+        // @todo: Update the message to not use the 'case' string by default
+        // and to incorporate the 'failed_details'.
+        $messages[$validator_name]['status'] = 'fail';
+
+        $case_message = $failures[$validator_name]['case'];
+        $messages[$validator_name]['details'] = $case_message;
+        $messages[$validator_name]['raw_results'] = $failures[$validator_name];
+      }
+      else {
         // @todo: Check if this is a validator that keeps track of line numbers.
         // @assumption: Only data-row validators enter this else
         // block since BOTH:
@@ -769,23 +773,23 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // $failures[$validator_name]['failures']
         // also are valid but this scenario should have already been caught by
         // the previous if block.
-        else {
-          // @todo: Update this current approach to not report only the first
-          // failure, but instead collect all the cases and failedItems and
-          // formulate one concise, helpful feedback message.
-          //foreach ($failures[$validator_name] as $line_no => $validator_results) {
-            $first_failed_row = array_key_first($failures[$validator_name]);
-            $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
-            if (($first_failed_row != 1) && in_array($validator_name, $raw_row_validators)) {
-              // A non-header row failed raw-row validation, therefore data-row
-              // validators should be set as todo unless failed.
-              $raw_row_failed = TRUE;
-            }
-          //}
-          $messages[$validator_name]['status'] = 'fail';
-          $messages[$validator_name]['details'] = $case_message;
-          $messages[$validator_name]['raw_results'] = $failures[$validator_name];
-        }
+
+        // @todo: Update this current approach to not report only the first
+        // failure, but instead collect all the cases and failedItems and
+        // formulate one concise, helpful feedback message.
+        //foreach ($failures[$validator_name] as $line_no => $validator_results) {
+        $messages[$validator_name]['status'] = 'fail';
+
+        $first_failed_row = array_key_first($failures[$validator_name]);
+
+        // A non-header row failed raw-row validation, therefore data-row
+        // validators should be set as todo unless failed.
+        $raw_row_failed = ($first_failed_row && in_array($validator_name, $raw_row_validators)) ? TRUE : FALSE;
+
+        $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
+        //}
+        $messages[$validator_name]['details'] = $case_message;
+        $messages[$validator_name]['raw_results'] = $failures[$validator_name];
       }
     }
 
