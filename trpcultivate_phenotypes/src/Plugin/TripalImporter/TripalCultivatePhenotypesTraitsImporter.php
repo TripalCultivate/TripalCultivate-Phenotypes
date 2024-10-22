@@ -601,7 +601,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // set to status of 'todo' to start and will only change to one of 'pass' or
     // 'fail' if the $failures[] array is defined for that validator, indicating
     // that validation did take place.
+    // IMPORTANT: Order matters here and is not necessarily reflective of the order
+    // that validators are run in. Think of these validators as being in 2 groups:
+    // Validators that get run once, and ones that get run for every line in the
+    // input file.
     $messages = [
+      // ----------------------- Validators run once ---------------------------
       // ----------------------------- METADATA --------------------------------
       'genus_exists' => [
         'title' => 'The genus is valid',
@@ -620,6 +625,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         'status' => 'todo',
         'details' => ''
       ],
+      // --------------------- Validators run per row --------------------------
       // ----------------------------- RAW ROW ---------------------------------
       'valid_delimited_file' => [
         'title' => 'Row is properly delimited',
@@ -662,6 +668,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       if (empty($failures[$validator_name])) {
         // Check if $failures[$validator_name] is empty, which indicates there
         // are no errors to report for this validator.
+        // If raw row validation at any point, make sure the data row validators
+        // are not set to 'pass' and remain as 'todo' since they haven't been
+        // run on every line.
         if (!$raw_row_failed) {
           $messages[$validator_name]['status'] = 'pass';
         }
@@ -683,7 +692,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       }
       else {
         // @todo: Check if this is a validator that keeps track of line numbers.
-        // @assumption: Only data-row validators enter this else
+        // @assumption: Only row-level validators enter this else
         // block since BOTH:
         //   a) $failures[$validator_name] is not empty
         //   b) $failures[$validator_name]['case'] is not set
@@ -703,14 +712,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
         $first_failed_row = array_key_first($failures[$validator_name]);
 
-        // A non-header row failed raw-row validation, therefore data-row
-        // validators should be set as todo unless failed.
+        // A row failed raw-row validation, therefore data-row validators should
+        // remain set as 'todo' UNLESS failed.
         if (in_array($validator_name, $raw_row_validators)) {
           $raw_row_failed = TRUE;
         }
-
         $case_message = $failures[$validator_name][$first_failed_row]['case'] . ' at row #: ' . $first_failed_row;
-        //}
         $messages[$validator_name]['details'] = $case_message;
         $messages[$validator_name]['raw_results'] = $failures[$validator_name];
       }
