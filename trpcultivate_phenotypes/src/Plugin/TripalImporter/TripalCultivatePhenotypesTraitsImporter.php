@@ -566,6 +566,19 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   An array containing the return values from any failed validators, keyed
    *   by the unique name assigned to each validator-input type combination
    *
+   * @param array $count
+   *   Is an array of relevant counts pertaining to rows evaluated, such as the total
+   *   rows read, total rows that failed etc. The following keys reference each type
+   *   of count values.
+   *    - total_rows: The total number of rows in the data file.
+   *    - total_passed: The total number of rows that passed validation.
+   *    - total_rows_read: Total number of rows read.
+   *    - total_row_failed: The total number of rows that failed validateRow() validation.
+   *    - total_raw_row_failed: The total number of rows that failed validateRawRow() validation.
+   *
+   *   @TODO; At the moment this method does not reference any of the total counts
+   *   but some of the counts have been implemented in the validate method to increment where applicable.
+   *
    * @return array
    *   An array of feedback to provide to the user which summarizes the validation results
    *   reported by the validators in the formValidate (i.e. $failures). This array is keyed
@@ -692,7 +705,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
         // A non-header row failed raw-row validation, therefore data-row
         // validators should be set as todo unless failed.
-        if ($first_failed_row && in_array($validator_name, $raw_row_validators)) {
+        if (in_array($validator_name, $raw_row_validators)) {
           $raw_row_failed = TRUE;
         }
 
