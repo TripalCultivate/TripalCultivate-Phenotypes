@@ -659,7 +659,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     foreach (array_keys($messages) as $validator_name) {
       // Check if this validator exists in the failures array, which indicates
-      // that it was run.
+      // that it was run. If it was not run then continue as it is already marked 
+      // todo in $messages above.
       if (!array_key_exists($validator_name, $failures)) {
         continue;
       }
@@ -668,9 +669,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       if (empty($failures[$validator_name])) {
         // Check if $failures[$validator_name] is empty, which indicates there
         // are no errors to report for this validator.
-        // If raw row validation at any point, make sure the data row validators
-        // are not set to 'pass' and remain as 'todo' since they haven't been
-        // run on every line.
+        // If raw row validation fails at any point, make sure the data row 
+        // validators are not set to 'pass' and remain as 'todo' since they 
+        // haven't been run on every line. This approach works because the 
+        // order of the validators in the default messages array ensures
+        // that the raw row validators are checked for failures directly
+        // before the data row validators. It also assumes that only data row
+        // validators are after raw row validators in the default messages array.
         if (!$raw_row_failed) {
           $messages[$validator_name]['status'] = 'pass';
         }
