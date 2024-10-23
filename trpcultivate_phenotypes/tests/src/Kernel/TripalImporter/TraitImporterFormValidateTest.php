@@ -173,7 +173,27 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       $num_form_validation_messages
     ];
 
-    // #2: 2nd row of file is improperly delimited
+    // #2: Header is improperly delimited, with proper data rows
+    $scenarios[] = [
+      $valid_genus,
+      'improperly_delimited_header_with_data.tsv',
+      [
+        'genus_exists' => ['status' => 'pass'],
+        'valid_data_file' => ['status' => 'pass'],
+        'valid_delimited_file' => [
+          'title' => 'Row is properly delimited',
+          'status' => 'fail',
+          'details' => 'Raw row is not delimited'
+        ],
+        'valid_header' => ['status' => 'todo'],
+        'empty_cell' => ['status' => 'todo'],
+        'valid_data_type' => ['status' => 'todo'],
+        'duplicate_traits' => ['status' => 'todo']
+      ],
+      $num_form_validation_messages
+    ];
+
+    // #3: 2nd row of file is improperly delimited
     $scenarios[] = [
       $valid_genus,
       'correct_header_improperly_delimited_data_row.tsv',
@@ -195,7 +215,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       $num_form_validation_messages
     ];
 
-    // #3: Contains correct header but no data
+    // #4: Contains correct header but no data
     // Never reaches the validators for data-row since file content is empty
     $scenarios[] = [
       $valid_genus,
@@ -212,7 +232,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       $num_form_validation_messages
     ];
 
-    // #4: Contains incorrect header and one line of correct data
+    // #5: Contains incorrect header and one line of correct data
     $scenarios[] = [
       $valid_genus,
       'incorrect_header_with_data.tsv',
@@ -232,7 +252,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       $num_form_validation_messages
     ];
 
-    // #5: Contains correct header and one line of correct data,
+    // #6: Contains correct header and one line of correct data,
     // 2nd line has an empty 'Short Method Name'
     $scenarios[] = [
       $valid_genus,
@@ -253,7 +273,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       $num_form_validation_messages
     ];
 
-    // #6: Contains correct header and two lines of data
+    // #7: Contains correct header and two lines of data
     // First line has an invalid value for 'Type' column
     $scenarios[] = [
       $valid_genus,
@@ -274,7 +294,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
       $num_form_validation_messages
     ];
 
-    // #7: Contains correct header and a duplicate trait-method-unit combo
+    // #8: Contains correct header and a duplicate trait-method-unit combo
      $scenarios[] = [
       $valid_genus,
       'correct_header_duplicate_traitMethodUnit.tsv',
