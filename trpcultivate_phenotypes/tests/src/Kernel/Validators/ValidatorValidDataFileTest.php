@@ -85,7 +85,6 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
         ],
-        // 'filesize' => 1024
       ],
 
       // A valid file type, an empty file.
@@ -105,7 +104,6 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
         ],
-        // 'filesize' => 1024,
       ],
 
       // Not valid file.
@@ -113,18 +111,19 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'ext' => 'png',
         'mime' => 'image/png',
         'content' => [
-          'string' => ''
-        ],
-        // 'filesize' => 1024,
-        'file' => 'png.png' // Can be found in the test Fixtures folder.
+          'string' => '',
+          'file' => 'png.png' // Can be found in the test Fixtures folder.
+        ]
       ],
 
       // Pretend tsv file.
       'file-pretend' => [
         'ext' => 'tsv',
         'mime' => 'application/pdf',
-        // 'filesize' => 1024,
-        'file' => 'pdf.txt' // Can be found in the test Fixtures folder.
+        'content' => [
+          'string' => '',
+          'file' => 'pdf.txt' // Can be found in the test Fixtures folder.
+        ]
       ],
 
       // Could not open the file - not permitted to read.
@@ -134,7 +133,6 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
         'content' => [
           'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3'])
         ],
-        // 'filesize' => 1024,
         'permissions' => 'none'
       ]
     ];

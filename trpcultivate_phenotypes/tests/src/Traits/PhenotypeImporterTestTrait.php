@@ -183,69 +183,77 @@ trait PhenotypeImporterTestTrait {
 
     // Set Defaults.
     $details['extension'] = @$details['extension'] ?: 'txt';
-    $details['mime'] = @$details['mime'] ?: 'text/tab-separated-values';
     $details['filename'] = @$details['filename'] ?: 'testFile.' . uniqid() . '.' . $details['extension'];
+    $details['mime'] = @$details['mime'] ?: 'text/tab-separated-values';
     $details['is_temporary'] = @$details['is_temporary'] ?: FALSE;
     $details['content'] = @$details['content'] ?: ['string' => uniqid()];
 
-    // Determine the fullpath to test files for use later
-    if (array_key_exists('file', $details['content'])) {
-      $path_to_fixtures = __DIR__ . '/../Fixtures/';
-      $full_path = $path_to_fixtures . $details['content']['file'];
-    }
-
+    // Set directory.
     $directory = ($details['is_temporary']) ? 'temporary://' : 'public://';
-    $uri = $directory . $details['filename'];
+    $file_uri = $directory . $details['filename'];
 
+    // Create file object.
     $file = File::create([
       'filename' => $details['filename'],
       'filemime' => $details['mime'],
-      'uri' => $uri,
+      'uri' => $file_uri,
       'status' => 0,
     ]);
 
-    // Set the size of the file.
-    // This is usually used if the file is empty in which case this is 0
-    if (isset($details['filesize'])) {
-      $file->setSize($details['filesize']);
-    }
-    else if (array_key_exists('file', $details['content'])) {
-      $size = @filesize($full_path);
-      // Set size unless there was an error.
-      $this->assertNotFalse($size, 'Unable to determine size of test file: ' . $full_path);
-      $file->setSize($size);
-    }
+    // Reference file attributes:
+    $file_id = $file->id();
+    $file_uri = $file->getFileUri();
 
-    // Save the file to Drupal.
-    $file->save();
-    $id = $file->id();
+    // If a test file fixture was provided, create a copy and set this file copy as
+    // the file uri value in the file object for this test file.
+    if (array_key_exists('file', $details['content']) && !empty($details['content']['file'])) {
+      $path_to_file_fixture = __DIR__ . '/../Fixtures/' . $details['content']['file'];
+
+      $this->assertFileIsReadable(
+        $path_to_file_fixture,
+        'Unable to setup FILE ' . $file_id . ' because cannot access Fixture file at ' .  $path_to_file_fixture
+      );
+
+      copy($path_to_file_fixture, $file_uri);
+    }
 
     // Write something on file with content key set to a string.
     if (!empty($details['content']['string'])) {
-      $fileuri = $file->getFileUri();
-      file_put_contents($fileuri, $details['content']['string']);
+      file_put_contents($file_uri, $details['content']['string']);
     }
 
-    // If an existing file was specified then we can add that in here.
-    if (!empty($details['content']['file'])) {
-      $fileuri = $file->getFileUri();
+    // Set other file attributes:
 
-      $this->assertFileIsReadable($full_path,
-        "Unable to setup FILE ". $id . " because cannot access Fixture file at $full_path.");
-
-      copy($full_path, $fileuri);
+    // Set the size of the file.
+    // This is usually used if the file is empty in which case this is 0.
+    if (isset($details['filesize'])) {
+      // File size was provided.
+      $file->setSize($details['filesize']);
     }
+    else {
+      // File size is to be determined.
+      // Get the file size.
+      $file_size = @filesize($file_uri);
+
+      // Assert that a file size was established.
+      $this->assertNotFalse($file_size, 'Unable to determine size of test file: ' . $file_uri);
+
+      // Set the file size.
+      $file->setSize($file_size);
+    }
+
+    // Save all set attributes.
+    $file->save();
 
     // Set file permissions if needed.
     if (!empty($details['permissions'])) {
-      $fileuri = $file->getFileUri();
       if ($details['permissions'] == 'none') {
-        chmod($fileuri, octdec(0000));
+        chmod($file_uri, octdec(0000));
       }
       elseif (is_numeric($details['permissions'])) {
         $decoded = decoct(octdec($details['permissions']));
         if ($details['permissions'] == $decoded) {
-          chmod($fileuri, $details['permissions']);
+          chmod($file_uri, $details['permissions']);
         }
       }
     }
