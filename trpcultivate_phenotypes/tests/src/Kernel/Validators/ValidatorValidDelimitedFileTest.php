@@ -87,7 +87,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
         [
           'case' => 'Raw row is empty',
           'valid' => FALSE,
-          'failedItems' => ['raw_row' => 'is an empty string value'],
+          'failedItems' => ['raw_row' => ''],
 
         ],
       ],
