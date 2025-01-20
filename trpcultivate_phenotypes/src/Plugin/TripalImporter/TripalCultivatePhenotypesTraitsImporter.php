@@ -26,7 +26,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   label = @Translation("Tripal Cultivate: Phenotypic Trait Importer"),
  *   description = @Translation("Loads Traits for phenotypic data into the system. This is useful for large phenotypic datasets to ease the upload process."),
  *   file_types = {"tsv"},
- *   upload_description = @Translation("Please provide a txt or tsv data file."),
+ *   upload_description = @Translation("Please provide a data file."),
  *   upload_title = @Translation("Phenotypic Trait Data File*"),
  *   use_analysis = FALSE,
  *   require_analysis = FALSE,
@@ -858,6 +858,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $render_array = [
       '#type' => 'item',
       '#title' => $message,
+      '#wrapper_attributes' => [
+        'class' => [
+          'tcp-genus-exists-failures',
+        ],
+      ],
       'items' => [
         '#theme' => 'item_list',
         '#type' => 'ul',
@@ -896,34 +901,28 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   mime type are not compatible.
    */
   public function processValidDataFileFailures(array $validation_result) {
-    if (($validation_result['case'] == 'Filename is empty string') ||
-        ($validation_result['case'] == 'Invalid file id number') ||
-        ($validation_result['case'] == 'Filename failed to load a file object') ||
+    // Get the current user in case we trigger a case that needs to log a
+    // message to the administrator.
+    $current_user = \Drupal::currentUser();
+    $username = $current_user->getAccountName();
+    // Define our items array.
+    $items = [];
+
+    if (($validation_result['case'] == 'Invalid file id number') ||
         ($validation_result['case'] == 'File id failed to load a file object')) {
       $message = 'A problem occurred in between uploading the file and submitting it for validation. Please try uploading and submitting it again, or contact your administrator if the problem persists.';
-      // All but one case returns the filename, so check that it exists before
-      // assigning it to items.
-      if (array_key_exists('filename', $validation_result['failedItems'])) {
-        $items = [
-          'Filename: ' . $validation_result['failedItems']['filename'],
-        ];
-      }
-      // Log a message for the administrator to help with debugging the issue.
-      // Get the current user.
-      $current_user = \Drupal::currentUser();
-      $username = $current_user->getAccountName();
+
       // Get the fid of the uploaded file.
       $fid = $validation_result['failedItems']['fid'];
+      // Log a message for the administrator to help with debugging the issue.
       $this->logger->info("The user $username uploaded a file with FID $fid using the Traits Importer, but could not import it as something is wrong with the filename/FID. More specifically, the case message '" . $validation_result['case'] . "' was reported.");
     }
-
     elseif ($validation_result['case'] == 'The file has no data and is an empty file') {
       $message = 'The file provided has no contents in it to import. Please ensure your file has the expected header row and at least one row of data.';
       $items = [
         'Filename: ' . $validation_result['failedItems']['filename'],
       ];
     }
-
     elseif (($validation_result['case'] == 'Unsupported file MIME type') ||
             ($validation_result['case'] == 'Unsupported file mime type and unsupported extension')) {
       $message = "The type of file uploaded is not supported by this importer. Please ensure your file has one of the supported file extensions and was saved using software that supports that type of file. For example, a 'tsv' file should be saved as such by a spreadsheet editor such as Microsoft Excel.";
@@ -951,6 +950,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $render_array = [
       '#type' => 'item',
       '#title' => $message,
+      '#wrapper_attributes' => [
+        'class' => [
+          'tcp-valid-data-file-failures',
+        ],
+      ],
       'items' => [
         '#theme' => 'item_list',
         '#type' => 'ul',
@@ -1001,6 +1005,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $render_array = [
       '#theme' => 'item_list',
       '#type' => 'ul',
+      '#attributes' => [
+        'class' => [
+          'tcp-valid-headers-failures',
+        ],
+      ],
       '#items' => [
         [
           [
@@ -1053,6 +1062,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *     - 'failedItems': an array of items that failed:
    *       - 'raw_row': A string indicating the row is empty OR the contents of
    *         the row as it appears in the file.
+   *       - 'expected_columns': The number of columns expected in the input
+   *         file as determined by calling getExpectedColumns().
+   *       - 'strict': A boolean indicating whether the number of expected
+   *         columns by the validator is strict (TRUE) or is the minimum number
+   *         required (FALSE).
    *
    * @return array
    *   A render array of type unordered list which is used to display feedback
@@ -1081,7 +1095,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       // Keeps track of which table this one line's validation result gets added
       // to based on the case it triggered.
       $table_case = '';
-
       if (($validation_result['case'] == 'Raw row is empty') ||
           ($validation_result['case'] == 'None of the delimiters supported by the file type was used')) {
         $table_case = 'unsupported';
@@ -1089,6 +1102,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       elseif (($validation_result['case'] == 'Raw row exceeds number of strict columns') ||
             ($validation_result['case'] == 'Raw row has insufficient number of columns')) {
         $table_case = 'delimited';
+        if (!isset($num_expected_columns)) {
+          $num_expected_columns = $validation_result['failedItems']['expected_columns'];
+          $strict = $validation_result['failedItems']['strict'];
+        }
       }
 
       // Checked all cases, now add a row to our appropriate table.
@@ -1096,10 +1113,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // Declare the array storing rows for this table, if not already.
         $table[$table_case]['rows'] = [];
       }
-      array_push($table[$table_case]['rows'], [
+      $table[$table_case]['rows'][] = [
         $line_no,
         $validation_result['failedItems']['raw_row'],
-      ]);
+      ];
     }
     // Check which tables were created, and assign the correct message.
     // Note that both tables can exist at the same time.
@@ -1107,28 +1124,47 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $table['unsupported']['message'] = 'The following lines in the input file do not contain a valid delimiter supported by this importer.';
     }
     if (array_key_exists('delimited', $table)) {
-      $num_expected_columns = count($this->headers);
-      $table['delimited']['message'] = "This importer requires a strict number of $num_expected_columns columns for each line. The following lines do not contain the expected number of columns.";
+      // Check if number of columns is strict, then set the message accordingly.
+      if ($strict) {
+        $strict_or_min = 'strict';
+      }
+      else {
+        $strict_or_min = 'minimum';
+      }
+      $message = "This importer requires a $strict_or_min number of $num_expected_columns columns for each line. The following lines do not contain the expected number of columns.";
+      $table['delimited']['message'] = $message;
     }
 
     // Finally, loop through our tables and build our render array.
     $tables = [];
-    foreach ($table as $table_case) {
-      array_push($tables, [
+    foreach ($table as $table_key => $table_case) {
+      $tables[] = [
         [
+          '#prefix' => '<div class="case-message case-' . $table_key . '">',
           '#markup' => $table_case['message'],
+          '#suffix' => '</div>',
         ],
         [
           '#type' => 'table',
           '#header' => $table_header,
-          '#attributes' => ['class' => ['tcp-raw-row']],
+          '#attributes' => [
+            'class' => [
+              'tcp-raw-row',
+              'table-case-' . $table_key,
+            ],
+          ],
           '#rows' => $table_case['rows'],
         ],
-      ]);
+      ];
     }
     $render_array = [
       '#theme' => 'item_list',
       '#type' => 'ul',
+      '#attributes' => [
+        'class' => [
+          'tcp-valid-delimited-file-failures',
+        ],
+      ],
       '#items' => $tables,
     ];
 
@@ -1188,10 +1224,17 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $render_array = [
       '#theme' => 'item_list',
       '#type' => 'ul',
+      '#attributes' => [
+        'class' => [
+          'tcp-empty-cell-failures',
+        ],
+      ],
       '#items' => [
         [
           [
+            '#prefix' => '<div class="case-message">',
             '#markup' => $table['message'],
+            '#suffix' => '</div>',
           ],
           [
             '#type' => 'table',
@@ -1230,53 +1273,74 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   and column combinations with an invalid value. It has the following
    *   headers:
    *   - 'Line Number'
-   *   - 'Column Header'
-   *   - 'Invalid Value'
+   *   - Column Header(s) of the cell(s) that has/have an invalid value
    */
   public function processValueInListFailures(array $failures, array $expected_values) {
     // Define our table header.
     // We will start with the line number and build the header from there as we
     // go through the failures. There will be a column for each column checked
     // by this validator instance and the column header will be the same as it
-    // is in the file.
-    $table_header = ['lineno' => 'Line Number'];
+    // appears in the file.
+    $table_header = [-1 => 'Line Number'];
     $table['rows'] = [];
 
     foreach ($failures as $line_no => $validation_result) {
       if ($validation_result['case'] == 'Invalid value(s) in required column(s)') {
-        $table['message'] = 'The following line number and column combinations did not contain one of the following allowed values: "' . implode('", "', $expected_values) . '". Note that values should be case sensitive. <strong>Empty cells indicate the value given was one of the allowed values.</strong>';
+        $table['message'] = 'The following line number and column combinations did not contain one of the following allowed values: "' . implode('", "', $expected_values) . '". Note that values should be case sensitive. <strong>If any cell in the table below is empty, then the value given in the file for that cell was one of the allowed values.</strong>';
+
+        // Define a new row in our table for this line number.
+        $table['rows'][$line_no][-1] = $line_no;
         // For each index with an invalid value, grab the column name from our
-        // $headers property and add it as a row in our table.
+        // $headers property and add it to our table header.
         foreach ($validation_result['failedItems'] as $index => $failed_value) {
           // Grab the column name based on the index of the invalid value
           // and add it to this table header if it's not already there.
           $column_name = $this->headers[$index]['name'];
           if (!array_key_exists($column_name, $table_header)) {
-            $table_header[$column_name] = $column_name;
+            $table_header[$index] = $column_name;
           }
-          // Now add a row to the table to indicate the invalid value.
-          // We use the column name as the key to ensure the invalid value
-          // is added to the right column. We also key the row with the line
+          // Now add a cell to the table to indicate this invalid value.
+          // We reuse the index from the original file as the key to preserve
+          // the same order of the columns. We also key the row with the line
           // number to ensure that a line with more then one failure is
           // compiled into a single row.
-          if (!array_key_exists($line_no, $table['rows'])) {
-            $table['rows'][$line_no] = [
-              'lineno' => $line_no,
-            ];
-          }
-          $table['rows'][$line_no][$column_name] = $failed_value;
+          $table['rows'][$line_no][$index] = $failed_value;
         }
       }
     }
+
+    // If our table has more than 2 columns with failed values, then iterate
+    // through and pad the table with empty strings where necessary.
+    if (count($table_header) > 2) {
+      foreach (array_keys($table['rows']) as $line_no) {
+        foreach (array_keys($table_header) as $index) {
+          if (!array_key_exists($index, $table['rows'][$line_no])) {
+            $table['rows'][$line_no][$index] = '';
+          }
+        }
+        // Finally, sort the row by keys.
+        ksort($table['rows'][$line_no]);
+      }
+    }
+
+    // Sort the table header.
+    ksort($table_header);
 
     // Build the render array for our table.
     $render_array = [
       '#theme' => 'item_list',
       '#type' => 'ul',
+      '#attributes' => [
+        'class' => [
+          'tcp-value-in-list-failures',
+        ],
+      ],
       '#items' => [
         [
           [
+            '#prefix' => '<div class="case-message">',
             '#markup' => $table['message'],
+            '#suffix' => '</div>',
           ],
           [
             '#type' => 'table',
@@ -1397,6 +1461,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $render_array = [
       '#theme' => 'item_list',
       '#type' => 'ul',
+      '#attributes' => [
+        'class' => [
+          'tcp-duplicate-traits-failures',
+        ],
+      ],
       '#items' => $tables,
     ];
 
@@ -1472,29 +1541,60 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   }
 
   /**
-   * {@inheritdoc}
+   * Describe the upload format including column descriptions + template file.
+   *
+   * Class TripalImporterBase is the parent class of this method and additional
+   * documentation is available in reference link below.
+   *
+   * NOTE: This method supports full HTML markup output.
+   *
+   * All relevant information relating to expected column headers and usage
+   * notes are laid out using the theme 'importer_header'. This is rendered
+   * using the referenced TWIG file below.
+   *
+   * A template geneartor service is utilized to provide a downloadable file
+   * template, pre-configured to contain all headers required. The link to
+   * this template file is also formatted using the theme 'importer_header'.
+   *
+   * @return string
+   *   The fully rendered HTML string produced by the 'importer_header' theme
+   *   with the pertinent variables supplied by this method.
+   *
+   * @see Drupal\tripal\TripalImporter\TripalImporterBase::describeUploadFileFormat()
+   * @see templates\trpcultivate-phenotypes-template-importer-header.html.twig
    */
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
+
     // Only the header names are needed for making the template file, so pull
     // them out into a new array.
     $column_headers = array_column($this->headers, 'name');
 
+    // File types 'file_types' annotation definition of this importer.
+    // The first item in the definition list will be used as the primary
+    // file extension of the template file.
+    // File MIME type and delimiter are based on mapping information defined
+    // in the validator base and file types validator trait.
+    $file_extensions = $this->plugin_definition['file_types'];
+
     $file_link = $this->service_FileTemplate
-      ->generateFile($importer_id, $column_headers);
+      ->generateFile($importer_id, $column_headers, $file_extensions);
 
     // Additional notes to the headers.
     $notes = $this->t('The order of the above columns is important and your file must include a header!
     If you have a single trait measured in more than one way (i.e. with multiple collection
-    methods), then you should have one line per collection method with the trait repeated.');
+    methods), then you should have one line per collection method with the trait name/description repeated.');
 
-    // Render the header notes/lists template and use the file link as
+    // Render the header and notes/lists in a template and use the file link as
     // the value to href attribute of the link to download a template file.
+    $supported_file_extensions = implode(', ', $file_extensions);
+
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
+        'file_extensions' => $supported_file_extensions,
         'notes' => $notes,
         'template_file' => $file_link,
       ],

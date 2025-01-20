@@ -12,7 +12,7 @@
 {{ attach_library('trpcultivate_phenotypes/trpcultivate-phenotypes-style-importer-header') }}
 
 <div id="tcp-header-notes">
-  <p>This should be a tab-separated file with the following columns:</p>
+  <p>This should be a [{{data.file_extensions}}] file with the following columns:</p>
 
   <ol id="tcp-header-notes">
     {% for header in data.headers %}
@@ -21,6 +21,8 @@
     </li>
     {% endfor %}
   </ol>
+
+  <p><em>{{data.notes}}</em></p>
 </div>
 
 <div id="tcp-template-file">
