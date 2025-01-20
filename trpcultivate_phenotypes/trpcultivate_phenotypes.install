@@ -10,6 +10,12 @@ use Drupal\Core\File\FileSystemInterface;
 /**
  * Implements hook_install().
  *
+ * When the module is installed, we use the configuration values to setup
+ * the site for this module. Specifically,
+ *  - create file directories.
+ *  - register tripaljobs to insert the cvterms we use as defaults for
+ *    our term configuration. The callback for this job is in the 
+ *    .module file.
  * @see config/install
  * @see config/schema
  * @see trpcultivate_phenotypes.module
