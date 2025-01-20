@@ -26,7 +26,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   label = @Translation("Tripal Cultivate: Phenotypic Trait Importer"),
  *   description = @Translation("Loads Traits for phenotypic data into the system. This is useful for large phenotypic datasets to ease the upload process."),
  *   file_types = {"tsv"},
- *   upload_description = @Translation("Please provide a txt or tsv data file."),
+ *   upload_description = @Translation("Please provide a data file."),
  *   upload_title = @Translation("Phenotypic Trait Data File*"),
  *   use_analysis = FALSE,
  *   require_analysis = FALSE,
@@ -1541,29 +1541,60 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   }
 
   /**
-   * {@inheritdoc}
+   * Describe the upload format including column descriptions + template file.
+   *
+   * Class TripalImporterBase is the parent class of this method and additional
+   * documentation is available in reference link below.
+   *
+   * NOTE: This method supports full HTML markup output.
+   *
+   * All relevant information relating to expected column headers and usage
+   * notes are laid out using the theme 'importer_header'. This is rendered
+   * using the referenced TWIG file below.
+   *
+   * A template geneartor service is utilized to provide a downloadable file
+   * template, pre-configured to contain all headers required. The link to
+   * this template file is also formatted using the theme 'importer_header'.
+   *
+   * @return string
+   *   The fully rendered HTML string produced by the 'importer_header' theme
+   *   with the pertinent variables supplied by this method.
+   *
+   * @see Drupal\tripal\TripalImporter\TripalImporterBase::describeUploadFileFormat()
+   * @see templates\trpcultivate-phenotypes-template-importer-header.html.twig
    */
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
+
     // Only the header names are needed for making the template file, so pull
     // them out into a new array.
     $column_headers = array_column($this->headers, 'name');
 
+    // File types 'file_types' annotation definition of this importer.
+    // The first item in the definition list will be used as the primary
+    // file extension of the template file.
+    // File MIME type and delimiter are based on mapping information defined
+    // in the validator base and file types validator trait.
+    $file_extensions = $this->plugin_definition['file_types'];
+
     $file_link = $this->service_FileTemplate
-      ->generateFile($importer_id, $column_headers);
+      ->generateFile($importer_id, $column_headers, $file_extensions);
 
     // Additional notes to the headers.
     $notes = $this->t('The order of the above columns is important and your file must include a header!
     If you have a single trait measured in more than one way (i.e. with multiple collection
-    methods), then you should have one line per collection method with the trait repeated.');
+    methods), then you should have one line per collection method with the trait name/description repeated.');
 
-    // Render the header notes/lists template and use the file link as
+    // Render the header and notes/lists in a template and use the file link as
     // the value to href attribute of the link to download a template file.
+    $supported_file_extensions = implode(', ', $file_extensions);
+
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
+        'file_extensions' => $supported_file_extensions,
         'notes' => $notes,
         'template_file' => $file_link,
       ],
