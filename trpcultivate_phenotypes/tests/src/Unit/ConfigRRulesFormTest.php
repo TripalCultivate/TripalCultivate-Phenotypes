@@ -21,7 +21,7 @@ class ConfigRRulesFormTest extends UnitTestCase {
   /**
    * An instance of the R rules configuration form.
    *
-   * @var object
+   * @var \Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm
    */
   protected $rrulesform;
 
