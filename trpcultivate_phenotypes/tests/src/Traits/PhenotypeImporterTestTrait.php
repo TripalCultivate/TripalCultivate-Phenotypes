@@ -148,9 +148,8 @@ trait PhenotypeImporterTestTrait {
         $terms[$key] = 0;
       }
       // If the term value is not set, then choose a random integer
-      // between 10 - 300.
-      // We know there are at least 300 terms in the cvterm table so this is
-      // pretty safe.
+      // between 10 - 300. We know there are at least 300 terms in
+      // the cvterm table so this is pretty safe.
       if (empty($terms[$key])) {
         $terms[$key] = random_int(10, 300);
       }
