@@ -17,7 +17,7 @@ class ConfigWatermarkFormTest extends UnitTestCase {
   /**
    * Class instance of watermark controller settings form.
    *
-   * @var object
+   * @var \Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm
    */
   protected $watermark_form;
 
