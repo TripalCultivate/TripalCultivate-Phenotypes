@@ -346,7 +346,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
         'valid_data_type' => [
           'title' => 'Values in required cells are valid',
           'status' => 'fail',
-          'details' => 'The following line number and column combinations did not contain one of the following allowed values: "Quantitative", "Qualitative". Note that values should be case sensitive. <strong>Empty cells indicate the value given was one of the allowed values.</strong>',
+          'details' => 'The following line number and column combinations did not contain one of the following allowed values: "Quantitative", "Qualitative". Note that values should be case sensitive. <strong>If any cell in the table below is empty, then the value given in the file for that cell was one of the allowed values.</strong>',
         ],
         'duplicate_traits' => ['status' => 'pass'],
       ],

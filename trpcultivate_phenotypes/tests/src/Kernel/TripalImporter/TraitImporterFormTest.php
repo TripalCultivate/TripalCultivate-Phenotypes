@@ -8,6 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\user\Entity\User;
 
 /**
  * Tests the form + form-related functionality of the Traits Importer.
@@ -389,6 +390,72 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
       "We should have exactly one validation error but instead we have: " . implode(" AND ", $helpful_output));
     $this->assertArrayHasKey('genus', $form_validation_messages,
       "We expected the genus form element specifically to have a validation error but instead we have: " . implode(" AND ", $helpful_output));
+  }
+
+  /**
+   * Test describeUploadFileFormat() method in the importer.
+   */
+  public function testDescribeUploadFileFormat() {
+    // Create a user.
+    $user_username = 'user-collector';
+    $this->user = User::create([
+      'name' => $user_username,
+      'roles' => ['authenticated user'],
+    ]);
+    $this->user->save();
+
+    \Drupal::currentUser()->setAccount($this->user);
+
+    // Fire up Tripal Trait Importer Plugin.
+    $importer_plugin_manager = \Drupal::service('tripal.importer');
+    $plugin_id = 'trpcultivate-phenotypes-traits-importer';
+    $trait_importer = $importer_plugin_manager->createInstance($plugin_id);
+
+    // Create a file format description section.
+    $rendered_file_format_description = $trait_importer->describeUploadFileFormat();
+
+    // Assert headers matched the headers defined by Trait Importer.
+    $expected_headers = [
+      'Trait Name',
+      'Trait Description',
+      'Method Short Name',
+      'Collection Method',
+      'Unit',
+      'Type',
+    ];
+
+    // Pull all the headers in the rendered description.
+    preg_match_all('/<strong>(.*?)<\/strong>/', $rendered_file_format_description, $matches);
+    $this->assertEquals(
+      $expected_headers,
+      $matches[1],
+      'The headers defined by the importer does not match the headers rendered by describeUploadFileFormat()'
+    );
+
+    // Assert admin notes were incorporated into the description section.
+    $expected_notes = 'The order of the above columns is important and your file must include a header!
+    If you have a single trait measured in more than one way (i.e. with multiple collection
+    methods), then you should have one line per collection method with the trait name/description repeated.';
+
+    $this->assertStringContainsString(
+      $expected_notes,
+      $rendered_file_format_description,
+      'The rendered markup of the method describeUploadFileFormat() does not contain expected file format importer notes'
+    );
+
+    // Assert a download link was provided.
+    // Construct the templage file filename.
+    // Only the first item in the 'file_types' importer annotation is used as
+    // default file extension of the template file.
+    $importer_annotations = $importer_plugin_manager->getDefinitions();
+    $expected_file_extension = $importer_annotations['trpcultivate-phenotypes-traits-importer']['file_types'][0];
+    $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
+
+    $this->assertStringContainsString(
+      $expected_template_filename,
+      $rendered_file_format_description,
+      'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template filename.'
+    );
   }
 
 }
