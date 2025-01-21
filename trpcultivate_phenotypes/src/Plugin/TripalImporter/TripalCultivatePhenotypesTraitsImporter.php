@@ -830,6 +830,45 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   }
 
   /**
+   * Sanity checks to ensure the validation status array is compliant.
+   *
+   * @param array $validation_result
+   *   An associative array that was returned by a validator in the event of
+   *   failed validation. It should contain the following keys:
+   *   - 'case': a developer-focused string describing the case checked.
+   *   - 'valid': FALSE to indicate that validation failed.
+   *   - 'failedItems': an array of items that failed which is specific to the
+   *     validator.
+   *
+   * @return bool
+   *   Returns TRUE if the validation_result array is compliant and ready for
+   *   processing, FALSE otherwise.
+   *
+   * @throws \Exception
+   *   - If the validation_result array does not contain one of the following
+   *     keys: 'case', 'valid', 'failedItems'.
+   *   - If the value for 'valid' is not FALSE, indicating it was not properly
+   *     set to be a failed validation status.
+   */
+  public function checkValidationStatusArray(array $validation_result) {
+    // Check for validation status keys: 'case', 'valid', 'failedItems'.
+    $keys = ['case', 'valid', 'failedItems'];
+    foreach ($keys as $key) {
+      if (!array_key_exists($key, $validation_status)) {
+        // @todo Is it possible to provide more details here, such as the
+        // validator that returned this status, row number if applicable?
+        // Alternatively, we can return FALSE here and then throw the exception
+        // where this method is being called? (may have to return the key too)
+        throw new \Exception("Expected to find the key $key in the validation result array.");
+      }
+    }
+    if ($validation_result['valid'] !== FALSE) {
+      throw new \Exception("Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed.");
+    }
+    return TRUE;
+  }
+
+  /**
    * Processes failed validation from GenusExists into a render array.
    *
    * @param array $validation_result
