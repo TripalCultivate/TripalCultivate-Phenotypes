@@ -884,6 +884,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   to the user about the case that failed and the failed items from the
    *   input file. Each item in the list contains the genus that was selected
    *   in the form which failed validation.
+   *
+   * @throws \Exception
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processGenusExistsFailures(array $validation_result) {
     if ($validation_result['case'] == 'Genus does not exist') {
@@ -891,6 +895,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     }
     elseif ($validation_result['case'] == 'Genus exists but is not configured') {
       $message = 'The selected genus has not yet been configured for use with phenotypic data. Please contact your administrator to have this set up.';
+    }
+    elseif ($validation_result['case'] == 'Genus exists and is configured with phenotypes') {
+      throw new \Exception('The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.');
+    }
+    else {
+      throw new \Exception('The case string returned by the GenusExists validator is not recognized as a potential case.');
     }
 
     // Build the render array.

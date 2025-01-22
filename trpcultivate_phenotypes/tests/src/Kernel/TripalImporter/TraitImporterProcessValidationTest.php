@@ -1477,4 +1477,64 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     }
   }
 
+  /**
+   * Data Provider for triggering exceptions in all process failures methods.
+   *
+   * @return array
+   *   Each scenario is an array with the following:
+   *   - A list of validator names that this scenario will be run for.
+   *   - The failures array that gets passed to the process method. It contains
+   *     the following keys:
+   *     - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *       validation status. This key is not set for non row-level validators.
+   *       - 'case': a developer-focused string describing the case checked.
+   *       - 'valid': FALSE to indicate that validation failed.
+   *       - 'failedItems': array of items that failed with the following keys:
+   *         - 'combo_provided': The combination of trait, method, and unit
+   *           provided in the file. The keys used are the same name of the
+   *           column header for the cell containing the failed value.
+   *           - 'Trait Name': The trait name provided in the file.
+   *           - 'Method Short Name': The method name provided in the file.
+   *           - 'Unit': The unit provided in the file.
+   *   - An array of expectations that we want to find in the resulting rendered
+   *     output. Each array has the following keys:
+   *     - 'expected_exception_message': The message expected by the exception
+   *       being triggered.
+   */
+  public function provideProcessFailuresExceptions() {
+    $scenarios = [];
+
+    // #0: GenusExists passed validation case message
+    $scenarios[] = [
+      ['GenusExists'],
+      [
+        'case' => 'Genus exists and is configured with phenotypes',
+        'valid' => FALSE,
+        'failedItems' => [
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [
+        'expected_exception_message' => 'The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.',
+      ],
+    ];
+
+    // #1: Unrecognized validation case message
+    $scenarios[] = [
+      ['GenusExists'],
+      [
+        'case' => 'Unrecognizable',
+        'valid' => FALSE,
+        'failedItems' => [
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [
+        'expected_exception_message' => 'The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.',
+      ],
+    ];
+
+    return $scenarios;
+  }
+
 }
