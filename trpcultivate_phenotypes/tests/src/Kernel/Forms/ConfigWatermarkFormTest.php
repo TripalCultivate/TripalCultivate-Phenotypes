@@ -1,16 +1,10 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Unit;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 
-use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Core\Config\Config;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\File\FileUrlGenerator;
 use Drupal\Core\Form\FormState;
-use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Core\StringTranslation\TranslationInterface;
-use Drupal\Tests\UnitTestCase;
+use Drupal\file\Entity\File;
+use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm;
 
 /**
@@ -19,7 +13,7 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettin
  * @coversDefaultClass Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm
  * @group trpcultivate_phenotypes
  */
-class ConfigWatermarkFormTest extends UnitTestCase {
+class ConfigWatermarkFormTest extends ChadoTestKernelBase {
 
   /**
    * Class instance of watermark controller settings form.
@@ -29,47 +23,48 @@ class ConfigWatermarkFormTest extends UnitTestCase {
   protected $watermark_form;
 
   /**
+   * Modules to enable.
+   *
+   * @var array
+   */
+  protected static $modules = [
+    'file',
+    'user',
+    'system',
+    'tripal',
+    'tripal_chado',
+    'trpcultivate_phenotypes',
+  ];
+
+  /**
+   * Configuration.
+   *
+   * @var \Drupal\Core\Config\Config
+   */
+  protected $config;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
 
-    // Mock file url generator.
-    $mock_file_url_generator = $this->createMock(FileUrlGenerator::class);
-    // Mock file entity manager.
-    $mock_file_entity_manager = $this->createMock(EntityTypeManagerInterface::class);
-    // Mock configuration.
-    $watermark_config_mock = $this->prophesize(Config::class);
-    $watermark_config_mock->get('trpcultivate.phenotypes.watermark')
-      ->willReturn([
-        'charts' => FALSE,
-        'image' => NULL,
-        'file_ext' => ['png', 'gif'],
-      ]);
-    $watermark_config_mock->get('trpcultivate.phenotypes.directory.watermark')
-      ->willReturn('public://TripalCultivatePhenotypes/watermark/');
+    // Set test environment.
+    \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    $all_config_mock = $this->prophesize(ConfigFactoryInterface::class);
-    $all_config_mock->getEditable('trpcultivate_phenotypes.settings')
-      ->willReturn($watermark_config_mock);
+    // Install configurations.
+    $this->installConfig(['system', 'trpcultivate_phenotypes']);
+    $this->installEntitySchema('file');
 
-    // Isolated configuration for watermark configuration.
-    $watermark_config = $all_config_mock->reveal();
+    $container = \Drupal::getContainer();
 
-    $this->watermark_form = new TripalCultivatePhenotypesWatermarkSettingsForm($mock_file_url_generator, $mock_file_entity_manager, $watermark_config);
+    // Watermark form controller instance.
+    $this->watermark_form = new TripalCultivatePhenotypesWatermarkSettingsForm(
+      $container->get('file_url_generator'),
+      $container->get('entity_type.manager')
+    );
 
-    // Mock translation interface.
-    $mock = $this->prophesize(TranslationInterface::class);
-    $translation = $mock->reveal();
-    $this->watermark_form->setStringTranslation($translation);
-    // Mock messenger interface.
-    $mock = $this->prophesize(MessengerInterface::class);
-    $messenger = $mock->reveal();
-    $this->watermark_form->setMessenger($messenger);
-
-    $container = new ContainerBuilder();
-    $container->set('config.factory', $watermark_config);
-    \Drupal::setContainer($container);
+    $this->config = $container->get('config.factory');
   }
 
   /**
@@ -140,17 +135,43 @@ class ConfigWatermarkFormTest extends UnitTestCase {
 
   /**
    * Test submitForm() method.
-   *
-   * @todo this test produces an error: Call to member function set() on null.
    */
   public function testSubmitForm() {
     $form = [];
     $form_state = new FormState();
 
-    $form_state->setValue('charts', 0);
-    $form_state->setValue('file', $form);
+    // Create a test watermark image file.
+    $watermark_file = File::create([
+      'filename' => 'watermark.png',
+      'uri' => 'public://watermark.png',
+      'status' => 0,
+    ]);
 
-    // $this->watermark_form->submitForm($form, $form_state);
+    $watermark_file->save();
+
+    // Allow chart to be watermarked.
+    $allow_watermark = 1;
+
+    $form_state->setValue('charts', $allow_watermark);
+    $form_state->setValue('file', [$watermark_file->id()]);
+
+    $this->watermark_form->submitForm($form, $form_state);
+
+    // Check the the watermart was set in the configuration for watermark.
+    $phenotypes_settings = $this->config->getEditable('trpcultivate_phenotypes.settings');
+    $watermark_config = $phenotypes_settings->get('trpcultivate.phenotypes.watermark');
+
+    $this->assertEquals(
+      $watermark_config['charts'],
+      $allow_watermark,
+      'The watermark configuration for option to watermark all charts must be set to value 1 (watermark all charts).'
+    );
+
+    $this->assertEquals(
+      $watermark_config['charts'],
+      $watermark_file->getFileUri(),
+      'The watermark configuration for watermark image must be set to public://watermark.png.'
+    );
   }
 
 }
