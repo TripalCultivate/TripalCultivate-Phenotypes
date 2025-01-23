@@ -137,13 +137,17 @@ class ConfigWatermarkFormTest extends ChadoTestKernelBase {
    * Test submitForm() method.
    */
   public function testSubmitForm() {
+    $phenotypes_settings = $this->config->getEditable('trpcultivate_phenotypes.settings');
+    // The managed_file field is set to upload file into this directory.
+    $watermark_dir = $phenotypes_settings->get('trpcultivate.phenotypes.directory.watermark');
+
     $form = [];
     $form_state = new FormState();
 
     // Create a test watermark image file.
     $watermark_file = File::create([
       'filename' => 'watermark.png',
-      'uri' => 'public://watermark.png',
+      'uri' => $watermark_dir . 'watermark.png',
       'status' => 0,
     ]);
 
@@ -158,7 +162,6 @@ class ConfigWatermarkFormTest extends ChadoTestKernelBase {
     $this->watermark_form->submitForm($form, $form_state);
 
     // Check the the watermart was set in the configuration for watermark.
-    $phenotypes_settings = $this->config->getEditable('trpcultivate_phenotypes.settings');
     $watermark_config = $phenotypes_settings->get('trpcultivate.phenotypes.watermark');
 
     $this->assertEquals(
@@ -167,10 +170,13 @@ class ConfigWatermarkFormTest extends ChadoTestKernelBase {
       'The watermark configuration for option to watermark all charts must be set to value 1 (watermark all charts).'
     );
 
+    // Reload the file object to pull the lastest update.
+    $watermark_file = File::load($watermark_file->id());
+
     $this->assertEquals(
-      $watermark_config['charts'],
+      $watermark_config['image'],
       $watermark_file->getFileUri(),
-      'The watermark configuration for watermark image must be set to public://watermark.png.'
+      'The watermark image file uri does not match the expected file uri.'
     );
   }
 
