@@ -8,11 +8,16 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 /**
  * Simple test to ensure that main page loads with module enabled.
  *
- * @group TripGeno Genetics
+ * @group TripPheno Collect
  * @group Installation
  */
 class InstallTest extends ChadoTestBrowserBase {
 
+  /**
+   * Default theme.
+   *
+   * @var string
+   */
   protected $defaultTheme = 'stark';
 
   /**
@@ -20,21 +25,30 @@ class InstallTest extends ChadoTestBrowserBase {
    *
    * @var array
    */
-  protected static $modules = ['help', 'trpcultivate_phenotypes', 'trpcultivate_phenocollect'];
+  protected static $modules = [
+    'help',
+    'trpcultivate_phenotypes',
+    'trpcultivate_phenocollect',
+  ];
 
   /**
-   * The name of your module in the .info.yml
+   * The name of your module in the .info.yml.
+   *
+   * @var string
    */
   protected static $module_name = 'Phenotypic Data Collection';
 
   /**
    * The machine name of this module.
+   *
+   * @var string
    */
   protected static $module_machinename = 'trpcultivate_phenocollect';
 
   /**
-   * A small excert from your help page.
-   * Do not cross newlines.
+   * A small excert from your help page (Do not cross newlines).
+   *
+   * @var string
    */
   protected static $help_text_excerpt = 'tools to backup and upload phenotypic data while it is being collected in a access controlled environment.';
 
@@ -59,7 +73,7 @@ class InstallTest extends ChadoTestBrowserBase {
     $this->drupalGet('admin/modules');
     $status_code = $session->getStatusCode();
     $this->assertEquals(200, $status_code, "The module install page should be able to load $context.");
-    $this->assertSession()->pageTextContains( self::$module_name );
+    $this->assertSession()->pageTextContains(self::$module_name);
 
   }
 
@@ -72,7 +86,7 @@ class InstallTest extends ChadoTestBrowserBase {
     $some_extected_text = self::$help_text_excerpt;
 
     // Ensure we have an admin user.
-    $permissions = ['access administration pages','administer modules', 'access help pages'];
+    $permissions = ['access administration pages', 'administer modules', 'access help pages'];
     $user = $this->drupalCreateUser($permissions);
     $this->drupalLogin($user);
 
@@ -80,7 +94,7 @@ class InstallTest extends ChadoTestBrowserBase {
 
     // Call the hook to ensure it is returning text.
     $name = 'help.page.' . $this::$module_machinename;
-    $match = $this->createStub(\Drupal\Core\Routing\RouteMatch::class);
+    $match = $this->createStub(RouteMatch::class);
     $hook_name = self::$module_machinename . '_help';
     $output = $hook_name($name, $match);
     $this->assertNotEmpty($output, "The help hook should return output $context.");
