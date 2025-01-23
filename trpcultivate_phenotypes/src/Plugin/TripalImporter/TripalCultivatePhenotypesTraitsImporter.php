@@ -849,12 +849,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *     keys: 'case', 'valid', 'failedItems'.
    *   - If the value for 'valid' is not FALSE, indicating it was not properly
    *     set to be a failed validation status.
+   *   - If the value for 'failedItems' is not an array.
+   *   - If the value for 'failedItems' is an empty array.
    */
   public function checkValidationStatusArray(array $validation_result) {
     // Check for validation status keys: 'case', 'valid', 'failedItems'.
     $keys = ['case', 'valid', 'failedItems'];
     foreach ($keys as $key) {
-      if (!array_key_exists($key, $validation_status)) {
+      if (!array_key_exists($key, $validation_result)) {
         // @todo Is it possible to provide more details here, such as the
         // validator that returned this status, row number if applicable?
         // Alternatively, we can return FALSE here and then throw the exception
@@ -862,8 +864,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         throw new \Exception("Expected to find the key $key in the validation result array.");
       }
     }
+    // Check that key 'valid' is set to FALSE.
     if ($validation_result['valid'] !== FALSE) {
       throw new \Exception("Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed.");
+    }
+    // Check that 'failedItems' contains a value of type array.
+    if (is_array($validation_result['failedItems'])) {
+      if ($validation_result['failedItems'] === []) {
+        throw new \Exception("Expected the validation result to have content for the key 'failedItems', but it was set to an empty array.");
+      }
+    }
+    else {
+      throw new \Exception("Expected the validation result to contain an array for the key 'failedItems', but it did not.");
     }
     return TRUE;
   }
@@ -886,10 +898,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   in the form which failed validation.
    *
    * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
    *   - If the case string returned by the validator implied validation passed.
    *   - If the case string returned by the validator is not recognized.
    */
   public function processGenusExistsFailures(array $validation_result) {
+    // Check the format of the validation_result parameter.
+    try {
+      $this->checkValidationStatusArray($validation_result);
+    }
+    catch (\Exception $e) {
+      throw new \Exception("The validation result array returned by the GenusExists validator was not formatted correctly. Details: $e");
+    }
     if ($validation_result['case'] == 'Genus does not exist') {
       $message = 'The selected genus does not exist in this site. Please contact your administrator to have this added.';
     }
