@@ -63,7 +63,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
   }
 
   /**
-   * Fetch all genus from chado.organism in the host site.
+   * Construct an ontology configuration template array for every genus.
    *
    * For each organism, initialize an empty template array.
    * This array will be used by other genus ontology configuration
