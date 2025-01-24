@@ -137,20 +137,4 @@ class ConfigWatermarkFormTest extends UnitTestCase {
       'If watermark charts was set to false, then the formValidate() method is expected to submit the form without a watermark image.'
     );
   }
-
-  /**
-   * Test submitForm() method.
-   *
-   * @todo this test produces an error: Call to member function set() on null.
-   */
-  public function testSubmitForm() {
-    $form = [];
-    $form_state = new FormState();
-
-    $form_state->setValue('charts', 0);
-    $form_state->setValue('file', $form);
-
-    // $this->watermark_form->submitForm($form, $form_state);
-  }
-
 }
