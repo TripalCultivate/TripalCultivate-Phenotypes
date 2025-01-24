@@ -151,6 +151,13 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   protected Renderer $service_Renderer;
 
   /**
+   * The Drupal Messenger Service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $service_Messenger;
+
+  /**
    * Constructs the Phenotypes Share importer.
    *
    * @param array $configuration
@@ -180,7 +187,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     Renderer $renderer,
     MessengerInterface $messenger,
   ) {
-    parent::__construct($configuration, $plugin, $plugin_definition, $chado_connection);
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
     // Call service setter method to set the service.
     $this->setServiceGenusOntology($service_PhenoGenusOntology);
@@ -204,6 +211,59 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       $container->get('renderer'),
       $container->get('messenger'),
     );
+  }
+
+  /**
+   * Configure all the validators this importer uses.
+   *
+   * @param array $form_values
+   *   An array of the importer form values provided to formValidate.
+   * @param string $file_mime_type
+   *   A string of the MIME type of the input file, usually grabbed from the
+   *   file object using $file->getMimeType()
+   *
+   * @return array
+   *   A listing of configured validator objects first keyed by their inputType.
+   *   More specifically:
+   *   - [inputType]: and array of validator instances. Not an
+   *     associative array although the keys do indicate what
+   *     order they should be run in.
+   */
+  public function configureValidators(array $form_values, string $file_mime_type) {
+
+    $validators = [];
+
+    // Grab the project/experiment from our form.
+    $project = $form_values['project'];
+
+    // Grab the genus from our form to use in confguring some validators.
+    $genus = $form_values['genus'];
+
+    // Make the header columns into a simplified array for easy reference:
+    // - Keyed by the column header name.
+    // - Values are the column header's position in the $headers property (ie.
+    //   its index if we assume no keys were assigned).
+    $header_index = [];
+    $headers = $this->headers;
+    foreach ($headers as $i => $column_details) {
+      $header_index[$column_details['name']] = $i;
+    }
+
+    // -----------------------------------------------------
+    // Metadata
+    // - Genus exists and is configured
+    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
+    $validators['metadata']['genus_exists'] = $instance;
+
+    // - Project exists.
+    $instance = $this->service_validatorPluginManager->createInstance('project_exists');
+    $validators['metadata']['project_exists'] = $instance;
+
+    // - Project and Genus match.
+    $instance = $this->service_validatorPluginManager->createInstance('project_genus_match');
+    $validators['metadata']['project_genus_match'] = $instance;
+
+    return $validators;
   }
 
   /**
@@ -570,60 +630,87 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       }
 
       if ($stage >= 1) {
+
         // Validate Stage 1.
-        // Counter, count number of validators that failed.
-        $failed_validator = 0;
-
-        // Call validator manager service.
-        $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-
-        // All values will be accessible to every instance of the
-        // validator Plugin.
-        $project = $form_state_values['project'];
-        $genus = $form_state_values['genus'];
-        $file = $form_state_values['file_upload'];
-        $headers = array_keys($this->headers);
-
         if ($stage == 1) {
-          $scopes = ['PROJECT', 'GENUS', 'FILE', 'HEADERS'];
+          $form_values = $form_state_values;
 
-          // Array to hold all validation result for each level.
-          // Each result is keyed by the scope.
-          $validation = [];
+          $file_id = $form_values['file_upload'];
 
-          foreach ($scopes as $scope) {
-            // Create instance of the scope-specific plugin and
-            // perform validation.
-            $validator = $manager->getValidatorIdWithScope($scope);
-            $instance = $manager->createInstance($validator);
+          // Load our file object.
+          $file = $this->service_entityTypeManager->getStorage('file')->load($file_id);
 
-            // Set other validation level to upcoming/todo if a
-            // validation failed.
-            $skip = ($failed_validator > 0) ? 1 : 0;
+          // Get the mime type which is used to validate the file and
+          // split the rows.
+          $file_mime_type = $file->getMimeType();
 
-            // Load values.
-            $instance->loadAssets($project, $genus, $file, $headers, $skip);
+          // Configure the validators.
+          $validators = $this->configureValidators($form_values, $file_mime_type);
 
-            // Perform current scope level validation.
-            $validation[$scope] = $instance->validate();
+          // A FLAG to keep track if any validator fails.
+          // We will only continue to the next input-type if all validators of
+          // the current input-type pass.
+          $failed_validator = FALSE;
 
-            // Inspect for any failed validation to halt the importer.
-            if ($validation[$scope]['status'] == 'fail') {
-              $failed_validator++;
+          // Keep track of failed items. This is a nested array keyed
+          // as follows:
+          // - The unique name of a validator instance, which maps to the
+          //   second level of the $validators array.
+          //   - For row-level input-type validators, this is further keyed by
+          //     the row number that the failure for this validator
+          //     instance occurred.
+          // The value (level 1 for non row-level validators, level 2 for
+          // row-level validators) is the validation results array returned by
+          // the validator.
+          $failures = [];
+
+          // *******************************************************************
+          // Metadata Validation
+          // *******************************************************************
+          foreach ($validators['metadata'] as $validator_name => $validator) {
+            // Set failures for this validator name to an empty array to signal
+            // that this validator has been run.
+            $failures[$validator_name] = [];
+            // Validate metadata input value.
+            $result = $validator->validateMetadata($form_values);
+
+            // Check if validation failed and save the results if it did.
+            if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+              $failed_validator = TRUE;
+              $failures[$validator_name] = $result;
             }
           }
 
-          // Save all validation results in Drupal storage to be used by
-          // validation window to create summary report.
+          $validation_feedback = $this->processValidationMessages($failures);
+
+          // Save all validation results in Drupal storage to create a
+          // summary report.
           $storage = $form_state->getStorage();
-          $storage[$this->validation_result] = $validation;
+          $storage[$this->validation_result] = $validation_feedback;
           $form_state->setStorage($storage);
 
-          if ($failed_validator > 0) {
-            // There are issues in the submission and are detailed in the
-            // validation result window.
+          // Check if the $validation_feedback contains 'fail' or 'todo' status.
+          // If either is found, prevent form submission.
+          $submit_form = TRUE;
+
+          foreach ($validation_feedback as $feedback_item) {
+            if ($feedback_item['status'] == 'todo' || $feedback_item['status'] == 'fail') {
+              $submit_form = FALSE;
+
+              // No need to inspect other validators, a single instance of
+              // fail/todo is sufficient to prevent form submission.
+              break;
+            }
+          }
+
+          if ($submit_form === FALSE) {
+            // Provide a general error message indicating that input values and/or the
+            // data file may contain one or more errors.
+            $this->service_Messenger
+              ->addError($this->t('Your file import was not successful. Please check the Validation Result Window for errors and try again.'));
+
             // Prevent this form from submitting and reload form with all the
-            // validation errors in the storage system.
+            // validation failures in the storage system.
             $form_state->setRebuild(TRUE);
           }
         }
