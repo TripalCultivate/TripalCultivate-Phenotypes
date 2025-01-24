@@ -50,7 +50,7 @@ class InstallTest extends ChadoTestBrowserBase {
    *
    * @var string
    */
-  protected static $help_text_excerpt = 'provides trait pages, downloads and visualization tools to facillitate sharing published phenotypic data with';
+  protected static $help_text_excerpt = 'Provides trait pages, downloads and visualization tools to facillitate sharing published phenotypic data with';
 
   /**
    * Tests that a specific set of pages load with a 200 response.
