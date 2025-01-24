@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\trpcultivate_phenocollect\Functional;
 
+use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
