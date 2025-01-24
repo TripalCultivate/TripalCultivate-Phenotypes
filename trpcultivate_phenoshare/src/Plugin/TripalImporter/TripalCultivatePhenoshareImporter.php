@@ -2,13 +2,17 @@
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Render\Renderer;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 
 /**
@@ -42,6 +46,8 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
  */
 class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
 
+  use StringTranslationTrait;
+
   /**
    * Reference the current stage.
    *
@@ -60,18 +66,67 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
    * Headers required by this importer.
    *
    * @var array
+   *
+   * The following keys are required:
+   * - 'name': The column header name as it should appear in the input file.
+   * - 'description': A user-friendly description of the header that will be
+   *   displayed to the user through the form.
+   * - 'type': one of "required" or "optional" to indicate whether the column
+   *   needs to have values present or not.
+   *
+   * NOTE: Order MUST reflect the desired order of headers in the input file.
    */
   private $headers = [
-    'Trait Name' => 'The full name of the trait as you would like it to appear on a trait page. This should not be abbreviated (e.g. Days till one open flower).',
-    'Method Name' => 'A short (<4 words) name describing the method. This should uniquely identify the method while being very succinct (e.g. 10% Plot at R1).',
-    'Unit' => 'The unit the trait was measured with. In the case of a scale this column should defined the scale. (e.g. days)',
-    'Germplasm Accession' => 'The stock.uniquename for the germplasm whose phenotype was measured. (e.g. ID:1234)',
-    'Germplasm Name' => 'The stock.name for the germplasm whose phenotype was measured. (e.g. Variety ABC)',
-    'Year' => 'The 4-digit year in which the measurement was taken. (e.g. 2020)',
-    'Location' => 'The full name of the location either using “location name, country” or GPS coordinates (e.g. Saskatoon, Canada)',
-    'Replicate' => 'The number for the replicate the current measurement is in. (e.g. 3)',
-    'Value' => 'The measured phenotypic value. (e.g. 34)',
-    'Data Collector' => 'The name of the person or organization which measured the phenotype.',
+    [
+      'name' => 'Trait Name',
+      'description' => 'The full name of the trait as you would like it to appear on a trait page. This should not be abbreviated (e.g. Days till one open flower).',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Method Name',
+      'description' => 'A short (<4 words) name describing the method. This should uniquely identify the method while being very succinct (e.g. 10% Plot at R1).',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Unit',
+      'description' => 'The unit the trait was measured with. In the case of a scale this column should defined the scale. (e.g. days)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Germplasm Accession',
+      'description' => 'The stock.uniquename for the germplasm whose phenotype was measured. (e.g. ID:1234)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Germplasm Name',
+      'description' => 'The stock.name for the germplasm whose phenotype was measured. (e.g. Variety ABC)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Year',
+      'description' => 'The 4-digit year in which the measurement was taken. (e.g. 2020)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Location',
+      'description' => 'The full name of the location either using “location name, country” or GPS coordinates (e.g. Saskatoon, Canada)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Replicate',
+      'description' => 'The number for the replicate the current measurement is in. (e.g. 3)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Value',
+      'description' => 'The measured phenotypic value. (e.g. 34)',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Data Collector',
+      'description' => 'The name of the person or organization which measured the phenotype.',
+      'type' => 'required',
+    ],
   ];
 
   /**
@@ -82,7 +137,38 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   protected $service_PhenoGenusOntology;
 
   /**
+   * The TripalCultivatePhenotypes File Template Service.
+   *
+   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
+   */
+  protected TripalCultivatePhenotypesFileTemplateService $service_FileTemplate;
+
+  /**
+   * The Drupal Renderer.
+   *
+   * @var Drupal\Core\Render\Renderer
+   */
+  protected Renderer $service_Renderer;
+
+  /**
    * Constructs the Phenotypes Share importer.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param Drupal\tripal_chado\Database\ChadoConnection $chado_connection
+   *   The connection to the Chado database.
+   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
+   *   The genus ontology service.
+   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
+   *   The service used to generate the termplate file.
+   * @param Drupal\Core\Render\Renderer $renderer
+   *   The Drupal renderer service.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The Drupal messenger service.
    */
   public function __construct(
     array $configuration,
@@ -90,11 +176,18 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
+    TripalCultivatePhenotypesFileTemplateService $service_FileTemplate,
+    Renderer $renderer,
+    MessengerInterface $messenger,
   ) {
     parent::__construct($configuration, $plugin, $plugin_definition, $chado_connection);
 
     // Call service setter method to set the service.
     $this->setServiceGenusOntology($service_PhenoGenusOntology);
+
+    $this->service_FileTemplate = $service_FileTemplate;
+    $this->service_Renderer = $renderer;
+    $this->service_Messenger = $messenger;
   }
 
   /**
@@ -107,6 +200,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       $plugin_definition,
       $container->get('tripal_chado.database'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
+      $container->get('trpcultivate_phenotypes.template_generator'),
+      $container->get('renderer'),
+      $container->get('messenger'),
     );
   }
 
@@ -145,14 +241,14 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
         during the upload process. Please make sure that all trait, method and unit exist in Chado (cvterm)
         before uploading your data file.');
 
-      \Drupal::messenger()->addMessage($allownew_minder);
+      $this->service_Messenger->addMessage($allownew_minder);
     }
 
     // This is a reminder to user about expected phenotypic data.
-    $phenotypes_minder = $this('Phenotypic data should be filtered for outliers and mis-entries before
+    $phenotypes_minder = $this->t('Phenotypic data should be filtered for outliers and mis-entries before
       being uploaded here. Do not upload data that should not be used in the final analysis for a
       scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.');
-    \Drupal::messenger()->addWarning($phenotypes_minder);
+    $this->service_Messenger->addWarning($phenotypes_minder);
 
     // Cacheing of stage number:
     // Cache current stage and id field to allow script to reference this value.
@@ -550,27 +646,66 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   }
 
   /**
-   * {@inheritdoc}
+   * Describe the upload format including column descriptions + template file.
+   *
+   * Class TripalImporterBase is the parent class of this method and additional
+   * documentation is available in reference link below.
+   *
+   * NOTE: This method supports full HTML markup output.
+   *
+   * All relevant information relating to expected column headers and usage
+   * notes are laid out using the theme 'importer_header'. This is rendered
+   * using the referenced TWIG file below.
+   *
+   * A template geneartor service is utilized to provide a downloadable file
+   * template, pre-configured to contain all headers required. The link to
+   * this template file is also formatted using the theme 'importer_header'.
+   *
+   * @return string
+   *   The fully rendered HTML string produced by the 'importer_header' theme
+   *   with the pertinent variables supplied by this method.
+   *
+   * @see Drupal\tripal\TripalImporter\TripalImporterBase::describeUploadFileFormat()
+   * @see templates\trpcultivate-phenotypes-template-importer-header.html.twig
    */
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
-    $column_headers = array_keys($this->headers);
 
-    $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
-      ->generateFile($importer_id, $column_headers);
+    // Only the header names are needed for making the template file, so pull
+    // them out into a new array.
+    $column_headers = array_column($this->headers, 'name');
 
-    // Render the header notes/lists template and use the file link as
+    // File types 'file_types' annotation definition of this importer.
+    // The first item in the definition list will be used as the primary
+    // file extension of the template file.
+    // File MIME type and delimiter are based on mapping information defined
+    // in the validator base and file types validator trait.
+    $file_extensions = $this->plugin_definition['file_types'];
+
+    $file_link = $this->service_FileTemplate
+      ->generateFile($importer_id, $column_headers, $file_extensions);
+
+    // Additional notes to the headers.
+    $notes = $this->t('The order of the above columns is important and your file must include a header!
+    If you have a single trait measured in more than one way (i.e. with multiple collection
+    methods), then you should have one line per collection method with the trait name/description repeated.');
+
+    // Render the header and notes/lists in a template and use the file link as
     // the value to href attribute of the link to download a template file.
+    $supported_file_extensions = implode(', ', $file_extensions);
+
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
+        'file_extensions' => $supported_file_extensions,
+        'notes' => $notes,
         'template_file' => $file_link,
       ],
     ];
 
-    return \Drupal::service('renderer')->render($build);
+    return $this->service_Renderer->renderPlain($build);
   }
 
   /**
