@@ -7,7 +7,7 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
 
 /**
- * Class TripalCultivatePhenotypesTermsService.
+ * Phenotypes terms service.
  */
 class TripalCultivatePhenotypesTermsService {
   /**
@@ -26,22 +26,29 @@ class TripalCultivatePhenotypesTermsService {
 
   /**
    * Module configuration.
+   *
+   * @var config_entity
    */
-  protected $config;
+  private $config;
 
   /**
-   * Holds configuration variable names
-   * and terms it maps to.
+   * Holds configuration variable names and terms it maps to.
+   *
+   * @var array
    */
   private $terms;
 
   /**
    * Configuration hierarchy for configuration: terms.
+   *
+   * @var string
    */
   private $sysvar_terms;
 
   /**
-   * Tripal logger.
+   * Tripal logger service.
+   *
+   * @var Drupal\tripal\Services\TripalLogger
    */
   protected $logger;
 
@@ -74,9 +81,8 @@ class TripalCultivatePhenotypesTermsService {
 
   /**
    * Define terms.
-   * Each term set is defined using the array structure below:
    *
-   * @see config/schema for ontology terms - default_terms
+   * Each term set is defined using the array structure below:
    * Format:
    *   cv - 1 name
    *   cv - 1 definition
@@ -84,7 +90,7 @@ class TripalCultivatePhenotypesTermsService {
    *     config_map // Maps to which configuration variable.
    *     term - 1 name
    *     term - 1 id
-   *     term - 1 definition
+   *     term - 1 definition.
    *
    *     config_map
    *     term - 2 name
@@ -94,21 +100,22 @@ class TripalCultivatePhenotypesTermsService {
    *     ....
    *   ...
    *
+   * @see config/schema
+   *
    * @return array
    *   All configuration entity values keyed by configuration map value.
    */
   public function defineTerms() {
     $terms = [];
 
-    // Fetch all terms in the terms config_entity and prepare an associative array
-    // where each element is keyed by the configuration map value.
+    // Fetch all terms in the terms config_entity and prepare an associative
+    // array where each element is keyed by the configuration map value.
     $default_terms = $this->config->get('trpcultivate.default_terms.term_set');
 
-    // Terms are not available as configuration values until
-    // job to install terms has been executed. This value is null
-    // to start with.
+    // Terms are not available as configuration values until job to install
+    // terms has been executed. This value is null to start with.
     if ($default_terms) {
-      foreach ($default_terms as $i => $cv) {
+      foreach ($default_terms as $cv) {
         foreach ($cv['terms'] as $term_set) {
           // Add the cv information of the term.
           $term_set['cv'] = ['name' => $cv['name'], 'definition' => $cv['definition']];
@@ -131,7 +138,6 @@ class TripalCultivatePhenotypesTermsService {
   public function loadTerms($schema = NULL) {
     $error = 0;
     $terms = $this->terms;
-    $chado = \Drupal::service('tripal_chado.database');
 
     if ($terms) {
       // Install terms.
@@ -210,21 +216,22 @@ class TripalCultivatePhenotypesTermsService {
    *
    * @param string $term_key
    *   The unique identifier for the term of interest. This should be one of:
-   *   data_collector: Data Collector.
-   *   entry: Entry Number/Information.
-   *   genus: Organism.
-   *   location: Location.
-   *   method: Collection Method.
-   *   name: Name/Germplasm line.
-   *   experiment_container: Plot.
-   *   unit_to_method_relationship_type: Related - create relationships (unit - method).
-   *   method_to_trait_relationship_type: Related - create relationships (method - trait).
-   *   experiment_replicate: Planting replicate.
-   *   unit: Unit of measurement.
-   *   experiment_year: Year.
+   *   - data_collector: Data Collector.
+   *   - entry: Entry Number/Information.
+   *   - genus: Organism.
+   *   - location: Location.
+   *   - name: Name/Germplasm line.
+   *   - experiment_container: Plot.
+   *   - unit_to_method_relationship_type: Related - create relationships
+   *     (unit - method).
+   *   - method_to_trait_relationship_type: Related - create relationships
+   *     (method - trait).
+   *   - experiment_replicate: Planting replicate.
+   *   - unit_type: Unit of measurement.
+   *   - experiment_year: Year.
+   *   - trait_to_synonym_relationship_type: Prefered term.
    *
-   * @see schema/trpcultivate_phenotypes.schema.yml for detailed
-   *   description of each configuration variable name.
+   * @see schema/trpcultivate_phenotypes.schema.yml
    *
    * @return int
    *   The chado cvterm_id for the term associated with that key.
@@ -253,11 +260,16 @@ class TripalCultivatePhenotypesTermsService {
    *   variable name and the value being the value as set in
    *   corresponding form field resolved to id number.
    *
-   *   ie: $config_values[name] = 1; // Null term, Already resolved to id number.
-   *   // name configuration variable name is set to Null term.
+   *   For example, the following indicates that the chado.cvterm.cvterm_id for
+   *   the 'name' configuration variable is '1'. This resolves to the 'Null'
+   *   cvterm when that cvterm_id is looked up in the cvterm table.
+   *
+   * @code
+   *   $config_values['name'] = 1;
+   * @endcode
    *
    * @return bool
-   *   True, configuration saved successfully and False on error.
+   *   True if configuration saved successfully and False on error.
    */
   public function saveTermConfigValues($config_values) {
     $error = 0;
