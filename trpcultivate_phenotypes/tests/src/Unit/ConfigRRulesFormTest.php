@@ -18,8 +18,12 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm;
  * @group trpcultivate_phenotypes
  */
 class ConfigRRulesFormTest extends UnitTestCase {
-
-  private $rrulesform;
+  /**
+   * An instance of the R rules configuration form.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm
+   */
+  protected $rrulesform;
 
   /**
    * {@inheritdoc}

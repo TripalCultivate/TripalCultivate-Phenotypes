@@ -1,24 +1,33 @@
 <?php
+
 namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
- /**
-  *  Class definition ConfigOntologyTermsTest.
-  */
+/**
+ * Class definition ConfigOntologyTermsTest.
+ */
 class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
 
+  /**
+   * Default theme.
+   *
+   * @var string
+   */
   protected $defaultTheme = 'stark';
 
   /**
-   * Modules to enabled
+   * Modules to enabled.
    *
    * @var array
    */
-  protected static $modules = ['tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
+  protected static $modules = [
+    'tripal',
+    'tripal_chado',
+    'trpcultivate_phenotypes',
+  ];
 
   /**
    * Admin user with admin privileges.
@@ -30,7 +39,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
   /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
-   * @var ChadoConnection
+   * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
 
@@ -55,7 +64,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // in their contructor.
     $services_to_refresh = [
       'trpcultivate_phenotypes.genus_ontology',
-      'trpcultivate_phenotypes.terms'
+      'trpcultivate_phenotypes.terms',
     ];
     foreach ($services_to_refresh as $service_name) {
       $this->container->set($service_name, NULL);
@@ -72,7 +81,7 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Setup admin user account.
     $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
-      'administer tripal'
+      'administer tripal',
     ]);
 
     // Ensure we see all logging in tests.
@@ -89,11 +98,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $session->pageTextContains('Warning message');
 
     // Tripal Jobs to create/insert terms and setup genus ontology configuration
-    // are created on install of tripalcultivate_phenotypes. The job may execute or not
-    // but this block will create them manually.
+    // are created on install of tripalcultivate_phenotypes. The job may execute
+    // or not but this block will create them manually.
     $test_insert_genus = [
       'Lens',
-      'Cicer'
+      'Cicer',
     ];
 
     $this->chado_connection->insert('1:organism')
@@ -101,17 +110,17 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
       ->values([
         'genus' => $test_insert_genus[0],
         'species' => 'culinaris',
-        'type_id'  => 1
+        'type_id'  => 1,
       ])
       ->values([
         'genus' => $test_insert_genus[0],
         'species' => 'samegenus',
-        'type_id'  => 1
+        'type_id'  => 1,
       ])
       ->values([
         'genus' => $test_insert_genus[1],
         'species' => 'arietinum',
-        'type_id'  => 1
+        'type_id'  => 1,
       ])
       ->execute();
 
@@ -149,22 +158,23 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     // Test setting the same cv value for trait, method and unit in the same
     // genus will trigger an error.
     $j = 0;
-    foreach($genus_ontology as $genus => $vars) {
-      foreach($vars as $i => $config) {
+    foreach ($genus_ontology as $genus => $vars) {
+      foreach ($vars as $i => $config) {
         $fld_name = $genus . '_' . $config;
-        // Test if each genus has a trait, unit, method, db and crop ontology field.
+        // Test if each genus has a trait, unit, method, db and crop ontology
+        // field.
         $session->fieldExists($fld_name);
 
         if ($config == 'database') {
-          $set_val = $test_db_id[ $j ];
+          $set_val = $test_db_id[$j];
           $j++;
         }
         else {
           // Same cv.
-          $set_val = $test_cv_id[ 0 ];
+          $set_val = $test_cv_id[0];
         }
 
-        $values_genusontology[ $fld_name ] = $set_val;
+        $values_genusontology[$fld_name] = $set_val;
       }
     }
 
@@ -173,21 +183,22 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $session->pageTextContains('Error: Controlled Vocabulary (CV) value for Trait, Method and Unit must have unique values');
 
     $j = 0;
-    foreach($genus_ontology as $genus => $vars) {
-      foreach($vars as $i => $config) {
+    foreach ($genus_ontology as $genus => $vars) {
+      foreach ($vars as $i => $config) {
         $fld_name = $genus . '_' . $config;
-        // Test if each genus has a trait, unit, method, db and crop ontology field.
+        // Test if each genus has a trait, unit, method, db and crop ontology
+        // field.
         $session->fieldExists($fld_name);
 
         if ($config == 'database') {
-          $set_val = $test_db_id[ $j ];
+          $set_val = $test_db_id[$j];
           $j++;
         }
         else {
-          $set_val = $test_cv_id[ $i ];
+          $set_val = $test_cv_id[$i];
         }
 
-        $values_genusontology[ $fld_name ] = $set_val;
+        $values_genusontology[$fld_name] = $set_val;
       }
     }
 
@@ -196,16 +207,16 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $session->pageTextContains('The configuration options have been saved.');
 
     $j = 0;
-    foreach($genus_ontology as $genus => $vars) {
-      foreach($vars as $i => $config) {
+    foreach ($genus_ontology as $genus => $vars) {
+      foreach ($vars as $i => $config) {
         $fld_name = $genus . '_' . $config;
 
         if ($config == 'database') {
-          $set_val = $test_db_id[ $j ];
+          $set_val = $test_db_id[$j];
           $j++;
         }
         else {
-          $set_val = $test_cv_id[ $i ];
+          $set_val = $test_cv_id[$i];
         }
 
         $session->fieldValueEquals($fld_name, $set_val);
@@ -236,11 +247,11 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $values_terms = [];
 
     $i = 0;
-    foreach($terms as $config => $prop) {
+    foreach ($terms as $config => $prop) {
       // Test each term has an autocomplete field.
       $session->fieldExists($config);
 
-      $values_terms[ $config ] = $test_cvterms[ $i ];
+      $values_terms[$config] = $test_cvterms[$i];
       $i++;
     }
 
@@ -249,9 +260,10 @@ class ConfigOntologyTermsTest extends ChadoTestBrowserBase {
     $session->pageTextContains('The configuration options have been saved.');
 
     $i = 0;
-    foreach($terms as $config => $prop) {
-      $session->fieldValueEquals($config, $test_cvterms[ $i ]);
+    foreach ($terms as $config => $prop) {
+      $session->fieldValueEquals($config, $test_cvterms[$i]);
       $i++;
     }
   }
+
 }
