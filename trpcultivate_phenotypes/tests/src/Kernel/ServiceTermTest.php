@@ -71,29 +71,6 @@ class ServiceTermTest extends ChadoTestKernelBase {
     $this->installConfig('trpcultivate');
     trpcultivate_install_terms();
 
-    // Install required dependencies.
-    $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
-    $tripal_chado_api = [
-      'tripal_chado.cv.api.php',
-      'tripal_chado.variables.api.php',
-      'tripal_chado.schema.api.php',
-    ];
-
-    if ($handle = opendir($tripal_chado_path)) {
-      while (FALSE !== ($file = readdir($handle))) {
-        if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
-          include_once $tripal_chado_path . $file;
-        }
-      }
-
-      closedir($handle);
-    }
-
-    // Create a test chado instance and then set it in the container for use by
-    // our service.
-    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado_connection);
-
     // Term Service.
     $this->service_PhenoTerms = \Drupal::service('trpcultivate_phenotypes.terms');
     $this->assertNotNull($this->service_PhenoTerms, 'Failed to instantiate Terms Service.');
