@@ -1478,6 +1478,88 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Data Provider for triggering exceptions in checkValidationStatusArray().
+   *
+   * @return array
+   *   Each scenario is an array with the following:
+   *   - The validation status array returned by a single validator and where
+   *     applicable, a single row of the input file (ie. a row-level validator).
+   *     It is expected to contain the following keys:
+   *     - 'case': a developer-focused string describing the case checked.
+   *     - 'valid': FALSE to indicate that validation failed.
+   *     - 'failedItems': An array of items that failed.
+   *   - An array of expectations that we want to find in the resulting rendered
+   *     output. Each array has the following keys:
+   *     - 'expected_exception': TRUE or FALSE if an exception is expected to
+   *       occur for this scenario.
+   *     - 'expected_message': The message expected by the exception
+   *       being triggered.
+   */
+  public function provideFaultyValidationStatusArray() {
+    $scenarios = [];
+
+    // #0: 'failedItems' key is missing.
+    $scenarios[] = [
+      [
+        'case' => 'Case 0',
+        'valid' => FALSE,
+        'failed_items' => [
+          'item' => 'failed',
+        ],
+      ],
+      [
+        'expected_exception' => TRUE,
+        'expected_message' => "Expected to find the key \'failedItems\' in the validation result array.",
+      ],
+    ];
+
+    return $scenarios;
+  }
+
+  /**
+   * Tests the method that checks the integrity of the validation status array.
+   *
+   * @param array $validation_result
+   *   The validation status array returned by a single validator and where
+   *   applicable, a single row of the input file (ie. a row-level validator).
+   *   It is expected to contain the following keys:
+   *   - 'case': a developer-focused string describing the case checked.
+   *   - 'valid': FALSE to indicate that validation failed.
+   *   - 'failedItems': An array of items that failed.
+   * @param array $expectations
+   *   An array of expectations that we want to find in the resulting rendered
+   *   output. Each array has the following keys:
+   *   - 'expected_exception': TRUE or FALSE if an exception is expected to
+   *     occur for this scenario.
+   *   - 'expected_message': The message expected by the exception
+   *     being triggered.
+   *
+   * @dataProvider provideFaultyValidationStatusArray
+   */
+  public function testCheckValidationStatusArray(array $validation_result, array $expectations) {
+
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->importer->checkValidationStatusArray($validation_result);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      $expectations['expected_exception'],
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
+    $this->assertStringContainsString(
+      $expectations['expected_message'],
+      $exception_message,
+      "The exception thrown does not have the message we expected for this scenario.",
+    );
+  }
+
+  /**
    * Data Provider for triggering exceptions in all process failures methods.
    *
    * @return array

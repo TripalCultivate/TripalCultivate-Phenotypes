@@ -857,11 +857,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $keys = ['case', 'valid', 'failedItems'];
     foreach ($keys as $key) {
       if (!array_key_exists($key, $validation_result)) {
-        // @todo Is it possible to provide more details here, such as the
-        // validator that returned this status, row number if applicable?
-        // Alternatively, we can return FALSE here and then throw the exception
-        // where this method is being called? (may have to return the key too)
-        throw new \Exception("Expected to find the key $key in the validation result array.");
+        throw new \Exception("Expected to find the key \'$key\' in the validation result array.");
       }
     }
     // Check that key 'valid' is set to FALSE.
@@ -870,6 +866,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     }
     // Check that 'failedItems' contains a value of type array.
     if (is_array($validation_result['failedItems'])) {
+      // Check that 'failedItems' is not an empty array.
       if ($validation_result['failedItems'] === []) {
         throw new \Exception("Expected the validation result to have content for the key 'failedItems', but it was set to an empty array.");
       }
@@ -908,8 +905,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $this->checkValidationStatusArray($validation_result);
     }
     catch (\Exception $e) {
-      throw new \Exception("The validation result array returned by the GenusExists validator was not formatted correctly. Details: $e");
+      throw new \Exception("The validation result array returned by the GenusExists validator was not formatted correctly. Details: " . $e->getMessage());
     }
+
+    // Check for one of the expected cases.
     if ($validation_result['case'] == 'Genus does not exist') {
       $message = 'The selected genus does not exist in this site. Please contact your administrator to have this added.';
     }
