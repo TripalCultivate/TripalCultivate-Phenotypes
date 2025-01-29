@@ -13,14 +13,14 @@ class TripalCultivatePhenotypesTermsService {
   /**
    * The Chado Buddy cvterm.
    *
-   * @var object
+   * @var Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
    */
   protected object $cvterm_buddy;
 
   /**
    * The Chado Buddy Dbxref.
    *
-   * @var object
+   * @var Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy
    */
   protected object $dbxref_buddy;
 
