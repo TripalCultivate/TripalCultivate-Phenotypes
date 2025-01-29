@@ -1,29 +1,34 @@
 <?php
 
-/**
- * @file
- * Functional test of R Transfomration rules configuration page.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 
- /**
-  *  Class definition ConfigRRulesTest.
-  */
+/**
+ * Class definition ConfigRRulesTest.
+ *
+ * Functional test of R Transfomration rules configuration page.
+ */
 class ConfigRRulesTest extends ChadoTestBrowserBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
 
+  /**
+   * Default theme.
+   *
+   * @var string
+   */
   protected $defaultTheme = 'stark';
 
   /**
-   * Modules to enabled
+   * Modules to enabled.
    *
    * @var array
    */
-  protected static $modules = ['tripal', 'tripal_chado', 'trpcultivate_phenotypes'];
+  protected static $modules = [
+    'tripal',
+    'tripal_chado',
+    'trpcultivate_phenotypes',
+  ];
 
   /**
    * Admin user with admin privileges.
@@ -39,7 +44,7 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
     // Setup admin user account.
     $this->admin_user = $this->drupalCreateUser([
       'administer site configuration',
-      'administer tripal'
+      'administer tripal',
     ]);
 
     // Login admin user.
@@ -59,11 +64,11 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
 
     // Update configuration settings.
     // Updating R rules by appending ok to words rule, # sign to characters rule
-    // and ok = okay match and replace rule
+    // and ok = okay match and replace rule.
     $update_r_rules = [
-      'words' => implode(',', $r_rules[ $config_r . 'words' ]) . ',ok',
-      'chars'  => implode(',', $r_rules[ $config_r . 'chars' ]) . ',#',
-      'replace' => implode(',', $r_rules[ $config_r . 'replace' ]) . ',ok = okay',
+      'words' => implode(',', $r_rules[$config_r . 'words']) . ',ok',
+      'chars'  => implode(',', $r_rules[$config_r . 'chars']) . ',#',
+      'replace' => implode(',', $r_rules[$config_r . 'replace']) . ',ok = okay',
     ];
 
     // Access R rules configuration page.
@@ -75,20 +80,21 @@ class ConfigRRulesTest extends ChadoTestBrowserBase {
 
     // Fields and default value.
     $session->fieldExists('words');
-    $session->fieldValueEquals('words', implode(',', $r_rules[ $config_r. 'words' ]));
+    $session->fieldValueEquals('words', implode(',', $r_rules[$config_r . 'words']));
     $session->fieldExists('chars');
-    $session->fieldValueEquals('chars', implode(',', $r_rules[ $config_r . 'chars' ]));
+    $session->fieldValueEquals('chars', implode(',', $r_rules[$config_r . 'chars']));
     $session->fieldExists('replace');
-    $session->fieldValueEquals('replace', implode(',', $r_rules[ $config_r . 'replace' ]));
+    $session->fieldValueEquals('replace', implode(',', $r_rules[$config_r . 'replace']));
 
     // Update default values.
     $this->submitForm($update_r_rules, 'Save configuration');
 
     // Saved.
     $session->pageTextContains('The configuration options have been saved.');
-    // Values reflect the updated configuration
+    // Values reflect the updated configuration.
     $session->fieldValueEquals('words', $update_r_rules['words']);
     $session->fieldValueEquals('chars', $update_r_rules['chars']);
     $session->fieldValueEquals('replace', $update_r_rules['replace']);
   }
+
 }

@@ -148,10 +148,14 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
         $link_to_docs = Link::fromTextAndUrl($this->t('Tripal 4 User Guide'), $url)
           ->toString();
 
+        $placeholder_values = [
+          '@tripaljobs' => $link_to_jobs,
+          '@tripaldocs' => $link_to_docs,
+        ];
         $config_warning = $this->t('Tripal Cultivate Phenotypes module requires controlled vocabulary terms and genus records
           used for creating terms and genus-ontology module configuration. If you already know how to execute a Tripal Job,
           please proceed with the Tripal Job Id number for Tripal Job titled: Tripal Cultivate Phenotypes: Install Ontology and Terms
-          (@tripaljobs), otherwise, please visit @tripaldocs to learn more about Tripal Jobs.', ['@tripaljobs' => $link_to_jobs, '@tripaldocs' => $link_to_docs]);
+          (@tripaljobs), otherwise, please visit @tripaldocs to learn more about Tripal Jobs.', $placeholder_values);
 
         $this->messenger()->addWarning($config_warning);
         return $form;
@@ -325,9 +329,9 @@ class TripalCultivatePhenotypesOntologySettingsForm extends ConfigFormBase {
     // Render each term as autocomplete field element.
     foreach ($this->config_vars['terms'] as $config => $prop) {
       // Field description.
-      $describe = $this->t($prop['help_text']);
+      $describe = $prop['help_text'];
       // Field placeholder and title text.
-      $placeholder = $title = $this->t(ucwords($prop['name']));
+      $placeholder = $title = ucwords($prop['name']);
       // Field default value.
       $config_value = $this->service_terms->getTermId($config);
       $default_value = ChadoCVTermAutocompleteController::formatCVterm($config_value);

@@ -1,35 +1,35 @@
 <?php
 
-/**
- * @file
- * Functional test of Watermark charts configuration page.
- */
-
 namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
-use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Tests\BrowserTestBase;
-use Drupal\file\Entity\File;
 
 /**
  * Class definition ConfigWatermarkTest.
  *
+ * Functional test of Watermark charts configuration page.
+ *
  * @group trpcultivate_phenotypes_config_watermark
  */
 class ConfigWatermarkTest extends BrowserTestBase {
-  /**
-   * Modules to enabled
-   *
-   * @var array
-   */
-  protected static $modules = ['tripal','tripal_chado','trpcultivate_phenotypes'];
 
   /**
-   * Theme to enable.
+   * Default theme.
    *
    * @var string
    */
   protected $defaultTheme = 'stark';
+
+  /**
+   * Modules to enabled.
+   *
+   * @var array
+   */
+  protected static $modules = [
+    'tripal',
+    'tripal_chado',
+    'trpcultivate_phenotypes',
+  ];
 
   /**
    * Admin user with admin privileges.
@@ -44,8 +44,7 @@ class ConfigWatermarkTest extends BrowserTestBase {
    * NOTE: unable to test file upload field, This test only when
    * choosing not to watermark any charts.
    *
-   * @see unit test and kernel test of this form where file field
-   * and upload are tested.
+   * @see tests/src/unit/ConfigWatermarkFormTest.php
    */
   public function testForm() {
     // Ensure we see all logging in tests.
@@ -54,7 +53,7 @@ class ConfigWatermarkTest extends BrowserTestBase {
     // Setup admin user account.
     $admin_user = $this->drupalCreateUser([
       'administer site configuration',
-      'administer tripal'
+      'administer tripal',
     ]);
 
     // Login admin user.
@@ -67,20 +66,21 @@ class ConfigWatermarkTest extends BrowserTestBase {
     $session->statusCodeEquals(200);
     $session->pageTextContains('Configure Tripal Cultivate Phenotypes: Watermark Chart');
 
+    // Fields and default value.
+    // Field option to watermark which chart is default to 0 - Do not watermark.
+    $session->fieldExists('charts');
+    $session->fieldValueEquals('charts', '0');
+
+    // Watermark image file field is default to empty string.
+    $session->fieldExists('files[file]');
+    $session->elementTextContains('css', '#edit-file-upload', '');
+
     // Update configuration settings.
     // Do not watermark any charts.
     $update_watermark = [
       'charts' => '0',
-      // 'file' => '' test could not detect file field. ??
+      'files[file]' => '',
     ];
-
-    // Fields and default value.
-    $session->fieldExists('charts');
-    $session->fieldValueEquals('charts', '0');
-
-    // Could not seem to find this field in the form.
-    // $session->fieldExists('file');
-    // $session->fieldValueEquals('file', '');
 
     // Submit form.
     $this->submitForm($update_watermark, 'Save configuration');
@@ -93,4 +93,5 @@ class ConfigWatermarkTest extends BrowserTestBase {
 
     $this->drupalLogout();
   }
+
 }
