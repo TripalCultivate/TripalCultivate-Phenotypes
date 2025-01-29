@@ -134,6 +134,9 @@ class TripalCultivatePhenotypesTermsService {
   /**
    * Insert and create term configuration variable.
    *
+   * @param string $schema
+   *   The Chado schema name to use.
+   *
    * @return bool
    *   True if all terms were inserted successfully and false otherwise.
    */
