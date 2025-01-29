@@ -149,7 +149,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     }
 
     // This is a reminder to user about expected phenotypic data.
-    $phenotypes_minder = $this('Phenotypic data should be filtered for outliers and mis-entries before
+    $phenotypes_minder = $this->t('Phenotypic data should be filtered for outliers and mis-entries before
       being uploaded here. Do not upload data that should not be used in the final analysis for a
       scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.');
     \Drupal::messenger()->addWarning($phenotypes_minder);
