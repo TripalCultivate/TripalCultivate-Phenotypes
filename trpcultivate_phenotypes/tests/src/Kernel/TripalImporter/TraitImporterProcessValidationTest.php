@@ -1513,6 +1513,62 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
+    // #1: 'valid' key has been set to TRUE.
+    $scenarios[] = [
+      [
+        'case' => 'Case 1',
+        'valid' => TRUE,
+        'failedItems' => [
+          'item' => 'failed',
+        ],
+      ],
+      [
+        'expected_exception' => TRUE,
+        'expected_message' => "Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed.",
+      ],
+    ];
+
+    // #2: 'failedItems' key contains a value of an empty array.
+    $scenarios[] = [
+      [
+        'case' => 'Case 2',
+        'valid' => FALSE,
+        'failedItems' => [],
+      ],
+      [
+        'expected_exception' => TRUE,
+        'expected_message' => "Expected the validation result to have content for the key 'failedItems', but it was set to an empty array.",
+      ],
+    ];
+
+    // #3: 'failedItems' key contains a value of string, not an array.
+    $scenarios[] = [
+      [
+        'case' => 'Case 3',
+        'valid' => FALSE,
+        'failedItems' => 'item that failed',
+      ],
+      [
+        'expected_exception' => TRUE,
+        'expected_message' => "Expected the validation result to contain an array for the key 'failedItems', but it did not.",
+      ],
+    ];
+
+    // #4: Validation result array not faulty, no exceptions triggered.
+    $scenarios[] = [
+      [
+        'case' => 'Case 4',
+        'valid' => FALSE,
+        'failedItems' => [
+          'item' => 'failed',
+        ],
+      ],
+      [
+        'expected_exception' => FALSE,
+        'expected_message' => 'NONE',
+      ],
+    ];
+
     return $scenarios;
   }
 
