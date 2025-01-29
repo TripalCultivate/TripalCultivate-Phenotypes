@@ -5,6 +5,8 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 
 /**
  * Phenotypes terms service.
@@ -15,14 +17,14 @@ class TripalCultivatePhenotypesTermsService {
    *
    * @var Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
    */
-  protected object $cvterm_buddy;
+  protected ChadoCvtermBuddy $cvterm_buddy;
 
   /**
    * The Chado Buddy Dbxref.
    *
    * @var Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy
    */
-  protected object $dbxref_buddy;
+  protected ChadoDbxrefBuddy $dbxref_buddy;
 
   /**
    * Module configuration.
