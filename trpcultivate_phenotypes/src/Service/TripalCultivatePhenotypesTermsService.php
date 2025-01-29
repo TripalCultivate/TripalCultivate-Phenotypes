@@ -142,6 +142,11 @@ class TripalCultivatePhenotypesTermsService {
     $terms = $this->terms;
 
     if ($terms) {
+      if ($schema) {
+        $this->cvterm_buddy->connection->setSchemaName($schema);
+        $this->dbxref_buddy->connection->setSchemaName($schema);
+      }
+
       // Install terms.
       foreach ($terms as $config_map => $config_prop) {
         [$idspace, $accession] = explode(':', $config_prop['id']);
