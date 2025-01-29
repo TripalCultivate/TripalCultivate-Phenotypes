@@ -59,7 +59,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    // Create a test chado instance and then set it in the container for use by our service.
+    // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
     // Install module configuration.
