@@ -46,7 +46,7 @@ class InstallTest extends ChadoTestBrowserBase {
   protected static $module_machinename = 'trpcultivate_phenoshare';
 
   /**
-   * A small excert from your help page (Do not cross newlines).
+   * A small excerpt from your help page (Do not cross newlines).
    *
    * @var string
    */
