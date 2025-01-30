@@ -273,7 +273,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     }
 
     // Test loadTerms().
-    $is_loaded = $this->service_PhenoTerms->loadTerms();
+    $is_loaded = $this->service_PhenoTerms->loadTerms($this->testSchemaName);
     $this->assertTrue($is_loaded,
       "We expect loadTerms() to return TRUE to indicate it successfully loaded the terms.");
 
