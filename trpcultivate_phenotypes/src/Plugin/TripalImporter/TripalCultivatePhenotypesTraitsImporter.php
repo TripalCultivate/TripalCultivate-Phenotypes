@@ -889,13 +889,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // If any errors were found, throw an exception that includes the number of
     // errors, line number if applicable, and a sentence describing each error.
     if ($errors_found > 0) {
+      $error_message = trim($error_message);
       if ($line_no) {
-        $append_line_no = " at line #$line_no of the input file.";
+        $append_line_no = " at line #$line_no of the input file";
       }
       else {
         $append_line_no = '';
       }
-      throw new \Exception("ERROR: $errors_found problems were found with the validation result array returned by the $validator_name validator$append_line_no. Details: $error_message");
+      throw new \Exception("ERROR: Found $errors_found problem(s) with the validation result array returned by the $validator_name validator$append_line_no. Details: $error_message");
     }
     return TRUE;
   }

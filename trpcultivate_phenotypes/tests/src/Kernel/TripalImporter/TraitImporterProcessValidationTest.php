@@ -1492,8 +1492,9 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *     output. Each array has the following keys:
    *     - 'expected_exception': TRUE or FALSE if an exception is expected to
    *       occur for this scenario.
-   *     - 'expected_message': The message expected by the exception
-   *       being triggered.
+   *     - 'expected_errors': The number of expected problems with the array.
+   *     - 'expected_details': The details in the message expected to be in the
+   *        exception being triggered.
    */
   public function provideFaultyValidationStatusArray() {
     $scenarios = [];
@@ -1509,7 +1510,8 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
       [
         'expected_exception' => TRUE,
-        'expected_message' => "Expected to find the key \'failedItems\' in the validation result array.",
+        'expected_errors' => 1,
+        'expected_details' => "Expected to find the key \'failedItems\' in the validation result array.",
       ],
     ];
 
@@ -1524,7 +1526,8 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
       [
         'expected_exception' => TRUE,
-        'expected_message' => "Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed.",
+        'expected_errors' => 1,
+        'expected_details' => "Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed.",
       ],
     ];
 
@@ -1537,7 +1540,8 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
       [
         'expected_exception' => TRUE,
-        'expected_message' => "Expected the validation result to have content for the key 'failedItems', but it was set to an empty array.",
+        'expected_errors' => 1,
+        'expected_details' => "Expected the validation result to have content for the key 'failedItems', but it was set to an empty array.",
       ],
     ];
 
@@ -1550,14 +1554,29 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
       [
         'expected_exception' => TRUE,
-        'expected_message' => "Expected the validation result to contain an array for the key 'failedItems', but it did not.",
+        'expected_errors' => 1,
+        'expected_details' => "Expected the validation result to contain an array for the key 'failedItems', but it did not.",
       ],
     ];
 
-    // #4: Validation result array not faulty, no exceptions triggered.
+    // #4: Trigger 3 problems at a time.
     $scenarios[] = [
       [
-        'case' => 'Case 4',
+        'CASE' => 'Case 4',
+        'valid' => TRUE,
+        'failedItems' => 'this is a string',
+      ],
+      [
+        'expected_exception' => TRUE,
+        'expected_errors' => 3,
+        'expected_details' => "Expected to find the key \'case\' in the validation result array. Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed. Expected the validation result to contain an array for the key 'failedItems', but it did not.",
+      ],
+    ];
+
+    // #5: Validation result array not faulty, no exceptions triggered.
+    $scenarios[] = [
+      [
+        'case' => 'Case 5',
         'valid' => FALSE,
         'failedItems' => [
           'item' => 'failed',
@@ -1565,7 +1584,8 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
       [
         'expected_exception' => FALSE,
-        'expected_message' => 'NONE',
+        'expected_errors' => 0,
+        'expected_details' => 'NONE',
       ],
     ];
 
@@ -1587,17 +1607,18 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *   output. Each array has the following keys:
    *   - 'expected_exception': TRUE or FALSE if an exception is expected to
    *     occur for this scenario.
-   *   - 'expected_message': The message expected by the exception
-   *     being triggered.
+   *   - 'expected_errors': The number of expected problems with the array.
+   *   - 'expected_details': The details in the message expected to be in the
+   *     exception being triggered.
    *
    * @dataProvider provideFaultyValidationStatusArray
    */
   public function testCheckValidationStatusArray(array $validation_result, array $expectations) {
-
+    $validator_name = 'My Validator';
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->checkValidationStatusArray($validation_result);
+      $this->importer->checkValidationStatusArray($validation_result, $validator_name);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -1608,11 +1629,54 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       $exception_caught,
       "We expected an exception to be caught for this scenario, but one wasn't thrown.",
     );
-    $this->assertStringContainsString(
-      $expectations['expected_message'],
-      $exception_message,
-      "The exception thrown does not have the message we expected for this scenario.",
+    // Check that the exception message is prepended with a message specifying
+    // validator name and number of problems.
+    if ($expectations['expected_exception']) {
+      $this->assertStringStartsWith(
+        "ERROR: Found " . $expectations['expected_errors'] . " problem(s) with the validation result array",
+        $exception_message,
+        "The exception thrown does not contain the number of errors we expected for this scenario.",
+
+      );
+      $this->assertStringContainsString(
+        "validation result array returned by the $validator_name validator.",
+        $exception_message,
+        "The exception thrown does not contain the validator name within it for this scenario."
+      );
+      // Now check for our expected details to be in the message.
+      $this->assertStringEndsWith(
+        $expectations['expected_details'],
+        $exception_message,
+        "The exception thrown does not have the message we expected for this scenario.",
+      );
+    }
+
+    // Now, check the array again but this time provide a line number.
+    $line_no = 5;
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->importer->checkValidationStatusArray(
+        $validation_result,
+        $validator_name,
+        $line_no);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      $expectations['expected_exception'],
+      $exception_caught,
+      "We expected an exception to be caught for this scenario when a line number was specified, but one wasn't thrown.",
     );
+    if ($expectations['expected_exception']) {
+      $this->assertStringContainsString(
+        "returned by the $validator_name validator at line #5 of the input file.",
+        $exception_message,
+        "The exception thrown does not contain the correct line number within it for this scenario."
+      );
+    }
   }
 
   /**
