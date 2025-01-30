@@ -51,7 +51,7 @@ class InstallTest extends ChadoTestBrowserBase {
    *
    * @var string
    */
-  protected static $help_text_excerpt = 'tools to backup and upload phenotypic data while it is being collected in a access controlled environment.';
+  protected static $help_text_excerpt = 'tools to backup and upload phenotypic data while it is being collected in an access controlled environment.';
 
   /**
    * Tests that a specific set of pages load with a 200 response.
