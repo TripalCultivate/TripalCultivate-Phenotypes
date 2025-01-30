@@ -839,40 +839,63 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   - 'valid': FALSE to indicate that validation failed.
    *   - 'failedItems': an array of items that failed which is specific to the
    *     validator.
+   * @param string $validator_name
+   *   The name of the validator that produced the validation_result array.
+   * @param int|null $line_no
+   *   The line number in the input file that triggered the failed validation
+   *   status.
    *
    * @return bool
    *   Returns TRUE if the validation_result array is compliant and ready for
    *   processing, FALSE otherwise.
    *
    * @throws \Exception
-   *   - If the validation_result array does not contain one of the following
+   *   If any one or more of the following occur:
+   *   - The validation_result array does not contain one of the following
    *     keys: 'case', 'valid', 'failedItems'.
-   *   - If the value for 'valid' is not FALSE, indicating it was not properly
+   *   - The value for 'valid' is not FALSE, indicating it was not properly
    *     set to be a failed validation status.
-   *   - If the value for 'failedItems' is not an array.
-   *   - If the value for 'failedItems' is an empty array.
+   *   - The value for 'failedItems' is not an array.
+   *   - The value for 'failedItems' is an empty array.
    */
-  public function checkValidationStatusArray(array $validation_result) {
+  public function checkValidationStatusArray(array $validation_result, string $validator_name, int|null $line_no = NULL) {
+    $error_message = '';
+    $errors_found = 0;
     // Check for validation status keys: 'case', 'valid', 'failedItems'.
     $keys = ['case', 'valid', 'failedItems'];
     foreach ($keys as $key) {
       if (!array_key_exists($key, $validation_result)) {
-        throw new \Exception("Expected to find the key \'$key\' in the validation result array.");
+        $errors_found++;
+        $error_message .= "Expected to find the key \'$key\' in the validation result array. ";
       }
     }
     // Check that key 'valid' is set to FALSE.
-    if ($validation_result['valid'] !== FALSE) {
-      throw new \Exception("Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed.");
+    if (array_key_exists('valid', $validation_result) && ($validation_result['valid'] !== FALSE)) {
+      $errors_found++;
+      $error_message .= "Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed. ";
     }
-    // Check that 'failedItems' contains a value of type array.
-    if (is_array($validation_result['failedItems'])) {
+    if (array_key_exists('failedItems', $validation_result)) {
+      // Check that 'failedItems' contains a value of type array.
+      if (!is_array($validation_result['failedItems'])) {
+        $errors_found++;
+        $error_message .= "Expected the validation result to contain an array for the key 'failedItems', but it did not. ";
+      }
       // Check that 'failedItems' is not an empty array.
-      if ($validation_result['failedItems'] === []) {
-        throw new \Exception("Expected the validation result to have content for the key 'failedItems', but it was set to an empty array.");
+      elseif ($validation_result['failedItems'] === []) {
+        $errors_found++;
+        $error_message .= "Expected the validation result to have content for the key 'failedItems', but it was set to an empty array. ";
       }
     }
-    else {
-      throw new \Exception("Expected the validation result to contain an array for the key 'failedItems', but it did not.");
+    // If any errors were found, throw an exception that includes the number of
+    // errors, line number if applicable, and a sentence describing each error.
+    if ($errors_found > 0) {
+      if ($line_no) {
+        $append_line_no = " at line #$line_no of the input file.";
+      }
+      else {
+        $append_line_no = '';
+      }
+      throw new \Exception("ERROR: $errors_found problems were found with the validation result array returned by the $validator_name validator$append_line_no. Details: $error_message");
     }
     return TRUE;
   }
