@@ -3,26 +3,35 @@
 namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 
 /**
  * Phenotypes terms service.
  */
 class TripalCultivatePhenotypesTermsService {
   /**
-   * Configuration.
+   * The Chado Buddy cvterm.
+   *
+   * @var Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
+   */
+  protected ChadoCvtermBuddy $cvterm_buddy;
+
+  /**
+   * The Chado Buddy Dbxref.
+   *
+   * @var Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy
+   */
+  protected ChadoDbxrefBuddy $dbxref_buddy;
+
+  /**
+   * Module configuration.
    *
    * @var config_entity
    */
   private $config;
-
-  /**
-   * A Database query interface for querying Chado using Tripal DBX.
-   *
-   * @var \Drupal\tripal_chado\Database\ChadoConnection
-   */
-  protected ChadoConnection $chado_connection;
 
   /**
    * Holds configuration variable names and terms it maps to.
@@ -51,7 +60,7 @@ class TripalCultivatePhenotypesTermsService {
   public function __construct(
     ConfigFactoryInterface $config_factory,
     TripalLogger $logger,
-    ChadoConnection $chado,
+    ChadoBuddyPluginManager $buddy_manager,
   ) {
     // Configuration terms.
     $this->sysvar_terms = 'trpcultivate.phenotypes.ontology.terms';
@@ -63,8 +72,10 @@ class TripalCultivatePhenotypesTermsService {
     // Tripal Logger service.
     $this->logger = $logger;
 
-    // Chado database.
-    $this->chado_connection = $chado;
+    // Chado cvterm buddy.
+    $this->cvterm_buddy = $buddy_manager->createInstance('chado_cvterm_buddy', []);
+    // Chado dbxref buddy.
+    $this->dbxref_buddy = $buddy_manager->createInstance('chado_dbxref_buddy', []);
 
     // Prepare array of default terms from configuration definition.
     $this->terms = $this->defineTerms();
@@ -123,6 +134,9 @@ class TripalCultivatePhenotypesTermsService {
   /**
    * Insert and create term configuration variable.
    *
+   * @param string $schema
+   *   The Chado schema name to use.
+   *
    * @return bool
    *   True if all terms were inserted successfully and false otherwise.
    */
@@ -131,27 +145,54 @@ class TripalCultivatePhenotypesTermsService {
     $terms = $this->terms;
 
     if ($terms) {
+      if ($schema) {
+        $this->cvterm_buddy->connection->setSchemaName($schema);
+        $this->dbxref_buddy->connection->setSchemaName($schema);
+      }
+
       // Install terms.
       foreach ($terms as $config_map => $config_prop) {
-        // Remove cv information.
-        unset($config_prop['cv']);
-        // Remove term field_label text.
-        unset($config_prop['field_label']);
-
         [$idspace, $accession] = explode(':', $config_prop['id']);
-        $query = $this->chado_connection->select('1:cvterm', 'cvt')
-          ->fields('cvt', ['cvterm_id']);
-        $query->join('1:dbxref', 'dbx', 'cvt.dbxref_id = dbx.dbxref_id');
-        $query->join('1:db', 'db', 'dbx.db_id = db.db_id');
-        $query = $query->condition('dbx.accession', $accession, '=')
-          ->condition('db.name', $idspace, '=');
-        $exists = $query->execute()->fetchObject();
-        if (empty($exists)) {
-          $cvterm = chado_insert_cvterm($config_prop, [], $schema);
-          $cvterm_id = $cvterm->cvterm_id;
+
+        // Insert the cvterm only if both cv and db exist.
+        // Check that the cv name exists.
+        $cv_name = $config_prop['cv']['name'];
+        $cv_exists = $this->cvterm_buddy->getCv(['cv.name' => $cv_name], []);
+        if (empty($cv_exists)) {
+          // Create the cv.
+          $this->cvterm_buddy->upsertCv(['cv.name' => $cv_name], []);
+        }
+
+        // Check that the db (idspace) exists.
+        $db_exists = $this->dbxref_buddy->getDb(['db.name' => $idspace], []);
+        if (empty($db_exists)) {
+          // Create the db.
+          $this->dbxref_buddy->upsertDb(['db.name' => $idspace], []);
+        }
+
+        $term_values = [
+          'db.name' => $idspace,
+          'cv.name' => $config_prop['cv']['name'],
+          'dbxref.accession' => $accession,
+          'cvterm.name' => $config_prop['name'],
+          'cvterm.definition' => $config_prop['definition'],
+        ];
+
+        $cvterm_exists = $this->cvterm_buddy->getCvterm(
+          [
+            'cv.name' => $term_values['cv.name'],
+            'cvterm.name' => $term_values['cvterm.name'],
+          ],
+          []
+        );
+
+        if (empty($cvterm_exists)) {
+          // Create the cv.
+          $chado_cvterm_record = $this->cvterm_buddy->upsertCvterm($term_values, []);
+          $cvterm_id = $chado_cvterm_record->getValue('cvterm.cvterm_id');
         }
         else {
-          $cvterm_id = $exists->cvterm_id;
+          $cvterm_id = $cvterm_exists[0]->getValue('cvterm.cvterm_id');
         }
 
         // Set the term id as the configuration value of the

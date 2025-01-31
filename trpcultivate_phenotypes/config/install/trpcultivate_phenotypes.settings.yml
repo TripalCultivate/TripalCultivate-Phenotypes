@@ -162,7 +162,7 @@ trpcultivate:
             help_text: 'Metadata tagged with this term indicates the name of the germplasm or line.'
       -
         name: AGRO
-        definition: 'Agricultural experiment plot'
+        definition: 'Agronimic Ontology'
         terms:
           -
             config_map: experiment_container

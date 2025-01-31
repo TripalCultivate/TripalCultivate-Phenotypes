@@ -28,8 +28,11 @@ class ServiceTermTest extends ChadoTestKernelBase {
    * @var array
    */
   protected static $modules = [
+    'system',
     'tripal',
+    'tripal_layout',
     'tripal_chado',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -56,32 +59,17 @@ class ServiceTermTest extends ChadoTestKernelBase {
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
+    // Create a test chado instance as needed by our service.
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
-    // Install required dependencies.
-    $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
-    $tripal_chado_api = [
-      'tripal_chado.cv.api.php',
-      'tripal_chado.variables.api.php',
-      'tripal_chado.schema.api.php',
-    ];
+    $this->prepareEnvironment(['TripalTerm']);
 
-    if ($handle = opendir($tripal_chado_path)) {
-      while (FALSE !== ($file = readdir($handle))) {
-        if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
-          include_once $tripal_chado_path . $file;
-        }
-      }
-
-      closedir($handle);
-    }
-
-    // Create a test chado instance and then set it in the container for use by
-    // our service.
-    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado_connection);
+    $this->installConfig('trpcultivate');
+    trpcultivate_install_terms();
 
     // Term Service.
     $this->service_PhenoTerms = \Drupal::service('trpcultivate_phenotypes.terms');
@@ -285,7 +273,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     }
 
     // Test loadTerms().
-    $is_loaded = $this->service_PhenoTerms->loadTerms();
+    $is_loaded = $this->service_PhenoTerms->loadTerms($this->testSchemaName);
     $this->assertTrue($is_loaded,
       "We expect loadTerms() to return TRUE to indicate it successfully loaded the terms.");
 
