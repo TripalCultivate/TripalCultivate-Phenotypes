@@ -1,6 +1,8 @@
 <?php
+
 namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
+use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
@@ -13,6 +15,11 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
  */
 class InstallTest extends ChadoTestBrowserBase {
 
+  /**
+   * Default theme.
+   *
+   * @var string
+   */
   protected $defaultTheme = 'stark';
 
   /**
@@ -20,28 +27,36 @@ class InstallTest extends ChadoTestBrowserBase {
    *
    * @var array
    */
-  protected static $modules = ['help', 'trpcultivate_phenotypes'];
+  protected static $modules = [
+    'help',
+    'trpcultivate_phenotypes',
+  ];
 
   /**
-   * The name of your module in the .info.yml
+   * The name of your module in the .info.yml.
+   *
+   * @var string
    */
   protected static $module_name = 'Phenotypic Data API';
 
   /**
    * The machine name of this module.
+   *
+   * @var string
    */
   protected static $module_machinename = 'trpcultivate_phenotypes';
 
   /**
-   * A small excert from your help page.
-   * Do not cross newlines.
+   * A small excert from your help page (Do not cross newlines).
+   *
+   * @var string
    */
   protected static $help_text_excerpt = 'pports collecting all data for a specific trait (e.g. Plant Height) into a single page while still fully describing methodology and units for accurate analysis.';
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
-   * @var ChadoConnection
+   * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
 
@@ -74,7 +89,7 @@ class InstallTest extends ChadoTestBrowserBase {
     $this->drupalGet('admin/modules');
     $status_code = $session->getStatusCode();
     $this->assertEquals(200, $status_code, "The module install page should be able to load $context.");
-    $this->assertSession()->pageTextContains( self::$module_name );
+    $this->assertSession()->pageTextContains(self::$module_name);
   }
 
   /**
@@ -94,7 +109,7 @@ class InstallTest extends ChadoTestBrowserBase {
 
     // Call the hook to ensure it is returning text.
     $name = 'help.page.' . $this::$module_machinename;
-    $match = $this->createStub(\Drupal\Core\Routing\RouteMatch::class);
+    $match = $this->createStub(RouteMatch::class);
     $hook_name = self::$module_machinename . '_help';
     $output = $hook_name($name, $match);
     $this->assertNotEmpty($output, "The help hook should return output $context.");
@@ -110,4 +125,5 @@ class InstallTest extends ChadoTestBrowserBase {
     $this->assertEquals(200, $status_code, "The module help page should be able to load $context.");
     $this->assertSession()->pageTextContains($some_extected_text);
   }
+
 }

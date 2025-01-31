@@ -1,15 +1,19 @@
 <?php
+
 namespace Drupal\Tests\trpcultivate_phenotypes\Traits;
 
 use Drupal\file\Entity\File;
 use Drupal\tripal_chado\Database\ChadoConnection;
 
+/**
+ * Phenotypes test trait.
+ */
 trait PhenotypeImporterTestTrait {
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
-   * @var ChadoConnection
+   * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
 
@@ -41,10 +45,11 @@ trait PhenotypeImporterTestTrait {
    *        - name:
    *   If an id is supplied then no records will be added into the test chado.
    *   If an id is supplied but no name then the name will be looked up.
-   *   If a name is provided but no id then the record will be created with that name.
+   *   If a name is provided but no id then the record will be created with
+   *   that name.
    *   If nothing is supplied then a random name will be created.
    *
-   * @return
+   * @return array
    *   An array similar to $details but will all values filled out.
    */
   public function setOntologyConfig(string $genus, array $details = []) {
@@ -55,7 +60,7 @@ trait PhenotypeImporterTestTrait {
       'unit' => 'cv_id',
       'method' => 'cv_id',
       'crop_ontology' => 'cv_id',
-      'database' => 'db_id'
+      'database' => 'db_id',
     ];
     foreach ($reference as $key => $id_column) {
       $table = ($id_column == 'cv_id') ? 'cv' : 'db';
@@ -67,7 +72,7 @@ trait PhenotypeImporterTestTrait {
 
       // Now we will want to set the name.
       // -- no name but we have the id.
-      if (empty($details[$key]['name']) AND !empty($details[$key][$id_column])) {
+      if (empty($details[$key]['name']) and !empty($details[$key][$id_column])) {
         $table = ($id_column == 'cv_id') ? 'cv' : 'db';
         $id = $details[$key][$id_column];
         $name = $this->chado_connection->select("1:$table", 'tbl')
@@ -80,7 +85,7 @@ trait PhenotypeImporterTestTrait {
         $details[$key]['name'] = $name;
       }
       // -- no id but we have the name.
-      elseif (!empty($details[$key]['name']) AND empty($details[$key][$id_column])) {
+      elseif (!empty($details[$key]['name']) and empty($details[$key][$id_column])) {
         $name = $details[$key]['name'];
         $id = $this->chado_connection->select("1:$table", 'tbl')
           ->fields('tbl', [$id_column])
@@ -94,7 +99,7 @@ trait PhenotypeImporterTestTrait {
 
       // -- we still don't have the id so create one.
       if (empty($details[$key][$id_column])) {
-        // set the name if it's not already.
+        // Set the name if it's not already.
         $details[$key]['name'] = $details[$key]['name'] ?: $genus . ' ' . $key . uniqid();
         $name = $details[$key]['name'];
         $id = $this->chado_connection->insert("1:$table")
@@ -142,13 +147,14 @@ trait PhenotypeImporterTestTrait {
       if (!array_key_exists($key, $terms)) {
         $terms[$key] = 0;
       }
-      // If the term value is not set, then choose a random integer between 10 - 300.
-      // We know there are at least 300 terms in the cvterm table so this is pretty safe.
-      if(empty($terms[$key])) {
-        $terms[$key] = random_int(10,300);
+      // If the term value is not set, then choose a random integer
+      // between 10 - 300. We know there are at least 300 terms in
+      // the cvterm table so this is pretty safe.
+      if (empty($terms[$key])) {
+        $terms[$key] = random_int(10, 300);
       }
 
-      // Now set the configuration
+      // Now set the configuration.
       $config->set("trpcultivate.phenotypes.ontology.terms.$key", $terms[$key]);
     }
 
@@ -175,8 +181,9 @@ trait PhenotypeImporterTestTrait {
    *         Either 'none' for unreadable or the octet (see chmod)
    *         0600: read + write for owner, nothing for everyone else
    *         0644: read + write for owner, read only for everyone else
-   *         0777: read + write + execute for everyone
-   * @return File
+   *         0777: read + write + execute for everyone.
+   *
+   * @return \Drupal\file\Entity\File
    *   The Drupal managed file object created.
    */
   protected function createTestFile($details) {
@@ -204,14 +211,14 @@ trait PhenotypeImporterTestTrait {
     $file_id = $file->id();
     $file_uri = $file->getFileUri();
 
-    // If a test file fixture was provided, create a copy and set this file copy as
-    // the file uri value in the file object for this test file.
+    // If a test file fixture was provided, create a copy and set this file copy
+    // as the file uri value in the file object for this test file.
     if (array_key_exists('file', $details['content']) && !empty($details['content']['file'])) {
       $path_to_file_fixture = __DIR__ . '/../Fixtures/' . $details['content']['file'];
 
       $this->assertFileIsReadable(
         $path_to_file_fixture,
-        'Unable to setup FILE ' . $file_id . ' because cannot access Fixture file at ' .  $path_to_file_fixture
+        'Unable to setup FILE ' . $file_id . ' because cannot access Fixture file at ' . $path_to_file_fixture
       );
 
       copy($path_to_file_fixture, $file_uri);
@@ -223,7 +230,6 @@ trait PhenotypeImporterTestTrait {
     }
 
     // Set other file attributes:
-
     // Set the size of the file.
     // This is usually used if the file is empty in which case this is 0.
     if (isset($details['filesize'])) {
@@ -260,4 +266,5 @@ trait PhenotypeImporterTestTrait {
 
     return $file;
   }
+
 }

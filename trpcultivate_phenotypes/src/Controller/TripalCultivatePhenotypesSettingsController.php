@@ -1,35 +1,62 @@
 <?php
 
-/**
- * @file
- * Controller to display a dashboard page that houses links and descriptions
- * to configuration pages.
- */
-
 namespace Drupal\trpcultivate_phenotypes\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Url;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Class definition TripalCultivatePhenotypesSettingsController.
+ *
+ * Controller to display a dashboard page that houses links and descriptions
+ * to configuration pages.
  */
 class TripalCultivatePhenotypesSettingsController extends ControllerBase {
 
   /**
-   * Returns a markup of details (fieldset) where the
-   * the title of the element is the configuration section and
-   * expanding each will reveal a short description.
+   * Module hander service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $module_handler;
+
+  /**
+   * Constructor.
+   *
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler service.
+   */
+  public function __construct(ModuleHandlerInterface $module_handler) {
+    $this->module_handler = $module_handler;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('module_handler')
+    );
+  }
+
+  /**
+   * Provides an administrative list of phenotypes configuration pages.
+   *
+   * @return array
+   *   A render array consisting of a details element for each configuration
+   *   page where the title is the configuration section and the contents
+   *   include a short description plus a link.
    */
   public function loadPage() {
-    // Quick enabled or disabled status of sub-phenotypes modules
-    // and report to dashboard.
-    $moduleHandler = \Drupal::service('module_handler');
+    // Quick enabled or disabled status of sub-phenotypes modules and report
+    // to dashboard.
     $status_message = 'Tripal Cultivate Phenotypes Modules Status: ';
 
-    foreach(['trpcultivate_phenoshare', 'trpcultivate_phenocollect'] as $m) {
-      $is_enabled = ($moduleHandler->moduleExists($m)) ? 'is enabled' : 'is disabled';
+    foreach (['trpcultivate_phenoshare', 'trpcultivate_phenocollect'] as $m) {
+      $is_enabled = ($this->module_handler->moduleExists($m)) ? 'is enabled' : 'is disabled';
       $status_message .= '*' . $m . ' ' . $is_enabled . ' ';
     }
 
@@ -37,8 +64,7 @@ class TripalCultivatePhenotypesSettingsController extends ControllerBase {
     $link = Link::fromTextAndUrl('Manage Modules', $url)
       ->toString();
 
-    $this->messenger()->addStatus($this->t($status_message . '- @manage', ['@manage' => $link]));
-
+    $this->messenger()->addStatus($status_message . ' - ' . $link);
 
     // Describe R Rules configuration:
     $url = Url::fromRoute('trpcultivate_phenotypes.settings_r');
@@ -90,4 +116,5 @@ class TripalCultivatePhenotypesSettingsController extends ControllerBase {
 
     return $element;
   }
+
 }
