@@ -925,12 +925,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    */
   public function processGenusExistsFailures(array $validation_result) {
     // Check the format of the validation_result parameter.
-    try {
-      $this->checkValidationStatusArray($validation_result);
-    }
-    catch (\Exception $e) {
-      throw new \Exception("The validation result array returned by the GenusExists validator was not formatted correctly. Details: " . $e->getMessage());
-    }
+    $this->checkValidationStatusArray($validation_result, 'GenusExists');
 
     // Check for one of the expected cases.
     if ($validation_result['case'] == 'Genus does not exist') {
