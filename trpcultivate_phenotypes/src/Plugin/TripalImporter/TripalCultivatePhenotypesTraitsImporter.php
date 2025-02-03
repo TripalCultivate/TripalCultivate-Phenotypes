@@ -1371,6 +1371,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $table['rows'] = [];
 
     foreach ($failures as $line_no => $validation_result) {
+      // Check the format of the validation_result parameter.
+      $this->checkValidationStatusArray($validation_result, 'ValueInList');
+      // Check for the expected failed case message.
       if ($validation_result['case'] == 'Invalid value(s) in required column(s)') {
         $table['message'] = 'The following line number and column combinations did not contain one of the following allowed values: "' . implode('", "', $expected_values) . '". Note that values should be case sensitive. <strong>If any cell in the table below is empty, then the value given in the file for that cell was one of the allowed values.</strong>';
 
@@ -1392,6 +1395,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           // compiled into a single row.
           $table['rows'][$line_no][$index] = $failed_value;
         }
+      }
+      elseif ($validation_result['case'] == 'Values in required column(s) are valid') {
+        throw new \Exception('The case string returned by the ValueInList validator implies validation passed, but valid is set to FALSE.');
+      }
+      else {
+        throw new \Exception('The case string returned by the ValueInList validator is not recognized as a potential case.');
       }
     }
 

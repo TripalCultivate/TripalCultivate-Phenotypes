@@ -1719,28 +1719,67 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
 
     $unrecognized_case_string = 'unrecognizable case';
 
-    // #0: GenusExists passed + unrecognizable validation case message
+    // #0: GenusExists passed + unrecognizable validation case message.
     $scenarios[] = [
       'processGenusExistsFailures',
       [
-        'validation_result' => [
-          'case' => 'Genus exists and is configured with phenotypes',
-          'valid' => FALSE,
-          'failedItems' => [
-            'genus_provided' => 'Tripalus',
+        'process_method_params' => [
+          [
+            'case' => 'Genus exists and is configured with phenotypes',
+            'valid' => FALSE,
+            'failedItems' => [
+              'genus_provided' => 'Tripalus',
+            ],
           ],
         ],
         'expected_message' => 'The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.',
       ],
       [
-        'validation_result' => [
-          'case' => $unrecognized_case_string,
-          'valid' => FALSE,
-          'failedItems' => [
-            'genus_provided' => 'Tripalus',
+        'process_method_params' => [
+          [
+            'case' => $unrecognized_case_string,
+            'valid' => FALSE,
+            'failedItems' => [
+              'genus_provided' => 'Tripalus',
+            ],
           ],
         ],
         'expected_message' => 'The case string returned by the GenusExists validator is not recognized as a potential case.',
+      ],
+    ];
+
+    // #1: ValueInList passed + unrecognizable validation case message.
+    $scenarios[] = [
+      'processValueInListFailures',
+      [
+        'process_method_params' => [
+          [
+            2 => [
+              'case' => 'Values in required column(s) are valid',
+              'valid' => FALSE,
+              'failedItems' => [
+                5 => 'Invalid value',
+              ],
+            ],
+          ],
+          ['Quantitative, Qualitative'],
+        ],
+        'expected_message' => 'The case string returned by the ValueInList validator implies validation passed, but valid is set to FALSE.',
+      ],
+      [
+        'process_method_params' => [
+          [
+            3 => [
+              'case' => $unrecognized_case_string,
+              'valid' => FALSE,
+              'failedItems' => [
+                5 => 'Invalid value',
+              ],
+            ],
+          ],
+          ['Quantitative, Qualitative'],
+        ],
+        'expected_message' => 'The case string returned by the ValueInList validator is not recognized as a potential case.',
       ],
     ];
 
@@ -1788,7 +1827,14 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->$process_method($passed_case['validation_result']);
+      // The code below is essentially the same as:
+      // @code
+      // $this->importer->$process_method($passed_case['process_method_params'][0]);
+      // @endcode
+      // When there is only 1 parameter. But this code also seemlessly handles
+      // any number of additional parameters.
+      $process_method_callable = [$this->importer, $process_method];
+      call_user_func_array($process_method_callable, $passed_case['process_method_params']);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -1808,7 +1854,8 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->$process_method($unrecognized_case['validation_result']);
+      $process_method_callable = [$this->importer, $process_method];
+      call_user_func_array($process_method_callable, $unrecognized_case['process_method_params']);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
