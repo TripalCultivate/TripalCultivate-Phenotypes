@@ -1683,60 +1683,146 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    * Data Provider for triggering exceptions in all process failures methods.
    *
    * @return array
-   *   Each scenario is an array with the following:
-   *   - A list of validator names that this scenario will be run for.
-   *   - The failures array that gets passed to the process method. It contains
-   *     the following keys:
-   *     - [ROW-LEVEL ONLY] The line number that triggered this failed
-   *       validation status. This key is not set for non row-level validators.
-   *       - 'case': a developer-focused string describing the case checked.
-   *       - 'valid': FALSE to indicate that validation failed.
-   *       - 'failedItems': array of items that failed with the following keys:
-   *         - 'combo_provided': The combination of trait, method, and unit
-   *           provided in the file. The keys used are the same name of the
-   *           column header for the cell containing the failed value.
-   *           - 'Trait Name': The trait name provided in the file.
-   *           - 'Method Short Name': The method name provided in the file.
-   *           - 'Unit': The unit provided in the file.
-   *   - An array of expectations that we want to find in the resulting rendered
-   *     output. Each array has the following keys:
-   *     - 'expected_exception_message': The message expected by the exception
-   *       being triggered.
+   *   Each scenario is an array of 2 arrays, one for testing a passed case
+   *   string and one for an unrecognizable case string with the process
+   *   validation method for this validator.
+   *   - Passed validation case:
+   *     - 'validation_result': The failures array that gets passed to the
+   *       process method. It contains the following keys:
+   *       - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *         validation status. This key is NOT set for non row-level
+   *         validators.
+   *         - 'case': a developer-focused string describing a case of passed
+   *           validation.
+   *         - 'valid': FALSE to indicate that validation failed.
+   *         - 'failedItems': array of items that failed consistent with the
+   *         validator in this scenario.
+   *     - 'expected_message': The expected exception message to be triggered
+   *       by the case message that indicates passed validation.
+   *   - Unrecognized validation case:
+   *     - 'validation_result': The failures array that gets passed to the
+   *       process method. It contains the following keys:
+   *       - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *         validation status. This key is NOT set for non row-level
+   *         validators.
+   *         - 'case': a string that is NOT one of the available case strings
+   *           returned by this validator (pass or fail).
+   *         - 'valid': FALSE to indicate that validation failed.
+   *         - 'failedItems': array of items that failed consistent with the
+   *         validator in this scenario.
+   *     - 'expected_message': The expected exception message to be triggered
+   *       by the case message that is not recognized by the process validation
+   *       method for this validator.
    */
-  public function provideProcessFailuresExceptions() {
+  public function providePassedAndUnrecognizableCases() {
     $scenarios = [];
 
-    // #0: GenusExists passed validation case message
-    $scenarios[] = [
-      ['GenusExists'],
-      [
-        'case' => 'Genus exists and is configured with phenotypes',
-        'valid' => FALSE,
-        'failedItems' => [
-          'genus_provided' => 'Tripalus',
-        ],
-      ],
-      [
-        'expected_exception_message' => 'The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.',
-      ],
-    ];
+    $unrecognized_case_string = 'unrecognizable case';
 
-    // #1: Unrecognized validation case message
+    // #0: GenusExists passed + unrecognizable validation case message
     $scenarios[] = [
-      ['GenusExists'],
+      'processGenusExistsFailures',
       [
-        'case' => 'Unrecognizable',
-        'valid' => FALSE,
-        'failedItems' => [
-          'genus_provided' => 'Tripalus',
+        'validation_result' => [
+          'case' => 'Genus exists and is configured with phenotypes',
+          'valid' => FALSE,
+          'failedItems' => [
+            'genus_provided' => 'Tripalus',
+          ],
         ],
+        'expected_message' => 'The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.',
       ],
       [
-        'expected_exception_message' => 'The case string returned by the GenusExists validator implies validation passed, but valid is set to FALSE.',
+        'validation_result' => [
+          'case' => $unrecognized_case_string,
+          'valid' => FALSE,
+          'failedItems' => [
+            'genus_provided' => 'Tripalus',
+          ],
+        ],
+        'expected_message' => 'The case string returned by the GenusExists validator is not recognized as a potential case.',
       ],
     ];
 
     return $scenarios;
+  }
+
+  /**
+   * Tests for exceptions thrown for passed and unrecognizable case strings.
+   *
+   * @param string $process_method
+   *   The name of the process failures method being called.
+   * @param array $passed_case
+   *   An array with the following keys:
+   *   - 'validation_result': The failures array that gets passed to the
+   *     process method. It contains the following keys:
+   *     - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *       validation status. This key is NOT set for non row-level validators.
+   *       - 'case': a developer-focused string describing a case of passed
+   *         validation.
+   *       - 'valid': FALSE to indicate that validation failed.
+   *       - 'failedItems': array of items that failed consistent with the
+   *         validator in this scenario.
+   *   - 'expected_message': The expected exception message to be triggered
+   *     by the case message that indicates passed validation.
+   * @param array $unrecognized_case
+   *   An array with the following keys:
+   *   - 'validation_result': The failures array that gets passed to the
+   *     process method. It contains the following keys:
+   *     - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *       validation status. This key is NOT set for non row-level
+   *       validators.
+   *       - 'case': a string that is NOT one of the available case strings
+   *         returned by this validator (pass or fail).
+   *       - 'valid': FALSE to indicate that validation failed.
+   *       - 'failedItems': array of items that failed consistent with the
+   *         validator in this scenario.
+   *   - 'expected_message': The expected exception message to be triggered
+   *     by the case message that is not recognized by the process validation
+   *     method for this validator.
+   *
+   * @dataProvider providePassedAndUnrecognizableCases
+   */
+  public function testProcessFailuresExceptions(string $process_method, array $passed_case, array $unrecognized_case) {
+    // Test with a passed validation case string.
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->importer->$process_method($passed_case['validation_result']);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expected an exception to be caught for providing a passed validation case string to $process_method, but one wasn't thrown.",
+    );
+    $this->assertEquals(
+      $passed_case['expected_message'],
+      $exception_message,
+      "We expected the exception message to indicate that a passed validation string was provided to $process_method, but it does not match what was expected.",
+    );
+
+    // Test with an unrecognizable validation case string.
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $this->importer->$process_method($unrecognized_case['validation_result']);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      "We expected an exception to be caught for providing an unrecognized validation case string to $process_method, but one wasn't thrown.",
+    );
+    $this->assertEquals(
+      $unrecognized_case['expected_message'],
+      $exception_message,
+      "We expected the exception message to indicate that an unrecognized validation string was provided to $process_method, but it does not match what was expected.",
+    );
   }
 
 }
