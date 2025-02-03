@@ -1499,10 +1499,10 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
   public function provideFaultyValidationStatusArray() {
     $scenarios = [];
 
-    // #0: 'failedItems' key is missing.
+    // #0: 'case' and 'failedItems' keys are missing.
     $scenarios[] = [
       [
-        'case' => 'Case 0',
+        'cases' => 'Case 0',
         'valid' => FALSE,
         'failed_items' => [
           'item' => 'failed',
@@ -1511,7 +1511,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       [
         'expected_exception' => TRUE,
         'expected_errors' => 1,
-        'expected_details' => "Expected to find the key \'failedItems\' in the validation result array.",
+        'expected_details' => "Expected to find key(s) 'case', 'failedItems' in the validation result array.",
       ],
     ];
 
@@ -1569,7 +1569,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       [
         'expected_exception' => TRUE,
         'expected_errors' => 3,
-        'expected_details' => "Expected to find the key \'case\' in the validation result array. Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed. Expected the validation result to contain an array for the key 'failedItems', but it did not.",
+        'expected_details' => "Expected to find key(s) 'case' in the validation result array. Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed. Expected the validation result to contain an array for the key 'failedItems', but it did not.",
       ],
     ];
 

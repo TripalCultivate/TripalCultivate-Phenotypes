@@ -863,11 +863,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $errors_found = 0;
     // Check for validation status keys: 'case', 'valid', 'failedItems'.
     $keys = ['case', 'valid', 'failedItems'];
-    foreach ($keys as $key) {
-      if (!array_key_exists($key, $validation_result)) {
-        $errors_found++;
-        $error_message .= "Expected to find the key \'$key\' in the validation result array. ";
-      }
+    $missing_keys = array_diff($keys, array_keys($validation_result));
+    if ($missing_keys) {
+      $errors_found++;
+      $error_message = 'Expected to find key(s) \'' . implode('\', \'', $missing_keys) . '\' in the validation result array. ';
     }
     // Check that key 'valid' is set to FALSE.
     if (array_key_exists('valid', $validation_result) && ($validation_result['valid'] !== FALSE)) {
