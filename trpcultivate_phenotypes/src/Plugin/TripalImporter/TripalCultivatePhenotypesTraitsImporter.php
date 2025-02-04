@@ -1360,6 +1360,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   headers:
    *   - 'Line Number'
    *   - Column Header(s) of the cell(s) that has/have an invalid value
+   *
+   * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processValueInListFailures(array $failures, array $expected_values) {
     // Define our table header.

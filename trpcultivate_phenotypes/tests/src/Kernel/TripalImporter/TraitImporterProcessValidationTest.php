@@ -1683,33 +1683,41 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    * Data Provider for triggering exceptions in all process failures methods.
    *
    * @return array
-   *   Each scenario is an array of 2 arrays, one for testing a passed case
-   *   string and one for an unrecognizable case string with the process
-   *   validation method for this validator.
+   *   Each scenario contains a string of the process validator method to be
+   *   called, 1 array containing a passed validation result and the expected
+   *   exception message, and 1 array containing an unrecognizable case in the
+   *   validation status array with the expected exception message. The 2 arrays
+   *   are layed out as follows:
    *   - Passed validation case:
-   *     - 'validation_result': The failures array that gets passed to the
-   *       process method. It contains the following keys:
-   *       - [ROW-LEVEL ONLY] The line number that triggered this failed
-   *         validation status. This key is NOT set for non row-level
-   *         validators.
-   *         - 'case': a developer-focused string describing a case of passed
-   *           validation.
-   *         - 'valid': FALSE to indicate that validation failed.
-   *         - 'failedItems': array of items that failed consistent with the
-   *         validator in this scenario.
+   *     - 'process_method_params':
+   *       - The failures array that gets passed to the process method. It
+   *         contains the following keys:
+   *         - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *           validation status. This key is NOT set for non row-level
+   *           validators.
+   *           - 'case': a developer-focused string describing a case of passed
+   *             validation.
+   *           - 'valid': FALSE to indicate that validation failed.
+   *           - 'failedItems': array of items that failed consistent with the
+   *             validator in this scenario.
+   *       - Any additional parameters IF required by the process validation
+   *         method (eg. processValueInListFailures requires expected values).
    *     - 'expected_message': The expected exception message to be triggered
    *       by the case message that indicates passed validation.
    *   - Unrecognized validation case:
-   *     - 'validation_result': The failures array that gets passed to the
-   *       process method. It contains the following keys:
-   *       - [ROW-LEVEL ONLY] The line number that triggered this failed
-   *         validation status. This key is NOT set for non row-level
-   *         validators.
-   *         - 'case': a string that is NOT one of the available case strings
-   *           returned by this validator (pass or fail).
-   *         - 'valid': FALSE to indicate that validation failed.
-   *         - 'failedItems': array of items that failed consistent with the
-   *         validator in this scenario.
+   *     - 'process_method_params':
+   *       - The failures array that gets passed to the process method. It
+   *         contains the following keys:
+   *         - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *           validation status. This key is NOT set for non row-level
+   *           validators.
+   *           - 'case': a string that is NOT one of the available case strings
+   *             returned by this validator (neither pass or fail).
+   *           - 'valid': FALSE to indicate that validation failed.
+   *           - 'failedItems': array of items that failed consistent with the
+   *             validator in this scenario.
+   *       - Any additional parameters IF required by the process validation
+   *         method (eg. processValueInListFailures requires expected values).
    *     - 'expected_message': The expected exception message to be triggered
    *       by the case message that is not recognized by the process validation
    *       method for this validator.
@@ -1793,29 +1801,32 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *   The name of the process failures method being called.
    * @param array $passed_case
    *   An array with the following keys:
-   *   - 'validation_result': The failures array that gets passed to the
-   *     process method. It contains the following keys:
-   *     - [ROW-LEVEL ONLY] The line number that triggered this failed
-   *       validation status. This key is NOT set for non row-level validators.
-   *       - 'case': a developer-focused string describing a case of passed
-   *         validation.
-   *       - 'valid': FALSE to indicate that validation failed.
-   *       - 'failedItems': array of items that failed consistent with the
-   *         validator in this scenario.
+   *   - 'process_method_params':
+   *     - The failures array that gets passed to the process method. It
+   *       contains the following keys:
+   *       - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *         validation status. This key is NOT set for non row-level
+   *         validators.
+   *         - 'case': a developer-focused string describing a case of passed
+   *           validation.
+   *         - 'valid': FALSE to indicate that validation failed.
+   *         - 'failedItems': array of items that failed consistent with the
+   *           validator in this scenario.
    *   - 'expected_message': The expected exception message to be triggered
    *     by the case message that indicates passed validation.
    * @param array $unrecognized_case
    *   An array with the following keys:
-   *   - 'validation_result': The failures array that gets passed to the
-   *     process method. It contains the following keys:
-   *     - [ROW-LEVEL ONLY] The line number that triggered this failed
-   *       validation status. This key is NOT set for non row-level
-   *       validators.
-   *       - 'case': a string that is NOT one of the available case strings
-   *         returned by this validator (pass or fail).
-   *       - 'valid': FALSE to indicate that validation failed.
-   *       - 'failedItems': array of items that failed consistent with the
-   *         validator in this scenario.
+   *   - 'process_method_params':
+   *     - The failures array that gets passed to the process method. It
+   *       contains the following keys:
+   *       - [ROW-LEVEL ONLY] The line number that triggered this failed
+   *         validation status. This key is NOT set for non row-level
+   *         validators.
+   *         - 'case': a string that is NOT one of the available case strings
+   *           returned by this validator (pass or fail).
+   *         - 'valid': FALSE to indicate that validation failed.
+   *         - 'failedItems': array of items that failed consistent with the
+   *           validator in this scenario.
    *   - 'expected_message': The expected exception message to be triggered
    *     by the case message that is not recognized by the process validation
    *     method for this validator.
