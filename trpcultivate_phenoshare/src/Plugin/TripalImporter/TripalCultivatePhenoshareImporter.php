@@ -704,7 +704,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
           }
 
           if ($submit_form === FALSE) {
-            // Provide a general error message indicating that input values 
+            // Provide a general error message indicating that input values
             // and/or the data file may contain one or more errors.
             $this->service_Messenger
               ->addError($this->t('Your file import was not successful. Please check the Validation Result Window for errors and try again.'));
