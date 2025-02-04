@@ -1,0 +1,209 @@
+<?php
+
+namespace Drupal\Tests\trpcultivate_phenoshare\Kernel\TripalImporter;
+
+use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\user\Entity\User;
+
+/**
+ * Tests the form + form-related functionality of the Share Importer.
+ *
+ * @group traitsImporter
+ */
+class ShareImporterFormTest extends ChadoTestKernelBase {
+
+  use UserCreationTrait;
+  use PhenotypeImporterTestTrait;
+
+  /**
+   * Theme used in the test environment.
+   *
+   * @var string
+   */
+  protected string $defaultTheme = 'stark';
+
+  /**
+   * Modules to enable.
+   *
+   * @var array
+   */
+  protected static $modules = [
+    'system',
+    'user',
+    'file',
+    'tripal',
+    'tripal_chado',
+    'trpcultivate_phenoshare',
+  ];
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var \Drupal\tripal_chado\Database\ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
+   * Saves details regarding the config.
+   *
+   * @var array
+   */
+  protected array $cvdbon;
+
+  /**
+   * The terms required by this module mapped to the cvterm_ids they are set to.
+   *
+   * @var array
+   */
+  protected array $terms;
+
+  /**
+   * A default listing of annotations associated with our importer.
+   *
+   * @var array
+   */
+  protected array $definitions = [
+    'test-trait-importer' => [
+      'id' => 'trpcultivate-phenotypes-share-importer',
+      'label' => 'Tripal Cultivate: Phenotypic Share Importer',
+      'description' => 'Imports phenotypic data which has already been published or which is ready to be freely shared.',
+      'file_types' => ["tsv"],
+      'use_analysis' => FALSE,
+      'require_analysis' => FALSE,
+      'upload_title' => 'Phenotypic Share Data File*',
+      'upload_description' => 'This should not be visible!',
+      'button_text' => 'Import',
+      'file_upload' => TRUE,
+      'file_load' => FALSE,
+      'file_remote' => FALSE,
+      'file_required' => FALSE,
+      'cardinality' => 1,
+    ],
+  ];
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+
+    // Ensure we see all logging in tests.
+    \Drupal::state()->set('is_a_test_environment', TRUE);
+
+    // Open connection to Chado.
+    $this->chado_connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+
+    // Ensure we can access file_managed related functionality from Drupal.
+    // ... users need access to system.action config?
+    $this->installConfig(['system', 'trpcultivate_phenoshare']);
+    // ... managed files are associated with a user.
+    $this->installEntitySchema('user');
+    // ... Finally the file module + tables itself.
+    $this->installEntitySchema('file');
+    $this->installSchema('file', ['file_usage']);
+    $this->installSchema('tripal_chado', ['tripal_custom_tables']);
+    // Ensure we have our tripal import tables.
+    $this->installSchema('tripal', ['tripal_import', 'tripal_jobs']);
+    // Create and log-in a user.
+    $this->setUpCurrentUser();
+
+    // We need to mock the logger to test the progress reporting.
+    $container = \Drupal::getContainer();
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message, $context, $options) {
+        // @todo Revisit print out of log messages, but perhaps setting an option
+        // for log messages to not print to the UI?
+        // print str_replace(array_keys($context), $context, $message);
+        return NULL;
+      });
+    $container->set('tripal.logger', $mock_logger);
+  }
+
+  /**
+   * Tests building the importer form when all should be well.
+   */
+  public function testTraitImporterFormValid() {
+  }
+
+  /**
+   * Tests submitting the importer form when all should be well.
+   */
+  public function testTraitImporterFormSubmitValid() {
+  }
+
+  /**
+   * Test describeUploadFileFormat() method in the importer.
+   */
+  public function testDescribeUploadFileFormat() {
+    // Create a user.
+    $user_username = 'user-collector';
+    $this->user = User::create([
+      'name' => $user_username,
+      'roles' => ['authenticated user'],
+    ]);
+    $this->user->save();
+
+    \Drupal::currentUser()->setAccount($this->user);
+
+    // Fire up Tripal Trait Importer Plugin.
+    $importer_plugin_manager = \Drupal::service('tripal.importer');
+    $plugin_id = 'trpcultivate-phenotypes-traits-importer';
+    $trait_importer = $importer_plugin_manager->createInstance($plugin_id);
+
+    // Create a file format description section.
+    $rendered_file_format_description = $trait_importer->describeUploadFileFormat();
+
+    // Assert headers matched the headers defined by Trait Importer.
+    $expected_headers = [
+      'Trait Name',
+      'Method Name',
+      'Unit',
+      'Germplasm Accesssion',
+      'Year',
+      'Location',
+      'Replicate',
+      'Value',
+      'Data Collector',
+    ];
+
+    // Pull all the headers in the rendered description.
+    preg_match_all('/<strong>(.*?)<\/strong>/', $rendered_file_format_description, $matches);
+    $this->assertEquals(
+      $expected_headers,
+      $matches[1],
+      'The headers defined by the importer does not match the headers rendered by describeUploadFileFormat()'
+    );
+
+    // Assert admin notes were incorporated into the description section.
+    $expected_notes = 'The order of the above columns is important and your file must include a header!
+    If you have a single trait measured in more than one way (i.e. with multiple collection
+    methods), then you should have one line per collection method with the trait name/description repeated.';
+
+    $this->assertStringContainsString(
+      $expected_notes,
+      $rendered_file_format_description,
+      'The rendered markup of the method describeUploadFileFormat() does not contain expected file format importer notes'
+    );
+
+    // Assert a download link was provided.
+    // Construct the templage file filename.
+    // Only the first item in the 'file_types' importer annotation is used as
+    // default file extension of the template file.
+    $importer_annotations = $importer_plugin_manager->getDefinitions();
+    $expected_file_extension = $importer_annotations['trpcultivate-phenotypes-traits-importer']['file_types'][0];
+    $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
+
+    $this->assertStringContainsString(
+      $expected_template_filename,
+      $rendered_file_format_description,
+      'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template filename.'
+    );
+  }
+
+}
