@@ -89,7 +89,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     ],
     [
       'name' => 'Unit',
-      'description' => 'The unit the trait was measured with. In the case of a scale this column should defined the scale. (e.g. days)',
+      'description' => 'The unit the trait was measured with. In the case of a scale, this column should define the scale. (e.g. days)',
       'type' => 'required',
     ],
     [
