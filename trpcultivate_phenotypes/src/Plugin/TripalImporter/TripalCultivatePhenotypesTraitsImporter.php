@@ -1081,8 +1081,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   to the user about the case that failed and the failed items from the
    *   input file. This unordered list will include a table with a row of the
    *   expected headers followed by a row of the provided headers.
+   *
+   * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processValidHeadersFailures(array $validation_result) {
+    // Check the format of the validation_result parameter.
+    $this->checkValidationStatusArray($validation_result, 'ValidHeaders');
+
     if ($validation_result['case'] == 'Header row is an empty value') {
       $message = 'The file has an empty row where the header was expected.';
       $provided_headers = [];
@@ -1095,6 +1103,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $num_expected_columns = count($this->headers);
       $message = "This importer requires a strict number of $num_expected_columns column headers. Please ensure your column header matches the template exactly and remove any additional column headers from the file.";
       $provided_headers = $validation_result['failedItems'];
+    }
+    elseif ($validation_result['case'] == 'Headers exist and match expected headers') {
+      throw new \Exception('The case string returned by the ValidHeaders validator implies validation passed, but valid is set to FALSE.');
+    }
+    else {
+      throw new \Exception('The case string returned by the ValidHeaders validator is not recognized as a potential case.');
     }
     // Get the expected and actual headers to build the rows in our table render
     // array.

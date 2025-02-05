@@ -1785,7 +1785,36 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #2: ValueInList passed + unrecognizable validation case message.
+    // #2: ValidHeaders passed + unrecognizable validation case message.
+    $scenarios[] = [
+      'processValidHeadersFailures',
+      [
+        'process_method_params' => [
+          [
+            'case' => 'Headers exist and match expected headers',
+            'valid' => FALSE,
+            'failedItems' => [
+              'headers' => 'headers array is an empty array',
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the ValidHeaders validator implies validation passed, but valid is set to FALSE.',
+      ],
+      [
+        'process_method_params' => [
+          [
+            'case' => $unrecognized_case_string,
+            'valid' => FALSE,
+            'failedItems' => [
+              'headers' => 'headers array is an empty array',
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the ValidHeaders validator is not recognized as a potential case.',
+      ],
+    ];
+
+    // #3: ValueInList passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValueInListFailures',
       [
