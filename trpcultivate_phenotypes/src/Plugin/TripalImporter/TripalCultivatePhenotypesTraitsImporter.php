@@ -1192,6 +1192,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   Both tables contain the following headers:
    *   - 'Line Number'
    *   - 'Line Contents'
+   *
+   * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processValidDelimitedFileFailures(array $failures) {
     // Define our table headers.
@@ -1205,6 +1210,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Loop through each row in the $failures array and piece apart the
     // different cases into different tables.
     foreach ($failures as $line_no => $validation_result) {
+      // Check the format of the validation_result parameter.
+      $this->checkValidationStatusArray($validation_result, 'ValidDelimitedFile');
       // Keeps track of which table this one line's validation result gets added
       // to based on the case it triggered.
       $table_case = '';
@@ -1219,6 +1226,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           $num_expected_columns = $validation_result['failedItems']['expected_columns'];
           $strict = $validation_result['failedItems']['strict'];
         }
+      }
+      elseif (($validation_result['case'] == 'Raw row has expected number of columns') ||
+             ($validation_result['case'] == 'Raw row is delimited')) {
+        throw new \Exception("The case string returned by the ValidDelimitedFile validator at line #$line_no implies validation passed, but valid is set to FALSE.");
+      }
+      else {
+        throw new \Exception("The case string returned by the ValidDelimitedFile validator at line #$line_no is not recognized as a potential case.");
       }
 
       // Checked all cases, now add a row to our appropriate table.

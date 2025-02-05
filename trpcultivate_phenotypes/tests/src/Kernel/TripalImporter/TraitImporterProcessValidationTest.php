@@ -1814,7 +1814,40 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #3: ValueInList passed + unrecognizable validation case message.
+    // #3: ValidDelimitedFile passed + unrecognizable validation case message.
+    $scenarios[] = [
+      'processValidDelimitedFileFailures',
+      [
+        'process_method_params' => [
+          [
+            4 => [
+              'case' => 'Raw row has expected number of columns',
+              'valid' => FALSE,
+              'failedItems' => [
+                'raw_row' => 'This is a non-delimited raw row.',
+              ],
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the ValidDelimitedFile validator at line #4 implies validation passed, but valid is set to FALSE.',
+      ],
+      [
+        'process_method_params' => [
+          [
+            5 => [
+              'case' => $unrecognized_case_string,
+              'valid' => FALSE,
+              'failedItems' => [
+                'raw_row' => 'This is a raw row.',
+              ],
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the ValidDelimitedFile validator at line #5 is not recognized as a potential case.',
+      ],
+    ];
+
+    // #4: ValueInList passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValueInListFailures',
       [
