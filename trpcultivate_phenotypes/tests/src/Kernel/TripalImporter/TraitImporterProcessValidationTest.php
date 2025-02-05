@@ -1756,7 +1756,36 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #1: ValueInList passed + unrecognizable validation case message.
+    // #1: ValidDataFile passed + unrecognizable validation case message.
+    $scenarios[] = [
+      'processValidDataFileFailures',
+      [
+        'process_method_params' => [
+          [
+            'case' => 'Data file is valid',
+            'valid' => FALSE,
+            'failedItems' => [
+              'fid' => 100,
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the ValidDataFile validator implies validation passed, but valid is set to FALSE.',
+      ],
+      [
+        'process_method_params' => [
+          [
+            'case' => $unrecognized_case_string,
+            'valid' => FALSE,
+            'failedItems' => [
+              'fid' => 100,
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the ValidDataFile validator is not recognized as a potential case.',
+      ],
+    ];
+
+    // #2: ValueInList passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValueInListFailures',
       [
@@ -1772,7 +1801,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
           ],
           ['Quantitative, Qualitative'],
         ],
-        'expected_message' => 'The case string returned by the ValueInList validator implies validation passed, but valid is set to FALSE.',
+        'expected_message' => 'The case string returned by the ValueInList validator at line #2 implies validation passed, but valid is set to FALSE.',
       ],
       [
         'process_method_params' => [
@@ -1787,7 +1816,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
           ],
           ['Quantitative, Qualitative'],
         ],
-        'expected_message' => 'The case string returned by the ValueInList validator is not recognized as a potential case.',
+        'expected_message' => 'The case string returned by the ValueInList validator at line #3 is not recognized as a potential case.',
       ],
     ];
 
@@ -1798,7 +1827,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    * Tests for exceptions thrown for passed and unrecognizable case strings.
    *
    * @param string $process_method
-   *   The name of the process failures method being called.
+   *   The name of the process failures method being called in this test.
    * @param array $passed_case
    *   An array with the following keys:
    *   - 'process_method_params':

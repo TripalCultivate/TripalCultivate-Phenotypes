@@ -985,8 +985,15 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   - Filename: $validation_result['failedItems']['filename']
    *   OR it is a message informing the user that their file's extension and
    *   mime type are not compatible.
+   *
+   * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processValidDataFileFailures(array $validation_result) {
+    // Check the format of the validation_result parameter.
+    $this->checkValidationStatusArray($validation_result, 'ValidDataFile');
     // Get the current user in case we trigger a case that needs to log a
     // message to the administrator.
     $current_user = \Drupal::currentUser();
@@ -1030,6 +1037,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ];
       // Log more info for the administrator.
       $this->logger->info("The user $username uploaded a file with FID $fid using the Traits Importer, but the file could not be opened using \'@fopen\'. Filename was '$filename'.");
+    }
+    elseif ($validation_result['case'] == 'Data file is valid') {
+      throw new \Exception('The case string returned by the ValidDataFile validator implies validation passed, but valid is set to FALSE.');
+    }
+    else {
+      throw new \Exception('The case string returned by the ValidDataFile validator is not recognized as a potential case.');
     }
 
     // Build the render array.
@@ -1362,7 +1375,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   - Column Header(s) of the cell(s) that has/have an invalid value
    *
    * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
+   *   - If any validation result arrays are not formatted properly.
    *   - If the case string returned by the validator implied validation passed.
    *   - If the case string returned by the validator is not recognized.
    */
@@ -1377,7 +1390,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     foreach ($failures as $line_no => $validation_result) {
       // Check the format of the validation_result parameter.
-      $this->checkValidationStatusArray($validation_result, 'ValueInList');
+      $this->checkValidationStatusArray($validation_result, 'ValueInList', $line_no);
       // Check for the expected failed case message.
       if ($validation_result['case'] == 'Invalid value(s) in required column(s)') {
         $table['message'] = 'The following line number and column combinations did not contain one of the following allowed values: "' . implode('", "', $expected_values) . '". Note that values should be case sensitive. <strong>If any cell in the table below is empty, then the value given in the file for that cell was one of the allowed values.</strong>';
@@ -1402,10 +1415,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         }
       }
       elseif ($validation_result['case'] == 'Values in required column(s) are valid') {
-        throw new \Exception('The case string returned by the ValueInList validator implies validation passed, but valid is set to FALSE.');
+        throw new \Exception("The case string returned by the ValueInList validator at line #$line_no implies validation passed, but valid is set to FALSE.");
       }
       else {
-        throw new \Exception('The case string returned by the ValueInList validator is not recognized as a potential case.');
+        throw new \Exception("The case string returned by the ValueInList validator at line #$line_no is not recognized as a potential case.");
       }
     }
 
