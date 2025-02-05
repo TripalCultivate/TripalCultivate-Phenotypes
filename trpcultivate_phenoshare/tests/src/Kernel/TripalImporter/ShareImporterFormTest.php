@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\trpcultivate_phenoshare\Kernel\TripalImporter;
 
+use Drupal\Core\Form\FormState;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -63,6 +64,27 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   protected array $terms;
 
   /**
+   * The Drupal Renderer.
+   *
+   * @var Drupal\Core\Render\Renderer
+   */
+  protected $service_Renderer;
+
+  /**
+   * Phenotypes Share Importer plugin instance.
+   *
+   * @var Drupal\trpcultivate_phenoshare\src\Plugin\TripalImporter\TripalCultivatePhenoshareImporter
+   */
+  protected $phenoshare_importer;
+
+  /**
+   * Phenotypes Share Importer plugin manager.
+   *
+   * @var Drupal\trpcultivate_phenotype\src\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   */
+  protected $phenoshare_plugin_manager;
+
+  /**
    * A default listing of annotations associated with our importer.
    *
    * @var array
@@ -100,15 +122,9 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenoshare']);
-    // ... managed files are associated with a user.
-    $this->installEntitySchema('user');
-    // ... Finally the file module + tables itself.
-    $this->installEntitySchema('file');
-    $this->installSchema('file', ['file_usage']);
-    $this->installSchema('tripal_chado', ['tripal_custom_tables']);
-    // Ensure we have our tripal import tables.
-    $this->installSchema('tripal', ['tripal_import', 'tripal_jobs']);
+    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate_phenoshare']);
+    // Prepare Tripal Importer Environment.
+    $this->prepareEnvironment(['TripalImporter']);
     // Create and log-in a user.
     $this->setUpCurrentUser();
 
@@ -125,18 +141,53 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         return NULL;
       });
     $container->set('tripal.logger', $mock_logger);
+    $this->service_Renderer = $container->get('renderer');
+
+    // Phenoshare Importer instance.
+    $this->phenoshare_plugin_manager = \Drupal::service('tripal.importer');
+    $plugin_id = $this->definitions['test-trait-importer']['id'];
+    $this->phenoshare_importer = $this->phenoshare_plugin_manager->createInstance($plugin_id);
   }
 
   /**
-   * Tests building the importer form when all should be well.
+   * Tests form.
    */
-  public function testTraitImporterFormValid() {
+  public function testForm() {
+
+    // Build Stage 1 form.
+    $form = \Drupal::formBuilder()->getForm(
+      'Drupal\tripal\Form\TripalImporterForm',
+      $this->definitions['test-trait-importer']['id']
+    );
+
+    $stage_1_form = $this->service_Renderer->renderInIsolation($form);
+
+    // Test that on page load the default active stage is STAGE 1.
+    preg_match('/<div class=".*\stcp-current-stage">(.*?)<\/div>/', $stage_1_form, $matches);
+    $this->assertStringContainsString(
+      'STAGE 1',
+      $matches[1],
+      'The default active stage on page load is not labelled Stage 1'
+    );
   }
 
   /**
-   * Tests submitting the importer form when all should be well.
+   * Test Stage 1.
    */
-  public function testTraitImporterFormSubmitValid() {
+  public function testStage1() {
+    // Fire up Tripal Share Importer Plugin.
+    $form_state = new FormState();
+    $form = \Drupal::formBuilder()->getForm(
+      'Drupal\tripal\Form\TripalImporterForm',
+      $this->definitions['test-trait-importer']['id']
+    );
+
+    // Build Stage 1.
+    $this->phenoshare_importer->stage1($form, $form_state, '');
+    $stage_1 = $this->service_Renderer->renderInIsolation($form);
+
+    // Test that stage 1 specific field elements were rendered.
+    print_r($stage_1);
   }
 
   /**
@@ -145,21 +196,16 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   public function testDescribeUploadFileFormat() {
     // Create a user.
     $user_username = 'user-collector';
-    $this->user = User::create([
+    $user = User::create([
       'name' => $user_username,
       'roles' => ['authenticated user'],
     ]);
-    $this->user->save();
+    $user->save();
 
-    \Drupal::currentUser()->setAccount($this->user);
-
-    // Fire up Tripal Trait Importer Plugin.
-    $importer_plugin_manager = \Drupal::service('tripal.importer');
-    $plugin_id = 'trpcultivate-phenotypes-share-importer';
-    $trait_importer = $importer_plugin_manager->createInstance($plugin_id);
+    \Drupal::currentUser()->setAccount($user);
 
     // Create a file format description section.
-    $rendered_file_format_description = $trait_importer->describeUploadFileFormat();
+    $rendered_file_format_description = $this->phenoshare_importer->describeUploadFileFormat();
 
     // Assert headers matched the headers defined by Trait Importer.
     $expected_headers = [
@@ -198,7 +244,8 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Construct the templage file filename.
     // Only the first item in the 'file_types' importer annotation is used as
     // default file extension of the template file.
-    $importer_annotations = $importer_plugin_manager->getDefinitions();
+    $plugin_id = $this->definitions['test-trait-importer']['id'];
+    $importer_annotations = $this->phenoshare_plugin_manager->getDefinitions();
     $expected_file_extension = $importer_annotations[$plugin_id]['file_types'][0];
     $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
 

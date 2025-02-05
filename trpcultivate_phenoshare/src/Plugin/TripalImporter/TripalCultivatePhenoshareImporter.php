@@ -2,6 +2,7 @@
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
+use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
@@ -14,6 +15,7 @@ use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -137,6 +139,20 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   protected $service_PhenoGenusOntology;
 
   /**
+   * The Validator Plugin Manager.
+   *
+   * @var Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   */
+  protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
+
+  /**
+   * The Entity Type Manager.
+   *
+   * @var Drupal\Core\Entity\EntityTypeManager
+   */
+  protected EntityTypeManager $service_entityTypeManager;
+
+  /**
    * The TripalCultivatePhenotypes File Template Service.
    *
    * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
@@ -182,6 +198,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     string $plugin_id,
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
+    TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
+    EntityTypeManager $service_entityTypeManager,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesFileTemplateService $service_FileTemplate,
     Renderer $renderer,
@@ -192,6 +210,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     // Call service setter method to set the service.
     $this->setServiceGenusOntology($service_PhenoGenusOntology);
 
+    $this->service_validatorPluginManager = $service_validatorPluginManager;
+    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_FileTemplate = $service_FileTemplate;
     $this->service_Renderer = $renderer;
     $this->service_Messenger = $messenger;
@@ -206,6 +226,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       $plugin_id,
       $plugin_definition,
       $container->get('tripal_chado.database'),
+      $container->get('plugin.manager.trpcultivate_validator'),
+      $container->get('entity_type.manager'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.template_generator'),
       $container->get('renderer'),
@@ -451,9 +473,15 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       '#required' => TRUE,
       '#description' => $this->t('Enter the name of the experiment or project your data was generated as part of.'),
       '#attributes' => ['placeholder' => 'Project/Experiment Name', 'class' => ['tcp-autocomplete']],
-      '#autocomplete_route_name' => 'tripal_chado.project_autocomplete',
-      '#autocomplete_route_parameters' => ['type_id' => 0, 'count' => 5],
-
+      '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
+      '#autocomplete_route_parameters' => [
+        'type_id' => 0,
+        'match_limit' => 5,
+        'base_table' => 'project',
+        'column_name' => 'name',
+        'type_column' => 'x',
+        'property_table' => 'project',
+      ],
       // Used by script to pre-select genus paired to project entered.
       '#id' => 'trpcultivate-fld-project',
 
@@ -632,7 +660,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       if ($stage >= 1) {
 
         // Validate Stage 1.
-        if ($stage == 1) {
+        if ($stage == 1 && $form_values['file_upload']) {
           $form_values = $form_state_values;
 
           $file_id = $form_values['file_upload'];
@@ -792,7 +820,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       ],
     ];
 
-    return $this->service_Renderer->renderPlain($build);
+    return $this->service_Renderer->renderInIsolation($build);
   }
 
   /**
