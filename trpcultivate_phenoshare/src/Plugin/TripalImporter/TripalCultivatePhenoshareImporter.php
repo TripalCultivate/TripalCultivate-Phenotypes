@@ -22,7 +22,7 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
  * which is ready to be freely shared.
  *
  * @TripalImporter(
- *   id = "trpcultivate-phenotypes-share",
+ *   id = "trpcultivate-phenotypes-share-importer",
  *   label = @Translation("Tripal Cultivate: Open Science Phenotypic Data"),
  *   description = @Translation("Imports phenotypic data which has already been published or which is ready to be freely shared."),
  *   file_types = {"tsv"},

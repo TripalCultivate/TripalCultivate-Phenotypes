@@ -3,6 +3,7 @@
 namespace Drupal\Tests\trpcultivate_phenoshare\Kernel\TripalImporter;
 
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
@@ -36,6 +37,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     'file',
     'tripal',
     'tripal_chado',
+    'trpcultivate_phenotypes',
     'trpcultivate_phenoshare',
   ];
 
@@ -153,7 +155,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     // Fire up Tripal Trait Importer Plugin.
     $importer_plugin_manager = \Drupal::service('tripal.importer');
-    $plugin_id = 'trpcultivate-phenotypes-traits-importer';
+    $plugin_id = 'trpcultivate-phenotypes-share-importer';
     $trait_importer = $importer_plugin_manager->createInstance($plugin_id);
 
     // Create a file format description section.
@@ -164,7 +166,8 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
       'Trait Name',
       'Method Name',
       'Unit',
-      'Germplasm Accesssion',
+      'Germplasm Accession',
+      'Germplasm Name',
       'Year',
       'Location',
       'Replicate',
@@ -196,7 +199,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Only the first item in the 'file_types' importer annotation is used as
     // default file extension of the template file.
     $importer_annotations = $importer_plugin_manager->getDefinitions();
-    $expected_file_extension = $importer_annotations['trpcultivate-phenotypes-traits-importer']['file_types'][0];
+    $expected_file_extension = $importer_annotations[$plugin_id]['file_types'][0];
     $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
 
     $this->assertStringContainsString(
