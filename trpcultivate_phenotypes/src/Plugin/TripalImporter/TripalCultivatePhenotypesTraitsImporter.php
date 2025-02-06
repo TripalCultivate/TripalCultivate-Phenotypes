@@ -1211,7 +1211,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // different cases into different tables.
     foreach ($failures as $line_no => $validation_result) {
       // Check the format of the validation_result parameter.
-      $this->checkValidationStatusArray($validation_result, 'ValidDelimitedFile');
+      $this->checkValidationStatusArray($validation_result, 'ValidDelimitedFile', $line_no);
       // Keeps track of which table this one line's validation result gets added
       // to based on the case it triggered.
       $table_case = '';
@@ -1320,6 +1320,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   and column combinations with empty cells. It has the following headers:
    *   - 'Line Number'
    *   - 'Column(s) with empty value'
+   *
+   * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processEmptyCellFailures(array $failures) {
     // Define our table header.
@@ -1327,6 +1332,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $table['rows'] = [];
 
     foreach ($failures as $line_no => $validation_result) {
+      // Check the format of the validation_result parameter.
+      $this->checkValidationStatusArray($validation_result, 'EmptyCell', $line_no);
+
       if ($validation_result['case'] == 'Empty value found in required column(s)') {
         $table['message'] = 'The following line number and column header combinations were empty, but a value is required.';
         // Convert indices in failedItems to column headers.
@@ -1344,6 +1352,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
           $line_no,
           $columns_string,
         ]);
+      }
+      elseif ($validation_result['case'] == 'No empty values found in required column(s)') {
+        throw new \Exception("The case string returned by the EmptyCell validator at line #$line_no implies validation passed, but valid is set to FALSE.");
+      }
+      else {
+        throw new \Exception("The case string returned by the EmptyCell validator at line #$line_no is not recognized as a potential case.");
       }
     }
 

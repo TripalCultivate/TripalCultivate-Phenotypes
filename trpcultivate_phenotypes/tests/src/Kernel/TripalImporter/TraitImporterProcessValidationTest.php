@@ -1847,7 +1847,40 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #4: ValueInList passed + unrecognizable validation case message.
+    // #4: EmptyCell passed + unrecognizable validation case message.
+    $scenarios[] = [
+      'processEmptyCellFailures',
+      [
+        'process_method_params' => [
+          [
+            6 => [
+              'case' => 'No empty values found in required column(s)',
+              'valid' => FALSE,
+              'failedItems' => [
+                'empty_indices' => [2, 3, 4],
+              ],
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the EmptyCell validator at line #6 implies validation passed, but valid is set to FALSE.',
+      ],
+      [
+        'process_method_params' => [
+          [
+            7 => [
+              'case' => $unrecognized_case_string,
+              'valid' => FALSE,
+              'failedItems' => [
+                'empty_indices' => [2, 3, 4],
+              ],
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the EmptyCell validator at line #7 is not recognized as a potential case.',
+      ],
+    ];
+
+    // #5: ValueInList passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValueInListFailures',
       [
