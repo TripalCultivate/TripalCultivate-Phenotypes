@@ -150,44 +150,162 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Tests form.
+   * Data Provider: provides stage details to test import stages.
+   *
+   * @return array
+   *   Each stage scenario is an array with the following values:
+   *   - A string, human-readable short title text of the stage.
+   *   - A string, the name of stage container or wrapper that contains all
+   *     relevant stage specific form elements.
+   *   - A string, the method name to generate the stage.
+   *   - An array of expeceted features of the stage such as title or fields.
+   *     The following keys are used to reference a value:
+   *     - 'stage_title': The expected stage title text shown in the stage title
+   *       banner of the form.
+   *     - 'fields': A set of form elements expected to be rendered in a stage.
+   *       Each field is keyed by the name of the field and the value is an
+   *       array with the following keys:
+   *       - 'wrapper_element': The name of the wrapper element if a field is
+   *         contained in a wrapper element.
+   *       - 'field_type': The field element type ie. a textfield or select.
    */
-  public function testForm() {
+  public function provideStageDetails() {
+    return [
+      // #0: Stage One.
+      [
+        'stage 1 - upload',
+        'accordion_stage1',
+        'stage1',
+        [
+          'stage_title' => 'STAGE 1',
+          'fields' => [
+            'project' => [
+              'wrapper_element' => '',
+              'field_type' => 'textfield',
+            ],
+            'genus' => [
+              'wrapper_element' => '',
+              'field_type' => 'select',
+            ],
+            'file' => [
+              'wrapper_element' => '',
+              'field_type' => 'fieldset',
+            ],
+            'file_upload' => [
+              'wrapper_element' => 'file',
+              'field_type' => 'html5_file',
+            ],
+            'validate_stage' => [
+              'wrapper_element' => '',
+              'field_type' => 'submit',
+            ],
+          ],
+        ],
+      ],
 
-    // Build Stage 1 form.
-    $form = \Drupal::formBuilder()->getForm(
-      'Drupal\tripal\Form\TripalImporterForm',
-      $this->definitions['test-trait-importer']['id']
-    );
+      // #2: Stage Two.
+      [
+        'stage 2 - describe',
+        'accordion_stage2',
+        'stage2',
+        [
+          'stage_title' => 'STAGE 2',
+          'fields' => [
+            'validate_stage' => [
+              'wrapper_element' => '',
+              'field_type' => 'submit',
+            ],
+            'skip_stage' => [
+              'wrapper_element' => '',
+              'field_type' => 'submit',
+            ],
+          ],
+        ],
+      ],
 
-    $stage_1_form = $this->service_Renderer->renderInIsolation($form);
-
-    // Test that on page load the default active stage is STAGE 1.
-    preg_match('/<div class=".*\stcp-current-stage">(.*?)<\/div>/', $stage_1_form, $matches);
-    $this->assertStringContainsString(
-      'STAGE 1',
-      $matches[1],
-      'The default active stage on page load is not labelled Stage 1'
-    );
+      // #3: Stage Three.
+      [
+        'stage 3 - review and save',
+        'accordion_stage3',
+        'stage3',
+        [
+          'stage_title' => 'STAGE 3',
+          'fields' => [],
+        ],
+      ],
+    ];
   }
 
   /**
-   * Test Stage 1.
+   * Tests that stages render with the correct stage elements.
+   *
+   * @param string $scenario
+   *   A human-readable short title text of the stage.
+   * @param string $stage_wrapper
+   *   The name of stage container or wrapper that contains all relevant stage
+   *   specific form elements.
+   * @param string $stage_method
+   *   The method name to generate the stage.
+   * @param array $expected
+   *   An array of expeceted features of the stage such as title or fields.
+   *   The following keys are used to reference a value:
+   *     - 'stage_title': The expected stage title text shown in the stage title
+   *       banner of the form.
+   *     - 'fields': A set of form elements expected to be rendered in a stage.
+   *       Each field is keyed by the name of the field and the value is an
+   *       array with the following keys:
+   *       - 'wrapper_element': The name of the wrapper element if a field is
+   *         contained in a wrapper element.
+   *       - 'field_type': The field element type ie. a textfield or select.
+   *
+   * @dataProvider provideStageDetails
    */
-  public function testStage1() {
-    // Fire up Tripal Share Importer Plugin.
-    $form_state = new FormState();
+  public function testStages($scenario, $stage_wrapper, $stage_method, $expected) {
+
+    // Build $form parameter.
     $form = \Drupal::formBuilder()->getForm(
       'Drupal\tripal\Form\TripalImporterForm',
       $this->definitions['test-trait-importer']['id']
     );
 
-    // Build Stage 1.
-    $this->phenoshare_importer->stage1($form, $form_state, '');
-    $stage_1 = $this->service_Renderer->renderInIsolation($form);
+    // The initial page load has setup stage one and file fieldset element has
+    // been relocated into the field wrapper element. This will restore the
+    // original placement of the file field before any stage method
+    // builds a form.
+    $form['file'] = $form['accordion_stage1']['file'];
 
-    // Test that stage 1 specific field elements were rendered.
-    print_r($stage_1);
+    // Build $form_state parameter.
+    $form_state = new FormState();
+
+    // Set the Stage.
+    $this->phenoshare_importer->$stage_method($form, $form_state, '');
+
+    // Check that the stage has the title.
+    $stage_markup = $this->service_Renderer->renderInIsolation($form[$stage_wrapper]);
+    preg_match('/<div class=".*\s">(.*?)<\/div>/', $stage_markup, $matches);
+    $this->assertStringContainsString(
+      $expected['stage_title'],
+      $matches[1],
+      'The stage title does not match expected stage title in scenario ' . $scenario
+    );
+
+    // Check that the stage contains the exepected field elememts.
+    foreach ($expected['fields'] as $field_name => $field) {
+      $field_placement = ($field['wrapper_element'])
+        ? $form[$stage_wrapper][$field['wrapper_element']] : $form[$stage_wrapper];
+
+      $this->assertArrayHasKey(
+        $field_name,
+        $field_placement,
+        'The field element ' . $field_name . ' in ' . $scenario . ' could not be found in the form.'
+      );
+
+      $this->assertEquals(
+        $field['field_type'],
+        $field_placement[$field_name]['#type'],
+        'The field element ' . $field_name . ' in ' . $scenario . ' has an incorrect field type.'
+      );
+    }
   }
 
   /**
