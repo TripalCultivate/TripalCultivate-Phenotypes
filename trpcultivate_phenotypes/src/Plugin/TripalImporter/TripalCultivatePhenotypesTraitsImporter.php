@@ -1433,6 +1433,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     foreach ($failures as $line_no => $validation_result) {
       // Check the format of the validation_result parameter.
       $this->checkValidationStatusArray($validation_result, 'ValueInList', $line_no);
+
       // Check for the expected failed case message.
       if ($validation_result['case'] == 'Invalid value(s) in required column(s)') {
         $table['message'] = 'The following line number and column combinations did not contain one of the following allowed values: "' . implode('", "', $expected_values) . '". Note that values should be case sensitive. <strong>If any cell in the table below is empty, then the value given in the file for that cell was one of the allowed values.</strong>';
@@ -1541,6 +1542,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   - 'Trait Name'
    *   - 'Method Short Name'
    *   - 'Unit'
+   *
+   * @throws \Exception
+   *   - If any validation result arrays are not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
    */
   public function processDuplicateTraitsFailures(array $failures) {
     // Define our table headers.
@@ -1556,6 +1562,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Loop through each row in the $failures array and piece apart the
     // different cases into different tables.
     foreach ($failures as $line_no => $validation_result) {
+      // Check the format of the validation_result parameter.
+      $this->checkValidationStatusArray($validation_result, 'DuplicateTraits', $line_no);
+
       // Keeps track of which table this one line's validation result gets added
       // to based on the case it triggered.
       $table_case = [];
@@ -1567,6 +1576,12 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       }
       elseif ($validation_result['case'] == 'A duplicate trait was found within both the input file and the database') {
         $table_case = ['file', 'database'];
+      }
+      elseif ($validation_result['case'] == 'Confirmed that the current trait being validated is unique') {
+        throw new \Exception("The case string returned by the DuplicateTraits validator at line #$line_no implies validation passed, but valid is set to FALSE.");
+      }
+      else {
+        throw new \Exception("The case string returned by the DuplicateTraits validator at line #$line_no is not recognized as a potential case.");
       }
       // Now set values that should appear for this row in the table(s) for this
       // particular case.

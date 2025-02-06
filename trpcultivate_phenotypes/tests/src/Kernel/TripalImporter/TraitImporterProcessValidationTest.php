@@ -1915,6 +1915,47 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
+    // #6: DuplicateTraits passed + unrecognizable validation case message.
+    $scenarios[] = [
+      'processDuplicateTraitsFailures',
+      [
+        'process_method_params' => [
+          [
+            8 => [
+              'case' => 'Confirmed that the current trait being validated is unique',
+              'valid' => FALSE,
+              'failedItems' => [
+                'combo_provided' => [
+                  'Trait Name' => 'My Trait',
+                  'Method Short Name' => 'My Method',
+                  'Unit' => 'My Unit',
+                ],
+              ],
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the DuplicateTraits validator at line #8 implies validation passed, but valid is set to FALSE.',
+      ],
+      [
+        'process_method_params' => [
+          [
+            9 => [
+              'case' => $unrecognized_case_string,
+              'valid' => FALSE,
+              'failedItems' => [
+                'combo_provided' => [
+                  'Trait Name' => 'My Trait',
+                  'Method Short Name' => 'My Method',
+                  'Unit' => 'My Unit',
+                ],
+              ],
+            ],
+          ],
+        ],
+        'expected_message' => 'The case string returned by the DuplicateTraits validator at line #9 is not recognized as a potential case.',
+      ],
+    ];
+
     return $scenarios;
   }
 
