@@ -1482,8 +1482,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *
    * @return array
    *   Each scenario is an array with the following:
-   *   - The validation status array returned by a single validator and where
-   *     applicable, a single row of the input file (ie. a row-level validator).
+   *   - The validation status array returned by a single validator.
    *     It is expected to contain the following keys:
    *     - 'case': a developer-focused string describing the case checked.
    *     - 'valid': FALSE to indicate that validation failed.
@@ -1596,9 +1595,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    * Tests the method that checks the integrity of the validation status array.
    *
    * @param array $validation_result
-   *   The validation status array returned by a single validator and where
-   *   applicable, a single row of the input file (ie. a row-level validator).
-   *   It is expected to contain the following keys:
+   *   The validation status array returned by a single validator.
    *   - 'case': a developer-focused string describing the case checked.
    *   - 'valid': FALSE to indicate that validation failed.
    *   - 'failedItems': An array of items that failed.
