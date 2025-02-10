@@ -1501,7 +1501,6 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     // #0: 'case' and 'failedItems' keys are missing.
     $scenarios[] = [
       [
-        'cases' => 'Case 0',
         'valid' => FALSE,
         'failed_items' => [
           'item' => 'failed',

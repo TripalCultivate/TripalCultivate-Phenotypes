@@ -866,7 +866,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $missing_keys = array_diff($keys, array_keys($validation_result));
     if ($missing_keys) {
       $errors_found++;
-      $error_message = 'Expected to find key(s) \'' . implode('\', \'', $missing_keys) . '\' in the validation result array. ';
+      $error_message = "Expected to find key(s) '" . implode("', '", $missing_keys) . "' in the validation result array. ";
     }
     // Check that key 'valid' is set to FALSE.
     if (array_key_exists('valid', $validation_result) && ($validation_result['valid'] !== FALSE)) {
