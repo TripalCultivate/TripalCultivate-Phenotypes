@@ -73,7 +73,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   /**
    * Phenotypes Share Importer plugin instance.
    *
-   * @var Drupal\trpcultivate_phenoshare\src\Plugin\TripalImporter\TripalCultivatePhenoshareImporter
+   * @var Drupal\trpcultivate_phenoshare\src\Plugin\TripalImporter\TripalCultivatePhenoShareImporter
    */
   protected $phenoshare_importer;
 
@@ -327,16 +327,13 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     // Assert headers matched the headers defined by Trait Importer.
     $expected_headers = [
-      'Trait Name',
-      'Method Name',
-      'Unit',
-      'Germplasm Accession',
       'Germplasm Name',
-      'Year',
-      'Location',
+      'Sample Name',
+      'Group',
+      'Experimental Unit',
       'Replicate',
-      'Value',
-      'Data Collector',
+      'Timepoint',
+      'Treatment',
     ];
 
     // Pull all the headers in the rendered description.
@@ -348,9 +345,8 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     );
 
     // Assert admin notes were incorporated into the description section.
-    $expected_notes = 'The order of the above columns is important and your file must include a header!
-    If you have a single trait measured in more than one way (i.e. with multiple collection
-    methods), then you should have one line per collection method with the trait name/description repeated.';
+    $expected_notes = 'To ensure proper file processing and organization, it is
+    important that your data file includes a header.';
 
     $this->assertStringContainsString(
       $expected_notes,

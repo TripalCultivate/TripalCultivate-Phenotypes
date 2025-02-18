@@ -46,7 +46,7 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePheno
  *   callback_path = "",
  * )
  */
-class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
+class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
 
   use StringTranslationTrait;
 
@@ -80,53 +80,38 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
    */
   private $headers = [
     [
-      'name' => 'Trait Name',
-      'description' => 'The full name of the trait as you would like it to appear on a trait page. This should not be abbreviated (e.g. Days till one open flower).',
-      'type' => 'required',
-    ],
-    [
-      'name' => 'Method Name',
-      'description' => 'A short (<4 words) name describing the method. This should uniquely identify the method while being very succinct (e.g. 10% Plot at R1).',
-      'type' => 'required',
-    ],
-    [
-      'name' => 'Unit',
-      'description' => 'The unit the trait was measured with. In the case of a scale, this column should define the scale. (e.g. days)',
-      'type' => 'required',
-    ],
-    [
-      'name' => 'Germplasm Accession',
-      'description' => 'The stock.uniquename for the germplasm whose phenotype was measured. (e.g. ID:1234)',
-      'type' => 'required',
-    ],
-    [
       'name' => 'Germplasm Name',
-      'description' => 'The stock.name for the germplasm whose phenotype was measured. (e.g. Variety ABC)',
+      'description' => 'To be determined',
       'type' => 'required',
     ],
     [
-      'name' => 'Year',
-      'description' => 'The 4-digit year in which the measurement was taken. (e.g. 2020)',
+      'name' => 'Sample Name',
+      'description' => 'To be determined',
       'type' => 'required',
     ],
     [
-      'name' => 'Location',
-      'description' => 'The full name of the location either using “location name, country” or GPS coordinates (e.g. Saskatoon, Canada)',
+      'name' => 'Group',
+      'description' => 'To be determined',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Experimental Unit',
+      'description' => 'To be determined',
       'type' => 'required',
     ],
     [
       'name' => 'Replicate',
-      'description' => 'The number for the replicate the current measurement is in. (e.g. 3)',
+      'description' => 'To be determined',
       'type' => 'required',
     ],
     [
-      'name' => 'Value',
-      'description' => 'The measured phenotypic value. (e.g. 34)',
+      'name' => 'Timepoint',
+      'description' => 'To be determined',
       'type' => 'required',
     ],
     [
-      'name' => 'Data Collector',
-      'description' => 'The name of the person or organization which measured the phenotype.',
+      'name' => 'Treatment',
+      'description' => 'To be determined',
       'type' => 'required',
     ],
   ];
@@ -184,6 +169,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
    *   The plugin implementation definition.
    * @param Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
+   * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager
+   *   The validator plugin manager.
+   * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
+   *   The entity type manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
@@ -207,9 +196,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
-    // Call service setter method to set the service.
-    $this->setServiceGenusOntology($service_PhenoGenusOntology);
-
+    $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_FileTemplate = $service_FileTemplate;
@@ -277,6 +264,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
     $validators['metadata']['genus_exists'] = $instance;
 
+    $instance->setConfiguredGenus($genus);
+    $instance->setProject($project);
+
     // - Project exists.
     $instance = $this->service_validatorPluginManager->createInstance('project_exists');
     $validators['metadata']['project_exists'] = $instance;
@@ -286,18 +276,6 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     $validators['metadata']['project_genus_match'] = $instance;
 
     return $validators;
-  }
-
-  /**
-   * Set phenotype genus ontology configuration service.
-   *
-   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service
-   *   The PhenoGenoOntology service as created/injected through create method.
-   */
-  public function setServiceGenusOntology($service) {
-    if ($service) {
-      $this->service_PhenoGenusOntology = $service;
-    }
   }
 
   /**
@@ -711,6 +689,12 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
             }
           }
 
+          // Perform other validation level if the previous level did not find
+          // any issues with input vlues.
+          if ($failed_validator === FALSE) {
+
+          }
+
           $validation_feedback = $this->processValidationMessages($failures);
 
           // Save all validation results in Drupal storage to create a
@@ -804,9 +788,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       ->generateFile($importer_id, $column_headers, $file_extensions);
 
     // Additional notes to the headers.
-    $notes = $this->t('The order of the above columns is important and your file must include a header!
-    If you have a single trait measured in more than one way (i.e. with multiple collection
-    methods), then you should have one line per collection method with the trait name/description repeated.');
+    $notes = $this->t('To ensure proper file processing and organization, it is
+    important that your data file includes a header.');
 
     // Render the header and notes/lists in a template and use the file link as
     // the value to href attribute of the link to download a template file.
