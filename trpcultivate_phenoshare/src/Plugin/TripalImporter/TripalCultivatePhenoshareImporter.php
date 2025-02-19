@@ -117,13 +117,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   ];
 
   /**
-   * Genus Ontology Service.
-   *
-   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
-   */
-  protected $service_PhenoGenusOntology;
-
-  /**
    * The Validator Plugin Manager.
    *
    * @var Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
@@ -136,6 +129,13 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    * @var Drupal\Core\Entity\EntityTypeManager
    */
   protected EntityTypeManager $service_entityTypeManager;
+
+  /**
+   * Genus Ontology Service.
+   *
+   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
+   */
+  protected $service_PhenoGenusOntology;
 
   /**
    * The TripalCultivatePhenotypes File Template Service.
@@ -196,9 +196,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
-    $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_entityTypeManager = $service_entityTypeManager;
+    $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_FileTemplate = $service_FileTemplate;
     $this->service_Renderer = $renderer;
     $this->service_Messenger = $messenger;
