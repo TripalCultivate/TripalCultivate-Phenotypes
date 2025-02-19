@@ -85,12 +85,26 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   protected $phenoshare_plugin_manager;
 
   /**
+   * Configuration Factory.
+   *
+   * @var Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected $service_ConfigFactory;
+
+  /**
+   * Messenger service.
+   *
+   * @var Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $service_Messenger;
+
+  /**
    * A default listing of annotations associated with our importer.
    *
    * @var array
    */
   protected array $definitions = [
-    'test-trait-importer' => [
+    'test-share-importer' => [
       'id' => 'trpcultivate-phenotypes-share-importer',
       'label' => 'Tripal Cultivate: Phenotypic Share Importer',
       'description' => 'Imports phenotypic data which has already been published or which is ready to be freely shared.',
@@ -141,11 +155,14 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         return NULL;
       });
     $container->set('tripal.logger', $mock_logger);
+
     $this->service_Renderer = $container->get('renderer');
+    $this->service_ConigFactory = $container->get('config.factory');
+    $this->service_Messenger = $container->get('messenger');
 
     // Phenoshare Importer instance.
     $this->phenoshare_plugin_manager = \Drupal::service('tripal.importer');
-    $plugin_id = $this->definitions['test-trait-importer']['id'];
+    $plugin_id = $this->definitions['test-share-importer']['id'];
     $this->phenoshare_importer = $this->phenoshare_plugin_manager->createInstance($plugin_id);
   }
 
@@ -200,6 +217,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
               'field_type' => 'submit',
             ],
           ],
+          'disable_import_button' => TRUE,
         ],
       ],
 
@@ -220,6 +238,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
               'field_type' => 'submit',
             ],
           ],
+          'disable_import_button' => TRUE,
         ],
       ],
 
@@ -231,6 +250,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         [
           'stage_title' => 'STAGE 3',
           'fields' => [],
+          'disable_import_button' => FALSE,
         ],
       ],
     ];
@@ -265,7 +285,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Build $form parameter.
     $form = \Drupal::formBuilder()->getForm(
       'Drupal\tripal\Form\TripalImporterForm',
-      $this->definitions['test-trait-importer']['id']
+      $this->definitions['test-share-importer']['id']
     );
 
     // The initial page load has setup stage one and file fieldset element has
@@ -306,6 +326,13 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         'The field element ' . $field_name . ' in ' . $scenario . ' has an incorrect field type.'
       );
     }
+
+    // Check that Import button is enabled/disabled depending on which stage.
+    $this->assertEquals(
+      $expected['disable_import_button'],
+      $form['button']['#disabled'],
+      'The Import button #disabled set value does not match expected set value in scenario ' . $scenario
+    );
   }
 
   /**
@@ -358,7 +385,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Construct the templage file filename.
     // Only the first item in the 'file_types' importer annotation is used as
     // default file extension of the template file.
-    $plugin_id = $this->definitions['test-trait-importer']['id'];
+    $plugin_id = $this->definitions['test-share-importer']['id'];
     $importer_annotations = $this->phenoshare_plugin_manager->getDefinitions();
     $expected_file_extension = $importer_annotations[$plugin_id]['file_types'][0];
     $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
@@ -367,6 +394,159 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
       $expected_template_filename,
       $rendered_file_format_description,
       'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template filename.'
+    );
+  }
+
+  /**
+   * Data Provider: provides validation result array.
+   *
+   * @return array
+   *   Each validation array scenario is an array with the following values:
+   *   - A string, human-readable short title text of the stage.
+   *   - A validation result array.
+   *   - An array of expeceted values with the following keys.
+   *     - 'has_failed': the expected value returned by 'hasFailedValidation'
+   *       method given the validation result array.
+   *
+   * @todo update validation result with the new validation result array.
+   */
+  public function provideValidationResultArray() {
+    return [
+      // #0: Validation result array has failed item.
+      [
+        'has failed item',
+        [
+          'Genus Exists' => [
+            'status' => 'fail',
+            'detail' => 'Genus does not exist',
+          ],
+          'Project Exists' => [
+            'status' => 'pass',
+            'detail' => '',
+          ],
+        ],
+        [
+          'has_failed' => TRUE,
+        ],
+      ],
+
+      // #1: Validation result array has no failed item.
+      [
+        'has no failed item',
+        [
+          'Genus Exists' => [
+            'status' => 'pass',
+            'detail' => '',
+          ],
+          'Project Exists' => [
+            'status' => 'pass',
+            'detail' => '',
+          ],
+        ],
+        [
+          'has_failed' => FALSE,
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test hasFailedValidation() method in the importer.
+   *
+   * @param string $scenario
+   *   A human-readable short title text of the stage.
+   * @param array $validation_result_array
+   *   A validation result array.
+   * @param array $expected
+   *   An array of expeceted values with the following keys.
+   *   - 'has_failed': the expected value returned by 'hasFailedValidation'
+   *     method given the validation result array.
+   *
+   * @dataProvider provideValidationResultArray
+   *
+   * @todo update validation result with the new validation result array.
+   */
+  public function testHasFailedValidation($scenario, $validation_result_array, $expected) {
+    $has_failed = $this->phenoshare_importer->hasFailedValidation($validation_result_array);
+
+    $this->assertEquals(
+      $expected['has_failed'],
+      $has_failed,
+      'The validation result array status does not match status returned by hasFailedValidation() method in scenario ' . $scenario
+    );
+  }
+
+  /**
+   * Data Provider: provides config value to allow new configuration.
+   *
+   * @return array
+   *   Each config value scenario is an array with the following values:
+   *   - A string, human-readable short title text of the stage.
+   *   - Boolean, True to allow and False to restrict new trait during import.
+   *   - An array of expeceted values with the following keys.
+   *     - 'has_message': A false value will indicate that the form will post a
+   *       Drupal Status Message.
+   *
+   * @todo update validation result with the new validation result array.
+   */
+  public function provideAllowNewConfig() {
+    return [
+      // #0: True, allow new traits to be added during import.
+      [
+        'allow new config set to true',
+        TRUE,
+        [
+          'has_message' => FALSE,
+        ],
+      ],
+
+      // #1: False, prevent traits from being added during import.
+      [
+        'allow new config set to false',
+        FALSE,
+        [
+          'has_message' => TRUE,
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test importer form notification relating to allow new config.
+   *
+   * @param string $scenario
+   *   A human-readable short title text of the stage.
+   * @param bool $set_value
+   *   The value True will allow while False will restrict trait during import.
+   * @param array $expected
+   *   An array of expeceted values with the following keys.
+   *     - 'has_message': A false value will indicate that the form will post a
+   *       Drupal Status Message.
+   *
+   * @dataProvider provideAllowNewConfig
+   */
+  public function testFormAllowNewNotification($scenario, $set_value, $expected) {
+    $form = \Drupal::formBuilder()->getForm(
+      'Drupal\tripal\Form\TripalImporterForm',
+      $this->definitions['test-share-importer']['id']
+    );
+
+    $form_state = new FormState();
+
+    $this->service_ConigFactory
+      ->getEditable('trpcultivate_phenotypes.settings')
+      ->set('trpcultivate.phenotypes.ontology.allownew', $set_value)
+      ->save();
+
+    $this->phenoshare_importer->form($form, $form_state);
+
+    // Collect all messages of type status posted through the messenger service.
+    $messages = $this->service_Messenger->all();
+
+    $this->assertEquals(
+      $expected['has_message'],
+      isset($messages['status']),
+      'The form allow new notification message should coincide with the configured value ' . $scenario
     );
   }
 
