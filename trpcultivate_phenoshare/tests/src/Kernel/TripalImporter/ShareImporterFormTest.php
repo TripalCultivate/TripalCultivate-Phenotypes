@@ -99,6 +99,13 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   protected $service_Messenger;
 
   /**
+   * Form builder.
+   *
+   * @var Drupal\Core\Form\FormBuilder
+   */
+  protected $service_FormBuilder;
+
+  /**
    * A default listing of annotations associated with our importer.
    *
    * @var array
@@ -159,11 +166,205 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     $this->service_Renderer = $container->get('renderer');
     $this->service_ConigFactory = $container->get('config.factory');
     $this->service_Messenger = $container->get('messenger');
+    $this->service_FormBuilder = $container->get('form_builder');
 
     // Phenoshare Importer instance.
     $this->phenoshare_plugin_manager = \Drupal::service('tripal.importer');
     $plugin_id = $this->definitions['test-share-importer']['id'];
     $this->phenoshare_importer = $this->phenoshare_plugin_manager->createInstance($plugin_id);
+
+    $this->setTermConfig();
+
+    $genus = 'Tripalus';
+    $this->setOntologyConfig($genus);
+
+    // Setup a genus and project to test.
+    $project = 'Awesome Project';
+    $project_id = $this->chado_connection->insert('1:project')
+      ->fields([
+        'name' => $project,
+        'description' => 'A project description',
+      ])
+      ->execute();
+
+    \Drupal::service('trpcultivate_phenotypes.genus_project')
+      ->setGenusToProject($project_id, $genus, TRUE);
+  }
+
+  /**
+   * Data Provider: provides form values to test form build.
+   *
+   * @return array
+   *   Each stage scenario is an array with the following values:
+   *   - A string, human-readable short title text of the stage.
+   *   - Integer, Zero-based index number of the stage.
+   *   - The triggering element to set, to get to the next stage.
+   *   - An array of expeceted features of the stage.
+   *     The following keys are used to reference a value:
+   *     - 'disable_import_button': the expected #disabled state of the Import
+   *       button in the form.
+   *     - 'completed_stages': the stages that have been marked completed
+   *       depending on which page the form is currently at.
+   *     - 'upcoming_stages': the stages that have been marked upcoming
+   *       depending on which page the form is currently at.
+   */
+  public function provideFormValues() {
+    return [
+      [
+        'stage 1',
+        0,
+        '',
+        [
+          'disable_import_button' => TRUE,
+          'completed_stages' => [],
+          'upcoming_stages' => [
+            'STAGE 2',
+            'STAGE 3',
+          ],
+        ],
+      ],
+
+      [
+        'stage 2',
+        1,
+        'Validate Data File',
+        [
+          'disable_import_button' => TRUE,
+          'completed_stages' => [
+            'STAGE 1',
+          ],
+          'upcoming_stages' => [
+            'STAGE 3',
+          ],
+        ],
+      ],
+
+      [
+        'stage 3',
+        2,
+        'Check Values',
+        [
+          'disable_import_button' => TRUE,
+          'completed_stages' => [
+            'STAGE 1',
+            'STAGE 2',
+          ],
+          'upcoming_stages' => [],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test form() method in the importer.
+   *
+   * This test will test how form() method assembles all stages.
+   *
+   * @param string $scenario
+   *   A human-readable short title text of the stage.
+   * @param int $stage_index
+   *   A Zero-based index number of the stage.
+   * @param string $trigger_element
+   *   The triggering element to set, to get to the next stage.
+   * @param array $expected
+   *   An array of expeceted features of the stage.
+   *     The following keys are used to reference a value:
+   *     - 'disable_import_button': the expected #disabled state of the Import
+   *       button in the form.
+   *     - 'completed_stages': the stages that have been marked completed
+   *       depending on which page the form is currently at.
+   *     - 'upcoming_stages': the stages that have been marked upcoming
+   *       depending on which page the form is currently at.
+   *
+   * @dataProvider provideFormValues
+   */
+  public function testForm($scenario, $stage_index, $trigger_element, $expected) {
+    // Build $form_state parameter. These values are used to determine
+    // which how the stages are prepared in the main importer form.
+    $form_state = new FormState();
+
+    $storage = $form_state->getStorage();
+    // This will indicate that there is no failed validations.
+    $storage['validation_result'] = [];
+    $form_state->setStorage($storage);
+    // This replicates the triggering element was set (form is submitted).
+    $form_state->setValue('trigger_element', $trigger_element);
+    $form_state->setTriggeringElement(
+      [
+        '#type' => 'submit',
+        '#value' => $trigger_element,
+      ]
+    );
+    // This initializes the form to the current stage.
+    $form_state->setValue('current_stage', $stage_index);
+
+    // Build $form parameter.
+    $form = [];
+    $form['file'] = [];
+
+    $form['button'] = $this->service_FormBuilder
+      ->getForm(
+      'Drupal\tripal\Form\TripalImporterForm',
+      $this->definitions['test-share-importer']['id']
+      )['button'];
+
+    // Build the form.
+    $form = $this->phenoshare_importer->form($form, $form_state);
+
+    $this->assertEquals(
+      $expected['disable_import_button'],
+      $form['button']['#disabled'],
+      'Importer form() import button #disabled field attribute value does not match expected value in scenario ' . $scenario
+    );
+
+    // Before rendering, it is required to add the key #description_display
+    // to field that uses #description, in this case schema select field is one.
+    $form['advanced']['schema_name']['#description_display'] = 'after';
+    $form_markup = $this->service_Renderer->renderInIsolation($form);
+    // Get all <div> that wrap the stage title. The wrapper contains the
+    // current status of every stages by inspecting the CSS class selector set.
+    preg_match_all('/<div class="tcp-stage-title .*">.*?<\/div>/', (string) $form_markup, $matches);
+
+    // Assert that the current stage is this stage.
+    $this->assertStringContainsString(
+      'tcp-current-stage',
+      $matches[0][$stage_index],
+      'The form has set the incorrect current stage in scenario ' . $scenario
+    );
+
+    // Assert that the remanining stages are upcoming and previous stages are
+    // completed stages.
+    $form_stages = [
+      'completed' => [],
+      'upcoming'  => [],
+    ];
+
+    foreach ($matches[0] as $i => $stage_wrapper) {
+      if ($i == $stage_index) {
+        continue;
+      }
+
+      preg_match('/STAGE [1-9]/', $stage_wrapper, $matches);
+
+      if ($i < $stage_index && str_contains($stage_wrapper, 'tcp-completed-stage')) {
+        array_push($form_stages['completed'], $matches[0]);
+      }
+      else {
+        array_push($form_stages['upcoming'], $matches[0]);
+      }
+    }
+
+    $this->assertEquals(
+      $expected['completed_stages'],
+      $form_stages['completed'],
+      'Importer form() method completed stages do not match expected completed stages in scenario ' . $scenario
+    );
+
+    $this->assertEquals(
+      $expected['upcoming_stages'],
+      $form_stages['upcoming'],
+      'Importer form() method upcoming stages do not match expected upcoming stages in scenario ' . $scenario
+    );
   }
 
   /**
@@ -217,7 +418,6 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
               'field_type' => 'submit',
             ],
           ],
-          'disable_import_button' => TRUE,
         ],
       ],
 
@@ -238,7 +438,6 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
               'field_type' => 'submit',
             ],
           ],
-          'disable_import_button' => TRUE,
         ],
       ],
 
@@ -250,7 +449,6 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         [
           'stage_title' => 'STAGE 3',
           'fields' => [],
-          'disable_import_button' => FALSE,
         ],
       ],
     ];
@@ -283,10 +481,11 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   public function testStages($scenario, $stage_wrapper, $stage_method, $expected) {
 
     // Build $form parameter.
-    $form = \Drupal::formBuilder()->getForm(
-      'Drupal\tripal\Form\TripalImporterForm',
-      $this->definitions['test-share-importer']['id']
-    );
+    $form = $this->service_FormBuilder
+      ->getForm(
+        'Drupal\tripal\Form\TripalImporterForm',
+        $this->definitions['test-share-importer']['id']
+      );
 
     // The initial page load has setup stage one and file fieldset element has
     // been relocated into the field wrapper element. This will restore the
@@ -302,7 +501,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     // Check that the stage has the title.
     $stage_markup = $this->service_Renderer->renderInIsolation($form[$stage_wrapper]);
-    preg_match('/<div class=".*\s">(.*?)<\/div>/', $stage_markup, $matches);
+    preg_match('/<div class=".*\s">(.*?)<\/div>/', (string) $stage_markup, $matches);
     $this->assertStringContainsString(
       $expected['stage_title'],
       $matches[1],
@@ -326,13 +525,6 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         'The field element ' . $field_name . ' in ' . $scenario . ' has an incorrect field type.'
       );
     }
-
-    // Check that Import button is enabled/disabled depending on which stage.
-    $this->assertEquals(
-      $expected['disable_import_button'],
-      $form['button']['#disabled'],
-      'The Import button #disabled set value does not match expected set value in scenario ' . $scenario
-    );
   }
 
   /**
@@ -526,10 +718,12 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    * @dataProvider provideAllowNewConfig
    */
   public function testFormAllowNewNotification($scenario, $set_value, $expected) {
-    $form = \Drupal::formBuilder()->getForm(
-      'Drupal\tripal\Form\TripalImporterForm',
-      $this->definitions['test-share-importer']['id']
-    );
+
+    $form = $this->service_FormBuilder
+      ->getForm(
+        'Drupal\tripal\Form\TripalImporterForm',
+        $this->definitions['test-share-importer']['id']
+      );
 
     $form_state = new FormState();
 
@@ -548,6 +742,23 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
       isset($messages['status']),
       'The form allow new notification message should coincide with the configured value ' . $scenario
     );
+  }
+
+  /**
+   * Test ajaxLoadGenusOfProject() method in the importer.
+   */
+  public function testAjaxLoadGenusOfProject() {
+
+    $form = $this->service_FormBuilder
+      ->getForm(
+        'Drupal\tripal\Form\TripalImporterForm',
+        $this->definitions['test-share-importer']['id']
+      );
+
+    $form_state = new FormState();
+    $form_state->setValue('project', 'Awesome Project');
+
+    $this->phenoshare_importer->ajaxLoadGenusOfProject($form, $form_state);
   }
 
 }

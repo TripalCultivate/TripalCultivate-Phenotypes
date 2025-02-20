@@ -2,20 +2,21 @@
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
-use Drupal\Core\Entity\EntityTypeManager;
-use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
-use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\Render\Renderer;
-use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Render\Renderer;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -53,16 +54,16 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   /**
    * Reference the current stage.
    *
-   * @var int
+   * @var string
    */
-  private $current_stage;
+  private const CURRENT_STAGE = 'current_stage';
 
   /**
    * Reference the validation result summary values in Drupal storage system.
    *
-   * @var array
+   * @var string
    */
-  private $validation_result;
+  private const VALIDATION_RESULT = 'validation_result';
 
   /**
    * Headers required by this importer.
@@ -117,37 +118,44 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   ];
 
   /**
+   * Configuration Factory.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected $service_ConfigFactory;
+
+  /**
    * The Validator Plugin Manager.
    *
-   * @var Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
    */
   protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
 
   /**
    * The Entity Type Manager.
    *
-   * @var Drupal\Core\Entity\EntityTypeManager
+   * @var \Drupal\Core\Entity\EntityTypeManager
    */
   protected EntityTypeManager $service_entityTypeManager;
 
   /**
    * Genus Ontology Service.
    *
-   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
    */
   protected $service_PhenoGenusOntology;
 
   /**
    * The TripalCultivatePhenotypes File Template Service.
    *
-   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
    */
   protected TripalCultivatePhenotypesFileTemplateService $service_FileTemplate;
 
   /**
    * The Drupal Renderer.
    *
-   * @var Drupal\Core\Render\Renderer
+   * @var \Drupal\Core\Render\Renderer
    */
   protected Renderer $service_Renderer;
 
@@ -169,6 +177,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   The plugin implementation definition.
    * @param Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
+   * @param Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   Configuration factory service.
    * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager
    *   The validator plugin manager.
    * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
@@ -187,6 +197,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     string $plugin_id,
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
+    ConfigFactoryInterface $config_factory,
     TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
     EntityTypeManager $service_entityTypeManager,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
@@ -196,6 +207,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
+    $this->service_ConfigFactory = $config_factory;
     $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
@@ -213,6 +225,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $plugin_id,
       $plugin_definition,
       $container->get('tripal_chado.database'),
+      $container->get('config.factory'),
       $container->get('plugin.manager.trpcultivate_validator'),
       $container->get('entity_type.manager'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
@@ -293,7 +306,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ];
 
     // Remind user about the configuration value set for allow new.
-    $allownew = \Drupal::config('trpcultivate_phenotypes.settings')
+    $allownew = $this->service_ConfigFactory
+      ->get('trpcultivate_phenotypes.settings')
       ->get('trpcultivate.phenotypes.ontology.allownew');
 
     if ($allownew == FALSE) {
@@ -318,8 +332,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // Flag to indicate if validation has returned a failed status.
     $has_fail = FALSE;
 
-    if (isset($storage[$this->validation_result])) {
-      $has_fail = $this->hasFailedValidation($storage[$this->validation_result]);
+    if (isset($storage[self::VALIDATION_RESULT])) {
+      $has_fail = $this->hasFailedValidation($storage[self::VALIDATION_RESULT]);
     }
 
     $triggering_element = $form_state->getTriggeringElement();
@@ -333,10 +347,10 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ];
 
     $stage = (!$has_fail && $form_state->getValue('trigger_element') && in_array($triggering_element['#value'], $valid_triggering_element))
-      ? (int) $form_state->getValue($this->current_stage) + 1
+      ? (int) $form_state->getValue(self::CURRENT_STAGE) + 1
       : 1;
 
-    $form[$this->current_stage] = [
+    $form[self::CURRENT_STAGE] = [
       '#type' => 'hidden',
       '#value' => $stage,
       '#attributes' => ['id' => 'tcp-current-stage'],
@@ -351,7 +365,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     foreach ($stage_methods as $method) {
       if (preg_match('/stage([1-9])/', $method, $matches)) {
-        if ($stage_no = $matches[1]) {
+        if ($matches[1]) {
+          $stage_no = $matches[1];
+
           // Call method to build stage.
           // Set the status of the stage (current, complete, or upcoming).
           $stage_status = '';
@@ -429,8 +445,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // Validation result.
     $storage = $form_state->getStorage();
     // Full validation result.
-    if (isset($storage[$this->validation_result])) {
-      $validation_result = $storage[$this->validation_result];
+    if (isset($storage[self::VALIDATION_RESULT])) {
+      $validation_result = $storage[self::VALIDATION_RESULT];
 
       $form[$fld_wrapper]['validation_result'] = [
         '#type' => 'inline_template',
@@ -619,11 +635,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     //
     // NOTE: not all stages require a validation and a subsequent condition will
     // target a specific stage to perform pertinent validation.
-    // NOTE: $this->current_stage is the name of the field in the formstate that
+    // NOTE: CURRENT_STAGE is the name of the field in the formstate that
     // holds the current stage value (cacheing of stage no.).
     // See $current_stage property.
-    if (array_key_exists($this->current_stage, $form_state_values)) {
-      $stage = $form_state_values[$this->current_stage];
+    if (array_key_exists(self::CURRENT_STAGE, $form_state_values)) {
+      $stage = $form_state_values[self::CURRENT_STAGE];
 
       // This will support re-upload of a file but form has performed
       // validation of a previously uploaded file.
@@ -634,7 +650,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         // Reset the stage to stage 1 to perform validation below.
         $stage = 1;
         // Cache stage.
-        $form_state->setValue($this->current_stage, $stage);
+        $form_state->setValue(self::CURRENT_STAGE, $stage);
       }
 
       if ($stage >= 1) {
@@ -700,7 +716,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
           // Save all validation results in Drupal storage to create a
           // summary report.
           $storage = $form_state->getStorage();
-          $storage[$this->validation_result] = $validation_feedback;
+          $storage[self::VALIDATION_RESULT] = $validation_feedback;
           $form_state->setStorage($storage);
 
           // Check if the $validation_feedback contains 'fail' or 'todo' status.
@@ -889,6 +905,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   public static function ajaxLoadGenusOfProject($form, &$form_state) {
     // Project name.
     $project = $form_state->getValue('project');
+
     $response = new AjaxResponse();
 
     if (!empty($project)) {
@@ -910,7 +927,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $genus_of_project = '';
     }
 
-    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val', [$genus_of_project]));
+    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val' . $project, [$genus_of_project]));
     return $response;
   }
 
