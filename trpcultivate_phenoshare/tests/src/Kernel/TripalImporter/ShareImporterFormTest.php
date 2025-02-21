@@ -562,9 +562,9 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     );
 
     // Assert a download link was provided.
-    $plugin_id = $this->definitions['test-share-importer']['id'];
-    $expected_file_extension = $this->definitions[$plugin_id]['file_types'][0];
-    $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
+    $plugin = $this->definitions['test-share-importer'];
+    $expected_file_extension = $plugin['file_types'][0];
+    $expected_template_filename = $plugin['id'] . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
 
     $this->assertStringContainsString(
       $expected_template_filename,
