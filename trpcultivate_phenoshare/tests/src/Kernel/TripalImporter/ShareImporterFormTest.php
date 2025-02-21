@@ -13,7 +13,7 @@ use Drupal\user\Entity\User;
 /**
  * Tests the form + form-related functionality of the Share Importer.
  *
- * @group traitsImporter
+ * @group shareImporter
  */
 class ShareImporterFormTest extends ChadoTestKernelBase {
 
@@ -50,60 +50,39 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Saves details regarding the config.
-   *
-   * @var array
-   */
-  protected array $cvdbon;
-
-  /**
-   * The terms required by this module mapped to the cvterm_ids they are set to.
-   *
-   * @var array
-   */
-  protected array $terms;
-
-  /**
    * The Drupal Renderer.
    *
-   * @var Drupal\Core\Render\Renderer
+   * @var \Drupal\Core\Render\Renderer
    */
   protected $service_Renderer;
 
   /**
    * Phenotypes Share Importer plugin instance.
    *
-   * @var Drupal\trpcultivate_phenoshare\src\Plugin\TripalImporter\TripalCultivatePhenoShareImporter
+   * @var \Drupal\trpcultivate_phenoshare\src\Plugin\TripalImporter\TripalCultivatePhenoShareImporter
    */
   protected $phenoshare_importer;
 
   /**
-   * Phenotypes Share Importer plugin manager.
-   *
-   * @var Drupal\trpcultivate_phenotype\src\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
-   */
-  protected $phenoshare_plugin_manager;
-
-  /**
    * Configuration Factory.
    *
-   * @var Drupal\Core\Config\ConfigFactoryInterface
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $service_ConfigFactory;
 
   /**
    * Messenger service.
    *
-   * @var Drupal\Core\Messenger\MessengerInterface
+   * @var \Drupal\Core\Messenger\MessengerInterface
    */
   protected $service_Messenger;
 
   /**
-   * Form builder.
+   * Tripal Importer form.
    *
-   * @var Drupal\Core\Form\FormBuilder
+   * @var \Drupal\tripal\Form\TripalImporterForm
    */
-  protected $service_FormBuilder;
+  protected $form_importer;
 
   /**
    * A default listing of annotations associated with our importer.
@@ -143,7 +122,12 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate_phenoshare']);
+    $this->installConfig([
+      'system',
+      'trpcultivate_phenotypes',
+      'trpcultivate_phenoshare',
+    ]);
+
     // Prepare Tripal Importer Environment.
     $this->prepareEnvironment(['TripalImporter']);
     // Create and log-in a user.
@@ -163,22 +147,28 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
       });
     $container->set('tripal.logger', $mock_logger);
 
+    // Prepare services and create instance of form and importer.
     $this->service_Renderer = $container->get('renderer');
-    $this->service_ConigFactory = $container->get('config.factory');
+    $this->service_ConfigFactory = $container->get('config.factory');
     $this->service_Messenger = $container->get('messenger');
-    $this->service_FormBuilder = $container->get('form_builder');
 
-    // Phenoshare Importer instance.
-    $this->phenoshare_plugin_manager = \Drupal::service('tripal.importer');
     $plugin_id = $this->definitions['test-share-importer']['id'];
-    $this->phenoshare_importer = $this->phenoshare_plugin_manager->createInstance($plugin_id);
+    $this->form_importer = $container
+      ->get('form_builder')
+      ->getForm(
+        'Drupal\tripal\Form\TripalImporterForm',
+        $plugin_id
+      );
 
+    $this->phenoshare_importer = \Drupal::service('tripal.importer')
+      ->createInstance($plugin_id);
+
+    // Setup a genus and project to test.
     $this->setTermConfig();
 
     $genus = 'Tripalus';
     $this->setOntologyConfig($genus);
 
-    // Setup a genus and project to test.
     $project = 'Awesome Project';
     $project_id = $this->chado_connection->insert('1:project')
       ->fields([
@@ -192,26 +182,25 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides form values to test form build.
+   * Data Provider: provides form values to test form() method.
    *
    * @return array
-   *   Each stage scenario is an array with the following values:
-   *   - A string, human-readable short title text of the stage.
+   *   Each scenario is an array with the following values:
+   *   - A string, human-readable short title text of the scenario.
    *   - Integer, Zero-based index number of the stage.
-   *   - The triggering element to set, to get to the next stage.
-   *   - An array of expeceted features of the stage.
+   *   - A string, Triggering element to set, to get to the subsequent stage.
+   *   - An array of expected features of the stage.
    *     The following keys are used to reference a value:
-   *     - 'disable_import_button': the expected #disabled state of the Import
-   *       button in the form.
-   *     - 'completed_stages': the stages that have been marked completed
-   *       depending on which page the form is currently at.
-   *     - 'upcoming_stages': the stages that have been marked upcoming
-   *       depending on which page the form is currently at.
+   *     - 'disable_import_button': the anticipated disabled state of the Import
+   *       button in the form for each stage progression.
+   *     - 'completed_stages': the stages that have been marked as completed.
+   *     - 'upcoming_stages': the stages that have been marked upcoming.
    */
   public function provideFormValues() {
     return [
+      // #0: Stage 1.
       [
-        'stage 1',
+        'form at stage 1',
         0,
         '',
         [
@@ -224,8 +213,9 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         ],
       ],
 
+      // #1: Stage 2.
       [
-        'stage 2',
+        'form at stage 2',
         1,
         'Validate Data File',
         [
@@ -239,12 +229,13 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         ],
       ],
 
+      // #2: Stage 3.
       [
-        'stage 3',
+        'form at stage 3',
         2,
         'Check Values',
         [
-          'disable_import_button' => TRUE,
+          'disable_import_button' => FALSE,
           'completed_stages' => [
             'STAGE 1',
             'STAGE 2',
@@ -258,34 +249,36 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   /**
    * Test form() method in the importer.
    *
-   * This test will test how form() method assembles all stages.
+   * This test evaluates the assembly of file import stages by form() method.
    *
    * @param string $scenario
-   *   A human-readable short title text of the stage.
+   *   A human-readable short title text of the scenario.
    * @param int $stage_index
    *   A Zero-based index number of the stage.
    * @param string $trigger_element
-   *   The triggering element to set, to get to the next stage.
+   *   The triggering element to set, to get to the subsequent stage.
    * @param array $expected
-   *   An array of expeceted features of the stage.
+   *   An array of expected features of the stage.
    *     The following keys are used to reference a value:
-   *     - 'disable_import_button': the expected #disabled state of the Import
-   *       button in the form.
-   *     - 'completed_stages': the stages that have been marked completed
-   *       depending on which page the form is currently at.
-   *     - 'upcoming_stages': the stages that have been marked upcoming
-   *       depending on which page the form is currently at.
+   *     - 'disable_import_button': the anticipated disabled state of the Import
+   *       button in the form for each stage progression.
+   *     - 'completed_stages': the stages that have been marked as completed.
+   *     - 'upcoming_stages': the stages that have been marked upcoming.
    *
    * @dataProvider provideFormValues
    */
   public function testForm($scenario, $stage_index, $trigger_element, $expected) {
+
     // Build $form_state parameter. These values are used to determine
-    // which how the stages are prepared in the main importer form.
+    // how stages are prepared in the main importer form.
     $form_state = new FormState();
 
     $storage = $form_state->getStorage();
     // This will indicate that there is no failed validations.
     $storage['validation_result'] = [];
+    // Tripal Importer uses this key to enable/disable Import button and by
+    // default is set to TRUE (disabled). Only in Stage 3 that it will be FALSE.
+    $storage['disable_TripalImporter_submit'] = TRUE;
     $form_state->setStorage($storage);
     // This replicates the triggering element was set (form is submitted).
     $form_state->setValue('trigger_element', $trigger_element);
@@ -301,20 +294,16 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Build $form parameter.
     $form = [];
     $form['file'] = [];
-
-    $form['button'] = $this->service_FormBuilder
-      ->getForm(
-      'Drupal\tripal\Form\TripalImporterForm',
-      $this->definitions['test-share-importer']['id']
-      )['button'];
+    $form['button'] = $this->form_importer['button'];
 
     // Build the form.
     $form = $this->phenoshare_importer->form($form, $form_state);
+    $storage = $form_state->getStorage();
 
     $this->assertEquals(
       $expected['disable_import_button'],
-      $form['button']['#disabled'],
-      'Importer form() import button #disabled field attribute value does not match expected value in scenario ' . $scenario
+      $storage['disable_TripalImporter_submit'],
+      'Importer form() Import button #disabled field attribute value does not match expected value in scenario ' . $scenario
     );
 
     // Before rendering, it is required to add the key #description_display
@@ -340,9 +329,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     ];
 
     foreach ($matches[0] as $i => $stage_wrapper) {
-      if ($i == $stage_index) {
-        continue;
-      }
+      if ($i == $stage_index) continue;
 
       preg_match('/STAGE [1-9]/', $stage_wrapper, $matches);
 
@@ -357,41 +344,41 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $expected['completed_stages'],
       $form_stages['completed'],
-      'Importer form() method completed stages do not match expected completed stages in scenario ' . $scenario
+      'Importer form() method list of completed stages do not match expected list of completed stages in scenario ' . $scenario
     );
 
     $this->assertEquals(
       $expected['upcoming_stages'],
       $form_stages['upcoming'],
-      'Importer form() method upcoming stages do not match expected upcoming stages in scenario ' . $scenario
+      'Importer form() method list of upcoming stages do not match expected list upcoming stages in scenario ' . $scenario
     );
   }
 
   /**
-   * Data Provider: provides stage details to test import stages.
+   * Data Provider: provides stage details to test importer stage methods.
    *
    * @return array
-   *   Each stage scenario is an array with the following values:
-   *   - A string, human-readable short title text of the stage.
-   *   - A string, the name of stage container or wrapper that contains all
-   *     relevant stage specific form elements.
-   *   - A string, the method name to generate the stage.
-   *   - An array of expeceted features of the stage such as title or fields.
+   *   Each scenario is an array with the following values:
+   *   - A string, human-readable short title text of the scenario.
+   *   - A string, the name of stage wrapper form element that contains
+   *     all pertinent stage-speficic form fields.
+   *   - A string, the method name to call to generate the stage.
+   *   - An array of expected features of the stage such as title and fields.
    *     The following keys are used to reference a value:
-   *     - 'stage_title': The expected stage title text shown in the stage title
-   *       banner of the form.
-   *     - 'fields': A set of form elements expected to be rendered in a stage.
+   *     - 'stage_title': the expected stage title text shown in the stage title
+   *       banner element.
+   *     - 'fields': a set of form fields expected to be rendered in a stage.
    *       Each field is keyed by the name of the field and the value is an
    *       array with the following keys:
-   *       - 'wrapper_element': The name of the wrapper element if a field is
+   *       - 'wrapper_element': the name of the wrapper element if a field is
    *         contained in a wrapper element.
-   *       - 'field_type': The field element type ie. a textfield or select.
+   *       - 'field_type': the field element type ie. a textfield or select.
    */
   public function provideStageDetails() {
     return [
       // #0: Stage One.
       [
-        'stage 1 - upload',
+        'create stage 1 - upload',
         'accordion_stage1',
         'stage1',
         [
@@ -423,7 +410,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
       // #2: Stage Two.
       [
-        'stage 2 - describe',
+        'create stage 2 - describe',
         'accordion_stage2',
         'stage2',
         [
@@ -443,7 +430,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
       // #3: Stage Three.
       [
-        'stage 3 - review and save',
+        'create stage 3 - review and save',
         'accordion_stage3',
         'stage3',
         [
@@ -455,37 +442,36 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Tests that stages render with the correct stage elements.
+   * Test stage#() methods in the importer.
+   *
+   * This test ensures that each method to create a stage, renders with the
+   * correct form elements.
    *
    * @param string $scenario
-   *   A human-readable short title text of the stage.
+   *   A human-readable short title text of the scenario.
    * @param string $stage_wrapper
-   *   The name of stage container or wrapper that contains all relevant stage
-   *   specific form elements.
+   *   The name of stage wrapper form element that contains all pertinent
+   *   stage-speficic form fields.
    * @param string $stage_method
-   *   The method name to generate the stage.
+   *   The method name to call to generate the stage.
    * @param array $expected
-   *   An array of expeceted features of the stage such as title or fields.
+   *   An array of expected features of the stage such as title and fields.
    *   The following keys are used to reference a value:
-   *     - 'stage_title': The expected stage title text shown in the stage title
-   *       banner of the form.
-   *     - 'fields': A set of form elements expected to be rendered in a stage.
+   *     - 'stage_title': the expected stage title text shown in the stage title
+   *       banner element.
+   *     - 'fields': a set of form fields expected to be rendered in a stage.
    *       Each field is keyed by the name of the field and the value is an
    *       array with the following keys:
-   *       - 'wrapper_element': The name of the wrapper element if a field is
+   *       - 'wrapper_element': the name of the wrapper element if a field is
    *         contained in a wrapper element.
-   *       - 'field_type': The field element type ie. a textfield or select.
+   *       - 'field_type': the field element type ie. a textfield or select.
    *
    * @dataProvider provideStageDetails
    */
   public function testStages($scenario, $stage_wrapper, $stage_method, $expected) {
 
     // Build $form parameter.
-    $form = $this->service_FormBuilder
-      ->getForm(
-        'Drupal\tripal\Form\TripalImporterForm',
-        $this->definitions['test-share-importer']['id']
-      );
+    $form = $this->form_importer;
 
     // The initial page load has setup stage one and file fieldset element has
     // been relocated into the field wrapper element. This will restore the
@@ -496,7 +482,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Build $form_state parameter.
     $form_state = new FormState();
 
-    // Set the Stage.
+    // Createt the the stage
     $this->phenoshare_importer->$stage_method($form, $form_state, '');
 
     // Check that the stage has the title.
@@ -505,10 +491,11 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       $expected['stage_title'],
       $matches[1],
-      'The stage title does not match expected stage title in scenario ' . $scenario
+      'The stage title does not contain the expected stage title in scenario ' . $scenario
     );
 
-    // Check that the stage contains the exepected field elememts.
+    // Verify that the stage contains the anticipated form field and that the
+    // the form field type matches the expected type.
     foreach ($expected['fields'] as $field_name => $field) {
       $field_placement = ($field['wrapper_element'])
         ? $form[$stage_wrapper][$field['wrapper_element']] : $form[$stage_wrapper];
@@ -531,6 +518,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    * Test describeUploadFileFormat() method in the importer.
    */
   public function testDescribeUploadFileFormat() {
+
     // Create a user.
     $user_username = 'user-collector';
     $user = User::create([
@@ -560,7 +548,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $expected_headers,
       $matches[1],
-      'The headers defined by the importer does not match the headers rendered by describeUploadFileFormat()'
+      'The list of headers defined by the importer does not match the headers rendered by describeUploadFileFormat()'
     );
 
     // Assert admin notes were incorporated into the description section.
@@ -570,22 +558,18 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       $expected_notes,
       $rendered_file_format_description,
-      'The rendered markup of the method describeUploadFileFormat() does not contain expected file format importer notes'
+      'The rendered markup of the method describeUploadFileFormat() does not contain expected importer notes'
     );
 
     // Assert a download link was provided.
-    // Construct the templage file filename.
-    // Only the first item in the 'file_types' importer annotation is used as
-    // default file extension of the template file.
     $plugin_id = $this->definitions['test-share-importer']['id'];
-    $importer_annotations = $this->phenoshare_plugin_manager->getDefinitions();
-    $expected_file_extension = $importer_annotations[$plugin_id]['file_types'][0];
+    $expected_file_extension = $this->definitions[$plugin_id]['file_types'][0];
     $expected_template_filename = $plugin_id . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
 
     $this->assertStringContainsString(
       $expected_template_filename,
       $rendered_file_format_description,
-      'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template filename.'
+      'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template download link.'
     );
   }
 
@@ -594,13 +578,11 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *
    * @return array
    *   Each validation array scenario is an array with the following values:
-   *   - A string, human-readable short title text of the stage.
+   *   - A string, human-readable short title text of the scenario.
    *   - A validation result array.
    *   - An array of expeceted values with the following keys.
-   *     - 'has_failed': the expected value returned by 'hasFailedValidation'
+   *     - 'has_failed': the expected value returned by hasFailedValidation()
    *       method given the validation result array.
-   *
-   * @todo update validation result with the new validation result array.
    */
   public function provideValidationResultArray() {
     return [
@@ -646,20 +628,20 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    * Test hasFailedValidation() method in the importer.
    *
    * @param string $scenario
-   *   A human-readable short title text of the stage.
+   *   A human-readable short title text of the scenario.
    * @param array $validation_result_array
    *   A validation result array.
    * @param array $expected
    *   An array of expeceted values with the following keys.
-   *   - 'has_failed': the expected value returned by 'hasFailedValidation'
+   *   - 'has_failed': the expected value returned by hasFailedValidation()
    *     method given the validation result array.
    *
    * @dataProvider provideValidationResultArray
-   *
-   * @todo update validation result with the new validation result array.
    */
   public function testHasFailedValidation($scenario, $validation_result_array, $expected) {
-    $has_failed = $this->phenoshare_importer->hasFailedValidation($validation_result_array);
+
+    $has_failed = $this->phenoshare_importer
+      ->hasFailedValidation($validation_result_array);
 
     $this->assertEquals(
       $expected['has_failed'],
@@ -669,32 +651,33 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides config value to allow new configuration.
+   * Data Provider: provides config value to 'allownew' configuration.
+   *
+   * If set to true, a trait can be inserted during file import, while a false
+   * value will notify user of a restriction.
    *
    * @return array
    *   Each config value scenario is an array with the following values:
-   *   - A string, human-readable short title text of the stage.
+   *   - A string, human-readable short title text of the scenario.
    *   - Boolean, True to allow and False to restrict new trait during import.
    *   - An array of expeceted values with the following keys.
-   *     - 'has_message': A false value will indicate that the form will post a
+   *     - 'has_message': a false value will indicate that the form will post a
    *       Drupal Status Message.
-   *
-   * @todo update validation result with the new validation result array.
    */
   public function provideAllowNewConfig() {
     return [
       // #0: True, allow new traits to be added during import.
       [
-        'allow new config set to true',
+        'allownew config set to true',
         TRUE,
         [
           'has_message' => FALSE,
         ],
       ],
 
-      // #1: False, prevent traits from being added during import.
+      // #1: False, prevent traits from being added during import (notify).
       [
-        'allow new config set to false',
+        'allownew config set to false',
         FALSE,
         [
           'has_message' => TRUE,
@@ -707,41 +690,43 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    * Test importer form notification relating to allow new config.
    *
    * @param string $scenario
-   *   A human-readable short title text of the stage.
+   *   A human-readable short title text of the scenario.
    * @param bool $set_value
-   *   The value True will allow while False will restrict trait during import.
+   *   True to allow and False to restrict new trait during import.
    * @param array $expected
    *   An array of expeceted values with the following keys.
-   *     - 'has_message': A false value will indicate that the form will post a
+   *     - 'has_message': a false value will indicate that the form will post a
    *       Drupal Status Message.
    *
    * @dataProvider provideAllowNewConfig
    */
   public function testFormAllowNewNotification($scenario, $set_value, $expected) {
 
-    $form = $this->service_FormBuilder
-      ->getForm(
-        'Drupal\tripal\Form\TripalImporterForm',
-        $this->definitions['test-share-importer']['id']
-      );
-
+    $form = $this->form_importer;
     $form_state = new FormState();
 
-    $this->service_ConigFactory
+    $this->service_ConfigFactory
       ->getEditable('trpcultivate_phenotypes.settings')
       ->set('trpcultivate.phenotypes.ontology.allownew', $set_value)
       ->save();
 
     $this->phenoshare_importer->form($form, $form_state);
 
-    // Collect all messages of type status posted through the messenger service.
+    // Collect all messages of posted through the messenger service.
     $messages = $this->service_Messenger->all();
 
     $this->assertEquals(
       $expected['has_message'],
-      isset($messages['status']),
+      isset($messages[$this->service_Messenger::TYPE_STATUS]),
       'The form allow new notification message should coincide with the configured value ' . $scenario
     );
+
+    if ($set_value == FALSE) {
+      $this->assertTrue(
+        str_contains((string) $messages[$this->service_Messenger::TYPE_STATUS][0], 'This module is set to NOT to allow new trait'),
+        'The status message text does not contain the expected message when allow new configuration is set to FALSE'
+      );
+    }
   }
 
   /**
@@ -749,16 +734,18 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    */
   public function testAjaxLoadGenusOfProject() {
 
-    $form = $this->service_FormBuilder
-      ->getForm(
-        'Drupal\tripal\Form\TripalImporterForm',
-        $this->definitions['test-share-importer']['id']
-      );
-
+    $form = $this->form_importer;
     $form_state = new FormState();
     $form_state->setValue('project', 'Awesome Project');
 
-    $this->phenoshare_importer->ajaxLoadGenusOfProject($form, $form_state);
+    $http_response = $this->phenoshare_importer->ajaxLoadGenusOfProject($form, $form_state)
+      ->getStatusCode();
+
+    $this->assertEquals(
+      200,
+      $http_response,
+      'The method ajaxLoadGenusOfProject is expected to return a 200 (ok) response status code'
+    );
   }
 
 }
