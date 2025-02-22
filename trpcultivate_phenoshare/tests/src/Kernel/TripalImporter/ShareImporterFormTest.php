@@ -329,7 +329,9 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     ];
 
     foreach ($matches[0] as $i => $stage_wrapper) {
-      if ($i == $stage_index) continue;
+      if ($i == $stage_index) {
+        continue;
+      }
 
       preg_match('/STAGE [1-9]/', $stage_wrapper, $matches);
 
@@ -482,7 +484,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // Build $form_state parameter.
     $form_state = new FormState();
 
-    // Createt the the stage
+    // Create the the stage.
     $this->phenoshare_importer->$stage_method($form, $form_state, '');
 
     // Check that the stage has the title.
