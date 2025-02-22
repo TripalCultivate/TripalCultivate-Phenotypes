@@ -52,14 +52,14 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   use StringTranslationTrait;
 
   /**
-   * Reference the current stage.
+   * The field name to reference the current stage form field element.
    *
    * @var string
    */
   private const CURRENT_STAGE = 'current_stage';
 
   /**
-   * Reference the validation result summary values in Drupal storage system.
+   * The key to reference the validation result array in Drupal storage system.
    *
    * @var string
    */
@@ -82,37 +82,37 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   private $headers = [
     [
       'name' => 'Germplasm Name',
-      'description' => 'To be determined',
+      'description' => 'The official name of the accession phenotyped. This accession name should be an exact match of an accession previously imported using a Germplasm Importer.',
       'type' => 'required',
     ],
     [
       'name' => 'Sample Name',
-      'description' => 'To be determined',
+      'description' => 'A unique identifier or label of the plant material being measured. For example, the plot entry number, a label on a test tube or pot.',
       'type' => 'required',
     ],
     [
       'name' => 'Group',
-      'description' => 'To be determined',
+      'description' => 'A simple descriptor of the environmental variables for this particular grouping of experimental subjects or germplasm. For example, site location, heated vs. room temperature, or assay.',
       'type' => 'required',
     ],
     [
       'name' => 'Experimental Unit',
-      'description' => 'To be determined',
+      'description' => '',
       'type' => 'required',
     ],
     [
       'name' => 'Replicate',
-      'description' => 'To be determined',
+      'description' => 'The number indicating the replicate of the sample.',
       'type' => 'required',
     ],
     [
       'name' => 'Timepoint',
-      'description' => 'To be determined',
+      'description' => 'The specific moment of time a phenotypic measurement was taken.',
       'type' => 'required',
     ],
     [
       'name' => 'Treatment',
-      'description' => 'To be determined',
+      'description' => 'Refers to specific condition or manipulation that is applied. For example, fertilizer, weeding pressure, nitrogen supplementation, or temperature.',
       'type' => 'required',
     ],
   ];
@@ -386,10 +386,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       }
     }
 
-    // Submit button.
-    // Manage importer submit button: Import
-    // By default, is disabled in the plugin annotation definition:
-    // submit_disabled and enabled one less stage of the total stages.
+    // Enable the Import button at final stage by setting a value in $form_state
+    // storage keyed by 'disable_TripalImporter_submit' to FALSE (enabled).
     if ($stage > ($total_stages - 1)) {
       $storage['disable_TripalImporter_submit'] = FALSE;
       $form_state->setStorage($storage);
@@ -635,9 +633,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     //
     // NOTE: not all stages require a validation and a subsequent condition will
     // target a specific stage to perform pertinent validation.
-    // NOTE: CURRENT_STAGE is the name of the field in the formstate that
-    // holds the current stage value (cacheing of stage no.).
-    // See $current_stage property.
     if (array_key_exists(self::CURRENT_STAGE, $form_state_values)) {
       $stage = $form_state_values[self::CURRENT_STAGE];
 
