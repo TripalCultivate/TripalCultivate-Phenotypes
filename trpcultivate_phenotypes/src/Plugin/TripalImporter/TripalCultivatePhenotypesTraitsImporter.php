@@ -11,8 +11,8 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -119,9 +119,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   /**
    * The Validator Plugin Manager.
    *
-   * @var Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
+  protected TripalCultivateValidatorManager $service_validatorPluginManager;
 
   /**
    * The TripalCultivate File Template Service.
@@ -173,7 +173,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The genus ontology service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   The traits service.
-   * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager
+   * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
    *   The validator plugin manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
@@ -191,7 +191,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     ChadoConnection $chado_connection,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
-    TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
+    TripalCultivateValidatorManager $service_validatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
@@ -541,7 +541,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         // ********************************************************************
         if ($line_no == 1) {
           // Split line into an array of values.
-          $header_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+          $header_row = TripalCultivateValidatorBase::splitRowIntoColumns($line, $file_mime_type);
 
           foreach ($validators['header-row'] as $validator_name => $validator) {
             // Set failures for this validator name to an empty array to signal
@@ -573,7 +573,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         elseif ($line_no > 1) {
           // Split line into an array using the delimiter supported by this
           // importer when it was configured.
-          $data_row = TripalCultivatePhenotypesValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+          $data_row = TripalCultivateValidatorBase::splitRowIntoColumns($line, $file_mime_type);
 
           // Call each validator on this row of the file.
           foreach ($validators['data-row'] as $validator_name => $validator) {
