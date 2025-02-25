@@ -11,6 +11,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
@@ -117,11 +118,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
-   * The Validator Plugin Manager.
+   * The TripalCultivate Phenotypes validator plugin manager.
+   *
+   * @var Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   */
+  protected TripalCultivatePhenotypesValidatorManager $service_PhenoValidatorPluginManager;
+
+  /**
+   * The TripalCultivate Base validator plugin manager.
    *
    * @var Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivateValidatorManager $service_validatorPluginManager;
+  protected TripalCultivateValidatorManager $service_BaseValidatorPluginManager;
 
   /**
    * The TripalCultivate File Template Service.
@@ -173,8 +181,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The genus ontology service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   The traits service.
-   * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
-   *   The validator plugin manager.
+   * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_PhenoValidatorPluginManager
+   *   The TripalCultivate Phenotypes validator plugin manager.
+   * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_BaseValidatorPluginManager
+   *   The TripalCultivate Base validator plugin manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
    * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
@@ -191,7 +201,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     ChadoConnection $chado_connection,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
-    TripalCultivateValidatorManager $service_validatorPluginManager,
+    TripalCultivatePhenotypesValidatorManager $service_PhenoValidatorPluginManager,
+    TripalCultivateValidatorManager $service_BaseValidatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
@@ -202,7 +213,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Call service setter method to set the service.
     $this->setServiceGenusOntology($service_PhenoGenusOntology);
     $this->setServiceTraits($service_PhenoTraits);
-    $this->service_validatorPluginManager = $service_validatorPluginManager;
+    $this->service_PhenoValidatorPluginManager = $service_PhenoValidatorPluginManager;
+    $this->service_BaseValidatorPluginManager = $service_BaseValidatorPluginManager;
     $this->service_FileTemplate = $service_FileTemplate;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_Renderer = $renderer;
@@ -220,6 +232,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $container->get('tripal_chado.database'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.traits'),
+      $container->get('plugin.manager.trpcultivate_phenotypes_validator'),
       $container->get('plugin.manager.trpcultivate_validator'),
       $container->get('trpcultivate.template_generator'),
       $container->get('entity_type.manager'),
@@ -264,13 +277,13 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // -----------------------------------------------------
     // Metadata
     // - Genus exists and is configured
-    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('genus_exists');
     $validators['metadata']['genus_exists'] = $instance;
 
     // -----------------------------------------------------
     // File level
     // - File exists and is the expected type
-    $instance = $this->service_validatorPluginManager->createInstance('valid_data_file');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('valid_data_file');
     // Set supported mime-types using the valid file extensions (file_types) as
     // defined in the annotation for this importer on line 25.
     $supported_file_extensions = $this->plugin_definition['file_types'];
@@ -280,7 +293,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // -----------------------------------------------------
     // Raw row level
     // - File rows are properly delimited
-    $instance = $this->service_validatorPluginManager->createInstance('valid_delimited_file');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('valid_delimited_file');
     // Count the number of columns and configure it for this validator. We want
     // this number to be strict = TRUE, thus no extra columns are allowed.
     $num_columns = count($this->headers);
@@ -292,7 +305,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // -----------------------------------------------------
     // Header Level
     // - All column headers match expected header format
-    $instance = $this->service_validatorPluginManager->createInstance('valid_headers');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('valid_headers');
     // Use our $headers property to configure what we expect for a header in the
     // input file.
     $instance->setHeaders($this->headers);
@@ -303,7 +316,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // -----------------------------------------------------
     // Data Row Level
     // - All data row cells in columns 0,2,4 are not empty
-    $instance = $this->service_validatorPluginManager->createInstance('empty_cell');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('empty_cell');
     $indices = [
       $header_index['Trait Name'],
       $header_index['Method Short Name'],
@@ -314,7 +327,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $validators['data-row']['empty_cell'] = $instance;
 
     // - The column 'Type' is one of "Qualitative" and "Quantitative"
-    $instance = $this->service_validatorPluginManager->createInstance('value_in_list');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('value_in_list');
     $instance->setIndices([$header_index['Type']]);
     $instance->setValidValues([
       'Quantitative',
@@ -323,7 +336,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $validators['data-row']['valid_data_type'] = $instance;
 
     // - The combination of Trait Name, Method Short Name and Unit is unique
-    $instance = $this->service_validatorPluginManager->createInstance('duplicate_traits');
+    $instance = $this->service_PhenoValidatorPluginManager->createInstance('duplicate_traits');
     // Set the logger since this validator uses a setter (setConfiguredGenus)
     // which may log messages.
     $instance->setLogger($this->logger);
