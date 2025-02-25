@@ -9,11 +9,11 @@ use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -124,18 +124,18 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
 
   /**
+   * The TripalCultivate File Template Service.
+   *
+   * @var Drupal\trpcultivate\Service\TripalCultivateFileTemplateService
+   */
+  protected TripalCultivateFileTemplateService $service_FileTemplate;
+
+  /**
    * The Entity Type Manager.
    *
    * @var Drupal\Core\Entity\EntityTypeManager
    */
   protected EntityTypeManager $service_entityTypeManager;
-
-  /**
-   * The TripalCultivatePhenotypes File Template Service.
-   *
-   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
-   */
-  protected TripalCultivatePhenotypesFileTemplateService $service_FileTemplate;
 
   /**
    * The Drupal Renderer.
@@ -175,10 +175,10 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The traits service.
    * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager
    *   The validator plugin manager.
-   * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
-   *   The entity type manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
+   * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
+   *   The entity type manager.
    * @param Drupal\Core\Render\Renderer $renderer
    *   The Drupal renderer service.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
@@ -192,8 +192,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
     TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
+    TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
-    TripalCultivatePhenotypesFileTemplateService $service_FileTemplate,
     Renderer $renderer,
     MessengerInterface $messenger,
   ) {
@@ -202,10 +202,9 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // Call service setter method to set the service.
     $this->setServiceGenusOntology($service_PhenoGenusOntology);
     $this->setServiceTraits($service_PhenoTraits);
-
     $this->service_validatorPluginManager = $service_validatorPluginManager;
-    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_FileTemplate = $service_FileTemplate;
+    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_Renderer = $renderer;
     $this->service_Messenger = $messenger;
   }
@@ -222,8 +221,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.traits'),
       $container->get('plugin.manager.trpcultivate_validator'),
+      $container->get('trpcultivate.template_generator'),
       $container->get('entity_type.manager'),
-      $container->get('trpcultivate_phenotypes.template_generator'),
       $container->get('renderer'),
       $container->get('messenger'),
     );
