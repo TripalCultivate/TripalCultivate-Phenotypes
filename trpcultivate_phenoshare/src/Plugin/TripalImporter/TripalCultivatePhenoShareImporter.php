@@ -97,7 +97,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ],
     [
       'name' => 'Experimental Unit',
-      'description' => '',
+      'description' => 'The identifier for the physical entity (e.g. plot, plant, protein extraction) that measurements are being taken on. For example, the plot identifier in a field experiment or the test tube label in a biochemical assay.',
       'type' => 'required',
     ],
     [
