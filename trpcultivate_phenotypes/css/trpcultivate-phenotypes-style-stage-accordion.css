@@ -12,7 +12,7 @@
   margin: 1px 0 0 0;
   padding: 20px;
   text-align: left;
-  width: inherit;
+  width: auto;
 }
 
 /* Stage Content Panel */
@@ -21,7 +21,7 @@ div.tcp-stage-title + div {
   display: none;
   padding: 10px;
 }
- 
+
 .tcp-stage-title:hover {
   background-color: #DADADA;
 }

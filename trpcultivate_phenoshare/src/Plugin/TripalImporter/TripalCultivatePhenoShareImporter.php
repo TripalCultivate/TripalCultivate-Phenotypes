@@ -2,14 +2,21 @@
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
-use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
-use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Render\Renderer;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -18,7 +25,7 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
  * which is ready to be freely shared.
  *
  * @TripalImporter(
- *   id = "trpcultivate-phenotypes-share",
+ *   id = "trpcultivate-phenotypes-share-importer",
  *   label = @Translation("Tripal Cultivate: Open Science Phenotypic Data"),
  *   description = @Translation("Imports phenotypic data which has already been published or which is ready to be freely shared."),
  *   file_types = {"tsv"},
@@ -40,61 +47,173 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
  *   callback_path = "",
  * )
  */
-class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
+class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
+
+  use StringTranslationTrait;
 
   /**
-   * Reference the current stage.
+   * The field name to reference the current stage form field element.
    *
-   * @var int
+   * @var string
    */
-  private $current_stage;
+  private const CURRENT_STAGE = 'current_stage';
 
   /**
-   * Reference the validation result summary values in Drupal storage system.
+   * The key to reference the validation result array in Drupal storage system.
    *
-   * @var array
+   * @var string
    */
-  private $validation_result;
+  private const VALIDATION_RESULT = 'validation_result';
 
   /**
    * Headers required by this importer.
    *
    * @var array
+   *
+   * The following keys are required:
+   * - 'name': The column header name as it should appear in the input file.
+   * - 'description': A user-friendly description of the header that will be
+   *   displayed to the user through the form.
+   * - 'type': one of "required" or "optional" to indicate whether the column
+   *   needs to have values present or not.
+   *
+   * NOTE: Order MUST reflect the desired order of headers in the input file.
    */
   private $headers = [
-    'Trait Name' => 'The full name of the trait as you would like it to appear on a trait page. This should not be abbreviated (e.g. Days till one open flower).',
-    'Method Name' => 'A short (<4 words) name describing the method. This should uniquely identify the method while being very succinct (e.g. 10% Plot at R1).',
-    'Unit' => 'The unit the trait was measured with. In the case of a scale this column should defined the scale. (e.g. days)',
-    'Germplasm Accession' => 'The stock.uniquename for the germplasm whose phenotype was measured. (e.g. ID:1234)',
-    'Germplasm Name' => 'The stock.name for the germplasm whose phenotype was measured. (e.g. Variety ABC)',
-    'Year' => 'The 4-digit year in which the measurement was taken. (e.g. 2020)',
-    'Location' => 'The full name of the location either using “location name, country” or GPS coordinates (e.g. Saskatoon, Canada)',
-    'Replicate' => 'The number for the replicate the current measurement is in. (e.g. 3)',
-    'Value' => 'The measured phenotypic value. (e.g. 34)',
-    'Data Collector' => 'The name of the person or organization which measured the phenotype.',
+    [
+      'name' => 'Germplasm Name',
+      'description' => 'The official name of the accession phenotyped. This accession name should be an exact match of an accession previously imported using a Germplasm Importer.',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Sample Name',
+      'description' => 'A unique identifier or label of the plant material being measured. For example, the germplasm entry number or the seed packet label.',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Group',
+      'description' => 'A simple descriptor of the environmental variables for this particular grouping of experimental subjects or germplasm. For example, site location, heated vs. room temperature, or assay.',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Experimental Unit',
+      'description' => 'The identifier for the physical entity (e.g. plot, plant, protein extraction) that measurements are being taken on. For example, the plot identifier in a field experiment or the test tube label in a biochemical assay.',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Replicate',
+      'description' => 'The number indicating the replicate of the sample.',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Timepoint',
+      'description' => 'The most specific timepoint common to all measurements recorded on a single row in the file. For example, if the measurements are days to various growth stages then this might be the planting date. Alternatively, if the measurements are all relating to specific biochemical assay run or drone flyover then the assay date or drone flyover date would be used in order to keep the rows of the file unique.',
+      'type' => 'required',
+    ],
+    [
+      'name' => 'Treatment',
+      'description' => 'Refers to specific condition or manipulation that is applied. For example, fertilizer, weeding pressure, nitrogen supplementation, or temperature.',
+      'type' => 'required',
+    ],
   ];
+
+  /**
+   * Configuration Factory.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected $service_ConfigFactory;
+
+  /**
+   * The Validator Plugin Manager.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   */
+  protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
+
+  /**
+   * The Entity Type Manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManager
+   */
+  protected EntityTypeManager $service_entityTypeManager;
 
   /**
    * Genus Ontology Service.
    *
-   * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
    */
   protected $service_PhenoGenusOntology;
 
   /**
+   * The TripalCultivatePhenotypes File Template Service.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
+   */
+  protected TripalCultivatePhenotypesFileTemplateService $service_FileTemplate;
+
+  /**
+   * The Drupal Renderer.
+   *
+   * @var \Drupal\Core\Render\Renderer
+   */
+  protected Renderer $service_Renderer;
+
+  /**
+   * The Drupal Messenger Service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $service_Messenger;
+
+  /**
    * Constructs the Phenotypes Share importer.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param Drupal\tripal_chado\Database\ChadoConnection $chado_connection
+   *   The connection to the Chado database.
+   * @param Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   Configuration factory service.
+   * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager
+   *   The validator plugin manager.
+   * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
+   *   The entity type manager.
+   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
+   *   The genus ontology service.
+   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
+   *   The service used to generate the termplate file.
+   * @param Drupal\Core\Render\Renderer $renderer
+   *   The Drupal renderer service.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The Drupal messenger service.
    */
   public function __construct(
     array $configuration,
     string $plugin_id,
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
+    ConfigFactoryInterface $config_factory,
+    TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
+    EntityTypeManager $service_entityTypeManager,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
+    TripalCultivatePhenotypesFileTemplateService $service_FileTemplate,
+    Renderer $renderer,
+    MessengerInterface $messenger,
   ) {
-    parent::__construct($configuration, $plugin, $plugin_definition, $chado_connection);
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
-    // Call service setter method to set the service.
-    $this->setServiceGenusOntology($service_PhenoGenusOntology);
+    $this->service_ConfigFactory = $config_factory;
+    $this->service_validatorPluginManager = $service_validatorPluginManager;
+    $this->service_entityTypeManager = $service_entityTypeManager;
+    $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_FileTemplate = $service_FileTemplate;
+    $this->service_Renderer = $renderer;
+    $this->service_Messenger = $messenger;
   }
 
   /**
@@ -106,20 +225,70 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       $plugin_id,
       $plugin_definition,
       $container->get('tripal_chado.database'),
+      $container->get('config.factory'),
+      $container->get('plugin.manager.trpcultivate_validator'),
+      $container->get('entity_type.manager'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
+      $container->get('trpcultivate_phenotypes.template_generator'),
+      $container->get('renderer'),
+      $container->get('messenger'),
     );
   }
 
   /**
-   * Set phenotype genus ontology configuration service.
+   * Configure all the validators this importer uses.
    *
-   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service
-   *   The PhenoGenoOntology service as created/injected through create method.
+   * @param array $form_values
+   *   An array of the importer form values provided to formValidate.
+   * @param string $file_mime_type
+   *   A string of the MIME type of the input file, usually grabbed from the
+   *   file object using $file->getMimeType()
+   *
+   * @return array
+   *   A listing of configured validator objects first keyed by their inputType.
+   *   More specifically:
+   *   - [inputType]: and array of validator instances. Not an
+   *     associative array although the keys do indicate what
+   *     order they should be run in.
    */
-  public function setServiceGenusOntology($service) {
-    if ($service) {
-      $this->service_PhenoGenusOntology = $service;
+  public function configureValidators(array $form_values, string $file_mime_type) {
+
+    $validators = [];
+
+    // Grab the project/experiment from our form.
+    $project = $form_values['project'];
+
+    // Grab the genus from our form to use in confguring some validators.
+    $genus = $form_values['genus'];
+
+    // Make the header columns into a simplified array for easy reference:
+    // - Keyed by the column header name.
+    // - Values are the column header's position in the $headers property (ie.
+    //   its index if we assume no keys were assigned).
+    $header_index = [];
+    $headers = $this->headers;
+    foreach ($headers as $i => $column_details) {
+      $header_index[$column_details['name']] = $i;
     }
+
+    // -----------------------------------------------------
+    // Metadata
+    // - Genus exists and is configured
+    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
+    $validators['metadata']['genus_exists'] = $instance;
+
+    $instance->setConfiguredGenus($genus);
+    $instance->setProject($project);
+
+    // - Project exists.
+    $instance = $this->service_validatorPluginManager->createInstance('project_exists');
+    $validators['metadata']['project_exists'] = $instance;
+
+    // - Project and Genus match.
+    $instance = $this->service_validatorPluginManager->createInstance('project_genus_match');
+    $validators['metadata']['project_genus_match'] = $instance;
+
+    return $validators;
   }
 
   /**
@@ -137,7 +306,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     ];
 
     // Remind user about the configuration value set for allow new.
-    $allownew = \Drupal::config('trpcultivate_phenotypes.settings')
+    $allownew = $this->service_ConfigFactory
+      ->get('trpcultivate_phenotypes.settings')
       ->get('trpcultivate.phenotypes.ontology.allownew');
 
     if ($allownew == FALSE) {
@@ -145,14 +315,14 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
         during the upload process. Please make sure that all trait, method and unit exist in Chado (cvterm)
         before uploading your data file.');
 
-      \Drupal::messenger()->addMessage($allownew_minder);
+      $this->service_Messenger->addMessage($allownew_minder);
     }
 
     // This is a reminder to user about expected phenotypic data.
     $phenotypes_minder = $this->t('Phenotypic data should be filtered for outliers and mis-entries before
       being uploaded here. Do not upload data that should not be used in the final analysis for a
       scientific article. Furthermore, data should NOT BE AVERAGED across replicates or site-year.');
-    \Drupal::messenger()->addWarning($phenotypes_minder);
+    $this->service_Messenger->addWarning($phenotypes_minder);
 
     // Cacheing of stage number:
     // Cache current stage and id field to allow script to reference this value.
@@ -162,8 +332,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     // Flag to indicate if validation has returned a failed status.
     $has_fail = FALSE;
 
-    if (isset($storage[$this->validation_result])) {
-      $has_fail = $this->hasFailedValidation($storage[$this->validation_result]);
+    if (isset($storage[self::VALIDATION_RESULT])) {
+      $has_fail = $this->hasFailedValidation($storage[self::VALIDATION_RESULT]);
     }
 
     $triggering_element = $form_state->getTriggeringElement();
@@ -177,10 +347,10 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     ];
 
     $stage = (!$has_fail && $form_state->getValue('trigger_element') && in_array($triggering_element['#value'], $valid_triggering_element))
-      ? (int) $form_state->getValue($this->current_stage) + 1
+      ? (int) $form_state->getValue(self::CURRENT_STAGE) + 1
       : 1;
 
-    $form[$this->current_stage] = [
+    $form[self::CURRENT_STAGE] = [
       '#type' => 'hidden',
       '#value' => $stage,
       '#attributes' => ['id' => 'tcp-current-stage'],
@@ -195,7 +365,9 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
 
     foreach ($stage_methods as $method) {
       if (preg_match('/stage([1-9])/', $method, $matches)) {
-        if ($stage_no = $matches[1]) {
+        if ($matches[1]) {
+          $stage_no = $matches[1];
+
           // Call method to build stage.
           // Set the status of the stage (current, complete, or upcoming).
           $stage_status = '';
@@ -214,10 +386,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       }
     }
 
-    // Submit button.
-    // Manage importer submit button: Import
-    // By default, is disabled in the plugin annotation definition:
-    // submit_disabled and enabled one less stage of the total stages.
+    // Enable the Import button at final stage by setting a value in $form_state
+    // storage keyed by 'disable_TripalImporter_submit' to FALSE (enabled).
     if ($stage > ($total_stages - 1)) {
       $storage['disable_TripalImporter_submit'] = FALSE;
       $form_state->setStorage($storage);
@@ -273,8 +443,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     // Validation result.
     $storage = $form_state->getStorage();
     // Full validation result.
-    if (isset($storage[$this->validation_result])) {
-      $validation_result = $storage[$this->validation_result];
+    if (isset($storage[self::VALIDATION_RESULT])) {
+      $validation_result = $storage[self::VALIDATION_RESULT];
 
       $form[$fld_wrapper]['validation_result'] = [
         '#type' => 'inline_template',
@@ -294,10 +464,17 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       '#weight' => -100,
       '#required' => TRUE,
       '#description' => $this->t('Enter the name of the experiment or project your data was generated as part of.'),
+      '#description_display' => 'after',
       '#attributes' => ['placeholder' => 'Project/Experiment Name', 'class' => ['tcp-autocomplete']],
-      '#autocomplete_route_name' => 'tripal_chado.project_autocomplete',
-      '#autocomplete_route_parameters' => ['type_id' => 0, 'count' => 5],
-
+      '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
+      '#autocomplete_route_parameters' => [
+        'type_id' => 0,
+        'match_limit' => 5,
+        'base_table' => 'project',
+        'column_name' => 'name',
+        'type_column' => 'x',
+        'property_table' => 'project',
+      ],
       // Used by script to pre-select genus paired to project entered.
       '#id' => 'trpcultivate-fld-project',
 
@@ -326,6 +503,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       '#weight' => -90,
       '#required' => TRUE,
       '#description' => $this->t('Select Genus. When experiment or project has genus set, a value will be selected.'),
+      '#description_display' => 'after',
 
       // States.
       '#states' => [
@@ -455,11 +633,8 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
     //
     // NOTE: not all stages require a validation and a subsequent condition will
     // target a specific stage to perform pertinent validation.
-    // NOTE: $this->current_stage is the name of the field in the formstate that
-    // holds the current stage value (cacheing of stage no.).
-    // See $current_stage property.
-    if (array_key_exists($this->current_stage, $form_state_values)) {
-      $stage = $form_state_values[$this->current_stage];
+    if (array_key_exists(self::CURRENT_STAGE, $form_state_values)) {
+      $stage = $form_state_values[self::CURRENT_STAGE];
 
       // This will support re-upload of a file but form has performed
       // validation of a previously uploaded file.
@@ -470,64 +645,97 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
         // Reset the stage to stage 1 to perform validation below.
         $stage = 1;
         // Cache stage.
-        $form_state->setValue($this->current_stage, $stage);
+        $form_state->setValue(self::CURRENT_STAGE, $stage);
       }
 
       if ($stage >= 1) {
+
         // Validate Stage 1.
-        // Counter, count number of validators that failed.
-        $failed_validator = 0;
+        if ($stage == 1 && $form_values['file_upload']) {
+          $form_values = $form_state_values;
 
-        // Call validator manager service.
-        $manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+          $file_id = $form_values['file_upload'];
 
-        // All values will be accessible to every instance of the
-        // validator Plugin.
-        $project = $form_state_values['project'];
-        $genus = $form_state_values['genus'];
-        $file = $form_state_values['file_upload'];
-        $headers = array_keys($this->headers);
+          // Load our file object.
+          $file = $this->service_entityTypeManager->getStorage('file')->load($file_id);
 
-        if ($stage == 1) {
-          $scopes = ['PROJECT', 'GENUS', 'FILE', 'HEADERS'];
+          // Get the mime type which is used to validate the file and
+          // split the rows.
+          $file_mime_type = $file->getMimeType();
 
-          // Array to hold all validation result for each level.
-          // Each result is keyed by the scope.
-          $validation = [];
+          // Configure the validators.
+          $validators = $this->configureValidators($form_values, $file_mime_type);
 
-          foreach ($scopes as $scope) {
-            // Create instance of the scope-specific plugin and
-            // perform validation.
-            $validator = $manager->getValidatorIdWithScope($scope);
-            $instance = $manager->createInstance($validator);
+          // A FLAG to keep track if any validator fails.
+          // We will only continue to the next input-type if all validators of
+          // the current input-type pass.
+          $failed_validator = FALSE;
 
-            // Set other validation level to upcoming/todo if a
-            // validation failed.
-            $skip = ($failed_validator > 0) ? 1 : 0;
+          // Keep track of failed items. This is a nested array keyed
+          // as follows:
+          // - The unique name of a validator instance, which maps to the
+          //   second level of the $validators array.
+          //   - For row-level input-type validators, this is further keyed by
+          //     the row number that the failure for this validator
+          //     instance occurred.
+          // The value (level 1 for non row-level validators, level 2 for
+          // row-level validators) is the validation results array returned by
+          // the validator.
+          $failures = [];
 
-            // Load values.
-            $instance->loadAssets($project, $genus, $file, $headers, $skip);
+          // *******************************************************************
+          // Metadata Validation
+          // *******************************************************************
+          foreach ($validators['metadata'] as $validator_name => $validator) {
+            // Set failures for this validator name to an empty array to signal
+            // that this validator has been run.
+            $failures[$validator_name] = [];
+            // Validate metadata input value.
+            $result = $validator->validateMetadata($form_values);
 
-            // Perform current scope level validation.
-            $validation[$scope] = $instance->validate();
-
-            // Inspect for any failed validation to halt the importer.
-            if ($validation[$scope]['status'] == 'fail') {
-              $failed_validator++;
+            // Check if validation failed and save the results if it did.
+            if (array_key_exists('valid', $result) && $result['valid'] === FALSE) {
+              $failed_validator = TRUE;
+              $failures[$validator_name] = $result;
             }
           }
 
-          // Save all validation results in Drupal storage to be used by
-          // validation window to create summary report.
+          // Perform other validation level if the previous level did not find
+          // any issues with input vlues.
+          if ($failed_validator === FALSE) {
+
+          }
+
+          $validation_feedback = $this->processValidationMessages($failures);
+
+          // Save all validation results in Drupal storage to create a
+          // summary report.
           $storage = $form_state->getStorage();
-          $storage[$this->validation_result] = $validation;
+          $storage[self::VALIDATION_RESULT] = $validation_feedback;
           $form_state->setStorage($storage);
 
-          if ($failed_validator > 0) {
-            // There are issues in the submission and are detailed in the
-            // validation result window.
+          // Check if the $validation_feedback contains 'fail' or 'todo' status.
+          // If either is found, prevent form submission.
+          $submit_form = TRUE;
+
+          foreach ($validation_feedback as $feedback_item) {
+            if ($feedback_item['status'] == 'todo' || $feedback_item['status'] == 'fail') {
+              $submit_form = FALSE;
+
+              // No need to inspect other validators, a single instance of
+              // fail/todo is sufficient to prevent form submission.
+              break;
+            }
+          }
+
+          if ($submit_form === FALSE) {
+            // Provide a general error message indicating that input values
+            // and/or the data file may contain one or more errors.
+            $this->service_Messenger
+              ->addError($this->t('Your file import was not successful. Please check the Validation Result Window for errors and try again.'));
+
             // Prevent this form from submitting and reload form with all the
-            // validation errors in the storage system.
+            // validation failures in the storage system.
             $form_state->setRebuild(TRUE);
           }
         }
@@ -550,27 +758,65 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   }
 
   /**
-   * {@inheritdoc}
+   * Describe the upload format including column descriptions + template file.
+   *
+   * Class TripalImporterBase is the parent class of this method and additional
+   * documentation is available in reference link below.
+   *
+   * NOTE: This method supports full HTML markup output.
+   *
+   * All relevant information relating to expected column headers and usage
+   * notes are laid out using the theme 'importer_header'. This is rendered
+   * using the referenced TWIG file below.
+   *
+   * A template geneartor service is utilized to provide a downloadable file
+   * template, pre-configured to contain all headers required. The link to
+   * this template file is also formatted using the theme 'importer_header'.
+   *
+   * @return string
+   *   The fully rendered HTML string produced by the 'importer_header' theme
+   *   with the pertinent variables supplied by this method.
+   *
+   * @see Drupal\tripal\TripalImporter\TripalImporterBase::describeUploadFileFormat()
+   * @see templates\trpcultivate-phenotypes-template-importer-header.html.twig
    */
   public function describeUploadFileFormat() {
     // A template file has been generated and is ready for download.
     $importer_id = $this->pluginDefinition['id'];
-    $column_headers = array_keys($this->headers);
 
-    $file_link = \Drupal::service('trpcultivate_phenotypes.template_generator')
-      ->generateFile($importer_id, $column_headers);
+    // Only the header names are needed for making the template file, so pull
+    // them out into a new array.
+    $column_headers = array_column($this->headers, 'name');
 
-    // Render the header notes/lists template and use the file link as
+    // File types 'file_types' annotation definition of this importer.
+    // The first item in the definition list will be used as the primary
+    // file extension of the template file.
+    // File MIME type and delimiter are based on mapping information defined
+    // in the validator base and file types validator trait.
+    $file_extensions = $this->plugin_definition['file_types'];
+
+    $file_link = $this->service_FileTemplate
+      ->generateFile($importer_id, $column_headers, $file_extensions);
+
+    // Additional notes to the headers.
+    $notes = $this->t('To ensure proper file processing and organization, it is
+    important that your data file includes a header.');
+
+    // Render the header and notes/lists in a template and use the file link as
     // the value to href attribute of the link to download a template file.
+    $supported_file_extensions = implode(', ', $file_extensions);
+
     $build = [
       '#theme' => 'importer_header',
       '#data' => [
         'headers' => $this->headers,
+        'file_extensions' => $supported_file_extensions,
+        'notes' => $notes,
         'template_file' => $file_link,
       ],
     ];
 
-    return \Drupal::service('renderer')->render($build);
+    return $this->service_Renderer->renderInIsolation($build);
   }
 
   /**
@@ -654,6 +900,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
   public static function ajaxLoadGenusOfProject($form, &$form_state) {
     // Project name.
     $project = $form_state->getValue('project');
+
     $response = new AjaxResponse();
 
     if (!empty($project)) {
@@ -675,7 +922,7 @@ class TripalCultivatePhenoshareImporter extends ChadoImporterBase implements Con
       $genus_of_project = '';
     }
 
-    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val', [$genus_of_project]));
+    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val' . $project, [$genus_of_project]));
     return $response;
   }
 
