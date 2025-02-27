@@ -724,8 +724,9 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     );
 
     if ($set_value == FALSE) {
-      $this->assertTrue(
-        str_contains((string) $messages[$this->service_Messenger::TYPE_STATUS][0], 'This module is set to NOT to allow new trait'),
+      $this->assertStringContainsString(
+        'This module is set to NOT to allow new trait',
+        (string) $messages[$this->service_Messenger::TYPE_STATUS][0],
         'The status message text does not contain the expected message when allow new configuration is set to FALSE'
       );
     }
