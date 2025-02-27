@@ -199,10 +199,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
-    // Call service setter method to set the service.
-    $this->setServiceGenusOntology($service_PhenoGenusOntology);
-    $this->setServiceTraits($service_PhenoTraits);
-
+    $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_PhenoTraits = $service_PhenoTraits;
     $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_FileTemplate = $service_FileTemplate;
@@ -1771,30 +1769,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     ];
 
     return $this->service_Renderer->renderPlain($build);
-  }
-
-  /**
-   * Set phenotype genus ontology configuration service.
-   *
-   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service
-   *   The PhenoGenoOntology service as created/injected through create method.
-   */
-  public function setServiceGenusOntology(TripalCultivatePhenotypesGenusOntologyService $service) {
-    if ($service) {
-      $this->service_PhenoGenusOntology = $service;
-    }
-  }
-
-  /**
-   * Set phenotype traits service.
-   *
-   * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service
-   *   The PhenoTraits service as created/injected through create method.
-   */
-  public function setServiceTraits($service) {
-    if ($service) {
-      $this->service_PhenoTraits = $service;
-    }
   }
 
 }
