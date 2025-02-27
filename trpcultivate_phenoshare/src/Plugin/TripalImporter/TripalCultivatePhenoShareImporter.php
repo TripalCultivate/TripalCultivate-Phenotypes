@@ -107,7 +107,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ],
     [
       'name' => 'Timepoint',
-      'description' => 'The specific moment of time a phenotypic measurement was taken.',
+      'description' => 'The most specific timepoint common to all measurements recorded on a single row in the file. For example, if the measurements are days to various growth stages then this might be the planting date. Alternatively, if the measurements are all relating to specific biochemical assay run or drone flyover then the assay date or drone flyover date would be used in order to keep the rows of the file unique.',
       'type' => 'required',
     ],
     [
