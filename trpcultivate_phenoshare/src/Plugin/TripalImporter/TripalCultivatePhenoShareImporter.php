@@ -87,7 +87,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ],
     [
       'name' => 'Sample Name',
-      'description' => 'A unique identifier or label of the plant material being measured. For example, the plot entry number, a label on a test tube or pot.',
+      'description' => 'A unique identifier or label of the plant material being measured. For example, the germplasm entry number or the seed packet label.',
       'type' => 'required',
     ],
     [
