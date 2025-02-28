@@ -45,7 +45,7 @@ class ValidatorValidDelimitedFileTest extends ChadoTestKernelBase {
 
     // Create a plugin instance for this validator.
     $validator_id = 'valid_delimited_file';
-    $this->validator_instance = \Drupal::service('plugin.manager.trpcultivate_validator')
+    $this->validator_instance = \Drupal::service('plugin.manager.trpcultivate_phenotypes_validator')
       ->createInstance($validator_id);
 
     // Set the supported mime types for this test.
