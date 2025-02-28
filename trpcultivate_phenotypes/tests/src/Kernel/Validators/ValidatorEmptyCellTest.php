@@ -1,15 +1,15 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
+namespace Drupal\Tests\trpcultivate\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 
 /**
  * Tests the Empty Cell validator.
  *
- * @group trpcultivate_phenotypes
+ * @group trpcultivate
  * @group validators
  * @group row_validators
  */
@@ -18,9 +18,9 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
   /**
    * The Validators plugin manager for creating new validator instances.
    *
-   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
+  protected TripalCultivateValidatorManager $plugin_manager;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -46,6 +46,8 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -59,7 +61,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installConfig(['trpcultivate_phenotypes', 'trpcultivate']);
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Test Chado database.
