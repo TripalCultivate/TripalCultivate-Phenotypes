@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
+namespace Drupal\Tests\trpcultivate\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
@@ -46,6 +46,8 @@ class ValidatorValidDataFileTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
