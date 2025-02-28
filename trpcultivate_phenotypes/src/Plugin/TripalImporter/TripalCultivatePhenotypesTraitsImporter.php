@@ -11,7 +11,6 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
@@ -118,13 +117,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
-   * The TripalCultivate Phenotypes validator plugin manager.
-   *
-   * @var Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
-   */
-  protected TripalCultivatePhenotypesValidatorManager $service_PhenoValidatorPluginManager;
-
-  /**
    * The TripalCultivate Base validator plugin manager.
    *
    * @var Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
@@ -181,8 +173,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The genus ontology service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   The traits service.
-   * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_PhenoValidatorPluginManager
-   *   The TripalCultivate Phenotypes validator plugin manager.
    * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_BaseValidatorPluginManager
    *   The TripalCultivate Base validator plugin manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
@@ -201,7 +191,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     ChadoConnection $chado_connection,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
-    TripalCultivatePhenotypesValidatorManager $service_PhenoValidatorPluginManager,
     TripalCultivateValidatorManager $service_BaseValidatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
@@ -212,7 +201,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoTraits = $service_PhenoTraits;
-    $this->service_PhenoValidatorPluginManager = $service_PhenoValidatorPluginManager;
     $this->service_BaseValidatorPluginManager = $service_BaseValidatorPluginManager;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_FileTemplate = $service_FileTemplate;
@@ -232,7 +220,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $container->get('tripal_chado.database'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.traits'),
-      $container->get('plugin.manager.trpcultivate_phenotypes_validator'),
       $container->get('plugin.manager.trpcultivate_validator'),
       $container->get('trpcultivate.template_generator'),
       $container->get('entity_type.manager'),
@@ -277,7 +264,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // -----------------------------------------------------
     // Metadata
     // - Genus exists and is configured
-    $instance = $this->service_PhenoValidatorPluginManager->createInstance('genus_exists');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('genus_exists');
     $validators['metadata']['genus_exists'] = $instance;
 
     // -----------------------------------------------------
@@ -336,7 +323,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $validators['data-row']['valid_data_type'] = $instance;
 
     // - The combination of Trait Name, Method Short Name and Unit is unique
-    $instance = $this->service_PhenoValidatorPluginManager->createInstance('duplicate_traits');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('duplicate_traits');
     // Set the logger since this validator uses a setter (setConfiguredGenus)
     // which may log messages.
     $instance->setLogger($this->logger);
