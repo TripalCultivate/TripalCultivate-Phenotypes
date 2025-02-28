@@ -1,15 +1,15 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate\Kernel\Validators;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
-use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
+use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
 
 /**
  * Tests the Empty Cell validator.
  *
- * @group trpcultivate
+ * @group trpcultivate_phenotypes
  * @group validators
  * @group row_validators
  */
@@ -18,9 +18,9 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
   /**
    * The Validators plugin manager for creating new validator instances.
    *
-   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
+   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
    */
-  protected TripalCultivateValidatorManager $plugin_manager;
+  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -46,8 +46,6 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
-    'tripal_layout',
-    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -61,7 +59,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes', 'trpcultivate']);
+    $this->installConfig(['trpcultivate_phenotypes']);
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Test Chado database.
@@ -71,7 +69,7 @@ class ValidatorEmptyCellTest extends ChadoTestKernelBase {
     $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Set plugin manager service.
-    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_phenotypes_validator');
   }
 
   /**
