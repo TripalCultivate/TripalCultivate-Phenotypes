@@ -5,19 +5,19 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Validate that project exits and project-genus match the genus provided.
  *
- * @TripalCultivatePhenotypesValidator(
+ * @TripalCultivateValidator(
  *   id = "project_genus_match",
  *   validator_name = @Translation("Project Exists and Genus Match Validator"),
  *   input_types = {"metadata"}
  * )
  */
-class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class ProjectGenusMatch extends TripalCultivateValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
    * Genus Project Service.

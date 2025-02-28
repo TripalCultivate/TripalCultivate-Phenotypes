@@ -5,7 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\Core\Form\FormState;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 
 /**
  * Tests Tripal Cultivate Phenotypes Metadata Validator Plugins.
@@ -19,9 +19,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
   /**
    * The Validators plugin manager for creating new validator instances.
    *
-   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
+  protected TripalCultivateValidatorManager $plugin_manager;
 
   /**
    * An array of genera for testing.
@@ -57,6 +57,8 @@ class MetadataInputTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -70,7 +72,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installConfig(['trpcultivate_phenotypes', 'trpcultivate']);
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by
@@ -79,7 +81,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Set plugin manager service.
-    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_phenotypes_validator');
+    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
     $genus = 'Tripalus';
     // Create our organism and configure it.
