@@ -212,7 +212,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoTraits = $service_PhenoTraits;
-    $this->service_validatorPluginManager = $service_validatorPluginManager;
+    $this->service_PhenoValidatorPluginManager = $service_PhenoValidatorPluginManager;
+    $this->service_BaseValidatorPluginManager = $service_BaseValidatorPluginManager;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_FileTemplate = $service_FileTemplate;
     $this->service_entityTypeManager = $service_entityTypeManager;
@@ -276,7 +277,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     // -----------------------------------------------------
     // Metadata
     // - Genus exists and is configured
-    $instance = $this->service_BaseValidatorPluginManager->createInstance('genus_exists');
+    $instance = $this->service_PhenoValidatorPluginManager->createInstance('genus_exists');
     $validators['metadata']['genus_exists'] = $instance;
 
     // -----------------------------------------------------

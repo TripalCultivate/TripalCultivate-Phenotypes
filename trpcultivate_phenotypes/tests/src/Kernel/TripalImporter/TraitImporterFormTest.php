@@ -38,6 +38,8 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     'file',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -100,7 +102,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenotypes']);
+    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate']);
     // ... managed files are associated with a user.
     $this->installEntitySchema('user');
     // ... Finally the file module + tables itself.
