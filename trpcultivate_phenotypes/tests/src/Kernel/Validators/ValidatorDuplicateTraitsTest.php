@@ -96,7 +96,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Set plugin manager service.
-    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
+    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_phenotypes_validator');
 
     // Create our organism and configure it.
     $organism_id = $this->chado_connection->insert('1:organism')
