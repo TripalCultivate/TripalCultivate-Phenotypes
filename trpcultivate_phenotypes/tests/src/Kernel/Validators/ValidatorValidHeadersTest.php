@@ -46,7 +46,7 @@ class ValidatorValidHeadersTest extends ChadoTestKernelBase {
 
     // Create a plugin instance for this validator.
     $validator_id = 'valid_headers';
-    $this->validator_instance = \Drupal::service('plugin.manager.trpcultivate_validator')
+    $this->validator_instance = \Drupal::service('plugin.manager.trpcultivate_phenotypes_validator')
       ->createInstance($validator_id);
 
     // Set the importer headers.
