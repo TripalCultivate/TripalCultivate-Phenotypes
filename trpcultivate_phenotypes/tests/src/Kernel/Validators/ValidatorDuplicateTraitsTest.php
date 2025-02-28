@@ -6,7 +6,7 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 
 /**
  * Tests the Duplicate Traits validator.
@@ -25,9 +25,9 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
   /**
    * Plugin Manager service.
    *
-   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
+  protected TripalCultivateValidatorManager $plugin_manager;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -74,6 +74,8 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -87,7 +89,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installConfig(['trpcultivate_phenotypes', 'trpcultivate']);
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by
@@ -96,7 +98,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
     $this->container->set('tripal_chado.database', $this->chado_connection);
 
     // Set plugin manager service.
-    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_phenotypes_validator');
+    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
     // Create our organism and configure it.
     $organism_id = $this->chado_connection->insert('1:organism')

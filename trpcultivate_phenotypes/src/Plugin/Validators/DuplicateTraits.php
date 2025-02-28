@@ -6,21 +6,21 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\ColumnIndices;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\GenusConfigured;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
+use Drupal\trpcultivate\TripalCultivateValidator\ValidatorTraits\ColumnIndices;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Validate duplicate traits within a file.
  *
- * @TripalCultivatePhenotypesValidator(
+ * @TripalCultivateValidator(
  *   id = "duplicate_traits",
  *   validator_name = @Translation("Duplicate Traits Validator"),
  *   input_types = {"data-row"},
  * )
  */
-class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
+class DuplicateTraits extends TripalCultivateValidatorBase implements ContainerFactoryPluginInterface {
 
   /**
    * Validator Traits required by this validator.
