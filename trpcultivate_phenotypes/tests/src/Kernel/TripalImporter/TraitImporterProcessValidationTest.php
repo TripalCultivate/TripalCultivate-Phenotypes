@@ -39,6 +39,8 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     'file',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -101,7 +103,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenotypes']);
+    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate']);
     // ... managed files are associated with a user.
     $this->installEntitySchema('user');
     // ... Finally the file module + tables itself.
@@ -139,9 +141,10 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       $this->chado_connection,
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.traits'),
+      $this->container->get('plugin.manager.trpcultivate_phenotypes_validator'),
       $this->container->get('plugin.manager.trpcultivate_validator'),
+      $this->container->get('trpcultivate.template_generator'),
       $this->container->get('entity_type.manager'),
-      $this->container->get('trpcultivate_phenotypes.template_generator'),
       $this->renderer,
       $this->container->get('messenger'),
     );
