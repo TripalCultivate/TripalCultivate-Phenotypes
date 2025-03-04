@@ -119,28 +119,28 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   /**
    * The TripalCultivate Base validator plugin manager.
    *
-   * @var Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
   protected TripalCultivateValidatorManager $service_BaseValidatorPluginManager;
 
   /**
    * The TripalCultivate File Template Service.
    *
-   * @var Drupal\trpcultivate\Service\TripalCultivateFileTemplateService
+   * @var \Drupal\trpcultivate\Service\TripalCultivateFileTemplateService
    */
   protected TripalCultivateFileTemplateService $service_FileTemplate;
 
   /**
    * The Entity Type Manager.
    *
-   * @var Drupal\Core\Entity\EntityTypeManager
+   * @var \Drupal\Core\Entity\EntityTypeManager
    */
   protected EntityTypeManager $service_entityTypeManager;
 
   /**
    * The Drupal Renderer.
    *
-   * @var Drupal\Core\Render\Renderer
+   * @var \Drupal\Core\Render\Renderer
    */
   protected Renderer $service_Renderer;
 

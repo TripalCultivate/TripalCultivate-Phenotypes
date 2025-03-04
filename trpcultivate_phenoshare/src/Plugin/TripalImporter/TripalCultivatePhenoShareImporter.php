@@ -13,9 +13,9 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
+use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -129,7 +129,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *
    * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
+  protected TripalCultivateValidatorManager $service_BaseValidatorPluginManager;
 
   /**
    * The Entity Type Manager.
@@ -146,11 +146,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   protected $service_PhenoGenusOntology;
 
   /**
-   * The TripalCultivatePhenotypes File Template Service.
+   * The TripalCultivate File Template Service.
    *
-   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
+   * @var \Drupal\trpcultivate\Service\TripalCultivateFileTemplateService
    */
-  protected TripalCultivatePhenotypesFileTemplateService $service_FileTemplate;
+  protected TripalCultivateFileTemplateService $service_FileTemplate;
 
   /**
    * The Drupal Renderer.
@@ -198,20 +198,20 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
     ConfigFactoryInterface $config_factory,
-    TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
-    EntityTypeManager $service_entityTypeManager,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
-    TripalCultivatePhenotypesFileTemplateService $service_FileTemplate,
+    TripalCultivateValidatorManager $service_BaseValidatorPluginManager,
+    TripalCultivateFileTemplateService $service_FileTemplate,
+    EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
     MessengerInterface $messenger,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
     $this->service_ConfigFactory = $config_factory;
-    $this->service_validatorPluginManager = $service_validatorPluginManager;
-    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_BaseValidatorPluginManager = $service_BaseValidatorPluginManager;
     $this->service_FileTemplate = $service_FileTemplate;
+    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_Renderer = $renderer;
     $this->service_Messenger = $messenger;
   }
@@ -226,10 +226,10 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $plugin_definition,
       $container->get('tripal_chado.database'),
       $container->get('config.factory'),
-      $container->get('plugin.manager.trpcultivate_validator'),
-      $container->get('entity_type.manager'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
-      $container->get('trpcultivate_phenotypes.template_generator'),
+      $container->get('plugin.manager.trpcultivate_validator'),
+      $container->get('trpcultivate.template_generator'),
+      $container->get('entity_type.manager'),
       $container->get('renderer'),
       $container->get('messenger'),
     );
@@ -274,18 +274,18 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // -----------------------------------------------------
     // Metadata
     // - Genus exists and is configured
-    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('genus_exists');
     $validators['metadata']['genus_exists'] = $instance;
 
     $instance->setConfiguredGenus($genus);
     $instance->setProject($project);
 
     // - Project exists.
-    $instance = $this->service_validatorPluginManager->createInstance('project_exists');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('project_exists');
     $validators['metadata']['project_exists'] = $instance;
 
     // - Project and Genus match.
-    $instance = $this->service_validatorPluginManager->createInstance('project_genus_match');
+    $instance = $this->service_BaseValidatorPluginManager->createInstance('project_genus_match');
     $validators['metadata']['project_genus_match'] = $instance;
 
     return $validators;
