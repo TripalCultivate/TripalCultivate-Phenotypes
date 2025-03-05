@@ -12,15 +12,6 @@ services:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
 
-  trpcultivate_phenotypes.template_generator:
-    class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService'
-    arguments: ['@config.factory', '@current_user']
-
-  plugin.manager.trpcultivate_phenotypes_validator:
-    class: 'Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager'
-    parent: default_plugin_manager
-    arguments: ['@tripal_chado.database']
-
   trpcultivate_phenotypes.traits:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService'
     arguments: ['@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms', '@tripal_chado.database', '@tripal.logger']
