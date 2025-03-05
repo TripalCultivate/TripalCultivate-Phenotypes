@@ -1760,7 +1760,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     $supported_file_extensions = implode(', ', $file_extensions);
 
     $build = [
-      '#theme' => 'importer_header',
+      '#theme' => 'describe_header_window',
       '#data' => [
         'headers' => $this->headers,
         'file_extensions' => $supported_file_extensions,
