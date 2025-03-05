@@ -448,7 +448,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
       $form[$fld_wrapper]['validation_result'] = [
         '#type' => 'inline_template',
-        '#theme' => 'result_window',
+        '#theme' => 'validation_result_window',
         '#data' => [
           'validation_result' => $validation_result,
         ],

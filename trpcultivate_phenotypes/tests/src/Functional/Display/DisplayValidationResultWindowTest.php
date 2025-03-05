@@ -32,6 +32,8 @@ class DisplayValidationResultWindowTest extends ChadoTestBrowserBase {
   protected static $modules = [
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -363,7 +365,7 @@ class DisplayValidationResultWindowTest extends ChadoTestBrowserBase {
 
     $validation_window = [
       '#type' => 'inline_template',
-      '#theme' => 'result_window',
+      '#theme' => 'validation_result_window',
       '#data' => [
         'validation_result' => $object_render_array,
       ],
@@ -417,7 +419,7 @@ class DisplayValidationResultWindowTest extends ChadoTestBrowserBase {
 
     $validation_window = [
       '#type' => 'inline_template',
-      '#theme' => 'result_window',
+      '#theme' => 'validation_result_window',
       '#data' => [
         'validation_result' => $validation_result_input,
       ],
