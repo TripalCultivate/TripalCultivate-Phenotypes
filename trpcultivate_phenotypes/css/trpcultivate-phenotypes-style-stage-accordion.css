@@ -17,7 +17,7 @@
 
 /* Stage Content Panel */
 div.tcp-stage-title + div {
-  background-color: #FFFFFF;
+  background-color: inherit;
   display: none;
   padding: 10px;
 }
