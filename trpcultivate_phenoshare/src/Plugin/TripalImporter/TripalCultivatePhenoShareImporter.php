@@ -129,7 +129,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *
    * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivateValidatorManager $service_BaseValidatorPluginManager;
+  protected TripalCultivateValidatorManager $service_validatorPluginManager;
 
   /**
    * The Entity Type Manager.
@@ -181,7 +181,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   Configuration factory service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
-   * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_BaseValidatorPluginManager
+   * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
    *   The TripalCultivate Base validator plugin manager.
    * @param Drupal\trpcultivate\Service\TripalCultivateFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
@@ -199,7 +199,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ChadoConnection $chado_connection,
     ConfigFactoryInterface $config_factory,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
-    TripalCultivateValidatorManager $service_BaseValidatorPluginManager,
+    TripalCultivateValidatorManager $service_validatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
@@ -209,7 +209,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     $this->service_ConfigFactory = $config_factory;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
-    $this->service_BaseValidatorPluginManager = $service_BaseValidatorPluginManager;
+    $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_FileTemplate = $service_FileTemplate;
     $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_Renderer = $renderer;
@@ -274,18 +274,18 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // -----------------------------------------------------
     // Metadata
     // - Genus exists and is configured
-    $instance = $this->service_BaseValidatorPluginManager->createInstance('genus_exists');
+    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
     $validators['metadata']['genus_exists'] = $instance;
 
     $instance->setConfiguredGenus($genus);
     $instance->setProject($project);
 
     // - Project exists.
-    $instance = $this->service_BaseValidatorPluginManager->createInstance('project_exists');
+    $instance = $this->service_validatorPluginManager->createInstance('project_exists');
     $validators['metadata']['project_exists'] = $instance;
 
     // - Project and Genus match.
-    $instance = $this->service_BaseValidatorPluginManager->createInstance('project_genus_match');
+    $instance = $this->service_validatorPluginManager->createInstance('project_genus_match');
     $validators['metadata']['project_genus_match'] = $instance;
 
     return $validators;
