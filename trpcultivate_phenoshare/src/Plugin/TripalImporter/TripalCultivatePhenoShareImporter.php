@@ -273,16 +273,16 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     // -----------------------------------------------------
     // Metadata
-    // - Genus exists and is configured
-    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
-    $validators['metadata']['genus_exists'] = $instance;
-
-    $instance->setConfiguredGenus($genus);
-    $instance->setProject($project);
-
     // - Project exists.
     $instance = $this->service_validatorPluginManager->createInstance('project_exists');
     $validators['metadata']['project_exists'] = $instance;
+    // NOTE: this setter is for review.
+    $instance->setProject($project);
+
+    // - Genus exists and is configured
+    $instance = $this->service_validatorPluginManager->createInstance('genus_exists');
+    $validators['metadata']['genus_exists'] = $instance;
+    $instance->setConfiguredGenus($genus);
 
     // - Project and Genus match.
     $instance = $this->service_validatorPluginManager->createInstance('project_genus_match');
@@ -651,7 +651,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       if ($stage >= 1) {
 
         // Validate Stage 1.
-        if ($stage == 1 && $form_values['file_upload']) {
+        if ($stage == 1 && $form_state_values['file_upload']) {
           $form_values = $form_state_values;
 
           $file_id = $form_values['file_upload'];

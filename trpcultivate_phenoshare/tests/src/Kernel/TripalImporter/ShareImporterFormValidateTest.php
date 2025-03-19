@@ -20,6 +20,20 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
+   * A project name.
+   *
+   * @var string
+   */
+  private const TEST_PROJECT = 'Test Project';
+
+  /**
+   * A genus name.
+   *
+   * @var string
+   */
+  private const TEST_GENUS = 'Test Genus';
+
+  /**
    * Theme used in the test environment.
    *
    * @var string
@@ -131,43 +145,38 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     // Configure module.
     $this->setTermConfig();
 
-    $genus = 'TEST GENUS';
     $this->chado_connection->insert('1:organism')
       ->fields([
-        'genus' => $genus,
+        'genus' => self::TEST_GENUS,
         'species' => 'some species',
       ])
       ->execute();
 
-    $this->setOntologyConfig($genus);
+    $this->setOntologyConfig(self::TEST_GENUS);
 
-    $project = 'TEST PROJECT';
     $project_id = $this->chado_connection->insert('1:project')
       ->fields([
-        'name' => $project,
+        'name' => self::TEST_PROJECT,
         'description' => 'some description',
       ])
       ->execute();
 
+    // Create test project-genus pair.
     $container->get('trpcultivate_phenotypes.genus_project')
-      ->setGenusToProject($project_id, $genus);
+      ->setGenusToProject($project_id, self::TEST_GENUS);
   }
 
   /**
    * Data Provider: provides input values and expected validation result.
    */
   public function provideFormInputValues() {
-
-    $test_project = 'TEST PROJECT';
-    $test_genus   = 'TEST GENUS';
-
     return [
       // #0: Project does not exists.
       [
         'project does not exist',
         [
-          'project' => 'A Spurious Project',
-          'genus' => $test_genus,
+          'project' => 'A spurious project',
+          'genus' => self::TEST_GENUS,
           'filename' => 'simple_example.txt',
         ],
         [
@@ -184,7 +193,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test the validation aspect of Phenotypes Share Importer form.
+   * Test Stage 1 validation aspect of Phenotypes Share Importer form.
    *
    * @param string $scenario
    * @param array $input_values
@@ -192,12 +201,13 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormInputValues
    */
-  public function testShareImporterFormValidate(string $scenario, array $input_values, array $expected) {
+  public function testShareImporterFormValidateStage1(string $scenario, array $input_values, array $expected) {
 
     // Setup form_state.
     $form_state = new FormState();
     $form_state->addBuildInfo('args', [$this->definitions['test-share-importer']['id']]);
 
+    $form_state->setValue('current_stage', 1);
     $form_state->setValue('project', $input_values['project']);
     $form_state->setValue('genus', $input_values['genus']);
 
@@ -213,7 +223,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     $this->form_builder->submitForm($form_id, $form_state);
     $form = $this->form_builder->retrieveForm($form_id, $form_state);
 
-    print_r($form);
+    // print_r($form);
   }
 
 }
