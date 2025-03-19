@@ -14,9 +14,9 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
  * Used to test the GenusConfigured trait.
  *
  * @TripalCultivateValidator(
- * id = "validator_requiring_configured_genus",
- * validator_name = @Translation("Validator Using GenusConfigured Trait"),
- * input_types = {"header-row", "data-row"}
+ *   id = "validator_requiring_configured_genus",
+ *   validator_name = @Translation("Validator Using GenusConfigured Trait"),
+ *   input_types = {"header-row", "data-row"}
  * )
  */
 class ValidatorGenusConfigured extends TripalCultivateValidatorBase {

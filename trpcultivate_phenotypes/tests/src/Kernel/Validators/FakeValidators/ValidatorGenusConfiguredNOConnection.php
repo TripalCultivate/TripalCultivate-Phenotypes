@@ -14,9 +14,9 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
  * Used to test the GenusConfigured trait with NO ChadoConnection.
  *
  * @TripalCultivateValidator(
- * id = "validator_configured_genus_no_connection",
- * validator_name = @Translation("Validator Using GenusConfigured Trait"),
- * input_types = {"header-row", "data-row"}
+ *   id = "validator_configured_genus_no_connection",
+ *   validator_name = @Translation("Validator Using GenusConfigured Trait"),
+ *   input_types = {"header-row", "data-row"}
  * )
  */
 class ValidatorGenusConfiguredNOConnection extends TripalCultivateValidatorBase {

@@ -14,9 +14,9 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
  * Used to test the GenusConfigured trait with NO PhenoTraits service.
  *
  * @TripalCultivateValidator(
- * id = "validator_configured_genus_no_service_trait",
- * validator_name = @Translation("Validator Using GenusConfigured Trait"),
- * input_types = {"header-row", "data-row"}
+ *   id = "validator_configured_genus_no_service_trait",
+ *   validator_name = @Translation("Validator Using GenusConfigured Trait"),
+ *   input_types = {"header-row", "data-row"}
  * )
  */
 class ValidatorGenusConfiguredNOServiceTraits extends TripalCultivateValidatorBase {
