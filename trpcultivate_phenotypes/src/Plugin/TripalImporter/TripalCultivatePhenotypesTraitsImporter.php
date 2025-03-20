@@ -117,7 +117,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
-   * The TripalCultivate Base validator plugin manager.
+   * The TripalCultivate validator plugin manager.
    *
    * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
@@ -174,8 +174,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   The traits service.
    * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
-   *   The TripalCultivate Base validator plugin manager.
-   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
+   *   The TripalCultivate validator plugin manager.
+   * @param Drupal\trpcultivate\Service\TripalCultivateFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
    * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
    *   The entity type manager.

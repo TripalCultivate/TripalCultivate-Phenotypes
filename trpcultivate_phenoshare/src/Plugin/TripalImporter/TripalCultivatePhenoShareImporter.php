@@ -125,7 +125,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   protected $service_ConfigFactory;
 
   /**
-   * The TripalCultivate Base validator plugin manager.
+   * The TripalCultivate validator plugin manager.
    *
    * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
@@ -182,7 +182,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
    * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
-   *   The TripalCultivate Base validator plugin manager.
+   *   The TripalCultivate validator plugin manager.
    * @param Drupal\trpcultivate\Service\TripalCultivateFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
    * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
