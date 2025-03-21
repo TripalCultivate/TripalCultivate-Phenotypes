@@ -69,11 +69,12 @@ class PhenotypeImporterTestTraitTest extends ChadoTestKernelBase {
     $this->setOntologyConfig($test_genus);
 
     $genus_config = $this->config->get('trpcultivate.phenotypes.ontology.cvdbon');
+    $genus_key_config = array_keys($genus_config);
 
     // There must be an item in the configuration with the genus as the key.
     $this->assertEquals(
       strtolower($test_genus),
-      reset(array_keys($genus_config)),
+      reset($genus_key_config),
       'The trait method setOntologyConfig() failed to create a configuration item for the genus ' . $test_genus
     );
 
