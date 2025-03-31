@@ -3,6 +3,7 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\TripalImporter;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
@@ -17,6 +18,7 @@ use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotyp
 class TraitImporterRunTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
+  use TripalCultivateImporterTestTrait;
   use PhenotypeImporterTestTrait;
 
   /**
@@ -37,6 +39,8 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     'file',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -93,6 +97,13 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
   ];
 
   /**
+   * The path to tripalcultivate_phenotypes module.
+   *
+   * @var string
+   */
+  private $module_path;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -106,7 +117,7 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenotypes']);
+    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate']);
     // ... managed files are associated with a user.
     $this->installEntitySchema('user');
     // ... Finally the file module + tables itself.
@@ -156,12 +167,15 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.traits'),
       $this->container->get('plugin.manager.trpcultivate_validator'),
+      $this->container->get('trpcultivate.template_generator'),
       $this->container->get('entity_type.manager'),
-      $this->container->get('trpcultivate_phenotypes.template_generator'),
       $this->container->get('renderer'),
       $this->container->get('messenger'),
     );
 
+    $this->module_path = $this->container->get('module_handler')
+      ->getModule('trpcultivate_phenotypes')
+      ->getPath();
   }
 
   /**
@@ -174,7 +188,10 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
 
     $file = $this->createTestFile([
       'filename' => 'simple_example.txt',
-      'content' => ['file' => 'TraitImporterFiles/simple_example.txt'],
+      'content' => [
+        'file' => 'simple_example.txt',
+        'fixturepath' => $this->module_path . '/tests/src/Fixtures/TraitImporterFiles/',
+      ],
     ]);
 
     $genus = 'Tripalus';
@@ -185,7 +202,6 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
     $this->importer->prepareFiles();
     $this->importer->run();
     $this->importer->postRun();
-
   }
 
 }

@@ -9,10 +9,10 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePheno
  *
  * Used to test the base class.
  *
- * @TripalCultivatePhenotypesValidator(
- * id = "fake_basically_base",
- * validator_name = @Translation("Basically Base Validator"),
- * input_types = {"header-row", "data-row"}
+ * @TripalCultivateValidator(
+ *   id = "fake_basically_base",
+ *   validator_name = @Translation("Basically Base Validator"),
+ *   input_types = {"header-row", "data-row"}
  * )
  */
 class BasicallyBase extends TripalCultivatePhenotypesValidatorBase {

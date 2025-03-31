@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Validate that genus exists and is configured.
  *
- * @TripalCultivatePhenotypesValidator(
+ * @TripalCultivateValidator(
  *   id = "genus_exists",
  *   validator_name = @Translation("Genus Exists and Configured Validator"),
  *   input_types = {"metadata"}

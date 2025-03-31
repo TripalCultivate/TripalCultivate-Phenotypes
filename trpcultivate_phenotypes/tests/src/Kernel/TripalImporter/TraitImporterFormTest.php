@@ -4,6 +4,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\TripalImporter;
 
 use Drupal\Core\Form\FormState;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
@@ -18,6 +19,7 @@ use Drupal\user\Entity\User;
 class TraitImporterFormTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
+  use TripalCultivateImporterTestTrait;
   use PhenotypeImporterTestTrait;
 
   /**
@@ -38,6 +40,8 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     'file',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -87,6 +91,13 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
   ];
 
   /**
+   * The path to tripalcultivate_phenotypes module.
+   *
+   * @var string
+   */
+  private $module_path;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -100,7 +111,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
 
     // Ensure we can access file_managed related functionality from Drupal.
     // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenotypes']);
+    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate']);
     // ... managed files are associated with a user.
     $this->installEntitySchema('user');
     // ... Finally the file module + tables itself.
@@ -125,6 +136,10 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
         return NULL;
       });
     $container->set('tripal.logger', $mock_logger);
+
+    $this->module_path = $this->container->get('module_handler')
+      ->getModule('trpcultivate_phenotypes')
+      ->getPath();
   }
 
   /**
@@ -227,7 +242,10 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     // Create a file to upload.
     $file = $this->createTestFile([
       'filename' => 'simple_example.txt',
-      'content' => ['file' => 'TraitImporterFiles/simple_example.txt'],
+      'content' => [
+        'file' => 'simple_example.txt',
+        'fixturepath' => $this->module_path . '/tests/src/Fixtures/TraitImporterFiles/',
+      ],
     ]);
 
     // Setup the form_state.
@@ -334,7 +352,10 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     // Create a file to upload.
     $file = $this->createTestFile([
       'filename' => 'simple_example.txt',
-      'content' => ['file' => 'TraitImporterFiles/simple_example.txt'],
+      'content' => [
+        'file' => 'simple_example.txt',
+        'fixturepath' => $this->module_path . '/tests/src/Fixtures/TraitImporterFiles/',
+      ],
     ]);
 
     // INVALID ORGANISM.

@@ -5,7 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 use Drupal\Core\Form\FormState;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 
 /**
  * Tests Tripal Cultivate Phenotypes Metadata Validator Plugins.
@@ -19,9 +19,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
   /**
    * The Validators plugin manager for creating new validator instances.
    *
-   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $plugin_manager;
+  protected TripalCultivateValidatorManager $plugin_manager;
 
   /**
    * An array of genera for testing.
@@ -57,6 +57,8 @@ class MetadataInputTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -70,7 +72,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installConfig(['trpcultivate_phenotypes', 'trpcultivate']);
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by
@@ -256,108 +258,6 @@ class MetadataInputTest extends ChadoTestKernelBase {
       'Genus exists validator case title does not match expected title for a valid genus.');
     $this->assertTrue($validation_status['valid'], 'A valid genus must return a TRUE valid status.');
     $this->assertEmpty($validation_status['failedItems'], 'A valid genus does not return a failed item value.');
-  }
-
-  /**
-   * Test project input - project exists.
-   */
-  public function testProjectExistsInput() {
-    // Create a plugin instance for this validator.
-    $validator_id = 'project_exists';
-    $instance = $this->plugin_manager->createInstance($validator_id);
-
-    // Test items that will throw exception:
-    // 1. Passing a string value.
-    // 2. Failed to implement a form field element with project name/key.
-    // 3. Passing object or the entire $form_state.
-    // Test passing a string value.
-    $form_values = 'Not a valid form values';
-
-    $exception_caught  = FALSE;
-    $exception_message = '';
-    try {
-      $instance->validateMetadata($form_values);
-    }
-    catch (\TypeError $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project exists metadata validator.');
-    $this->assertStringContainsString(
-      'Argument #1 ($form_values) must be of type array, string given', $exception_message,
-      'Expected exception message does not match message when passing string to project exists metadata validator.');
-
-    // No project field.
-    $form_values = ['genus' => 'Lens'];
-
-    $exception_caught  = FALSE;
-    $exception_message = '';
-    try {
-      $instance->validateMetadata($form_values);
-    }
-    catch (\Exception $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertTrue($exception_caught, 'Failed to catch exception when no project form field was implemented.');
-    $this->assertStringContainsString('Failed to locate project field element', $exception_message,
-      'Expected exception message does not match message when importer failed to implement a form field element with the name/key project.');
-
-    // A Drupal $form_state object.
-    $form_state = new FormState();
-    // A random field.
-    $form_state->setValues(['project' => uniqid()]);
-
-    $exception_caught  = FALSE;
-    $exception_message = '';
-    try {
-      $instance->validateMetadata($form_state);
-    }
-    catch (\TypeError $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project exists metadata validator.');
-    $this->assertStringContainsString(
-      'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given', $exception_message,
-      'Expected exception message does not match message when passing $form_state to project exists metadata validator.');
-
-    // Other tests:
-    // Each test checks if projectExists generated the correct validation items.
-    // Failed item is the failed project value. Failed information is contained
-    // in the case to indicate project exists or not.
-    // Project does not exist.
-    $project = 'project-' . uniqid();
-    $form_values = ['project' => $project];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Project does not exist', $validation_status['case'],
-      'Project exists validator case title does not match expected title for non-existent project.');
-    $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
-    $this->assertEquals($project, $validation_status['failedItems']['project_provided'], 'Failed project value is expected in failed items.');
-
-    // Project exists - by project id.
-    foreach ($this->test_project as $project) {
-      $form_values = ['project' => $project['id']];
-      $validation_status = $instance->validateMetadata($form_values);
-
-      $this->assertEquals('Project exists', $validation_status['case'],
-        'Project exists validator case title does not match expected title for a valid project.');
-      $this->assertTrue($validation_status['valid'], 'A valid project must return a TRUE valid status.');
-      $this->assertEmpty($validation_status['failedItems'], 'A valid project does not return a failed item value.');
-
-      // Project exists - by project name.
-      $form_values = ['project' => $project['name']];
-      $validation_status = $instance->validateMetadata($form_values);
-
-      $this->assertEquals('Project exists', $validation_status['case'],
-        'Project exists validator case title does not match expected title for a valid project.');
-      $this->assertTrue($validation_status['valid'], 'A valid project must return a TRUE valid status.');
-      $this->assertEmpty($validation_status['failedItems'], 'A valid project does not return a failed item value.');
-    }
   }
 
   /**

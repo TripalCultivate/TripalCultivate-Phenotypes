@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Validate that project exits and project-genus match the genus provided.
  *
- * @TripalCultivatePhenotypesValidator(
+ * @TripalCultivateValidator(
  *   id = "project_genus_match",
  *   validator_name = @Translation("Project Exists and Genus Match Validator"),
  *   input_types = {"metadata"}

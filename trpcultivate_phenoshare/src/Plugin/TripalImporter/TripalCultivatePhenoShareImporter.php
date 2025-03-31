@@ -13,9 +13,9 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
+use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -125,11 +125,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   protected $service_ConfigFactory;
 
   /**
-   * The Validator Plugin Manager.
+   * The TripalCultivate validator plugin manager.
    *
-   * @var \Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
-  protected TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager;
+  protected TripalCultivateValidatorManager $service_validatorPluginManager;
 
   /**
    * The Entity Type Manager.
@@ -146,11 +146,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   protected $service_PhenoGenusOntology;
 
   /**
-   * The TripalCultivatePhenotypes File Template Service.
+   * The TripalCultivate File Template Service.
    *
-   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService
+   * @var \Drupal\trpcultivate\Service\TripalCultivateFileTemplateService
    */
-  protected TripalCultivatePhenotypesFileTemplateService $service_FileTemplate;
+  protected TripalCultivateFileTemplateService $service_FileTemplate;
 
   /**
    * The Drupal Renderer.
@@ -179,14 +179,14 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   The connection to the Chado database.
    * @param Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Configuration factory service.
-   * @param Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager
-   *   The validator plugin manager.
-   * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
-   *   The entity type manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
-   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesFileTemplateService $service_FileTemplate
+   * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
+   *   The TripalCultivate validator plugin manager.
+   * @param Drupal\trpcultivate\Service\TripalCultivateFileTemplateService $service_FileTemplate
    *   The service used to generate the termplate file.
+   * @param Drupal\Core\Entity\EntityTypeManager $service_entityTypeManager
+   *   The entity type manager.
    * @param Drupal\Core\Render\Renderer $renderer
    *   The Drupal renderer service.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
@@ -198,20 +198,20 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
     ConfigFactoryInterface $config_factory,
-    TripalCultivatePhenotypesValidatorManager $service_validatorPluginManager,
-    EntityTypeManager $service_entityTypeManager,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
-    TripalCultivatePhenotypesFileTemplateService $service_FileTemplate,
+    TripalCultivateValidatorManager $service_validatorPluginManager,
+    TripalCultivateFileTemplateService $service_FileTemplate,
+    EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
     MessengerInterface $messenger,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
 
     $this->service_ConfigFactory = $config_factory;
-    $this->service_validatorPluginManager = $service_validatorPluginManager;
-    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_FileTemplate = $service_FileTemplate;
+    $this->service_entityTypeManager = $service_entityTypeManager;
     $this->service_Renderer = $renderer;
     $this->service_Messenger = $messenger;
   }
@@ -226,10 +226,10 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $plugin_definition,
       $container->get('tripal_chado.database'),
       $container->get('config.factory'),
-      $container->get('plugin.manager.trpcultivate_validator'),
-      $container->get('entity_type.manager'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
-      $container->get('trpcultivate_phenotypes.template_generator'),
+      $container->get('plugin.manager.trpcultivate_validator'),
+      $container->get('trpcultivate.template_generator'),
+      $container->get('entity_type.manager'),
       $container->get('renderer'),
       $container->get('messenger'),
     );
@@ -448,7 +448,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
       $form[$fld_wrapper]['validation_result'] = [
         '#type' => 'inline_template',
-        '#theme' => 'result_window',
+        '#theme' => 'validation_result_window',
         '#data' => [
           'validation_result' => $validation_result,
         ],
@@ -807,7 +807,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $supported_file_extensions = implode(', ', $file_extensions);
 
     $build = [
-      '#theme' => 'importer_header',
+      '#theme' => 'describe_header_window',
       '#data' => [
         'headers' => $this->headers,
         'file_extensions' => $supported_file_extensions,
