@@ -27,25 +27,6 @@ trpcultivate-phenotypes-script-autoselect-project-genus:
     - core/jquery
     - core/once
 
-# Style importer header elements (notes, header definitions).
-trpcultivate-phenotypes-style-importer-header:
-  version: v1.x
-  css:
-    theme:
-      css/trpcultivate-phenotypes-style-importer-header.css: {}
-
-# Style validation result window.
-trpcultivate-phenotypes-style-result-window:
-  version: v1.x
-  css:
-    theme:
-      css/trpcultivate-phenotypes-style-result-window.css: {}
-  js:
-    js/trpcultivate-phenotypes-script-validation-window.js: {}
-  dependencies:
-    - core/jquery
-    - core/once
-
 # Style stage accordion.
 trpcultivate-phenotypes-style-stage-accordion:
   version: v1.x

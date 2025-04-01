@@ -28,6 +28,8 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     'user',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -78,7 +80,7 @@ class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
     // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installConfig(['trpcultivate_phenotypes', 'trpcultivate']);
 
     // Test Chado database.
     // Create a test chado instance and then set it in the container for use by

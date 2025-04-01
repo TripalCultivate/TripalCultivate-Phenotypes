@@ -38,6 +38,8 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     'file',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
     'trpcultivate_phenoshare',
   ];
@@ -124,6 +126,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     // ... users need access to system.action config?
     $this->installConfig([
       'system',
+      'trpcultivate',
       'trpcultivate_phenotypes',
       'trpcultivate_phenoshare',
     ]);

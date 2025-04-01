@@ -5,21 +5,21 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\GenusConfigured;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 
 /**
  * Fake Validator that does not implement any of its own methods.
  *
  * Used to test the GenusConfigured trait with NO ChadoConnection.
  *
- * @TripalCultivatePhenotypesValidator(
- * id = "validator_configured_genus_no_connection",
- * validator_name = @Translation("Validator Using GenusConfigured Trait"),
- * input_types = {"header-row", "data-row"}
+ * @TripalCultivateValidator(
+ *   id = "validator_configured_genus_no_connection",
+ *   validator_name = @Translation("Validator Using GenusConfigured Trait"),
+ *   input_types = {"header-row", "data-row"}
  * )
  */
-class ValidatorGenusConfiguredNOConnection extends TripalCultivatePhenotypesValidatorBase {
+class ValidatorGenusConfiguredNOConnection extends TripalCultivateValidatorBase {
 
   use GenusConfigured;
 
