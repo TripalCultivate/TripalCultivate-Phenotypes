@@ -907,7 +907,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       // The project entered through the auto-complete project field
       // returns a string, the project name. Additional step of resolving
       // the name to its project id is required to determine the genus.
-      $project_id = ChadoProjectAutocompleteController::getProjectId($project);
+      // T4 - this values is from autocomplete field which seems to contain the
+      // project id (id) part.
+      $project = preg_replace('/\([0-9]\)$/', '', $project);
+      $project_name = trim($project);
+      $project_id = ChadoProjectAutocompleteController::getProjectId($project_name);
 
       // Get genus of project.
       $genus_of_project = \Drupal::service('trpcultivate_phenotypes.genus_project')
