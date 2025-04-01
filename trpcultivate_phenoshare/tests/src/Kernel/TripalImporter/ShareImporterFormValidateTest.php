@@ -3,6 +3,7 @@
 namespace Drupal\Tests\trpcultivate_phenoshare\Kernel\TripalImporter;
 
 use Drupal\Core\Form\FormState;
+use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -17,6 +18,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 class ShareImporterFormValidateTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
+  use TripalCultivateImporterTestTrait;
   use PhenotypeImporterTestTrait;
 
   /**
@@ -70,6 +72,13 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    * @var \Drupal\Core\Form\FormBuilder
    */
   protected $form_builder;
+
+  /**
+   * The path to tripalcultivate_phenotypes module.
+   *
+   * @var string
+   */
+  private $module_path;
 
   /**
    * A default listing of annotations associated with our importer.
@@ -164,6 +173,10 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     // Create test project-genus pair.
     $container->get('trpcultivate_phenotypes.genus_project')
       ->setGenusToProject($project_id, self::TEST_GENUS);
+
+    $this->module_path = $this->container->get('module_handler')
+      ->getModule('trpcultivate_phenotypes')
+      ->getPath();
   }
 
   /**
@@ -180,14 +193,17 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'filename' => 'simple_example.txt',
         ],
         [
-          'validation_result' => [
-            'project_exists' => [],
-            'genus_exists' => [],
-            'project_genus_match' => [],
-            'valid_data_file' => [],
+          'project_genus_match' => [
+            'title' => 'Project exists and project-genus match the genus provided',
+            'status' => 'fail',
+            'details' => 'The project provided does not exist. Please contact your administrator to have this added.'
           ],
-          'failed_count' => 1,
+          'valid_data_file' => ['status' => 'todo'],
+          'valid_delimited_file' => ['status' => 'todo'],
+          'valid_header' => ['status' => 'todo'],
+          'empty_cell' => ['status' => 'todo'],
         ],
+        1,
       ],
     ];
   }
@@ -201,7 +217,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormInputValues
    */
-  public function testShareImporterFormValidateStage1(string $scenario, array $input_values, array $expected) {
+  public function testShareImporterFormValidateStage1(string $scenario, array $input_values, array $expected_validator_result, int $expected_num_form_validation_errors) {
 
     // Setup form_state.
     $form_state = new FormState();
@@ -213,7 +229,10 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
 
     $test_file = $this->createTestFile([
       'filename' => $input_values['filename'],
-      'content' => ['file' => 'TraitImporterFiles/' . $input_values['filename']],
+      'content' => [
+        'file' => $input_values['filename'],
+        'fixturepath' => $this->module_path . '/tests/src/Fixtures/TraitImporterFiles/', 
+      ],
     ]);
 
     $form_state->setValue('file_upload', $test_file->id());
@@ -222,8 +241,14 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     $form_id = 'Drupal\tripal\Form\TripalImporterForm';
     $this->form_builder->submitForm($form_id, $form_state);
     $form = $this->form_builder->retrieveForm($form_id, $form_state);
+    
+    // Validation result window is in accordion stage 1.
+    $form_stage1 = $form['accordion_stage1'];
 
-    // print_r($form);
+    // Confirm that there is a validation window open.
+    $this->assertArrayHasKey('validation_result', $form_stage1,
+      "We expected a validation failure reported via our plugin setup but it's not showing up in the form.");
+    $validation_element_data = $form['validation_result']['#data']['validation_result'];
   }
 
 }
