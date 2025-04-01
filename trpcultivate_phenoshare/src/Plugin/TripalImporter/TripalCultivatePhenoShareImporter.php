@@ -922,7 +922,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $genus_of_project = '';
     }
 
-    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val' . $project, [$genus_of_project]));
+    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val', [$genus_of_project]));
+
     return $response;
   }
 
