@@ -175,7 +175,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
       ->setGenusToProject($project_id, self::TEST_GENUS);
 
     $this->module_path = $this->container->get('module_handler')
-      ->getModule('trpcultivate_phenotypes')
+      ->getModule('trpcultivate_phenoshare')
       ->getPath();
   }
 
@@ -184,13 +184,13 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    */
   public function provideFormInputValues() {
     return [
-      // #0: Project does not exists.
+      // #0: Project not provided.
       [
-        'project does not exist',
+        'no project',
         [
-          'project' => 'A spurious project',
+          'project' => '',
           'genus' => self::TEST_GENUS,
-          'filename' => 'simple_example.txt',
+          'filename' => 'importer_share_data_file.tsv',
         ],
         [
           'project_genus_match' => [
@@ -205,6 +205,50 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         1,
       ],
+
+      // #1: No project and genus provided.
+      [
+        'no project and genus',
+        [
+          'project' => '',
+          'genus' => '',
+          'filename' => 'importer_share_data_file.tsv',
+        ],
+        [
+          'project_genus_match' => [
+            'title' => 'Project exists and project-genus match the genus provided',
+            'status' => 'fail',
+            'details' => 'The project provided does not exist. Please contact your administrator to have this added.'
+          ],
+          'valid_data_file' => ['status' => 'todo'],
+          'valid_delimited_file' => ['status' => 'todo'],
+          'valid_header' => ['status' => 'todo'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        2,
+      ],
+
+      // #3: Project does not exists
+      [
+        'project does not exist',
+        [
+          'project' => 'A spurious project',
+          'genus' => self::TEST_GENUS,
+          'filename' => 'importer_share_data_file.tsv',
+        ],
+        [
+          'project_genus_match' => [
+            'title' => 'Project exists and project-genus match the genus provided',
+            'status' => 'fail',
+            'details' => 'The project provided does not exist. Please contact your administrator to have this added.'
+          ],
+          'valid_data_file' => ['status' => 'todo'],
+          'valid_delimited_file' => ['status' => 'todo'],
+          'valid_header' => ['status' => 'todo'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
     ];
   }
 
@@ -217,7 +261,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormInputValues
    */
-  public function testShareImporterFormValidateStage1(string $scenario, array $input_values, array $expected_validator_result, int $expected_num_form_validation_errors) {
+  public function testShareImporterFormValidateStage1(string $scenario, array $input_values, array $expected_validator_results, int $expected_num_form_validation_errors) {
 
     // Setup form_state.
     $form_state = new FormState();
@@ -231,7 +275,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
       'filename' => $input_values['filename'],
       'content' => [
         'file' => $input_values['filename'],
-        'fixturepath' => $this->module_path . '/tests/src/Fixtures/TraitImporterFiles/', 
+        'fixturepath' => $this->module_path . '/tests/src/Fixtures/ShareImporterFiles/',
       ],
     ]);
 
@@ -241,14 +285,96 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     $form_id = 'Drupal\tripal\Form\TripalImporterForm';
     $this->form_builder->submitForm($form_id, $form_state);
     $form = $this->form_builder->retrieveForm($form_id, $form_state);
-    
+
     // Validation result window is in accordion stage 1.
     $form_stage1 = $form['accordion_stage1'];
 
+    // Looking for form validation errors.
+    $form_validation_messages = $form_state->getErrors();
+    $helpful_output = [];
+    foreach ($form_validation_messages as $element => $markup) {
+      $helpful_output[] = $element . " => " . (string) $markup;
+    }
+
+    $this->assertCount(
+      $expected_num_form_validation_errors,
+      $form_validation_messages,
+      "The number of form state errors we expected (" . $expected_num_form_validation_errors . ") does not match what we received: " . implode(" AND ", $helpful_output) . ' in scenario: ' . $scenario
+    );
+
     // Confirm that there is a validation window open.
     $this->assertArrayHasKey('validation_result', $form_stage1,
-      "We expected a validation failure reported via our plugin setup but it's not showing up in the form.");
-    $validation_element_data = $form['validation_result']['#data']['validation_result'];
+      "We expected a validation failure reported via our plugin setup but it's not showing up in the form in scenario: $scenario.");
+
+    $validation_element_data = $form_stage1['validation_result']['#data']['validation_result'];
+
+    // Now check our expectations are met.
+    foreach ($expected_validator_results as $validation_plugin => $expected) {
+      // Check status.
+      $this->assertEquals(
+        $expected['status'],
+        $validation_element_data[$validation_plugin]['status'],
+        "We expected the form validation element to indicate the $validation_plugin plugin had the specified status in scenario: $scenario."
+      );
+
+      // We don't want the value of 'details' in $expectations (from the data
+      // provider) to be empty since assertStringContainsString() will evaluate
+      // to true in that scenario. It can be tempting to set it to empty and
+      // then come back to it when you figure out what the expected string
+      // should be- just don't do it!
+      if (array_key_exists('details', $expected)) {
+        $this->assertNotEmpty(
+          $expected['details'],
+          "An empty string was provided with a 'details' key within the data provider - trust me, don't do that! in scenario: $scenario"
+        );
+
+        // Now check details.
+        $this->assertIsArray(
+          $validation_element_data[$validation_plugin]['details'],
+          "We expected the details for $validation_plugin to be an array, but it is not in scenario: $scenario."
+        );
+
+        // Check for the key #type which is common in all render arrays.
+        $this->assertArrayHasKey('#type', $validation_element_data[$validation_plugin]['details'], "We expected the details for $validation_plugin to be a render array by having the #type key, but it does not in scenario: $scenario.");
+
+        // Walk recursively through the render array, and report whether our
+        // 'details' item is present in the array or not.
+        $item_to_find = $expected['details'];
+        $found = FALSE;
+        array_walk_recursive(
+          $validation_element_data[$validation_plugin]['details'],
+          function ($item, $key) use (&$found, $item_to_find) {
+            if ($item == $item_to_find) {
+              $found = TRUE;
+            }
+          }
+        );
+
+        $this->assertTrue($found, "We expected to find \"$item_to_find\" in the
+        resulting render array for $validation_plugin failures, but did not in scenario: $scenario.");
+      }
+    }
+
+    // Assert that the default value of genus field is the genus
+    // entered/selected, indicating that on form validate error, the form was
+    // not submitted and reloaded with the genus value as default.
+    $this->assertEquals(
+      $form_state->getValue('genus'),
+      $input_values['genus'],
+      'The import form should set the default value of genus to the genus entered if the form was not submitted due to validation error in scenario: $scenario.'
+    );
+
+    // If the form was not submitted due to validation error, check to ensure
+    // that no Tripal Job was created in the process.
+    $tripal_jobs = $this->chado_connection->query(
+      'SELECT job_id FROM {tripal_jobs} ORDER BY job_id DESC LIMIT 1'
+    )
+      ->fetchField();
+
+    $this->assertFalse(
+      $tripal_jobs,
+      'A failed import due to validation error that did not submit should not create a job request in scenario: $scenario.'
+    );
   }
 
 }
