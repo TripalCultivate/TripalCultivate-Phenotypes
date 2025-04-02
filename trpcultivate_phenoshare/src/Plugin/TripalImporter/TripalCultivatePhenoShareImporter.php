@@ -14,6 +14,7 @@ use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -780,7 +781,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
               // Current row.
               $line = fgets($handle);
               $line_no++;
-              // Skip this line if its empty, but line numbers should remain accurate.
+              // Skip this line if its empty, but line numbers should
+              // remain accurate.
               if (empty(trim($line))) {
                 continue;
               }
@@ -1061,7 +1063,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     }
     elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
       $message = 'The project provided does not have a genus paired to it. Please contact your administrator to have this setup.';
-      $item = $validation_result['failedItems']['project_provided'];
+      $item = $validation_result['failedItems']['genus_provided'];
     }
     elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
       $message = 'The genus selected does not match the genus set to the project. Please contact your administrator to have this set up.';

@@ -74,11 +74,16 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
   protected $form_builder;
 
   /**
-   * The path to tripalcultivate_phenotypes module.
+   * Location of file fixtures relative to a module.
    *
-   * @var string
+   * Keys:
+   *   - 'share': the test fixtures directory located in PhenoShare module.
+   *   - 'trait': the test fixtures directory located in Phenotypes module.
+   *   - 'base' : the test fixtures directory located in TripalCultivate module.
+   *
+   * @var array
    */
-  private $module_path;
+  private array $fixture_source;
 
   /**
    * A default listing of annotations associated with our importer.
@@ -161,7 +166,16 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
+    // This genus is not paired with a project.
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => 'NOT:' . self::TEST_GENUS,
+        'species' => 'some species',
+      ])
+      ->execute();
+
     $this->setOntologyConfig(self::TEST_GENUS);
+    $this->setOntologyConfig('NOT:' . self::TEST_GENUS);
 
     $project_id = $this->chado_connection->insert('1:project')
       ->fields([
@@ -170,17 +184,69 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
+    // This project is not paired with a genus.
+    $this->chado_connection->insert('1:project')
+      ->fields([
+        'name' => 'NOT:' . self::TEST_PROJECT,
+        'description' => 'some description',
+      ])
+      ->execute();
+
     // Create test project-genus pair.
     $container->get('trpcultivate_phenotypes.genus_project')
       ->setGenusToProject($project_id, self::TEST_GENUS);
 
-    $this->module_path = $this->container->get('module_handler')
-      ->getModule('trpcultivate_phenoshare')
-      ->getPath();
+    $sources = [
+      'trait' => [
+        'module' => 'trpcultivate_phenotypes',
+        'dir' => 'TraitImporterFiles',
+      ],
+      'share' => [
+        'module' => 'trpcultivate_phenoshare',
+        'dir' => 'ShareImporterFiles',
+      ],
+    ];
+
+    foreach ($sources as $source => $prop) {
+      $fixture_path = $this->container->get('module_handler')
+        ->getModule($prop['module'])
+        ->getPath();
+
+      $this->fixture_source[$source] = $fixture_path . '/tests/src/Fixtures/' . $prop['dir'] . '/';
+    }
   }
 
   /**
    * Data Provider: provides input values and expected validation result.
+   *
+   * @return array
+   *   Each scenario is an array with the following:
+   *   - A short description of the test scenario.
+   *   - An array of importer share input values with the following keys.
+   *     - 'project': the project name.
+   *     - 'genus': the genus name that gets selected in the genus dropdown.
+   *     - 'file': the data file with the following properties:
+   *       - 'filename': the filename of the data collection file.
+   *       - 'source': indicates the location of the test file fixture relative
+   *         to a module. A source of 'trait' points to phenotypes module
+   *         fixture whereas a source of 'share' refers to the fixtures in
+   *         phenotypes share module. Fixtures in base can be reference
+   *         by an empty string.
+   *   - An array indicating the expected validation results:
+   *     - Each key is the unique name of a feedback line provided to the UI
+   *       through processValidationMessages(). Currently, there is a feedback
+   *       line for each unique validator instance that was instantiated by the
+   *       configureValidators() method in the Traits Importer class.
+   *       - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'
+   *       - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
+   *         title set in processValidationMessages() method in the Traits
+   *         Importer class for this validator instance.
+   *       - 'details': [REQUIRED if 'status' = 'fail'] A string that is ideally
+   *         unique to the scenario that is expected to be in the render array.
+   *   - an integer indicating the number of form validation messages we expect
+   *     to see when the form is submitted.
+   *     NOTE: These validation messages are produced by the form via Drupal and
+   *     are not related to this module's use of validator plugins.
    */
   public function provideFormInputValues() {
     return [
@@ -190,13 +256,16 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         [
           'project' => '',
           'genus' => self::TEST_GENUS,
-          'filename' => 'importer_share_data_file.tsv',
+          'file' => [
+            'filename' => 'empty_data_row.tsv',
+            'source' => 'share',
+          ],
         ],
         [
           'project_genus_match' => [
             'title' => 'Project exists and project-genus match the genus provided',
             'status' => 'fail',
-            'details' => 'The project provided does not exist. Please contact your administrator to have this added.'
+            'details' => 'The project provided does not exist. Please contact your administrator to have this added.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
@@ -206,46 +275,252 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         1,
       ],
 
-      // #1: No project and genus provided.
+      // #1: Not the genus the project was paired to.
       [
-        'no project and genus',
+        'not the expected genus',
         [
-          'project' => '',
-          'genus' => '',
-          'filename' => 'importer_share_data_file.tsv',
+          'project' => self::TEST_PROJECT,
+          'genus' => 'NOT:' . self::TEST_GENUS,
+          'file' => [
+            'filename' => 'empty_data_row.tsv',
+            'source' => 'share',
+          ],
         ],
         [
           'project_genus_match' => [
-            'title' => 'Project exists and project-genus match the genus provided',
+            'title' => 'Genus does not match the genus set to the project',
             'status' => 'fail',
-            'details' => 'The project provided does not exist. Please contact your administrator to have this added.'
+            'details' => 'The genus selected does not match the genus set to the project. Please contact your administrator to have this set up.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
           'valid_header' => ['status' => 'todo'],
           'empty_cell' => ['status' => 'todo'],
         ],
-        2,
+        0,
       ],
 
-      // #3: Project does not exists
+      // #2: Project does not exists.
       [
         'project does not exist',
         [
           'project' => 'A spurious project',
           'genus' => self::TEST_GENUS,
-          'filename' => 'importer_share_data_file.tsv',
+          'file' => [
+            'filename' => 'empty_data_row.tsv',
+            'source' => 'share',
+          ],
         ],
         [
           'project_genus_match' => [
             'title' => 'Project exists and project-genus match the genus provided',
             'status' => 'fail',
-            'details' => 'The project provided does not exist. Please contact your administrator to have this added.'
+            'details' => 'The project provided does not exist. Please contact your administrator to have this added.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
           'valid_header' => ['status' => 'todo'],
           'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #3: Project exists but is not paired to a genus.
+      [
+        'project has no genus',
+        [
+          'project' => 'NOT:' . self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'empty_data_row.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => [
+            'title' => 'Project has no genus set and could not compare with the genus provided',
+            'status' => 'fail',
+            'details' => 'The project provided does not have a genus paired to it. Please contact your administrator to have this setup.',
+          ],
+          'valid_data_file' => ['status' => 'todo'],
+          'valid_delimited_file' => ['status' => 'todo'],
+          'valid_header' => ['status' => 'todo'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #4: File is empty
+      [
+        'file is empty',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'empty_file.tsv',
+            'source' => 'trait',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => [
+            'title' => 'File is valid and not empty',
+            'status' => 'fail',
+            'details' => 'The file provided has no contents in it to import. Please ensure your file has the expected header row and at least one row of data.',
+          ],
+          'valid_delimited_file' => ['status' => 'todo'],
+          'valid_header' => ['status' => 'todo'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #5: Header is improperly delimited, with proper data rows.
+      [
+        'header row not properly delimited',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'improperly_delimited_header_row.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => [
+            'title' => 'Lines are properly delimited',
+            'status' => 'fail',
+            'details' => 'This importer requires a strict number of 7 columns for each line. The following lines do not contain the expected number of columns.',
+          ],
+          'valid_header' => ['status' => 'todo'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #6: Data row of file is improperly delimited.
+      [
+        'data row not properly delimited',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'improperly_delimited_data_row.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => [
+            'title' => 'Lines are properly delimited',
+            'status' => 'fail',
+            'details' => 'This importer requires a strict number of 7 columns for each line. The following lines do not contain the expected number of columns.',
+          ],
+          'valid_header' => ['status' => 'pass'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #7: Contains correct header but no data.
+      // Never reaches the validators for data-row since file content is empty.
+      [
+        'no data row',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'empty_data_row.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => ['status' => 'pass'],
+          'valid_header' => ['status' => 'pass'],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #8: Contains incorrect header and one line of correct data.
+      [
+        'incorrect header',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'incorrect_header_with_data.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => ['status' => 'pass'],
+          'valid_header' => [
+            'title' => 'File has all of the column headers expected',
+            'status' => 'fail',
+            'details' => 'One or more of the column headers in the input file does not match what was expected. Please check if your column header is in the correct order and matches the template exactly.',
+          ],
+          'empty_cell' => ['status' => 'todo'],
+        ],
+        0,
+      ],
+
+      // #9: Contains correct header and one line of correct data.
+      // 3rd line has an empty 'Replicate'.
+      [
+        'empty column',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'empty_cell.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => ['status' => 'pass'],
+          'valid_header' => ['status' => 'pass'],
+          'empty_cell' => [
+            'title' => 'Required cells contain a value',
+            'status' => 'fail',
+            'details' => 'The following line number and column header combinations were empty, but a value is required.',
+          ],
+        ],
+        0,
+      ],
+
+      // #10: Contains correct header and one line of correct data.
+      // 3rd line has empty line (not a validation error).
+      // 4th line has an empty 'Replicate'.
+      [
+        'empty column after empty line',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'empty_cell_after_empty_line.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => ['status' => 'pass'],
+          'valid_header' => ['status' => 'pass'],
+          'empty_cell' => [
+            'title' => 'Required cells contain a value',
+            'status' => 'fail',
+            'details' => 'The following line number and column header combinations were empty, but a value is required.',
+          ],
         ],
         0,
       ],
@@ -256,8 +531,34 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    * Test Stage 1 validation aspect of Phenotypes Share Importer form.
    *
    * @param string $scenario
+   *   A short description of the test scenario.
    * @param array $input_values
-   * @param array $expected
+   *   An array of importer share input values with the following keys.
+   *     - 'project': the project name.
+   *     - 'genus': the genus name that gets selected in the form dropdown.
+   *     - 'file': the file with the following properties:
+   *       - 'filename': the filename of the data collection file.
+   *       - 'source': idicates the location of the test file fixutre relative
+   *         to a module. A source of 'trait' points to phenotypes module
+   *         fixutre whereas a source of 'share' refers to the fixtures in
+   *         phenotypes share module. Any fixutes in base can be reference
+   *         by and empty string.
+   * @param array $expected_validator_results
+   *   An array that is keyed by the unique name of each validator instance
+   *   (these names are declared in the configureValidators() method in the
+   *   Traits Importer class). Each validator instance in the array is further
+   *   keyed by the following. Some are required but others are optional,
+   *   dependent upon the expected validation results.
+   *   - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'.
+   *   - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
+   *     title set in processValidationMessages() method in the Trait Importer
+   *     class for this validator instance.
+   *   - 'details': [REQUIRED if 'status' = 'fail'] A string that is ideally
+   *     unique to the scenario that is expected to be in the render array.
+   * @param int $expected_num_form_validation_errors
+   *   The number of form validation messages we expect to see when the form is
+   *   submitted. NOTE: These validation messages are produced by the form via
+   *   Drupal and are not related to this module's use of validator plugins.
    *
    * @dataProvider provideFormInputValues
    */
@@ -272,10 +573,10 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     $form_state->setValue('genus', $input_values['genus']);
 
     $test_file = $this->createTestFile([
-      'filename' => $input_values['filename'],
+      'filename' => $input_values['file']['filename'],
       'content' => [
-        'file' => $input_values['filename'],
-        'fixturepath' => $this->module_path . '/tests/src/Fixtures/ShareImporterFiles/',
+        'file' => $input_values['file']['filename'],
+        'fixturepath' => $this->fixture_source[$input_values['file']['source']],
       ],
     ]);
 
