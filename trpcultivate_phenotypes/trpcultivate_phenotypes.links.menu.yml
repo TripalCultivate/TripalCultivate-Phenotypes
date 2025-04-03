@@ -10,3 +10,8 @@ trpcultivate_phenotypes.rrules:
 # trpcultivate_phenotypes.watermark:  
 # trpcultivate_phenotypes.ontology:
   
+entity.phenodata_backup.overview:
+  title: Phenotypic Data Backups
+  parent: system.admin_structure
+  description: 'List of phenotypic data backups to extend site functionality.'
+  route_name: entity.phenodata_backup.collection

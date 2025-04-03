@@ -185,3 +185,19 @@ trpcultivate_phenotypes.settings:
                         help_text:
                           type: string
                           label: 'Term field label text'
+
+trpcultivate_phenotypes.phenodata_backup.*:
+  type: config_entity
+  label: Phenotypic Data Backup
+  mapping:
+    id:
+      type: string
+      label: ID
+    uuid:
+      type: string
+    file_id:
+      type: string
+      label: 'The file object file id of the data file'
+    project_id:
+      type: string
+      label: 'The project id of the project the data file is specific to'

@@ -34,3 +34,35 @@ trpcultivate_phenotypes.settings_ontology:
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm'
   requirements:
     _permission: 'administer tripal'
+
+entity.phenodata_backup.collection:
+  path: '/admin/structure/phenodata-backup'
+  defaults:
+    _entity_list: 'phenodata_backup'
+    _title: 'Phenotypic Data Backup configuration'
+  requirements:
+    _permission: 'administer phenodata_backup'
+
+entity.phenodata_backup.add_form:
+  path: '/admin/structure/phenodata_backup/add'
+  defaults:
+    _entity_form: 'phenodata_backup.add'
+    _title: 'Add a phenotypic data backup'
+  requirements:
+    _permission: 'administer phenodata_backup'
+
+entity.phenodata_backup.edit_form:
+  path: '/admin/structure/phenodata-backup/{phenodata_backup}'
+  defaults:
+    _entity_form: 'phenodata_backup.edit'
+    _title: 'Edit a phenotypic data backup'
+  requirements:
+    _permission: 'administer phenodata_backup'
+
+entity.phenodata_backup.delete_form:
+  path: '/admin/structure/phenodata-backup/{phenodata_backup}/delete'
+  defaults:
+    _entity_form: 'phenodata_backup.delete'
+    _title: 'Delete a phenotypic data backup'
+  requirements:
+    _permission: 'administer phenodata_backup'
