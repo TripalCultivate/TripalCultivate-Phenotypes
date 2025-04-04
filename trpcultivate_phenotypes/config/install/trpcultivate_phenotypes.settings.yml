@@ -12,7 +12,7 @@ trpcultivate:
     directory:
       watermark: 'public://TripalCultivatePhenotypes/watermark/'
       data_file: 'public://TripalCultivatePhenotypes/data_collection/'
-      data_backup: 'public://TripalCultivatePhenotypes/data_backup/'
+      data_backup: 'public://phenotype-backups/'
       data_env: 'public://TripalCultivatePhenotypes/data_env/'
       trait_photo: ''
 

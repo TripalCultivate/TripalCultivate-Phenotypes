@@ -197,7 +197,16 @@ trpcultivate_phenotypes.phenodata_backup.*:
       type: string
     file_id:
       type: string
-      label: 'The file object file id of the data file'
+      label: 'The file object file id of the data file.'
     project_id:
       type: string
-      label: 'The project id of the project the data file is specific to'
+      label: 'The project id of the project the data file is specific to.'
+    comments:
+      type: text
+      label: 'User notes or comments about the data file.'
+    backup_date:
+      type: string
+      label: 'The date the data file was uploaded.'
+    user_id:
+      type: string
+      label: 'The user id of the user who uploaded the data file.'

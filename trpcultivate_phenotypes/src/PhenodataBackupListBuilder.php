@@ -19,8 +19,10 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder {
    */
   public function buildHeader(): array {
 
-    $header['file_id'] = $this->t('Data File');
     $header['project_id'] = $this->t('Project/Experiment');
+    $header['comments'] = $this->t('Notes/Comments');
+    $header['backup_date'] = $this->t('Date Created');
+    $header['file_id'] = $this->t('Data File');
 
     return $header + parent::buildHeader();
   }
@@ -30,7 +32,29 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder {
    */
   public function buildRow(EntityInterface $entity): array {
 
-    // Create a button to download the backup data file.
+    $row['project_id'] = '--';
+    $project_id = $entity->get('project_id');
+
+    if ($project_id) {
+      $project_name = ChadoProjectAutocompleteController::getProjectName((int) $project_id);
+      $row['project_id'] = [];
+      $row['project_id']['data'] = [
+        '#markup' => '<a target="_blank" href="/experiment/' . str_replace(' ', '-', $project_name) . '">' . $project_name . '</a>',
+      ];
+    }
+
+    $row['comments'] = '--';
+    $comments = $entity->get('comments');
+
+    if (!empty($comments)) {
+      $row['comments'] = [];
+      $row['comments']['data'] = [
+        '#markup' => '<small>' . $comments . '</small>',
+      ];
+    }
+
+    $row['backup_date'] = $entity->get('backup_date');
+
     $row['file_id'] = '--';
     $file_id = $entity->get('file_id');
 
@@ -40,18 +64,10 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder {
         $url = $file_obj->createFileUrl();
 
         $row['file_id'] = [];
-        $row['file_id']['data']['download'] = [
+        $row['file_id']['data'] = [
           '#markup' => '<a class="button" target="_blank" href="' . $url . '">Download File</a>',
         ];
       }
-    }
-
-    $row['project_id'] = '--';
-    $project_id = $entity->get('project_id');
-
-    if ($project_id) {
-      $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
-      $row['project_id'] = $project_name;
     }
 
     return $row + parent::buildRow($entity);

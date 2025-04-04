@@ -40,10 +40,18 @@ use Drupal\trpcultivate_phenotypes\PhenodataBackupInterface;
  *     "id" = "id",
  *     "uuid" = "uuid",
  *     "file_id" = "file_id",
+ *     "project_id" = "project_id",
+ *     "comments" = "comments",
+ *     "backup_date" = "backup_date",
+ *     "user_id" = "user_id",
  *   },
  *   config_export = {
  *     "id",
  *     "file_id",
+ *     "project_id",
+ *     "comments",
+ *     "backup_date",
+ *     "user_id",
  *   },
  * )
  */
@@ -58,5 +66,25 @@ final class PhenodataBackup extends ConfigEntityBase implements PhenodataBackupI
    * The file object file id of the data file.
    */
   protected string $file_id;
+
+  /**
+   * The project id of the project the data file is specific to.
+   */
+  protected string $project_id;
+
+  /**
+   * User notes or comments about the data file.
+   */
+  protected string $comments;
+
+  /**
+   * The data the data file was uploaded.
+   */
+  protected string $backup_date;
+
+  /**
+   * The user id of the user who uploaded the data file.
+   */
+  protected string $user_id;
 
 }
