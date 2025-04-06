@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\trpcultivate_phenotypes;
 
+use Drupal\file\Entity\File;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -12,7 +13,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\file\Entity\File;
+use Drupal\Core\Url;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -44,6 +45,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    *   The entity storage class.
    * @param \Drupal\Core\From\FormBuilderInterface $form_builder
    *   The form builder interface.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
    */
   public function __construct(
     EntityTypeInterface $entity_type,
@@ -179,11 +182,11 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     // available in the list.
     $project_names = [];
     $list = $this->service_EntityTypeManager
-      ->getListBuilder('phenodata_backup')
-      ->load();
+      ->getStorage('phenodata_backup')
+      ->loadMultiple();
 
     $project_names = [
-      0 => 'Select Project Name',
+      0 => '- Any - ',
     ];
 
     foreach ($list as $entity) {
@@ -191,12 +194,17 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       $project_names[$project_id] = ChadoProjectAutocompleteController::getProjectName($project_id);
     }
 
-    $form['project_name'] = [
+    $filter_project_id = \Drupal::request()
+      ->get('project_id', 0);
+
+    $form['project_id'] = [
       '#type' => 'select',
+      '#title' => 'Project or Experiment Name',
       '#options' => $project_names,
       '#attributes' => [
         'style' => 'width: 100%',
       ],
+      '#default_value' => $filter_project_id,
     ];
 
     $form['actions'] = [
@@ -206,8 +214,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $form['actions']['submit'] = [
       '#type' => 'submit',
-      '#value' => 'Apply Filter',
-      '#button_type' => 'primary',
+      '#value' => 'Filter',
+      '#button_type' => 'default',
     ];
 
     return $form;
@@ -223,6 +231,35 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+
+    $project_id = $form_state->getValue('project_id');
+
+    $query_url = Url::fromRoute('<current>', [], ['query' => ['project_id' => $project_id]]);
+    $form_state->setRedirectUrl($query_url);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function load() {
+
+    $entities = parent::load();
+
+    $filter_project_id = \Drupal::request()
+      ->get('project_id', 0);
+
+    if (!preg_match('/^\d+$/', (string) $filter_project_id)) {
+      // If mangled filter value is not valid, default to load all.
+      $filter_project_id = 0;
+    }
+
+    if ($filter_project_id > 0) {
+      $entities = array_filter($entities, function ($e) use ($filter_project_id) {
+        return $e->get('project_id') == $filter_project_id;
+      });
+    }
+
+    return $entities;
   }
 
 }
