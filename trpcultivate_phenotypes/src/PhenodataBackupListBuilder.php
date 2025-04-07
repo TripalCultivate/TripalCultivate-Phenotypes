@@ -23,6 +23,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implements FormInterface {
 
   /**
+   * Number of item per page (override default 50).
+   *
+   * @var int
+   */
+  protected $limit = 10;
+
+  /**
    * The form builder.
    *
    * @var \Drupal\Core\Form\FormBuilderInterface
@@ -155,9 +162,11 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    * {@inheritDoc}
    */
   public function render() {
+
     $build = [];
 
     $build['filter_form'] = $this->formBuilder->getForm($this);
+
     $build['table'] = parent::render();
 
     return $build;
@@ -259,7 +268,36 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       });
     }
 
+    // Always sort by date backed up, latest first.
+    usort($entities, [self::class, 'sortByDate']);
+
     return $entities;
+  }
+
+  /**
+   * Sort by backup date.
+   *
+   * @param object $a
+   *   First item for comparison.
+   * @param object $b
+   *   Second item for comparison.
+   *
+   * @return object
+   *   Entity config object.
+   */
+  public static function sortByDate($a, $b) {
+    $key = 'backup_date';
+
+    $date_1 = strtotime($a->get($key));
+    $date_2 = strtotime($b->get($key));
+
+    // Same, keep order.
+    if ($date_1 == $date_2) {
+      return 0;
+    }
+
+    // Date 1 should be prior to date 2.
+    return ($date_1 > $date_2) ? -1 : 1;
   }
 
 }
