@@ -190,15 +190,42 @@ final class PhenodataBackupForm extends EntityForm {
    */
   public function save(array $form, FormStateInterface $form_state): int {
 
-    $backup_file = $form_state->getValue('backup_file');
+    $filename_components = [];
 
+    // Extract the project id from the value returned by
+    // autocomplete field (Project Name (Id)).
+    $project_name = $form_state->getValue('project_name');
+    preg_match('/\((\d+)\)$/', $project_name, $matches);
+    $project_id = trim($matches[1]);
+    if (isset($project_id)) {
+      $this->entity->set('project_id', $project_id);
+    }
+    $filename_components[] = $project_id;
+
+    $user_id = $this->user->id();
+    $this->entity->set('user_id', $user_id);
+    $filename_components[] = $user_id;
+
+    // Backup date and time.
+    $backup_date = date('Y-M-d H:i:s');
+    $this->entity->set('backup_date', $backup_date);
+    $filename_components[] = $backup_date;
+
+    $backup_file = $form_state->getValue('backup_file');
     if (!empty($backup_file)) {
       $file_obj = $this->service_EntityTypeManager
         ->getStorage('file')
         ->load($backup_file[0]);
 
       if ($file_obj) {
-        // @todo Rename the file.
+        $file_uri = $file_obj->getFileUri();
+        $file_filename = $file_obj->getFileName();
+        $new_file_name = implode('_', $filename_components) . '.' . pathinfo($file_filename, PATHINFO_EXTENSION);
+        $new_file_uri = str_replace($file_filename, $new_file_name, $file_uri);
+        rename($file_uri, $new_file_uri);
+
+        $file_obj->setFileName($new_file_name);
+        $file_obj->setFileUri($new_file_uri);
         $file_obj->setPermanent();
         $file_obj->save();
 
@@ -206,27 +233,10 @@ final class PhenodataBackupForm extends EntityForm {
       }
     }
 
-    $project_name = $form_state->getValue('project_name');
-
-    preg_match('/\((\d+)\)$/', $project_name, $matches);
-    if (isset($matches[1])) {
-      $this->entity->set('project_id', trim($matches[1]));
-    }
-
-    $this->entity->set('backup_date', date('Y-M-d H:i:s'));
-
-    $this->entity->set('user_id', $this->user->id());
-
     $this->entity->save();
     $result = parent::save($form, $form_state);
 
-    $message_args = ['%label' => 'Phenotype Data File Backup'];
-    $this->messenger()->addStatus(
-      match($result) {
-        \SAVED_NEW => $this->t('Created new %label.', $message_args),
-        \SAVED_UPDATED => $this->t('Updated %label.', $message_args),
-      }
-    );
+    $this->messenger()->addStatus($this->t('Created new Phenotype Data File Backup'));
     $form_state->setRedirectUrl($this->entity->toUrl('collection'));
 
     return $result;

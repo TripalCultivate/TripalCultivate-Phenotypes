@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\trpcultivate_phenotypes;
 
-use Drupal\file\Entity\File;
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -13,6 +12,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBuilderInterface;
 use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -21,13 +21,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Provides a listing of phenotypic data backups.
  */
 final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implements FormInterface {
-
-  /**
-   * Number of item per page (override default 50).
-   *
-   * @var int
-   */
-  protected $limit = 10;
 
   /**
    * The form builder.
@@ -44,6 +37,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   protected EntityTypeManagerInterface $service_EntityTypeManager;
 
   /**
+   * Users.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected AccountInterface $user;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
@@ -54,28 +54,34 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    *   The form builder interface.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\Core\Session\AccountInterface $user
+   *   Drupal users.
    */
   public function __construct(
     EntityTypeInterface $entity_type,
     EntityStorageInterface $storage,
     FormBuilderInterface $form_builder,
     EntityTypeManagerInterface $entity_type_manager,
+    AccountInterface $user,
   ) {
     parent::__construct($entity_type, $storage);
 
     $this->service_EntityTypeManager = $entity_type_manager;
     $this->formBuilder = $form_builder;
+    $this->user = $user;
   }
 
   /**
    * {@inheritDoc}
    */
   public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
+
     return new static(
       $entity_type,
       $container->get('entity_type.manager')->getStorage($entity_type->id()),
       $container->get('form_builder'),
       $container->get('entity_type.manager'),
+      $container->get('current_user'),
     );
   }
 
@@ -102,16 +108,17 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $row = [];
 
     $row['project_id'] = '';
-    $project_id = $entity->get('project_id');
+    $project_id = (int) $entity->get('project_id');
 
     if ($project_id) {
-      $project_name = ChadoProjectAutocompleteController::getProjectName((int) $project_id);
+      $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
       $row['project_id'] = [];
       $row['project_id']['data'] = [
         '#markup' => '<a target="_blank" href="/experiment/' . str_replace(' ', '-', $project_name) . '">' . $project_name . '</a>',
       ];
     }
 
+    // Comment is optional, display this character if not supplied.
     $row['comments'] = '--';
     $comments = $entity->get('comments');
 
@@ -124,11 +131,15 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $row['backup_date'] = $entity->get('backup_date');
 
+    // Provide a download button.
     $row['file_id'] = '';
     $file_id = $entity->get('file_id');
 
     if ($file_id) {
-      $file_obj = File::load($file_id[0]);
+      $file_obj = $this->service_EntityTypeManager
+        ->getStorage('file')
+        ->load($file_id);
+
       if ($file_obj) {
         $url = $file_obj->createFileUrl();
 
@@ -146,6 +157,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    * {@inheritDoc}
    */
   public function getOperations(EntityInterface $entity) {
+
+    // Only delete is available.
     $operation = [];
 
     if ($entity->access('delete')) {
@@ -165,8 +178,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $build = [];
 
+    // The order is important.
     $build['filter_form'] = $this->formBuilder->getForm($this);
-
     $build['table'] = parent::render();
 
     return $build;
@@ -176,6 +189,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    * {@inheritDoc}
    */
   public function getFormId() {
+
     return 'phenodata_backup_display_form';
   }
 
@@ -185,14 +199,12 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $form = [];
+    // Panels tend to stick, apply some margin.
     $form['#attributes']['style'] = 'margin-bottom: 20px';
 
-    // Populate the select field with all the project names
-    // available in the list.
+    // Populate the select field with project names.
     $project_names = [];
-    $list = $this->service_EntityTypeManager
-      ->getStorage('phenodata_backup')
-      ->loadMultiple();
+    $list = $this->storage->loadMultiple();
 
     $project_names = [
       0 => '- Any - ',
@@ -234,6 +246,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    * {@inheritDoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+
+    $project_id = (int) $form_state->getValue('project_id');
+    $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
+
+    if (empty($project_name)) {
+      $form_state->setErrorByName('project_id', 'The project is not recognized. Please select a project and try again.');
+    }
   }
 
   /**
@@ -243,7 +262,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $project_id = $form_state->getValue('project_id');
 
-    $query_url = Url::fromRoute('<current>', [], ['query' => ['project_id' => $project_id]]);
+    $query_url = Url::fromRoute('<current>', [], ['query' => ['project_id' => strip_tags($project_id)]]);
     $form_state->setRedirectUrl($query_url);
   }
 
@@ -252,13 +271,20 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    */
   public function load() {
 
-    $entities = parent::load();
+    // Restrict the listing to the backup file of a user.
+    $entity_ids = $this->getEntityListQuery()
+      ->condition('user_id', $this->user->id(), '=')
+      ->execute();
 
+    $entities = $this->storage
+      ->loadMultiple($entity_ids);
+
+    // Further restrict to project when requested.
     $filter_project_id = \Drupal::request()
       ->get('project_id', 0);
 
     if (!preg_match('/^\d+$/', (string) $filter_project_id)) {
-      // If mangled filter value is not valid, default to load all.
+      // If filter value is not valid, default to load all.
       $filter_project_id = 0;
     }
 
@@ -269,7 +295,9 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     }
 
     // Always sort by date backed up, latest first.
-    usort($entities, [self::class, 'sortByDate']);
+    if ($entities) {
+      usort($entities, [self::class, 'sortByDate']);
+    }
 
     return $entities;
   }
