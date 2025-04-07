@@ -248,10 +248,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
     $project_id = (int) $form_state->getValue('project_id');
-    $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
 
-    if (empty($project_name)) {
-      $form_state->setErrorByName('project_id', 'The project is not recognized. Please select a project and try again.');
+    if ($project_id > 0) {
+      $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
+
+      if (empty($project_name)) {
+        $form_state->setErrorByName('project_id', 'The project is not recognized. Please select a project and try again.');
+      }
     }
   }
 
@@ -262,7 +265,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $project_id = $form_state->getValue('project_id');
 
-    $query_url = Url::fromRoute('<current>', [], ['query' => ['project_id' => strip_tags($project_id)]]);
+    $query_string = ($project_id == 0) ? [] : ['query' => ['project_id' => strip_tags($project_id)]];
+    $query_url = Url::fromRoute('<current>', [], $query_string);
     $form_state->setRedirectUrl($query_url);
   }
 
