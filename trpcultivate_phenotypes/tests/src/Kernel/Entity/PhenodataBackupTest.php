@@ -40,6 +40,13 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
   ];
 
   /**
+   * Config entity input values.
+   *
+   * @var array
+   */
+  private $entity_input_values;
+
+  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConnection
@@ -100,29 +107,30 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
       ->setAccount($user);
 
     // Create config entity list entries for both projects.
-    $config_entities = [
+    $this->entity_input_values = [
       [
-        uniqid(),
-        $file_id,
-        $project_a_id,
-        'This is a comment',
-        date('Y-M-d H:i:s'),
-        $user->id(),
+        'unique_id' => uniqid(),
+        'file_id' => $file_id,
+        'project_id' => $project_a_id,
+        'comments' => 'This is a comment',
+        'backup_date' => date('Y-M-d H:i:s'),
+        'user_id' => $user->id(),
       ],
       [
-        uniqid(),
-        $file_id,
-        $project_b_id,
-        'This is another comment',
-        date('Y-M-d H:i:s'),
-        $user->id(),
+        'unique_id' => uniqid(),
+        'file_id' => $file_id,
+        'project_id' => $project_b_id,
+        'comments' => 'This is another comment',
+        'backup_date' => date('Y-M-d H:i:s'),
+        'user_id' => $user->id(),
       ],
     ];
 
     $entity_storage = $entity_type_manager->getStorage('phenodata_backup');
 
-    foreach ($config_entities as $entity) {
-      $entity_storage->create($entity);
+    foreach ($this->entity_input_values as $entity) {
+      $values = array_values($entity);
+      $entity_storage->create($values);
     }
   }
 
@@ -139,6 +147,16 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
       $response->getStatusCode(),
       'The Phenodata Backup listing Http request status code does not match expected of 200'
     );
+
+    $config_entity_list_markup = (string) $response->getContent();
+
+    foreach ($this->entity_input_values as $entity) {
+      $this->assertStringContainsString(
+        $entity['comments'],
+        $config_entity_list_markup,
+        'The comments string was not found in the page listing.'
+      );
+    }
   }
 
 }
