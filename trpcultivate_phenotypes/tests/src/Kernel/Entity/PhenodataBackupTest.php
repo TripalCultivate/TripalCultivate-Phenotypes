@@ -5,6 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Entity;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -109,7 +110,7 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
     // Create config entity list entries for both projects.
     $this->entity_input_values = [
       [
-        'unique_id' => uniqid(),
+        'id' => uniqid(),
         'file_id' => $file_id,
         'project_id' => $project_a_id,
         'comments' => 'This is a comment',
@@ -117,7 +118,7 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
         'user_id' => $user->id(),
       ],
       [
-        'unique_id' => uniqid(),
+        'id' => uniqid(),
         'file_id' => $file_id,
         'project_id' => $project_b_id,
         'comments' => 'This is another comment',
@@ -129,8 +130,8 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
     $entity_storage = $entity_type_manager->getStorage('phenodata_backup');
 
     foreach ($this->entity_input_values as $entity) {
-      $values = array_values($entity);
-      $entity_storage->create($values);
+      $entity_storage->create($entity)
+        ->save();
     }
   }
 
@@ -151,8 +152,22 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
     $config_entity_list_markup = (string) $response->getContent();
 
     foreach ($this->entity_input_values as $entity) {
+      $project_name = ChadoProjectAutocompleteController::getProjectName((int) $entity['project_id']);
+
+      $this->assertStringContainsString(
+        $project_name,
+        $config_entity_list_markup,
+        'The project name was not found in the page listing.'
+      );
+
       $this->assertStringContainsString(
         $entity['comments'],
+        $config_entity_list_markup,
+        'The comments string was not found in the page listing.'
+      );
+
+      $this->assertStringContainsString(
+        'Download',
         $config_entity_list_markup,
         'The comments string was not found in the page listing.'
       );
