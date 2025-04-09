@@ -185,7 +185,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     // Only update is allowed.
     $operation = [];
 
-    if ($entity->access('edit')) {
+    if ($entity->access('edit', $this->user, TRUE)) {
       $operation['edit'] = [
         'title' => 'Update',
         'url' => $entity->toUrl('edit-form'),
@@ -261,7 +261,16 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     // Populate the select field with project names.
     $project_names = [];
-    $list = $this->storage->loadMultiple();
+
+    $query = $this->getEntityListQuery();
+
+    if (!isset($this->entity_field_header['user_id'])) {
+      $query
+        ->condition('user_id', $this->user->id());
+    }
+
+    $entity_ids = $query->execute();
+    $list = $this->storage->loadMultiple($entity_ids);
 
     $project_names = [
       0 => '- Any - ',

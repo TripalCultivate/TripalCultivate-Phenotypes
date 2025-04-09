@@ -167,6 +167,15 @@ final class PhenodataBackupForm extends EntityForm {
       ];
     }
     else {
+      // Ensure that user can only modify data file that they own.
+      if ($entity->get('user_id') != $this->user->id()) {
+        $form['not_my_backup'] = [
+          '#markup' => 'This data file backup does not belong to this account.',
+        ];
+
+        return $form;
+      }
+
       $file_id = $entity->get('file_id');
       $file_obj = $this->service_EntityTypeManager
         ->getStorage('file')
@@ -256,7 +265,6 @@ final class PhenodataBackupForm extends EntityForm {
       $this->entity->set('user_id', $user_id);
       $filename_components[] = $user_id;
 
-      // Backup date and time.
       $backup_date = date('Y-M-d H:i:s');
       $this->entity->set('backup_date', $backup_date);
       $filename_components[] = $backup_date;
@@ -287,7 +295,7 @@ final class PhenodataBackupForm extends EntityForm {
     $this->entity->save();
     $result = parent::save($form, $form_state);
 
-    $this->messenger()->addStatus($this->t('Created new Phenotype Data File Backup'));
+    $this->messenger()->addStatus('Created/Updated Phenodata Backup');
     $form_state->setRedirectUrl($this->entity->toUrl('collection'));
 
     return $result;
@@ -299,11 +307,18 @@ final class PhenodataBackupForm extends EntityForm {
   protected function actionsElement(array $form, FormStateInterface $form_state) {
 
     $element = $this->actions($form, $form_state);
+    $entity = $this->getEntity();
 
     // The listing does not provide a delete action, catch the delete button
     // in edit mode and remove it.
     if (isset($element['delete'])) {
       unset($element['delete']);
+    }
+
+    // A user is attempting to modify an entity that belongs to someone else.
+    if (!$entity->isNew() && $entity->get('user_id') != $this->user->id()) {
+      // Submit == Save.
+      unset($element['submit']);
     }
 
     return $element;

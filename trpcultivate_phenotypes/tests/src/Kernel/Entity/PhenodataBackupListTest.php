@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * @group trpcultivate_phenotypes
  */
-class PhenodataBackupTest extends ChadoTestKernelBase {
+class PhenodataBackupListTest extends ChadoTestKernelBase {
 
   use TripalCultivateImporterTestTrait;
 
@@ -146,7 +146,7 @@ class PhenodataBackupTest extends ChadoTestKernelBase {
     $this->assertEquals(
       200,
       $response->getStatusCode(),
-      'The Phenodata Backup listing Http request status code does not match expected of 200'
+      'The Phenodata Backup listing Http request status code does not match expected of 200 (ok)'
     );
 
     $config_entity_list_markup = (string) $response->getContent();
