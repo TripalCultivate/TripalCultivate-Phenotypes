@@ -66,4 +66,4 @@ entity.phenodata_backup.delete_form:
     _entity_form: 'phenodata_backup.delete'
     _title: 'Delete a phenotypic data backup'
   requirements:
-    _permission: 'administer phenodata_backup+view_all phenodata_backup+view_own phenodata_backup'
+    _permission: 'administer phenodata_backup'
