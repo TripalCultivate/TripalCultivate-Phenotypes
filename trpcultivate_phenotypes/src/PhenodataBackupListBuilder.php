@@ -44,6 +44,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   protected AccountInterface $user;
 
   /**
+   * Configuration entity fields per permission.
+   *
+   * @var array
+   */
+  private $entity_field_header = [];
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
@@ -69,6 +76,25 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $this->service_EntityTypeManager = $entity_type_manager;
     $this->formBuilder = $form_builder;
     $this->user = $user;
+
+    $headers = [
+      'project_id' => $this->t('Project/Experiment'),
+      'comments' => $this->t('Notes/Comments'),
+      'backup_date' => $this->t('Date Created'),
+      'file_id' => $this->t('Data File'),
+      'user_id' => $this->t('Created By'),
+    ];
+
+    $has_view_all = $this->user->hasPermission('view_all phenodata_backup');
+    $has_view_own = $this->user->hasPermission('view_own phenodata_backup');
+
+    if ($has_view_all || $this->user->hasPermission('administer phenodata_backup')) {
+      $this->entity_field_header = $headers;
+    }
+    elseif ($has_view_own) {
+      unset($headers['user_id']);
+      $this->entity_field_header = $headers;
+    }
   }
 
   /**
@@ -90,14 +116,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    */
   public function buildHeader(): array {
 
-    $header = [];
-
-    $header['project_id'] = $this->t('Project/Experiment');
-    $header['comments'] = $this->t('Notes/Comments');
-    $header['backup_date'] = $this->t('Date Created');
-    $header['file_id'] = $this->t('Data File');
-
-    return $header + parent::buildHeader();
+    return $this->entity_field_header + parent::buildHeader();
   }
 
   /**
@@ -105,49 +124,54 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    */
   public function buildRow(EntityInterface $entity): array {
 
+    $values = [];
+
+    $key = 'project_id';
+    $project_id = (int) $entity->get($key);
+    $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
+    $values[$key]['data'] = [
+      '#markup' => '<a target="_blank" href="/experiment/' . str_replace(' ', '-', $project_name) . '">' . $project_name . '</a>',
+    ];
+
+    $key = 'comments';
+    $comments = $entity->get($key);
+    $values[$key]['data'] = [
+      '#markup' => (empty($comments)) ? '--' : '<small>' . $comments . '</small>',
+    ];
+
+    $key = 'backup_date';
+    $values[$key] = $entity->get($key);
+
+    $key = 'file_id';
+    $file_id = $entity->get($key);
+    $file_obj = $this->service_EntityTypeManager
+      ->getStorage('file')
+      ->load($file_id);
+
+    if ($file_obj) {
+      $url = $file_obj->createFileUrl();
+      $values[$key]['data'] = [
+        '#markup' => '<a class="button button--primary" target="_blank" href="' . $url . '">Download</a>',
+      ];
+    }
+
+    $key = 'user_id';
+    $user_id = $entity->get($key);
+    $user_obj = $this->service_EntityTypeManager
+      ->getStorage('user')
+      ->load($user_id);
+
+    if ($user_obj) {
+      $username = $user_obj->getAccountName();
+      $values[$key]['data'] = [
+        '#markup' => '<i>' . $username . '</i>',
+      ];
+    }
+
+    // Based on the headers required, construct the values for each header.
     $row = [];
-
-    $row['project_id'] = '';
-    $project_id = (int) $entity->get('project_id');
-
-    if ($project_id) {
-      $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
-      $row['project_id'] = [];
-      $row['project_id']['data'] = [
-        '#markup' => '<a target="_blank" href="/experiment/' . str_replace(' ', '-', $project_name) . '">' . $project_name . '</a>',
-      ];
-    }
-
-    // Comment is optional, display this character if not supplied.
-    $row['comments'] = '--';
-    $comments = $entity->get('comments');
-
-    if (!empty($comments)) {
-      $row['comments'] = [];
-      $row['comments']['data'] = [
-        '#markup' => '<small>' . $comments . '</small>',
-      ];
-    }
-
-    $row['backup_date'] = $entity->get('backup_date');
-
-    // Provide a download button.
-    $row['file_id'] = '';
-    $file_id = $entity->get('file_id');
-
-    if ($file_id) {
-      $file_obj = $this->service_EntityTypeManager
-        ->getStorage('file')
-        ->load($file_id);
-
-      if ($file_obj) {
-        $url = $file_obj->createFileUrl();
-
-        $row['file_id'] = [];
-        $row['file_id']['data'] = [
-          '#markup' => '<a class="button button--primary" target="_blank" href="' . $url . '">Download</a>',
-        ];
-      }
+    foreach (array_keys($this->entity_field_header) as $field) {
+      $row[] = $values[$field] ?? '--';
     }
 
     return $row + parent::buildRow($entity);
@@ -158,13 +182,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    */
   public function getOperations(EntityInterface $entity) {
 
-    // Only delete is available.
+    // Only update is allowed.
     $operation = [];
 
-    if ($entity->access('delete')) {
-      $operation['delete'] = [
-        'title' => 'Delete',
-        'url' => $entity->toUrl('delete-form'),
+    if ($entity->access('edit')) {
+      $operation['edit'] = [
+        'title' => 'Update',
+        'url' => $entity->toUrl('edit-form'),
       ];
     }
 
@@ -183,6 +207,39 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $build['table'] = parent::render();
 
     return $build;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function load() {
+
+    $query = $this->getEntityListQuery();
+
+    if (!isset($this->entity_field_header['user_id'])) {
+      $query
+        ->condition('user_id', $this->user->id());
+    }
+
+    $filter_project_id = \Drupal::request()
+      ->get('project_id', 0);
+
+    // Any attempt to mangle with the query string will just default to
+    // load all projects.
+    if (!preg_match('/^\d+$/', (string) $filter_project_id)) {
+      $filter_project_id = 0;
+    }
+
+    if ($filter_project_id > 0) {
+      $query
+        ->condition('project_id', $filter_project_id, '=');
+    }
+
+    $query->sort('backup_date', 'DESC');
+    $entity_ids = $query->execute();
+
+    return $this->storage
+      ->loadMultiple($entity_ids);
   }
 
   /**
@@ -268,68 +325,6 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $query_string = ($project_id == 0) ? [] : ['query' => ['project_id' => strip_tags($project_id)]];
     $query_url = Url::fromRoute('<current>', [], $query_string);
     $form_state->setRedirectUrl($query_url);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  public function load() {
-
-    // Restrict the listing to the backup file of a user.
-    $entity_ids = $this->getEntityListQuery()
-      ->condition('user_id', $this->user->id(), '=')
-      ->execute();
-
-    $entities = $this->storage
-      ->loadMultiple($entity_ids);
-
-    // Further restrict to project when requested.
-    $filter_project_id = \Drupal::request()
-      ->get('project_id', 0);
-
-    if (!preg_match('/^\d+$/', (string) $filter_project_id)) {
-      // If filter value is not valid, default to load all.
-      $filter_project_id = 0;
-    }
-
-    if ($filter_project_id > 0) {
-      $entities = array_filter($entities, function ($e) use ($filter_project_id) {
-        return $e->get('project_id') == $filter_project_id;
-      });
-    }
-
-    // Always sort by date backed up, latest first.
-    if ($entities) {
-      usort($entities, [self::class, 'sortByDate']);
-    }
-
-    return $entities;
-  }
-
-  /**
-   * Sort by backup date.
-   *
-   * @param object $a
-   *   First item for comparison.
-   * @param object $b
-   *   Second item for comparison.
-   *
-   * @return object
-   *   Entity config object.
-   */
-  public static function sortByDate($a, $b) {
-    $key = 'backup_date';
-
-    $date_1 = strtotime($a->get($key));
-    $date_2 = strtotime($b->get($key));
-
-    // Same, keep order.
-    if ($date_1 == $date_2) {
-      return 0;
-    }
-
-    // Date 1 should be prior to date 2.
-    return ($date_1 > $date_2) ? -1 : 1;
   }
 
 }

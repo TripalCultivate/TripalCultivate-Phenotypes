@@ -24,6 +24,7 @@ use Drupal\trpcultivate_phenotypes\PhenodataBackupInterface;
  *     "list_builder" = "Drupal\trpcultivate_phenotypes\PhenodataBackupListBuilder",
  *     "form" = {
  *       "add" = "Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm",
+ *       "edit" = "Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm",
  *       "delete" = "Drupal\Core\Entity\EntityDeleteForm",
  *     },
  *   },
@@ -32,6 +33,7 @@ use Drupal\trpcultivate_phenotypes\PhenodataBackupInterface;
  *   links = {
  *     "collection" = "/admin/structure/phenodata-backup",
  *     "add-form" = "/admin/structure/phenodata-backup/add",
+ *     "edit-form" = "/admin/structure/phenodata-backup/{phenodata_backup}",
  *     "delete-form" = "/admin/structure/phenodata-backup/{phenodata_backup}/delete",
  *   },
  *   entity_keys = {
