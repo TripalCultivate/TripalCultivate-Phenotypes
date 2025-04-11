@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Drupal\trpcultivate_phenotypes\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
-use Drupal\trpcultivate_phenotypes\PhenodataBackupInterface;
+use Drupal\trpcultivate_phenotypes\Entity\PhenodataBackupInterface;
 
 /**
  * Defines the phenotypic data backup entity type.
@@ -21,7 +21,7 @@ use Drupal\trpcultivate_phenotypes\PhenodataBackupInterface;
  *     plural = "@count phenotypic data backups",
  *   ),
  *   handlers = {
- *     "list_builder" = "Drupal\trpcultivate_phenotypes\PhenodataBackupListBuilder",
+ *     "list_builder" = "Drupal\trpcultivate_phenotypes\ListBuilder\PhenodataBackupListBuilder",
  *     "form" = {
  *       "add" = "Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm",
  *       "edit" = "Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm",

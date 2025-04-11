@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Drupal\trpcultivate_phenotypes;
+namespace Drupal\trpcultivate_phenotypes\ListBuilder;
 
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
