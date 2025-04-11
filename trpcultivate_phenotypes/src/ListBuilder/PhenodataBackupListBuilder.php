@@ -78,7 +78,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $this->user = $user;
 
     $headers = [
-      'project_id' => $this->t('Project/Experiment'),
+      'project_id' => $this->t('Research Experiment'),
       'comments' => $this->t('Notes/Comments'),
       'backup_date' => $this->t('Date Created'),
       'file_id' => $this->t('Data File'),
@@ -129,9 +129,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $key = 'project_id';
     $project_id = (int) $entity->get($key);
     $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
-    $values[$key]['data'] = [
-      '#markup' => '<a target="_blank" href="/experiment/' . str_replace(' ', '-', $project_name) . '">' . $project_name . '</a>',
-    ];
+    $values[$key]['data'] = $project_name;
 
     $key = 'comments';
     $comments = $entity->get($key);
@@ -151,7 +149,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     if ($file_obj) {
       $url = $file_obj->createFileUrl();
       $values[$key]['data'] = [
-        '#markup' => '<a class="button button--primary" target="_blank" href="' . $url . '">Download</a>',
+        '#type' => 'link',
+        '#title' => 'Download',
+        '#url' => $url,
+        '#attributes' => [
+          'class' => ['button', 'button--primary'],
+          'target' => '_blank',
+        ],
       ];
     }
 
@@ -286,7 +290,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $form['project_id'] = [
       '#type' => 'select',
-      '#title' => 'Project or Experiment Name',
+      '#title' => $this->entity_field_header['project_id'],
       '#options' => $project_names,
       '#attributes' => [
         'style' => 'width: 100%',
@@ -319,7 +323,10 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
 
       if (empty($project_name)) {
-        $form_state->setErrorByName('project_id', 'The project is not recognized. Please select a project and try again.');
+        $form_state->setErrorByName('project_id', $this->t(
+          'The @project is not recognized. Please select a project and try again.',
+          ['@project' => $this->entity_field_header['project']])
+        );
       }
     }
   }
