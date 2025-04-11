@@ -13,5 +13,5 @@ trpcultivate_phenotypes.rrules:
 entity.phenodata_backup.overview:
   title: Phenotypic Data Backups
   parent: system.admin_structure
-  description: 'List of phenotypic data backups to extend site functionality.'
+  description: 'The collection of phenotypic data backups available in this site that you have permission to access.'
   route_name: entity.phenodata_backup.collection
