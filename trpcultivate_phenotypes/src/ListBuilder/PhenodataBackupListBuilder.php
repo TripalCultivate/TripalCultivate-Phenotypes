@@ -134,7 +134,9 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $key = 'comments';
     $comments = $entity->get($key);
     $values[$key]['data'] = [
-      '#markup' => (empty($comments)) ? '--' : '<small>' . $comments . '</small>',
+      '#type' => 'html_tag',
+      '#tag' => 'small',
+      '#value' => empty($comments) ? '--' : $comments,
     ];
 
     $key = 'backup_date';
@@ -147,14 +149,12 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       ->load($file_id);
 
     if ($file_obj) {
-      $url = $file_obj->createFileUrl();
       $values[$key]['data'] = [
-        '#type' => 'link',
-        '#title' => 'Download',
-        '#url' => $url,
+        '#type' => 'button',
+        '#value' => 'Download',
+        '#button_type' => 'primary',
         '#attributes' => [
-          'class' => ['button', 'button--primary'],
-          'target' => '_blank',
+          'onClick' => 'window.location.href="' . $file_obj->createFileUrl() . '"; return false;',
         ],
       ];
     }
@@ -168,7 +168,9 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     if ($user_obj) {
       $username = $user_obj->getAccountName();
       $values[$key]['data'] = [
-        '#markup' => '<i>' . $username . '</i>',
+        '#type' => 'html_tag',
+        '#tag' => 'i',
+        '#value' => $username,
       ];
     }
 
@@ -324,8 +326,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
       if (empty($project_name)) {
         $form_state->setErrorByName('project_id', $this->t(
-          'The @project is not recognized. Please select a project and try again.',
-          ['@project' => $this->entity_field_header['project']])
+          'The @project is not recognized. Please select an option and try again.',
+          ['@project' => $this->entity_field_header['project_id']])
         );
       }
     }
