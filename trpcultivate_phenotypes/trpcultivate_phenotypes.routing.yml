@@ -40,7 +40,7 @@ entity.phenodata_backup.collection:
   path: '/admin/structure/phenodata-backup'
   defaults:
     _entity_list: 'phenodata_backup'
-    _title: 'Phenotypic Data Backup configuration'
+    _title: 'Phenotypic Data Backups
   requirements:
     _permission: 'administer phenodata_backup+view_all phenodata_backup+view_own phenodata_backup'
 
