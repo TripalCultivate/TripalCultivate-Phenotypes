@@ -273,6 +273,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         1,
+        FALSE,
       ],
 
       // #1: Not the genus the project was paired to.
@@ -298,6 +299,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #2: Project does not exists.
@@ -323,6 +325,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #3: Project exists but is not paired to a genus.
@@ -348,6 +351,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #4: File is empty
@@ -373,6 +377,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #5: Header is improperly delimited, with proper data rows.
@@ -398,6 +403,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #6: Data row of file is improperly delimited.
@@ -423,6 +429,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #7: Contains correct header but no data.
@@ -445,6 +452,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #8: Contains incorrect header and one line of correct data.
@@ -470,6 +478,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'empty_cell' => ['status' => 'todo'],
         ],
         0,
+        FALSE,
       ],
 
       // #9: Contains correct header and one line of correct data.
@@ -496,6 +505,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           ],
         ],
         0,
+        FALSE,
       ],
 
       // #10: Contains correct header and one line of correct data.
@@ -523,6 +533,29 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           ],
         ],
         0,
+        FALSE,
+      ],
+
+      // #11: No validation error.
+      [
+        'all pass',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'valid_header_valid_row.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => ['status' => 'pass'],
+          'valid_header' => ['status' => 'pass'],
+          'empty_cell' => ['status' => 'pass'],
+        ],
+        0,
+        TRUE,
       ],
     ];
   }
@@ -562,7 +595,13 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormInputValues
    */
-  public function testShareImporterFormValidateStage1(string $scenario, array $input_values, array $expected_validator_results, int $expected_num_form_validation_errors) {
+  public function testShareImporterFormValidateStage1(
+    string $scenario,
+    array $input_values,
+    array $expected_validator_results,
+    int $expected_num_form_validation_errors,
+    bool $job_created,
+  ) {
 
     // Setup form_state.
     $form_state = new FormState();
@@ -672,8 +711,9 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     )
       ->fetchField();
 
-    $this->assertFalse(
-      $tripal_jobs,
+    $this->assertEquals(
+      $job_created,
+      !empty($tripal_jobs),
       'A failed import due to validation error that did not submit should not create a job request in scenario: $scenario.'
     );
   }
