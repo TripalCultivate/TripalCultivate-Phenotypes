@@ -287,9 +287,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // - File rows are properly delimited
     $instance = $this->service_validatorPluginManager->createInstance('valid_delimited_file');
     // Count the number of columns and configure it for this validator. We want
-    // this number to be strict = TRUE, thus no extra columns are allowed.
+    // this number to be strict = FALSE, thus extra columns are allowed.
     $num_columns = count($this->headers);
-    $instance->setExpectedColumns($num_columns, TRUE);
+    $instance->setExpectedColumns($num_columns, FALSE);
     // Set the MIME type of this input file.
     $instance->setFileMimeType($file_mime_type);
     $validators['raw-row']['valid_delimited_file'] = $instance;
@@ -302,7 +302,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // input file.
     $instance->setHeaders($this->headers);
     // Configure the expected number of columns and set it to be strict.
-    $instance->setExpectedColumns($num_columns, TRUE);
+    $instance->setExpectedColumns($num_columns, FALSE);
     $validators['header-row']['valid_header'] = $instance;
 
     // -----------------------------------------------------
@@ -492,13 +492,13 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // Other relevant fields here.
     // Select experiment, Genus field will reflect the genus project is set to.
     $form[$fld_wrapper]['project'] = [
-      '#title' => 'Project/Experiment',
+      '#title' => 'Research Experiment',
       '#type' => 'textfield',
       '#weight' => -100,
       '#required' => TRUE,
-      '#description' => $this->t('Enter the name of the experiment or project your data was generated as part of.'),
+      '#description' => $this->t('Enter the name of the research experiment your data was generated as part of.'),
       '#description_display' => 'after',
-      '#attributes' => ['placeholder' => 'Project/Experiment Name', 'class' => ['tcp-autocomplete']],
+      '#attributes' => ['placeholder' => 'Research Experiment Name', 'class' => ['tcp-autocomplete']],
       '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
       '#autocomplete_route_parameters' => [
         'type_id' => 0,
