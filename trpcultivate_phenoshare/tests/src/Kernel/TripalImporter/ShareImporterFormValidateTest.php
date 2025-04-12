@@ -392,7 +392,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'valid_delimited_file' => [
             'title' => 'Lines are properly delimited',
             'status' => 'fail',
-            'details' => 'This importer requires a strict number of 7 columns for each line. The following lines do not contain the expected number of columns.',
+            'details' => 'This importer requires a minimum number of 7 columns for each line. The following lines do not contain the expected number of columns.',
           ],
           'valid_header' => ['status' => 'todo'],
           'empty_cell' => ['status' => 'todo'],
@@ -417,7 +417,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'valid_delimited_file' => [
             'title' => 'Lines are properly delimited',
             'status' => 'fail',
-            'details' => 'This importer requires a strict number of 7 columns for each line. The following lines do not contain the expected number of columns.',
+            'details' => 'This importer requires a minimum number of 7 columns for each line. The following lines do not contain the expected number of columns.',
           ],
           'valid_header' => ['status' => 'pass'],
           'empty_cell' => ['status' => 'todo'],
