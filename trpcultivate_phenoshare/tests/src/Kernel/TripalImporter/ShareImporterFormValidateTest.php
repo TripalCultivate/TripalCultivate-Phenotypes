@@ -718,4 +718,72 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     );
   }
 
+  /**
+   * Test re-upload while with previous failed upload attempt.
+   */
+  public function testFormReupload() {
+
+    $form_id = 'Drupal\tripal\Form\TripalImporterForm';
+    $share_importer = \Drupal::service('tripal.importer')
+      ->createInstance($this->definitions['test-share-importer']['id']);
+
+    // Setup form_state.
+    $form_state = new FormState();
+    $form_state->addBuildInfo('args', [$this->definitions['test-share-importer']['id']]);
+    $form_state->setValue('current_stage', 1);
+    $form_state->setValue('project', self::TEST_PROJECT);
+    $form_state->setValue('genus', self::TEST_GENUS);
+
+    $invalid_test_file = 'incorrect_header_with_data.tsv';
+    $test_file = $this->createTestFile([
+      'filename' => $invalid_test_file,
+      'content' => [
+        'file' => $invalid_test_file,
+        'fixturepath' => $this->fixture_source['share'],
+      ],
+    ]);
+
+    $form_state->setValue('file_upload', $test_file->id());
+
+    // Submit form for validation.
+    $this->form_builder->submitForm($form_id, $form_state);
+    $form = $this->form_builder->retrieveForm($form_id, $form_state);
+
+    // Validation result window is in accordion stage 1.
+    // Confirm that there is a validation window open.
+    $this->assertArrayHasKey('validation_result', $form['accordion_stage1'],
+      "We expected a validation failure reported via our plugin setup but it's not showing up in the form in test re-upload form.");
+
+    $storage = $form_state->getStorage();
+    $has_failed = $share_importer->hasFailedValidation($storage['validation_result']);
+
+    $this->assertTrue(
+      $has_failed,
+      'The importer form is expected to fail with incorrect headers in the data file'
+    );
+
+    // With the form still has the validation result. Re-upload a file that is
+    // expected to pass keeping other input values for genus and project.
+    $valid_test_file = 'valid_header_valid_row.tsv';
+    $test_file = $this->createTestFile([
+      'filename' => $valid_test_file,
+      'content' => [
+        'file' => $valid_test_file,
+        'fixturepath' => $this->fixture_source['share'],
+      ],
+    ]);
+
+    $form_state->setValue('file_upload', $test_file->id());
+    $this->form_builder->submitForm($form_id, $form_state);
+    $form = $this->form_builder->retrieveForm($form_id, $form_state);
+
+    $storage = $form_state->getStorage();
+    $has_failed = $share_importer->hasFailedValidation($storage['validation_result']);
+
+    $this->assertFalse(
+      $has_failed,
+      'The importer form is expected to pass with valid header and data row in the data file'
+    );
+  }
+
 }
