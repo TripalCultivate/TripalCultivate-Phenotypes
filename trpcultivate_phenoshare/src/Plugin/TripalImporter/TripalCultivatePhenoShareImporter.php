@@ -1704,23 +1704,20 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    * Check if validation failed.
    *
    * @param array $validation_result
-   *   An associative array where each element is the validation summary of each
-   *   level (PROJECT, GENUS, FILE etc.).
-   *   [level => [
-   *       'status' => 'fail', // pass, todo
-   *       'detail' => 'String describing details about the failed validation'
-   *     ],
-   *    ...
-   *   ].
+   *   An associative array where each element is a validator feedback array.
+   *
+   * @return bool
+   *   A true value indicates a failed or todo status has been detected in the
+   *   overall validation result feedback and a false meant all validation
+   *   passed and cleared to proceed to next stage.
    */
   public function hasFailedValidation($validation_result = []) {
     $has_fail = FALSE;
 
     if ($validation_result) {
       foreach ($validation_result as $validator) {
-        // Inspect the validation result summary and if any one level
-        // failed validation should suffice to stop import.
-        if ($validator['status'] == 'fail') {
+        // Stop share importer on a validation status of todo or fail.
+        if ($validator['status'] == 'todo' || $validator['status'] == 'fail') {
           $has_fail = TRUE;
           break;
         }
