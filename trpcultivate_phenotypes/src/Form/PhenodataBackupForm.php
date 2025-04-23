@@ -171,10 +171,10 @@ final class PhenodataBackupForm extends EntityForm {
     $form['project_name'] = [
       '#type' => 'textfield',
       '#title' => 'Research Experiment',
-      '#description' => $this->t('Select the project name the data file is specific to.'),
+      '#description' => $this->t('Select the Research Experiment that this data file was generated for.'),
       '#description_display' => 'after',
       '#required' => TRUE,
-      '#attributes' => ['placeholder' => 'Project/Experiment Name'],
+      '#attributes' => ['placeholder' => 'Experiment Name'],
       '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
       '#autocomplete_route_parameters' => [
         'type_id' => $type_id,
