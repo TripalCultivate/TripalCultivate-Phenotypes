@@ -10,6 +10,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
 /**
@@ -110,8 +111,7 @@ final class PhenodataBackupForm extends EntityForm {
       }
       else {
         // The user can only view or modify own backups. Unauthorized access.
-        $form['unauthorized']['#markup'] = 'This data file backup does not belong to this account.';
-        return $form;
+        throw new AccessDeniedHttpException();
       }
     }
 
