@@ -103,7 +103,7 @@ final class PhenodataBackupForm extends EntityForm {
     $entity = $this->getEntity();
 
     if (!$entity->isNew() && $entity->get('user_id') != $this->user->id()) {
-      if ($this->user->hasPermission('view_all phenodata_backup')) {
+      if ($this->user->hasPermission('view_all phenodata_backup') OR $this->user->hasPermission('administer phenodata_backup')) {
         // The user can view or modify all backups.
         $this->messenger()
           ->addWarning('This data file belongs to another user. Please consider notifying the owner before making significant updates.');
