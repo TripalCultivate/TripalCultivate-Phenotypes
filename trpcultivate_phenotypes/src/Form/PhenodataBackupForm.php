@@ -195,7 +195,6 @@ final class PhenodataBackupForm extends EntityForm {
       '#default_value' => $entity->get('comments'),
       '#rows' => '5',
       '#resizable' => FALSE,
-      '#maxlength' => 200,
     ];
 
     return $form;
