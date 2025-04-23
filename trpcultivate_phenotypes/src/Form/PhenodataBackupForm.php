@@ -23,6 +23,9 @@ final class PhenodataBackupForm extends EntityForm {
    */
   private const array BACKUP_FILE_TYPES = [
     'tsv',
+    'csv',
+    'txt',
+    'xlsx',
   ];
 
   /**
