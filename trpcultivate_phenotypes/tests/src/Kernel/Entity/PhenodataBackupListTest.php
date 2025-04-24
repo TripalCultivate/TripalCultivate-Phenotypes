@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Entity;
 
+use Drupal\Core\Form\FormState;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
@@ -9,7 +10,6 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Tests associated with the Phenodata Backup listing.
@@ -376,5 +376,57 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $backups = $listbuilder->load();
 
     $this->assertCount($expected['num_backups'], $backups, "We did not get the number of backups we expected when project was provided incorrectly.");
+  }
+
+  /**
+   * Tests PhenodataBackupListBuilder::build/vaildate/submitForm().
+   */
+  public function testPhenodataBackupListForm() {
+
+    $current_user = 'view_all';
+
+    // Login the current user.
+    $current_user = $this->users[$current_user]['object'];
+    $this->setCurrentUser($current_user);
+
+    $listbuilder = $this->entityTypeManager->getListBuilder('phenodata_backup');
+
+    // Basic test that we can build the form.
+    $form_state = new FormState();
+    $form = $listbuilder->buildForm([], $form_state);
+    $this->assertIsArray($form, "We were not able to build the form.");
+
+    // Now submit the form without setting any filters.
+    $listbuilder->validateForm($form, $form_state);
+    $errors = $form_state->getErrors();
+    $this->assertCount(0, $errors, "We got errors when we submitting the form without any values.");
+    $listbuilder->submitForm($form, $form_state);
+    $redirect_url = $form_state->getRedirect();
+    $this->assertInstanceOf(\Drupal\Core\Url::class, $redirect_url, "FormState::getRedirect did not return the type of object we expected.");
+    $this->assertEquals('<current>', $redirect_url->getRouteName(), "The redirect route was not what we expected.");
+    $this->assertEmpty($redirect_url->getOptions(), "The redirect url should not have any parameters when no fitler criteria were set.");
+
+    // Next submit with a valid project_id.
+    $form_state->setValue('project_id', '1');
+    $listbuilder->validateForm($form, $form_state);
+    $errors = $form_state->getErrors();
+    $this->assertCount(0, $errors, "We got errors when we submitting the form with a valid project_id.");
+    $listbuilder->submitForm($form, $form_state);
+    $redirect_url = $form_state->getRedirect();
+    $this->assertInstanceOf(\Drupal\Core\Url::class, $redirect_url, "FormState::getRedirect did not return the type of object we expected.");
+    $this->assertEquals('<current>', $redirect_url->getRouteName(), "The redirect route was not what we expected.");
+    $query_params = $redirect_url->getOptions();
+    $this->assertNotEmpty($query_params, "The redirect url should have parameters when a valid project_id was set.");
+    $this->assertArrayHasKey('query', $query_params, "The query should have been set in the url options.");
+    $this->assertArrayHasKey('project_id', $query_params['query'], "The project_id should have been set in the url options['query'].");
+    $this->assertEquals(1, $query_params['query']['project_id'], "The project_id set in the url query parameters was not what we expected.");
+
+    // Next submit with a non-existing project_id.
+    $form_state->setValue('project_id', '999');
+    $listbuilder->validateForm($form, $form_state);
+    $errors = $form_state->getErrors();
+    $this->assertCount(1, $errors, "We got errors when we submitting the form with a valid project_id.");
+    $this->assertArrayHasKey('project_id', $errors, "We expected the project_id to be flagged in errors when a non-existing project_id was submitted.");
+    $this->assertStringContainsString('The Research Experiment is not recognized.', (string) $errors['project_id'], "The error did not contain what we expected when a non-existing project_id is supplied.");
   }
 }
