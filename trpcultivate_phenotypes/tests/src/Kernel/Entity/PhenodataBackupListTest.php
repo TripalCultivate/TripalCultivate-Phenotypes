@@ -44,13 +44,6 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
   ];
 
   /**
-   * Config entity input values.
-   *
-   * @var array
-   */
-  private $entity_input_values;
-
-  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConnection
@@ -204,15 +197,14 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    * Data Provider: Provides a variety of users/backups to test.
    *
    * @return array
-   *
+   *   Each element is a scenario to be tested and consists of the following:
+   *   - current user (string): a key from the users property of this class.
+   *   - expectations (array): indicates the expecations for the current
+   *     scenario. Keys are 'auth_level', 'headers', 'num_backups', and
+   *     'has_project_a'.
    */
   public static function providePhenodataBackupScenarios() {
     $scenarios = [];
-
-    // For all scenarios we want to test with 3 kinds of users.
-    // Users are defined in a property at the top of this class and their
-    // unique keys are used in the scenarios.
-    // @see $users property.
 
     // Headers expected for users that can only see their own backups.
     $user_specific_headers = ['project_id', 'comments', 'backup_date', 'file_id'];
@@ -282,6 +274,16 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    * Test Phenodata Backup list by HTTP request.
    *
    * @dataProvider providePhenodataBackupScenarios
+   *
+   * @param string $current_user
+   *   A key from the users property of this class to indicate the user to login.
+   * @param array $expected
+   *   An array indicating the expectations for the current scenario.
+   *   - auth_level (int): One of 0 (no access), 1 (only their own), or 2 (all).
+   *   - headers (array): the headers of the list to expect for this user.
+   *   - num_backups (int): the number of backups to expect in the listing.
+   *   - has_project_a (int): the number of backups including 'Project A'
+   *     that should be present in the listing.
    */
   public function testPhenodataBackupListRequest(string $current_user, array $expected) {
 
@@ -334,6 +336,16 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    * Tests PhenodataBackupListBuilder::load().
    *
    * @dataProvider providePhenodataBackupScenarios
+   *
+   * @param string $current_user
+   *   A key from the users property of this class to indicate the user to login.
+   * @param array $expected
+   *   An array indicating the expectations for the current scenario.
+   *   - auth_level (int): One of 0 (no access), 1 (only their own), or 2 (all).
+   *   - headers (array): the headers of the list to expect for this user.
+   *   - num_backups (int): the number of backups to expect in the listing.
+   *   - has_project_a (int): the number of backups including 'Project A'
+   *     that should be present in the listing.
    */
   public function testPhenodataBackupListLoad(string $current_user, array $expected) {
 
