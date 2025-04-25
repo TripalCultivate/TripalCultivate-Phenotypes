@@ -105,12 +105,21 @@ final class PhenodataBackupForm extends EntityForm {
 
     $entity = $this->getEntity();
 
+    // Check permissions.
+    $view_own = $this->user->hasPermission('view_own phenodata_backup');
+    $view_all = $this->user->hasPermission('view_all phenodata_backup');
+    $admin = $this->user->hasPermission('administer phenodata_backup');
+    // Confirm user should have access to create a backup or even edit their own.
+    // Access denied if they have none of these permissions.
+    if (!$view_own AND !$view_all AND !$admin) {
+      throw new AccessDeniedHttpException();
+    }
+    // Confirm user should have access to edit someone elses backup.
     if (!$entity->isNew() && $entity->get('user_id') != $this->user->id()) {
       if ($this->user->hasPermission('view_all phenodata_backup') OR $this->user->hasPermission('administer phenodata_backup')) {
         // The user can view or modify all backups.
         $this->messenger()
           ->addWarning('This data file belongs to another user. Please consider notifying the owner before making significant updates.');
-
       }
       else {
         // The user can only view or modify own backups. Unauthorized access.
