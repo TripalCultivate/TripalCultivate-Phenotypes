@@ -453,8 +453,8 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $this->setCurrentUser($current_user);
 
     // Set the fid in the input.
-    if ($input['backup_file'] === TRUE) {
-      $input['backup_file'] = [$this->fid];
+    if ($create_input['backup_file'] === TRUE) {
+      $create_input['backup_file'] = [$this->fid];
     }
 
     // Create Form.
@@ -465,7 +465,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $form_state = new FormState();
     $form = \Drupal::service('entity.form_builder')->getForm($entity, 'add');
     // -- set the form values.
-    foreach ($input as $key => $value) {
+    foreach ($create_input as $key => $value) {
       $form_state->setValue($key, $value);
     }
     // -- now validate it with the data provided.
