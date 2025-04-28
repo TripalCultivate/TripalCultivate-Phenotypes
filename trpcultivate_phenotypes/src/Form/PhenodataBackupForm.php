@@ -20,8 +20,11 @@ final class PhenodataBackupForm extends EntityForm {
 
   /**
    * File types supported.
+   *
+   * @var array
+   *   A list of the supported file endings.
    */
-  private const array BACKUP_FILE_TYPES = [
+  private static array $BACKUP_FILE_TYPES = [
     'tsv',
     'csv',
     'txt',
@@ -134,7 +137,7 @@ final class PhenodataBackupForm extends EntityForm {
       '#value' => uniqid(),
     ];
 
-    $importer_file_extension = implode(' ', self::BACKUP_FILE_TYPES);
+    $importer_file_extension = implode(' ', self::$BACKUP_FILE_TYPES);
 
     $config_backup_dir = $this->service_ConfigFactory
       ->get('trpcultivate_phenotypes.settings')

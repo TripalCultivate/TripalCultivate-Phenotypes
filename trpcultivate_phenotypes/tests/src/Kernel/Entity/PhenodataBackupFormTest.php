@@ -46,6 +46,13 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
+   * The entity type manager.
+   *
+   * @var Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * Users for testing phenodata backup permissions.
    *
    * When testing permissions we want to create a user with each of the
