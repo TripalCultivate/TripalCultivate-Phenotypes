@@ -236,11 +236,11 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *     - Each key is the unique name of a feedback line provided to the UI
    *       through processValidationMessages(). Currently, there is a feedback
    *       line for each unique validator instance that was instantiated by the
-   *       configureValidators() method in the Traits Importer class.
+   *       configureValidators() method in the Share Importer.
    *       - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'
    *       - 'title': [REQUIRED if 'status' = 'fail'] A string that matches the
-   *         title set in processValidationMessages() method in the Traits
-   *         Importer class for this validator instance.
+   *         title set in processValidationMessages() method in the Share
+   *         Importer for this validator instance.
    *       - 'details': [REQUIRED if 'status' = 'fail'] A string that is ideally
    *         unique to the scenario that is expected to be in the render array.
    *   - an integer indicating the number of form validation messages we expect
@@ -579,7 +579,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    * @param array $expected_validator_results
    *   An array that is keyed by the unique name of each validator instance
    *   (these names are declared in the configureValidators() method in the
-   *   Traits Importer class). Each validator instance in the array is further
+   *   Share Importer). Each validator instance in the array is further
    *   keyed by the following. Some are required but others are optional,
    *   dependent upon the expected validation results.
    *   - 'status': [REQUIRED] One of 'pass', 'todo', or 'fail'.

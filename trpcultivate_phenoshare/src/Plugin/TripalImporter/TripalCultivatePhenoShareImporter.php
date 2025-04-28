@@ -1145,7 +1145,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       // Get the fid of the uploaded file.
       $fid = $validation_result['failedItems']['fid'];
       // Log a message for the administrator to help with debugging the issue.
-      $this->logger->info("The user $username uploaded a file with FID $fid using the Traits Importer, but could not import it as something is wrong with the filename/FID. More specifically, the case message '" . $validation_result['case'] . "' was reported.");
+      $this->logger->info("The user $username uploaded a file with FID $fid using the Pheno Share Importer, but could not import it as something is wrong with the filename/FID. More specifically, the case message '" . $validation_result['case'] . "' was reported.");
     }
     elseif ($validation_result['case'] == 'The file has no data and is an empty file') {
       $message = 'The file provided has no contents in it to import. Please ensure your file has the expected header row and at least one row of data.';
@@ -1163,7 +1163,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $items = [
         "The file extension indicates the file is \"$file_extension\" but our system detected the file is of type \"$file_mime\"",
       ];
-      $this->logger->info("The user $username uploaded a file to the Traits Importer with file extension \"$file_extension\" and mime type \"$file_mime\"");
+      $this->logger->info("The user $username uploaded a file to the Pheno Share Importer with file extension \"$file_extension\" and mime type \"$file_mime\"");
     }
     elseif ($validation_result['case'] == 'Data file cannot be opened') {
       $message = 'The file provided could not be opened. Please contact your administrator for help.';
@@ -1173,7 +1173,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'Filename: ' . $filename,
       ];
       // Log more info for the administrator.
-      $this->logger->info("The user $username uploaded a file with FID $fid using the Traits Importer, but the file could not be opened using \'@fopen\'. Filename was '$filename'.");
+      $this->logger->info("The user $username uploaded a file with FID $fid using the Pheno Share Importer, but the file could not be opened using \'@fopen\'. Filename was '$filename'.");
     }
     elseif ($validation_result['case'] == 'Data file is valid') {
       throw new \Exception('The case string returned by the ValidDataFile validator implies validation passed, but valid is set to FALSE.');
