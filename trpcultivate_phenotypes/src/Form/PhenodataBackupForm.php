@@ -243,7 +243,7 @@ final class PhenodataBackupForm extends EntityForm {
       }
 
       if ($invalid_project) {
-        $form_state->setErrorByName('project_name', 'The Research Experiment name is not recognized. Please select an option and try again.');
+        $form_state->setErrorByName('project_name', 'The Research Experiment name is not recognized. Start by typing slowly, select the correct one from the dropdown and try saving again.');
       }
     }
 

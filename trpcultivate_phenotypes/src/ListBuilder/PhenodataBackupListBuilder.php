@@ -326,7 +326,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
       if (empty($project_name)) {
         $form_state->setErrorByName('project_id', $this->t(
-          'The @project is not recognized. Start by typing slowly, select the correct one from the dropdown and try saving again.',
+          'The @project is not recognized or you do not have permission to see backups for it.',
           ['@project' => $this->entity_field_header['project_id']])
         );
       }
