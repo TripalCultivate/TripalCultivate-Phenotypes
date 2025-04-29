@@ -286,6 +286,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       $project_id = (int) $entity->get('project_id');
       $project_names[$project_id] = ChadoProjectAutocompleteController::getProjectName($project_id);
     }
+    asort($project_names);
 
     $filter_project_id = \Drupal::request()
       ->get('project_id', 0);
