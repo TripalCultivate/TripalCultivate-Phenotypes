@@ -186,7 +186,7 @@ final class PhenodataBackupForm extends EntityForm {
     $form['project_name'] = [
       '#type' => 'textfield',
       '#title' => 'Research Experiment',
-      '#description' => $this->t('Select the Research Experiment that this data file was generated for.'),
+      '#description' => $this->t('<strong>WARNING: Research Experiment cannot be changed later.</strong> Please ensure that you are selecting the specific experiment this data file was generated for. If your research experiment is not listed or if you are unsure, please contact your curator or site administrator.'),
       '#description_display' => 'after',
       '#required' => TRUE,
       '#attributes' => ['placeholder' => 'Experiment Name'],
@@ -202,6 +202,11 @@ final class PhenodataBackupForm extends EntityForm {
       '#default_value' => ($project_id) ? "$project_name ($project_id)" : NULL,
       '#disabled' => ($project_id) ? TRUE : FALSE,
     ];
+    // Add an extra warning about the experiment not being changable if this
+    // is a new backup only.
+    if (!$entity->isNew()) {
+      $form['project_name']['#description'] = $this->t('The research experiment of an existing backup cannot be changed. If you made a mistake, please contact your curator or site administrator.');
+    }
 
     $form['comments'] = [
       '#type' => 'textarea',
