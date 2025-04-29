@@ -22,13 +22,6 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
   use UserCreationTrait;
 
   /**
-   * The entity type manager.
-   *
-   * @var Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entityTypeManager;
-
-  /**
    * Modules to enable.
    *
    * @var array
@@ -51,11 +44,18 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
+   * The entity type manager.
+   *
+   * @var Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
    * Users for testing phenodata backup permissions.
    *
    * When testing permissions we want to create a user with each of the
-   * permissions defined by this functionality. These will be created in the
-   * setup and referenced in the data provider and tests.
+   * permissions defined by Phenodata Backups. These users will be created in
+   * the setup and referenced in the data provider and tests.
    *
    * @var array
    *   Each element of this array is keyed by a unique identifier and defines
@@ -200,8 +200,11 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *   Each element is a scenario to be tested and consists of the following:
    *   - current user (string): a key from the users property of this class.
    *   - expectations (array): indicates the expecations for the current
-   *     scenario. Keys are 'auth_level', 'headers', 'num_backups', and
-   *     'has_project_a'.
+   *     - auth_level (int): One of 0 (no access), 1 (only their own), or 2 (all).
+   *     - headers (array): the headers of the list to expect for this user.
+   *     - num_backups (int): the number of backups to expect in the listing.
+   *     - has_project_a (int): the number of backups including 'Project A'
+   *       that should be present in the listing.
    */
   public static function providePhenodataBackupScenarios() {
     $scenarios = [];
@@ -275,6 +278,17 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    *
+   * Checks:
+   *  - The user from the scenario has access to the page if they should or
+   *    recieve an unautorized http code if they are not.
+   *  - Basic check that the page has a backup listed if we expect one.
+   *  - @todo we could check that the page content includes the Access Denied
+   *   message if 403 is thrown and that there is no listing table on this page.
+   *
+   * NOTE: more in-depth checks on the page content occur in
+   * testPhenodataBackupListForm(). This test focuses on simulating a page
+   * request to ensure permissions.
+   *
    * @param string $current_user
    *   A key from the users property of this class to indicate the user to login.
    * @param array $expected
@@ -295,22 +309,26 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $request = REQUEST::create('/admin/structure/phenodata-backup');
     $response = $this->container->get('http_kernel')->handle($request);
 
+    // Transform our authorization level into the expected HTTP code for
+    // the request. Also define a matching code label to be used in the
+    // assert message.
     $expected_code = 200;
     $code_label = "200 (ok)";
     if ($expected['auth_level'] === 0) {
       $expected_code = 403;
       $code_label = "403 (unauthorized)";
     }
-
     $this->assertEquals(
       $expected_code,
       $response->getStatusCode(),
       "The Phenodata Backup listing Http request status code does not match expected of $code_label."
     );
 
+    // Retrieve the rendered content of the requested page.
     $config_entity_list_markup = (string) $response->getContent();
 
-    // Check for a backup row.
+    // Check for a backup row as long as the requested page is expected to be
+    // authorized and we are expecting backups.
     if (($expected['auth_level'] > 0) AND ($expected['num_backups'] > 0)) {
       $this->assertStringContainsString(
         'Project A',
@@ -337,6 +355,21 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    *
+   * NOTE: This test checks both the load() function and the render() method.
+   * The render() method returns a render array which is better for testing
+   * then string matching the request. This complements the access tests in
+   * testPhenodataBackupListRequest().
+   *
+   * Checks:
+   * - The load only returns backups associated with a specific project when
+   *   one is indicated.
+   * - The load returns all backups when no project is specified.
+   * - The load returns all backups when the project is incorrectly specified.
+   * - In all the above cases, only projects the specific user has access to
+   *   are returned. This is defined in the data provider.
+   * - @todo The backups returned by load() are represented in the render array
+   *   for the page.
+   *
    * @param string $current_user
    *   A key from the users property of this class to indicate the user to login.
    * @param array $expected
@@ -353,29 +386,41 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $current_user = $this->users[$current_user]['object'];
     $this->setCurrentUser($current_user);
 
+    // Get the Listbuilder object through the entity type manager to ensure
+    // it is populated correctly.
     $listbuilder = $this->entityTypeManager->getListBuilder('phenodata_backup');
 
     // Test the load() will properly accept a valid project_id
     // -- set the request query params project_id used in the load().
+    //  This is needed because the load grabs it's parameters from the request
+    //  directly making this the only way to ensure the parameters are used.
     $request = REQUEST::create(
       '/admin/structure/phenodata-backup',
       'GET',
       ['project_id' => 1]
     );
     $this->container->get('http_kernel')->handle($request);
-    // -- now call the load the backups.
+    // -- now call the load the backups. We prefer this approach rather then
+    //  just using the request directly since it provides the backup entities
+    //  directly making testing for their presence more reliable then string
+    //  matching the rendered output.
     $backups = $listbuilder->load();
 
     // Ensure we got the number of backups we expected.
     $this->assertCount($expected['has_project_a'], $backups, "We did not get the number of backups we expected when filtering for project A.");
 
-    // Test the load() will give them all when no project is specified
+    // Test the load() will give them all when no project is specified.
+    // -- reset the request query params to none.
+    //  As above, this is needed because the load grabs it's parameters from
+    //  the request directly.
     $request = REQUEST::create(
       '/admin/structure/phenodata-backup'
     );
     $this->container->get('http_kernel')->handle($request);
+    // -- now call the load the backups.
     $backups = $listbuilder->load();
 
+    // Ensure we got the number of backups we expected.
     $this->assertCount($expected['num_backups'], $backups, "We did not get the number of backups we expected when not filtering at all.");
 
     // Test the load() will give them all when project is specified incorrectly.
@@ -387,43 +432,65 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $this->container->get('http_kernel')->handle($request);
     $backups = $listbuilder->load();
 
+    // Ensure we got the number of backups we expected. We expect the same
+    // number as if no parameters were set.
     $this->assertCount($expected['num_backups'], $backups, "We did not get the number of backups we expected when project was provided incorrectly.");
   }
 
   /**
    * Tests PhenodataBackupListBuilder::build/vaildate/submitForm().
+   *
+   * Specifically, this tests both filter criteria form only and only for
+   * a single user since access permissions were tested elsewhere.
    */
   public function testPhenodataBackupListForm() {
 
+    // We don't use the data provider but instead focus on a user with all
+    // permissions here since the access permissions were checked in
+    // testPhenodataBackupListRequest().
     $current_user = 'view_all';
 
     // Login the current user.
     $current_user = $this->users[$current_user]['object'];
     $this->setCurrentUser($current_user);
 
+    // Get the Listbuilder object through the entity type manager to ensure
+    // it is populated correctly.
     $listbuilder = $this->entityTypeManager->getListBuilder('phenodata_backup');
 
-    // Basic test that we can build the form.
+    // Basic test that we can build the listbuilder filter form.
     $form_state = new FormState();
     $form = $listbuilder->buildForm([], $form_state);
-    $this->assertIsArray($form, "We were not able to build the form.");
+    $this->assertIsArray($form,
+      "We were not able to build the listbuilder filter form.");
 
     // Now submit the form without setting any filters.
+    // -- validate the form first.
     $listbuilder->validateForm($form, $form_state);
+    // -- retrieve form state errors and confirm there were not any.
     $errors = $form_state->getErrors();
     $this->assertCount(0, $errors, "We got errors when we submitting the form without any values.");
+    // -- submit the form.
     $listbuilder->submitForm($form, $form_state);
+    // -- check the redirect was set properly: returns to current page.
+    // Note: the submit only sets the redirect to ensure any filter parameters
+    // are in the URL query. The listbuilder load then uses the URL query
+    // direclty which is tested in testPhenodataBackupListLoad().
     $redirect_url = $form_state->getRedirect();
     $this->assertInstanceOf(\Drupal\Core\Url::class, $redirect_url, "FormState::getRedirect did not return the type of object we expected.");
     $this->assertEquals('<current>', $redirect_url->getRouteName(), "The redirect route was not what we expected.");
     $this->assertEmpty($redirect_url->getOptions(), "The redirect url should not have any parameters when no fitler criteria were set.");
 
     // Next submit with a valid project_id.
+    // -- always call validate first.
     $form_state->setValue('project_id', '1');
     $listbuilder->validateForm($form, $form_state);
+    // -- check that there are no errors.
     $errors = $form_state->getErrors();
     $this->assertCount(0, $errors, "We got errors when we submitting the form with a valid project_id.");
+    // -- submit the form.
     $listbuilder->submitForm($form, $form_state);
+    // -- check that the URL redirect now includes the project ID.
     $redirect_url = $form_state->getRedirect();
     $this->assertInstanceOf(\Drupal\Core\Url::class, $redirect_url, "FormState::getRedirect did not return the type of object we expected.");
     $this->assertEquals('<current>', $redirect_url->getRouteName(), "The redirect route was not what we expected.");
@@ -434,8 +501,10 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $this->assertEquals(1, $query_params['query']['project_id'], "The project_id set in the url query parameters was not what we expected.");
 
     // Next submit with a non-existing project_id.
+    // -- always call validate first.
     $form_state->setValue('project_id', '999');
     $listbuilder->validateForm($form, $form_state);
+    // -- confirm that the user is told this project doesn't exist.
     $errors = $form_state->getErrors();
     $this->assertCount(1, $errors, "We got errors when we submitting the form with a valid project_id.");
     $this->assertArrayHasKey('project_id', $errors, "We expected the project_id to be flagged in errors when a non-existing project_id was submitted.");

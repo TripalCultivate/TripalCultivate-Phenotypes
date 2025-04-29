@@ -56,8 +56,8 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    * Users for testing phenodata backup permissions.
    *
    * When testing permissions we want to create a user with each of the
-   * permissions defined by this functionality. These will be created in the
-   * setup and referenced in the data provider and tests.
+   * permissions defined by Phenodata Backups. These users will be created in
+   * the setup and referenced in the data provider and tests.
    *
    * @var array
    *   Each element of this array is keyed by a unique identifier and defines
@@ -125,6 +125,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $this->entityTypeManager = $container->get('entity_type.manager');
 
     // Create Research Experiment Content type.
+    // -- term.
     $term_values = [
       'id_space_name' => 'SIO',
       'term' => [
@@ -132,10 +133,10 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
         'name' => 'Experiment'
       ],
     ];
-    // @var \Drupal\tripal\TripalVocabTerms\TripalTerm $term //
     $term = $this->createTripalTerm($term_values, 'tripal_default_id_space', 'tripal_default_vocabulary');
     $this->assertIsObject($term,
       'We were unable to create a tripal term during test setup');
+    // -- content type.
     $entityType = TripalEntityType::create([
       'id' => 'research_experiment',
       'label' => 'Research Experiment',
@@ -152,6 +153,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $entityType->save();
 
     // Create a test file.
+    // This will be reused for all the backups.
     $file_obj = $this->createTestFile([
       'filename' => 'backup_data_file.tsv',
       'mime' => 'text/tab-separated-values',
@@ -159,7 +161,6 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
         'string' => implode("\t", ['Header 1', 'Header 2', 'Header 3']),
       ],
     ]);
-
     $file_id = $file_obj->id();
     $this->fid = $file_id;
 
@@ -173,7 +174,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
       ->execute();
 
     // Create users.
-    // Create first UID1 so, the other users are not super-admin.
+    // -- Create first UID1 so, the other users are not super-admin.
     $this->createUser([], NULL, FALSE, ['uid' => 1,]);
     // Now create the rest of the users.
     foreach ($this->users as $user_key => $user_defn) {
@@ -181,7 +182,8 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
         $user_defn['permissions'],
         $user_defn['name']
       );
-      $this->assertNotFalse($this->users[$user_key]['object'], "We were unable to create a user for testing key:$user_key, params:" . print_r($user_defn, TRUE));
+      $this->assertNotFalse($this->users[$user_key]['object'],
+        "We were unable to create a user for testing key:$user_key, params:" . print_r($user_defn, TRUE));
 
       $this->users[$user_key]['object']->save();
       $this->users[$user_key]['id'] = $this->users[$user_key]['object']->id();
@@ -312,11 +314,11 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *   Indicates the users property key to use to fetch each backup for testing.
    *   The key 'own' indicates a backup owned by the current user and
    *   'other' indicates a backup owned by a different user. The backup
-   *   is looked up using the backups class property populated during setUp().
+   *   is looked up using the backups property populated during setUp().
    * @param array $expected
    *   Indicates whether the current user should have access to specific pages.
    *   A value of TRUE means this user should be able to access this page and
-   *     FALSE means AccessDenied should be thrown.
+   *   FALSE means AccessDenied should be thrown.
    *   - 'create' indicates the create form.
    *   - 'edit_own' indicates the edit form for the $test_backups['own'] backup.
    *   - 'edit_other' indicates the edit form for the $test_backups['other'] backup.
@@ -400,14 +402,20 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *   - @todo Project name is not of the right format.
    *   - @todo Project name is the right format but doesn't exist.
    *
+   * Note: this data provider is designed with the above todo scenarios in mind.
+   * Right now only valid data submitted on create is being tested and the test
+   * will need to be updated when the additional scenarios are added.
+   *
    * @return array
    *   Each element is a scenario to be tested and consists of the following:
    *   - create_input: an array with the keys id, backup_file, project_name and
    *     comments. These map to the form element keys.
-   *   - create_expectations: an array of expectations.
+   *   - create_expectations: an array of expectations indicating what we expect
+   *     when the create form is submitted with the create_input values.
    *   - edit_input: an array with the keys id, backup_file, project_name and
    *     comments. These map to the form element keys.
-   *   - edit_expectations: an array of expectations.
+   *   - edit_expectations: an array of expectations indicating what we expect
+   *     when the edit form is submitted with the edit_input values.
    */
   public function providePhenodataBackupValues(): array {
     $scenarios = [];
@@ -431,6 +439,8 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
   /**
    * Test Phenodata Backup form validate/submit.
    *
+   * @dataProvider providePhenodataBackupValues
+   *
    * Checks:
    *   - The create form can be validated with the input data.
    *   - The create form can be submitted if there are no validation errors.
@@ -440,18 +450,18 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *   - @todo The updated entity contains the values expected.
    *   - @todo The file is renamed appropriately.
    *
-   * @dataProvider providePhenodataBackupValues
-   *
    * @param array $create_input
    *   An array with the keys id, backup_file, project_name and comments.
    *   These map to the form element keys.
    * @param array $create_expectations
-   *   An array of expectations.
+   *   An array of expectations indicating what we expect when the create form
+   *   is submitted with the create_input values.
    * @param array $edit_input
    *   An array with the keys id, backup_file, project_name and comments.
    *   These map to the form element keys.
    * @param array $edit_expectations
-   *   An array of expectations.
+   *   An array of expectations indicating what we expect when the edit form
+   *   is submitted with the edit_input values.
    */
   public function testPhenodataBackupFormSubmit(array $create_input, array $create_expectations, array $edit_input, array $edit_expecations) {
 
@@ -478,8 +488,10 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     // -- now validate it with the data provided.
     $form_object->validateForm($form, $form_state);
     $errors = $form_state->getErrors();
+    // @todo use the expectations to check for the errors.
     $this->assertCount(0, $errors, "We got errors when we submitting the form the supplied values.");
     // -- if there are no errors then submit the form.
+    // @todo use the expectations to check the backup was created correctly.
     if (count($errors) === 0) {
       $form_object->submitForm($form, $form_state);
       $form_object->save($form, $form_state);
@@ -488,6 +500,9 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
 
   /**
    * Check the form matches our expectations.
+   *
+   * @todo add a lot more checks to ensure the form matches expectations
+   * @todo specifically check the default value!
    *
    * @param PhenodataBackup $entity
    *   The phenodata backup entity we used to build the form.
@@ -513,7 +528,5 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
       $code = "MISSING ELEMENT " . $expected_key;
       $this->assertArrayHasKey($expected_key, $form, $code . ' ' . $message);
     }
-
-    // @TODO ADD MORE CHECKS!!!
   }
 }
