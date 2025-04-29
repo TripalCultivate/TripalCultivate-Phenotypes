@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\trpcultivate_phenotypes\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
-use Drupal\trpcultivate_phenotypes\Entity\PhenodataBackupInterface;
 
 /**
  * Defines the phenotypic data backup entity type.

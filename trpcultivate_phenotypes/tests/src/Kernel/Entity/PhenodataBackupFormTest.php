@@ -2,16 +2,14 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Entity;
 
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Drupal\Core\Form\FormState;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\tripal\Entity\TripalEntityType;
 use Drupal\tripal_chado\Database\ChadoConnection;
-use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\trpcultivate_phenotypes\Entity\PhenodataBackup;
-use Drupal\user\Entity\User;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Tests associated with the Phenodata Backup create/edit form.
@@ -130,7 +128,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
       'id_space_name' => 'SIO',
       'term' => [
         'accession' => '000994',
-        'name' => 'Experiment'
+        'name' => 'Experiment',
       ],
     ];
     $term = $this->createTripalTerm($term_values, 'tripal_default_id_space', 'tripal_default_vocabulary');
@@ -168,14 +166,13 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $project_a_id = $this->chado_connection->insert('1:project')
       ->fields(['name' => 'Project A'])
       ->execute();
-
-    $project_b_id = $this->chado_connection->insert('1:project')
+    $this->chado_connection->insert('1:project')
       ->fields(['name' => 'Project B'])
       ->execute();
 
     // Create users.
     // -- Create first UID1 so, the other users are not super-admin.
-    $this->createUser([], NULL, FALSE, ['uid' => 1,]);
+    $this->createUser([], NULL, FALSE, ['uid' => 1]);
     // Now create the rest of the users.
     foreach ($this->users as $user_key => $user_defn) {
       $this->users[$user_key]['object'] = $this->createUser(
@@ -190,8 +187,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     }
 
     // Create two backups to test the edit page.
-    $entity_storage = $this->entityTypeManager->getStorage('phenodata_backup');
-    // 1. By admin
+    // 1. By admin.
     $values = [
       'id' => uniqid(),
       'file_id' => $file_id,
@@ -203,7 +199,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $entity = PhenodataBackup::create($values);
     $entity->save();
     $this->backups['admin'] = $entity->id();
-    // 2. By view_all
+    // 2. By view_all.
     $values = [
       'id' => uniqid(),
       'file_id' => $file_id,
@@ -215,7 +211,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $entity = PhenodataBackup::create($values);
     $entity->save();
     $this->backups['view_all'] = $entity->id();
-    // 3. By view_own
+    // 3. By view_own.
     $values = [
       'id' => uniqid(),
       'file_id' => $file_id,
@@ -247,10 +243,12 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     // User who does not have any phenodata backup permissions.
     $scenarios[] = [
       'other',
-      'backups' => [
+      // Backups.
+      [
         'own' => FALSE,
         'other' => 'admin',
       ],
+      // Access.
       [
         'create' => FALSE,
         'edit_own' => FALSE,
@@ -261,10 +259,12 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     // User who can only edit their own backups.
     $scenarios[] = [
       'view_own',
-      'backups' => [
+      // Backups.
+      [
         'own' => 'view_own',
         'other' => 'view_all',
       ],
+      // Access.
       [
         'create' => TRUE,
         'edit_own' => TRUE,
@@ -275,10 +275,12 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     // User who can edit all backups.
     $scenarios[] = [
       'view_all',
-      'backups' => [
+      // Backups.
+      [
         'own' => 'view_all',
         'other' => 'view_own',
       ],
+      // Access.
       [
         'create' => TRUE,
         'edit_own' => TRUE,
@@ -289,10 +291,12 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     // User who can administer backups.
     $scenarios[] = [
       'admin',
-      'backups' => [
+      // Backups.
+      [
         'own' => 'admin',
         'other' => 'view_all',
       ],
+      // Access.
       [
         'create' => TRUE,
         'edit_own' => TRUE,
@@ -306,10 +310,8 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
   /**
    * Test Phenodata Backup form.
    *
-   * @dataProvider providePhenodataBackupScenarios
-   *
    * @param string $current_user
-   *   A key from the users property of this class to indicate the user to login.
+   *   A key from the users property to indicate the user to login.
    * @param array $test_backups
    *   Indicates the users property key to use to fetch each backup for testing.
    *   The key 'own' indicates a backup owned by the current user and
@@ -319,9 +321,11 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *   Indicates whether the current user should have access to specific pages.
    *   A value of TRUE means this user should be able to access this page and
    *   FALSE means AccessDenied should be thrown.
-   *   - 'create' indicates the create form.
-   *   - 'edit_own' indicates the edit form for the $test_backups['own'] backup.
-   *   - 'edit_other' indicates the edit form for the $test_backups['other'] backup.
+   *   - 'create': the create form.
+   *   - 'edit_own': the edit form for the $test_backups['own'] backup.
+   *   - 'edit_other':the edit form for the $test_backups['other'] backup.
+   *
+   * @dataProvider providePhenodataBackupScenarios
    */
   public function testPhenodataBackupFormAccess(string $current_user, array $test_backups, array $expected) {
 
@@ -330,17 +334,16 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     $this->setCurrentUser($current_user);
 
     // Create Form.
+    // Note: no need to check the exception message since the exception class
+    // is specific to AccessDenied.
     $exception_caught = FALSE;
-    $exception_msg = '';
     $expected_code_label = ($expected['create']) ? "200 (ok)" : "403 (Unauthorized)";
     try {
       $entity = PhenodataBackup::create();
       $form = \Drupal::service('entity.form_builder')->getForm($entity, 'add');
     }
-    catch (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e) {
+    catch (AccessDeniedHttpException $e) {
       $exception_caught = TRUE;
-      $exception_msg = $e->getMessage();
-
     }
     $access_granted = !$exception_caught;
     $this->assertEquals($expected['create'], $access_granted, "We did not get the access code of '$expected_code_label' we expected when creating a backup.");
@@ -349,20 +352,20 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     }
 
     // Edit Own Backup.
+    // Note: no need to check the exception message since the exception class
+    // is specific to AccessDenied.
     if ($test_backups['own'] !== FALSE) {
       $exception_caught = FALSE;
-      $exception_msg = '';
       $expected_code_label = ($expected['edit_own']) ? "200 (ok)" : "403 (Unauthorized)";
       try {
-        $backup_id = $this->backups[ $test_backups['own'] ];
+        $backup_id = $this->backups[$test_backups['own']];
         $entity = $this->container->get('entity_type.manager')
           ->getStorage('phenodata_backup')
           ->load($backup_id);
         $form = \Drupal::service('entity.form_builder')->getForm($entity, 'edit');
       }
-      catch (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e) {
+      catch (AccessDeniedHttpException $e) {
         $exception_caught = TRUE;
-        $exception_msg = $e->getMessage();
       }
       $access_granted = !$exception_caught;
       $this->assertEquals($expected['edit_own'], $access_granted, "We did not get the access code of '$expected_code_label' we expected when editing our own backup.");
@@ -372,19 +375,19 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     }
 
     // Edit someone elses Backup.
+    // Note: no need to check the exception message since the exception class
+    // is specific to AccessDenied.
     try {
       $exception_caught = FALSE;
-      $exception_msg = '';
       $expected_code_label = ($expected['edit_others']) ? "200 (ok)" : "403 (Unauthorized)";
-      $backup_id = $this->backups[ $test_backups['other'] ];
+      $backup_id = $this->backups[$test_backups['other']];
       $entity = $this->container->get('entity_type.manager')
         ->getStorage('phenodata_backup')
         ->load($backup_id);
       $form = \Drupal::service('entity.form_builder')->getForm($entity, 'edit');
     }
-    catch (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e) {
+    catch (AccessDeniedHttpException $e) {
       $exception_caught = TRUE;
-      $exception_msg = $e->getMessage();
     }
     $access_granted = !$exception_caught;
     $this->assertEquals($expected['edit_others'], $access_granted, "We did not get the access code of '$expected_code_label' we expected when editing someone elses backup.");
@@ -430,7 +433,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
       ],
       [],
       [],
-      []
+      [],
     ];
 
     return $scenarios;
@@ -438,17 +441,6 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
 
   /**
    * Test Phenodata Backup form validate/submit.
-   *
-   * @dataProvider providePhenodataBackupValues
-   *
-   * Checks:
-   *   - The create form can be validated with the input data.
-   *   - The create form can be submitted if there are no validation errors.
-   *   - @todo The new entity contains the values expected.
-   *   - @todo The edit form can be changed + validated.
-   *   - @todo The edit form can be submitted if there are no validation errors.
-   *   - @todo The updated entity contains the values expected.
-   *   - @todo The file is renamed appropriately.
    *
    * @param array $create_input
    *   An array with the keys id, backup_file, project_name and comments.
@@ -462,8 +454,19 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    * @param array $edit_expectations
    *   An array of expectations indicating what we expect when the edit form
    *   is submitted with the edit_input values.
+   *
+   *   Checks:
+   *   - The create form can be validated with the input data.
+   *   - The create form can be submitted if there are no validation errors.
+   *   - @todo The new entity contains the values expected.
+   *   - @todo The edit form can be changed + validated.
+   *   - @todo The edit form can be submitted if there are no validation errors.
+   *   - @todo The updated entity contains the values expected.
+   *   - @todo The file is renamed appropriately.
+   *
+   * @dataProvider providePhenodataBackupValues
    */
-  public function testPhenodataBackupFormSubmit(array $create_input, array $create_expectations, array $edit_input, array $edit_expecations) {
+  public function testPhenodataBackupFormSubmit(array $create_input, array $create_expectations, array $edit_input, array $edit_expectations) {
 
     // Login the current user.
     $current_user = $this->users['view_all']['object'];
@@ -477,7 +480,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
     // Create Form.
     $entity = PhenodataBackup::create();
     $form_object = $this->container->get('entity_type.manager')
-        ->getFormObject('phenodata_backup', 'add');
+      ->getFormObject('phenodata_backup', 'add');
     $form_object->setEntity($entity);
     $form_state = new FormState();
     $form = \Drupal::service('entity.form_builder')->getForm($entity, 'add');
@@ -504,7 +507,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    * @todo add a lot more checks to ensure the form matches expectations
    * @todo specifically check the default value!
    *
-   * @param PhenodataBackup $entity
+   * @param \Drupal\trpcultivate_phenotypes\Entity\PhenodataBackup $entity
    *   The phenodata backup entity we used to build the form.
    * @param array $form
    *   The form built to be checked for consistency with expectations.
@@ -529,4 +532,5 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
       $this->assertArrayHasKey($expected_key, $form, $code . ' ' . $message);
     }
   }
+
 }

@@ -7,9 +7,7 @@ trpcultivate_phenotypes.rrules:
   description: 'Core administration menu for Tripal Cultivate Phenotypes'
   parent: tripal.extension
 
-# trpcultivate_phenotypes.watermark:  
-# trpcultivate_phenotypes.ontology:
-  
+
 entity.phenodata_backup.overview:
   title: Phenotypic Data Backups
   parent: system.admin_structure
