@@ -1528,17 +1528,33 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   }
 
   /**
-   * Use documentation in the traits importer.
+   * Sanity checks to ensure the validation status array is compliant.
    *
    * @param array $validation_result
-   *   Parameter.
+   *   An associative array that was returned by a validator in the event of
+   *   failed validation. It should contain the following keys:
+   *   - 'case': a developer-focused string describing the case checked.
+   *   - 'valid': FALSE to indicate that validation failed.
+   *   - 'failedItems': an array of items that failed which is specific to the
+   *     validator.
    * @param string $validator_name
-   *   Parameter.
+   *   The name of the validator that produced the validation_result array.
    * @param int|null $line_no
-   *   Parameter.
+   *   The line number in the input file that triggered the failed validation
+   *   status.
    *
    * @return bool
-   *   Return value.
+   *   Returns TRUE if the validation_result array is compliant and ready for
+   *   processing, FALSE otherwise.
+   *
+   * @throws \Exception
+   *   If any one or more of the following occur:
+   *   - The validation_result array does not contain one of the following
+   *     keys: 'case', 'valid', 'failedItems'.
+   *   - The value for 'valid' is not FALSE, indicating it was not properly
+   *     set to be a failed validation status.
+   *   - The value for 'failedItems' is not an array.
+   *   - The value for 'failedItems' is an empty array.
    */
   public function checkValidationStatusArray(array $validation_result, string $validator_name, int|null $line_no = NULL) {
 
