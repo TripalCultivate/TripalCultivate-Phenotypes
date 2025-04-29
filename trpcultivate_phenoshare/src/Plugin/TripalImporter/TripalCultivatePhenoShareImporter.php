@@ -919,10 +919,36 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    */
 
   /**
-   * Use documentation in the traits importer.
+   * Configures and processes validation messages for the user.
    *
    * @param array $failures
-   *   Parameter.
+   *   An array containing the return values from any failed validators. If
+   *   validation was run for a validator instance, this is keyed by the unique
+   *   name assigned to each validator-input type combination. This key will
+   *   only contain values IF validation failed at any point that it was run. It
+   *   is further keyed by row number IF the validator failed on that row as a
+   *   row-level validator.
+   *   Specifically:
+   *   - [VALIDATOR INSTANCE NAME]
+   *     - [ROW NUMBER (only if row-level validator)]
+   *       - 'case': a developer-focused string describing the case checked.
+   *       - 'valid': FALSE to indicate that validation failed.
+   *       - 'failedItems': an array of items that failed. Structure of this
+   *         array is dependent on the validator.
+   *
+   * @return array
+   *   An array of feedback to provide to the user. It summarizes the validation
+   *   results reported by the validators in formValidate (i.e. $failures). This
+   *   array is keyed by a validation line, which is a string that is associated
+   *   with a line in the validate UI dispalyed to the user. Specifically:
+   *   - [VALIDATION LINE]:
+   *     - 'title': A user-focused message describing the validation that took
+   *       place.
+   *     - 'status': One of: 'todo', 'pass', 'fail'.
+   *     - 'details': A render array that will display details of any failures
+   *       to guide the user to fix problems with their input file. The type of
+   *       render array depends on the validator, but the most common types are
+   *       item list and table.
    */
   public function processValidationMessages($failures) {
 
