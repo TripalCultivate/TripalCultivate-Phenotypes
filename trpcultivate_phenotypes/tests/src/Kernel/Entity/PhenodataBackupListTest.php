@@ -507,7 +507,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $errors = $form_state->getErrors();
     $this->assertCount(1, $errors, "We got errors when we submitting the form with a valid project_id.");
     $this->assertArrayHasKey('project_id', $errors, "We expected the project_id to be flagged in errors when a non-existing project_id was submitted.");
-    $this->assertStringContainsString('The Research Experiment is not recognized.', (string) $errors['project_id'], "The error did not contain what we expected when a non-existing project_id is supplied.");
+    $this->assertStringContainsString('The Research Experiment is not recognized', (string) $errors['project_id'], "The error did not contain what we expected when a non-existing project_id is supplied.");
   }
 
 }
