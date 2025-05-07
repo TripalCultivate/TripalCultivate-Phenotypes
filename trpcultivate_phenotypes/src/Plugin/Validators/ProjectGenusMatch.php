@@ -154,4 +154,89 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     ];
   }
 
+  /**
+   * Process failed validation from ProjectGenusMatch into a render array.
+   *
+   * @param array $failure
+   *   An associative array that was returned by the ProjectGenusMatch validator
+   *   in the event of failed validation. It contains the following keys:
+   *   - 'case': a developer-focused string describing the case checked.
+   *   - 'valid': FALSE to indicate that validation failed.
+   *   - 'failedItems': an array of items that failed with the following keys.
+   *     - 'project_provided': The name of the project provided.
+   *     - 'genus_provided': The name of the genus provided.
+   * @param array $tokens
+   *   [OPTIONAL] An array of values to use for token replacement.
+   *   The following tokens can be specfied as keys, with value as the
+   *   replacement value for the token. These apply to all failure cases.
+   *   - 'project': replaces the word "project".
+   *   - 'contact-admin': replaces the phrase
+   *     "Please contact your administrator to have this added."
+   *   The following token keys will substitute the entire existing case message
+   *   with the value of that token.
+   *   - 'case-message-1': "Project does not exist"
+   *   - 'case-message-2': "Project has no genus set and could not compare with
+   *     the genus provided"
+   *   - 'case-message-3': "Genus does not match the genus set to the project".
+   *
+   * @return array
+   *   A render array of type unordered list which is used to display feedback
+   *   to the user about the case that failed and the failed items from the
+   *   input file. Each item in the list contains either the project name or the
+   *   genus, whichever one caused the failure.
+   *
+   * @throws \Exception
+   *   - If the validation_result parameter was not formatted properly.
+   *   - If the case string returned by the validator implied validation passed.
+   *   - If the case string returned by the validator is not recognized.
+   */
+  public static function processSimpleList(array $failure, array $tokens = []) {
+
+    // @todo Re-add this check when the method is moved to its own Trait
+    // Check the format of the validation_result parameter.
+    // $this->checkValidationStatusArray($validation_result, 'ProjectGenusMatch');
+
+    // Check for one of the expected cases.
+    if ($validation_result['case'] == 'Project does not exist') {
+      $message = 'The @project provided does not exist. Please contact your administrator to have this added.';
+      $item = $validation_result['failedItems']['project_provided'];
+    }
+    elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
+      $message = 'The project provided does not have a genus paired to it. Please contact your administrator to have this setup.';
+      $item = $validation_result['failedItems']['genus_provided'];
+    }
+    elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
+      $message = 'The genus selected does not match the genus set to the project. Please contact your administrator to have this set up.';
+      $item = $validation_result['failedItems']['genus_provided'];
+    }
+    elseif ($validation_result['case'] == 'Project exists and project-genus match the genus provided') {
+      throw new \Exception('The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.');
+    }
+    else {
+      throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
+    }
+
+    // Build the render array.
+    $render_array = [
+      '#type' => 'item',
+      '#title' => $message,
+      '#wrapper_attributes' => [
+        'class' => [
+          'tcp-project-genus-match-failures',
+        ],
+      ],
+      'items' => [
+        '#theme' => 'item_list',
+        '#type' => 'ul',
+        '#items' => [
+          [
+            '#markup' => $item,
+          ],
+        ],
+      ],
+    ];
+
+    return $render_array;
+  }
+
 }
