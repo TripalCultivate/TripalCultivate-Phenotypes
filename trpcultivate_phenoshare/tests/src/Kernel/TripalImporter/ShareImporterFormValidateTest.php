@@ -592,6 +592,11 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *   The number of form validation messages we expect to see when the form is
    *   submitted. NOTE: These validation messages are produced by the form via
    *   Drupal and are not related to this module's use of validator plugins.
+   * @param bool $job_created
+   *   Indicates whether we expect a job to be created when the form is
+   *   submitted. Specifically, if TRUE then submission should have been
+   *   successful and a job should have been submitted; if FALSE then it
+   *   should have been blocked in validation and no job should exist.
    *
    * @dataProvider provideFormInputValues
    */
