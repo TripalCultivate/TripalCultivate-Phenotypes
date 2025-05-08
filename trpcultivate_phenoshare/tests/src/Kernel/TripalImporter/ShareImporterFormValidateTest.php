@@ -263,7 +263,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         [
           'project_genus_match' => [
-            'title' => 'Project exists and project-genus match the genus provided',
+            'title' => 'Research Experiment exists and has been configured with selected genus',
             'status' => 'fail',
             'details' => 'The project provided does not exist. Please contact your administrator to have this added.',
           ],
@@ -315,7 +315,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         [
           'project_genus_match' => [
-            'title' => 'Project exists and project-genus match the genus provided',
+            'title' => 'Research Experiment exists and has been configured with selected genus',
             'status' => 'fail',
             'details' => 'The project provided does not exist. Please contact your administrator to have this added.',
           ],
@@ -719,7 +719,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test re-upload while with previous failed upload attempt.
+   * Test re-upload after previous failed upload attempt.
    */
   public function testFormReupload() {
 

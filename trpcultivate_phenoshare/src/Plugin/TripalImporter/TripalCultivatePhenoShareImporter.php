@@ -954,7 +954,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     $messages = [
       'project_genus_match' => [
-        'title' => 'Project exists and project-genus match the genus provided',
+        'title' => 'Research Experiment exists and has been configured with selected genus',
         'status' => 'todo',
         'details' => '',
       ],
@@ -1084,15 +1084,15 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     // Check for one of the expected cases.
     if ($validation_result['case'] == 'Project does not exist') {
-      $message = 'The project provided does not exist. Please contact your administrator to have this added.';
+      $message = 'The selected Research Experiment does not exist. Please contact your administrator to have this added.';
       $item = $validation_result['failedItems']['project_provided'];
     }
     elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
-      $message = 'The project provided does not have a genus paired to it. Please contact your administrator to have this setup.';
+      $message = 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.';
       $item = $validation_result['failedItems']['genus_provided'];
     }
     elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
-      $message = 'The genus selected does not match the genus set to the project. Please contact your administrator to have this set up.';
+      $message = 'The selected genus has not been paired to the selected Research Experiment. Please select a paired genus or contact your administrator if you think one is missing.';
       $item = $validation_result['failedItems']['genus_provided'];
     }
     elseif ($validation_result['case'] == 'Project exists and project-genus match the genus provided') {
