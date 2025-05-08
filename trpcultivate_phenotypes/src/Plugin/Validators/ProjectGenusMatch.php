@@ -3,6 +3,7 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\tripal\Services\TripalTokenParser;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
@@ -27,6 +28,13 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   protected TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject;
 
   /**
+   * Tripal Token Parser.
+   *
+   * @var Drupal\tripal\Services\TripalTokenParser
+   */
+  protected TripalTokenParser $service_TripalTokenParser;
+
+  /**
    * Constructs an instance of the ProjectGenusMatch validator.
    *
    * @param array $configuration
@@ -37,17 +45,23 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   The plugin implementation definition.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
    *   The genus project service.
+   * @param Drupal\tripal\Services\TripalTokenParser $service_TripalTokenParser
+   *   The Tripal token parser service.
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
+    TripalTokenParser $service_TripalTokenParser,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     // Genus project service.
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
+
+    // Tripal token parser service.
+    $this->service_TripalTokenParser = $service_TripalTokenParser;
   }
 
   /**
@@ -195,7 +209,6 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // @todo Re-add this check when the method is moved to its own Trait
     // Check the format of the validation_result parameter.
     // $this->checkValidationStatusArray($validation_result, 'ProjectGenusMatch');
-
     // Check for one of the expected cases.
     if ($validation_result['case'] == 'Project does not exist') {
       $message = 'The @project provided does not exist. Please contact your administrator to have this added.';
