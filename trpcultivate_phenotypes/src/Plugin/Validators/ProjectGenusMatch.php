@@ -35,6 +35,23 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   protected TripalTokenParser $service_TripalTokenParser;
 
   /**
+   * An array of default tokens for this validator's process method.
+   *
+   * @var array
+   */
+  protected array $default_tokens = [
+    'project' => 'project',
+    'contact-admin' => 'contact your administrator',
+    // Case 1: Project does not exist.
+    'case-message-1' => 'The selected [project] does not exist. Please [contact-admin] to have this added.',
+    // Case 2: Project has no genus set and could not compare with the genus
+    // provided.
+    'case-message-2' => 'The selected [project] does not have a genus paired to it. Please [contact-admin] to have this set up.',
+    // Case 3: Genus does not match the genus set to the project.
+    'case-message-3' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
+  ];
+
+  /**
    * Constructs an instance of the ProjectGenusMatch validator.
    *
    * @param array $configuration
@@ -72,7 +89,8 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('trpcultivate_phenotypes.genus_project')
+      $container->get('trpcultivate_phenotypes.genus_project'),
+      $container->get('tripal.token_parser'),
     );
   }
 
@@ -184,8 +202,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   The following tokens can be specfied as keys, with value as the
    *   replacement value for the token. These apply to all failure cases.
    *   - 'project': replaces the word "project".
-   *   - 'contact-admin': replaces the phrase
-   *     "Please contact your administrator to have this added."
+   *   - 'contact-admin': replaces the phrase "contact your administrator".
    *   The following token keys will substitute the entire existing case message
    *   with the value of that token.
    *   - 'case-message-1': "Project does not exist"
@@ -209,17 +226,18 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // @todo Re-add this check when the method is moved to its own Trait
     // Check the format of the validation_result parameter.
     // $this->checkValidationStatusArray($validation_result, 'ProjectGenusMatch');
-    // Check for one of the expected cases.
+    // Check for one of the expected cases. Use the message stored in the
+    // provided tokens array if set, otherwise use our default case message.
     if ($validation_result['case'] == 'Project does not exist') {
-      $message = 'The @project provided does not exist. Please contact your administrator to have this added.';
+      $message = $tokens['case-message-1'] ?? $this->default_tokens['case-message-1'];
       $item = $validation_result['failedItems']['project_provided'];
     }
     elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
-      $message = 'The project provided does not have a genus paired to it. Please contact your administrator to have this setup.';
+      $message = $tokens['case-message-2'] ?? $this->default_tokens['case-message-2'];
       $item = $validation_result['failedItems']['genus_provided'];
     }
     elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
-      $message = 'The genus selected does not match the genus set to the project. Please contact your administrator to have this set up.';
+      $message = $tokens['case-message-3'] ?? $this->default_tokens['case-message-3'];
       $item = $validation_result['failedItems']['genus_provided'];
     }
     elseif ($validation_result['case'] == 'Project exists and project-genus match the genus provided') {
@@ -229,10 +247,18 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
     }
 
+    // Combine our provided and our default token arrays. Because array_merge
+    // will overwrite values in the first array with values from the second
+    // array for the same keys, we provide our default tokens first.
+    $combined_tokens = array_merge($this->default_tokens, $tokens);
+
+    // Now replace any tokens that are in our message.
+    $replaced_message = $this->service_TripalTokenParser->replaceTokens($message, $combined_tokens);
+
     // Build the render array.
     $render_array = [
       '#type' => 'item',
-      '#title' => $message,
+      '#title' => $replaced_message,
       '#wrapper_attributes' => [
         'class' => [
           'tcp-project-genus-match-failures',
