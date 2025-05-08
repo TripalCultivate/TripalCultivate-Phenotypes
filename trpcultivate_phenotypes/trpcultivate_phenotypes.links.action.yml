@@ -1,0 +1,5 @@
+entity.phenodata_backup.add_form:
+  route_name: 'entity.phenodata_backup.add_form'
+  title: 'Backup Phenotypic Data'
+  appears_on:
+    - entity.phenodata_backup.collection
