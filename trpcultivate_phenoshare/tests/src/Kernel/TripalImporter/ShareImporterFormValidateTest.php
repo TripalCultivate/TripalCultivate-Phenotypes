@@ -263,9 +263,9 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         [
           'project_genus_match' => [
-            'title' => 'Project exists and project-genus match the genus provided',
+            'title' => 'Research Experiment exists and has been configured with selected genus',
             'status' => 'fail',
-            'details' => 'The project provided does not exist. Please contact your administrator to have this added.',
+            'details' => 'The selected Research Experiment does not exist. Please contact your administrator to have this added.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
@@ -291,7 +291,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'project_genus_match' => [
             'title' => 'Genus does not match the genus set to the project',
             'status' => 'fail',
-            'details' => 'The genus selected does not match the genus set to the project. Please contact your administrator to have this set up.',
+            'details' => 'The selected genus has not been paired to the selected Research Experiment. Please select a paired genus or contact your administrator if you think one is missing.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
@@ -315,9 +315,9 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         [
           'project_genus_match' => [
-            'title' => 'Project exists and project-genus match the genus provided',
+            'title' => 'Research Experiment exists and has been configured with selected genus',
             'status' => 'fail',
-            'details' => 'The project provided does not exist. Please contact your administrator to have this added.',
+            'details' => 'The selected Research Experiment does not exist. Please contact your administrator to have this added.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
@@ -343,7 +343,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'project_genus_match' => [
             'title' => 'Project has no genus set and could not compare with the genus provided',
             'status' => 'fail',
-            'details' => 'The project provided does not have a genus paired to it. Please contact your administrator to have this setup.',
+            'details' => 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.',
           ],
           'valid_data_file' => ['status' => 'todo'],
           'valid_delimited_file' => ['status' => 'todo'],
@@ -592,6 +592,11 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *   The number of form validation messages we expect to see when the form is
    *   submitted. NOTE: These validation messages are produced by the form via
    *   Drupal and are not related to this module's use of validator plugins.
+   * @param bool $job_created
+   *   Indicates whether we expect a job to be created when the form is
+   *   submitted. Specifically, if TRUE then submission should have been
+   *   successful and a job should have been submitted; if FALSE then it
+   *   should have been blocked in validation and no job should exist.
    *
    * @dataProvider provideFormInputValues
    */
@@ -719,7 +724,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test re-upload while with previous failed upload attempt.
+   * Test re-upload after previous failed upload attempt.
    */
   public function testFormReupload() {
 
