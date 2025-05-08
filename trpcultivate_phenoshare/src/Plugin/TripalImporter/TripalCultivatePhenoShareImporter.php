@@ -535,7 +535,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#options' => $active_genus,
       '#weight' => -90,
       '#required' => TRUE,
-      '#description' => $this->t('Select Genus. When experiment or project has genus set, a value will be selected.'),
+      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment.'),
       '#description_display' => 'after',
 
       // States.
