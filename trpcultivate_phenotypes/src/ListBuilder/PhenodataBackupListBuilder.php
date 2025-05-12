@@ -51,6 +51,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   private $entity_field_header = [];
 
   /**
+   * An array of project id that the current user has permission to view.
+   *
+   * @var array
+   */
+  private $user_project_id = [];
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
@@ -95,6 +102,17 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       unset($headers['user_id']);
       $this->entity_field_header = $headers;
     }
+
+    // Construct list of projects the user has access to.
+    $query = $this->getEntityListQuery();
+
+    if (!isset($this->entity_field_header['user_id'])) {
+      $query
+        ->condition('user_id', $this->user->id());
+    }
+
+    $entity_ids = $query->execute();
+    $this->user_project_id = $this->storage->loadMultiple($entity_ids);
   }
 
   /**
@@ -268,21 +286,11 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     // Populate the select field with project names.
     $project_names = [];
 
-    $query = $this->getEntityListQuery();
-
-    if (!isset($this->entity_field_header['user_id'])) {
-      $query
-        ->condition('user_id', $this->user->id());
-    }
-
-    $entity_ids = $query->execute();
-    $list = $this->storage->loadMultiple($entity_ids);
-
     $project_names = [
       0 => '- Any - ',
     ];
 
-    foreach ($list as $entity) {
+    foreach ($this->user_project_id as $entity) {
       $project_id = (int) $entity->get('project_id');
       $project_names[$project_id] = ChadoProjectAutocompleteController::getProjectName($project_id);
     }
