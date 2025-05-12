@@ -39,7 +39,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *
    * @var array
    */
-  protected array $default_tokens = [
+  protected static array $default_tokens = [
     'project' => 'project',
     'contact-admin' => 'contact your administrator',
     // Case 1: Project does not exist.
@@ -217,40 +217,41 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   genus, whichever one caused the failure.
    *
    * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
+   *   - If the failure parameter was not formatted properly.
    *   - If the case string returned by the validator implied validation passed.
    *   - If the case string returned by the validator is not recognized.
    */
   public static function processSimpleList(array $failure, array $tokens = []) {
 
     // @todo Re-add this check when the method is moved to its own Trait
-    // Check the format of the validation_result parameter.
-    // $this->checkValidationStatusArray($validation_result, 'ProjectGenusMatch');
+    // Check the format of the failure parameter.
+    // $this->checkValidationStatusArray($failure, 'ProjectGenusMatch');
+
+    // Combine our provided and our default token arrays. Because array_merge
+    // will overwrite values in the first array with values from the second
+    // array for the same keys, we provide our default tokens first.
+    $combined_tokens = array_merge(ProjectGenusMatch::$default_tokens, $tokens);
+
     // Check for one of the expected cases. Use the message stored in the
     // provided tokens array if set, otherwise use our default case message.
-    if ($validation_result['case'] == 'Project does not exist') {
-      $message = $tokens['case-message-1'] ?? $this->default_tokens['case-message-1'];
-      $item = $validation_result['failedItems']['project_provided'];
+    if ($failure['case'] == 'Project does not exist') {
+      $message = $combined_tokens['case-message-1'];
+      $item = $failure['failedItems']['project_provided'];
     }
-    elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
-      $message = $tokens['case-message-2'] ?? $this->default_tokens['case-message-2'];
-      $item = $validation_result['failedItems']['genus_provided'];
+    elseif ($failure['case'] == 'Project has no genus set and could not compare with the genus provided') {
+      $message = $combined_tokens['case-message-2'];
+      $item = $failure['failedItems']['genus_provided'];
     }
-    elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
-      $message = $tokens['case-message-3'] ?? $this->default_tokens['case-message-3'];
-      $item = $validation_result['failedItems']['genus_provided'];
+    elseif ($failure['case'] == 'Genus does not match the genus set to the project') {
+      $message = $combined_tokens['case-message-3'];
+      $item = $failure['failedItems']['genus_provided'];
     }
-    elseif ($validation_result['case'] == 'Project exists and project-genus match the genus provided') {
+    elseif ($failure['case'] == 'Project exists and project-genus match the genus provided') {
       throw new \Exception('The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.');
     }
     else {
       throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
     }
-
-    // Combine our provided and our default token arrays. Because array_merge
-    // will overwrite values in the first array with values from the second
-    // array for the same keys, we provide our default tokens first.
-    $combined_tokens = array_merge($this->default_tokens, $tokens);
 
     // Now replace any tokens that are in our message.
     $replaced_message = $this->service_TripalTokenParser->replaceTokens($message, $combined_tokens);

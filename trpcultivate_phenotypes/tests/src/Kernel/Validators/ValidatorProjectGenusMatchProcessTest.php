@@ -2,6 +2,10 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
+use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
+use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
+
 /**
  * Tests any message processing methods for the ProjectGenusMatch validator.
  *
@@ -9,6 +13,27 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
  * @group validators
  */
 class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
+
+  /**
+   * Plugin Manager service.
+   *
+   * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
+   */
+  protected TripalCultivateValidatorManager $plugin_manager;
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var \Drupal\tripal_chado\Database\ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
+   * The genus for configuring and testing with our validator.
+   *
+   * @var string
+   */
+  protected string $genus = 'Tripalus';
 
   /**
    * Theme used in the test environment.
@@ -42,19 +67,14 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     // Ensure we see all logging in tests.
     \Drupal::state()->set('is_a_test_environment', TRUE);
 
-    // Ensure we can access file_managed related functionality from Drupal.
-    // ... users need access to system.action config?
-    $this->installConfig(['system', 'trpcultivate_phenotypes', 'trpcultivate']);
-    // ... managed files are associated with a user.
-    $this->installEntitySchema('user');
-    // ... Finally the file module + tables itself.
-    $this->installEntitySchema('file');
-    $this->installSchema('file', ['file_usage']);
-    $this->installSchema('tripal_chado', ['tripal_custom_tables']);
-    // Ensure we have our tripal import tables.
-    $this->installSchema('tripal', ['tripal_import', 'tripal_jobs']);
-    // Create and log-in a user.
-    $this->setUpCurrentUser();
+    // Test Chado database.
+    // Create a test chado instance and then set it in the container for use by
+    // our service.
+    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->container->set('tripal_chado.database', $this->chado_connection);
+
+    // Set plugin manager service.
+    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
   }
 
@@ -82,6 +102,22 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    */
   public function provideProjectGenusMatchFailedCases() {
     $scenarios = [];
+
+    // ------ DEFAULT CASES (no tokens) ------
+    // #0: The project does not exist.
+    $scenarios[] = [
+      [
+        'case' => 'Project does not exist',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'Non-existing project',
+        ],
+      ],
+      [],
+      [
+        'expected_message' => 'The selected genus does not exist in this site.',
+      ],
+    ];
 
     return $scenarios;
   }
@@ -113,6 +149,12 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    */
   public function testProcessSimpleList(array $validation_result, array $tokens, array $expectations) {
 
+    // Create a plugin instance for this validator.
+    $validator_id = 'project_genus_match';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Call the process method on our validation result.
+    $render_array = $instance->processSimpleList($validation_result, $tokens);
   }
 
 }
