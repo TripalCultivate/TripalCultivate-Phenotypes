@@ -3,7 +3,6 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\tripal\Services\TripalTokenParser;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
@@ -26,13 +25,6 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService
    */
   protected TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject;
-
-  /**
-   * Tripal Token Parser.
-   *
-   * @var Drupal\tripal\Services\TripalTokenParser
-   */
-  protected TripalTokenParser $service_TripalTokenParser;
 
   /**
    * An array of default tokens for this validator's process method.
@@ -62,23 +54,17 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   The plugin implementation definition.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
    *   The genus project service.
-   * @param Drupal\tripal\Services\TripalTokenParser $service_TripalTokenParser
-   *   The Tripal token parser service.
    */
   public function __construct(
     array $configuration,
     $plugin_id,
     $plugin_definition,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
-    TripalTokenParser $service_TripalTokenParser,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     // Genus project service.
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
-
-    // Tripal token parser service.
-    $this->service_TripalTokenParser = $service_TripalTokenParser;
   }
 
   /**
@@ -90,7 +76,6 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       $plugin_id,
       $plugin_definition,
       $container->get('trpcultivate_phenotypes.genus_project'),
-      $container->get('tripal.token_parser'),
     );
   }
 
@@ -226,7 +211,6 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // @todo Re-add this check when the method is moved to its own Trait
     // Check the format of the failure parameter.
     // $this->checkValidationStatusArray($failure, 'ProjectGenusMatch');
-
     // Combine our provided and our default token arrays. Because array_merge
     // will overwrite values in the first array with values from the second
     // array for the same keys, we provide our default tokens first.
@@ -253,8 +237,11 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
     }
 
+    // Tripal Token Service.
+    $service_TripalTokensParser = \Drupal::service('tripal.token_parser');
+
     // Now replace any tokens that are in our message.
-    $replaced_message = $this->service_TripalTokenParser->replaceTokens($message, $combined_tokens);
+    $replaced_message = $service_TripalTokensParser->replaceTokens($message, $combined_tokens);
 
     // Build the render array.
     $render_array = [
