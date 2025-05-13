@@ -51,11 +51,11 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   private $entity_field_header = [];
 
   /**
-   * An array of project id that the current user has permission to view.
+   * An array of backup the user has access to.
    *
    * @var array
    */
-  private $user_project_id = [];
+  private $user_backup = [];
 
   /**
    * Constructor.
@@ -103,16 +103,17 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       $this->entity_field_header = $headers;
     }
 
-    // Construct list of projects the user has access to.
+    // Construct list of backups the user has access to.
     $query = $this->getEntityListQuery();
 
     if (!isset($this->entity_field_header['user_id'])) {
       $query
-        ->condition('user_id', $this->user->id());
+        ->condition('user_id', $this->user->id())
+        ->sort('backup_date', 'DESC');
     }
 
     $entity_ids = $query->execute();
-    $this->user_project_id = $this->storage->loadMultiple($entity_ids);
+    $this->user_backup = $this->storage->loadMultiple($entity_ids);
   }
 
   /**
@@ -238,12 +239,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    */
   public function load() {
 
-    $query = $this->getEntityListQuery();
-
-    if (!isset($this->entity_field_header['user_id'])) {
-      $query
-        ->condition('user_id', $this->user->id());
-    }
+    $user_backup = $this->user_backup;
 
     $filter_project_id = \Drupal::request()
       ->get('project_id', 0);
@@ -254,16 +250,23 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       $filter_project_id = 0;
     }
 
+    // A request to filter user backups to limit to a specific project.
     if ($filter_project_id > 0) {
-      $query
-        ->condition('project_id', $filter_project_id, '=');
+      $user_backup = array_filter($user_backup, function ($entity) use ($filter_project_id) {
+        return $entity->get('project_id') == $filter_project_id;
+      });
+
+      // Filter resulted in an empty value indicates that the project as filter
+      // criterion does not exist or use lacks access permission to view
+      // backups in that project.
+      if (empty($user_backup)) {
+        $this->messenger()->addError(
+          $this->t('The Research Experiment is not recognized or you do not have permission to see backups for it.')
+        );
+      }
     }
 
-    $query->sort('backup_date', 'DESC');
-    $entity_ids = $query->execute();
-
-    return $this->storage
-      ->loadMultiple($entity_ids);
+    return $user_backup;
   }
 
   /**
@@ -290,9 +293,12 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       0 => '- Any - ',
     ];
 
-    foreach ($this->user_project_id as $entity) {
+    foreach ($this->user_backup as $entity) {
       $project_id = (int) $entity->get('project_id');
-      $project_names[$project_id] = ChadoProjectAutocompleteController::getProjectName($project_id);
+
+      if (!in_array($project_id, array_keys($project_names))) {
+        $project_names[$project_id] = ChadoProjectAutocompleteController::getProjectName($project_id);
+      }
     }
     asort($project_names);
 
