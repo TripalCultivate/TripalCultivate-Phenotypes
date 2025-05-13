@@ -257,7 +257,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       });
 
       // Filter resulted in an empty value indicates that the project as filter
-      // criterion does not exist or use lacks access permission to view
+      // criterion does not exist or user lacks access permission to view
       // backups in that project.
       if (empty($user_backup)) {
         $this->messenger()->addError(
