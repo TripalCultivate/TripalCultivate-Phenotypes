@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators;
 
+use Drupal\Core\Render\Renderer;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
@@ -27,6 +28,13 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
+
+  /**
+   * Drupal render service.
+   *
+   * @var Drupal\Core\Render\RendererInterface
+   */
+  protected Renderer $renderer;
 
   /**
    * The genus for configuring and testing with our validator.
@@ -76,6 +84,8 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     // Set plugin manager service.
     $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
+    // Get our renderer.
+    $this->renderer = $this->container->get('renderer');
   }
 
   /**
@@ -115,7 +125,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       ],
       [],
       [
-        'expected_message' => 'The selected genus does not exist in this site.',
+        'expected_message' => 'The selected project does not exist. Please contact your administrator to have this added.',
       ],
     ];
 
@@ -155,6 +165,15 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
 
     // Call the process method on our validation result.
     $render_array = $instance->processSimpleList($validation_result, $tokens);
+
+    // Render the array we were returned.
+    $rendered_markup = $this->renderer->renderRoot($render_array);
+    $this->setRawContent($rendered_markup);
+
+    // Check the render array here.
+    $selected_message_title = $this->cssSelect('div.tcp-project-genus-match-failures label');
+    $provided_message = (string) $selected_message_title[0];
+    $this->assertStringContainsString($expectations['expected_message'], $provided_message, 'The message expected from processing ProjectGenusMatch failures for this scenario did not match the one in the rendered output.');
   }
 
 }
