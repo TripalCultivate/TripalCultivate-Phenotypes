@@ -126,6 +126,39 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       [],
       [
         'expected_message' => 'The selected project does not exist. Please contact your administrator to have this added.',
+        'expected_item' => 'Non-existing project',
+      ],
+    ];
+
+    // #1: Project has no genus set.
+    $scenarios[] = [
+      [
+        'case' => 'Project has no genus set and could not compare with the genus provided',
+        'valid' => FALSE,
+        'failedItems' => [
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [],
+      [
+        'expected_message' => 'The selected project does not have a genus paired to it. Please contact your administrator to have this set up.',
+        'expected_item' => 'Tripalus',
+      ],
+    ];
+
+    // #2: The selected genus is not one of the genus set to project.
+    $scenarios[] = [
+      [
+        'case' => 'Genus does not match the genus set to the project',
+        'valid' => FALSE,
+        'failedItems' => [
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [],
+      [
+        'expected_message' => 'The selected genus has not been paired to the selected project. Please select a paired genus or contact your administrator if you think one is missing.',
+        'expected_item' => 'Tripalus',
       ],
     ];
 
@@ -174,6 +207,16 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     $selected_message_title = $this->cssSelect('div.tcp-project-genus-match-failures label');
     $provided_message = (string) $selected_message_title[0];
     $this->assertStringContainsString($expectations['expected_message'], $provided_message, 'The message expected from processing ProjectGenusMatch failures for this scenario did not match the one in the rendered output.');
+
+    // Next, check for expected items. Make sure we have the expected 1 item.
+    $selected_list_items = $this->cssSelect('div.tcp-project-genus-match-failures ul li');
+    $list_item_count = count($selected_list_items);
+    $this->assertEquals(1, $list_item_count, 'We expected 1 listed item in the render array from processing ProjectGenusMatch failures, but instead found ' . $list_item_count . '.');
+
+    // Grab the contents of 'SimpleXMLElement Object' and assert it matches what
+    // we expect.
+    $provided_item = (string) $selected_list_items[0];
+    $this->assertEquals($expectations['expected_item'], $provided_item, 'The render array from processing ProjectGenusMatch failures did not contain the expected failed item.');
   }
 
 }
