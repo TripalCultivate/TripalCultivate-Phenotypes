@@ -108,7 +108,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *     - 'expected_message': The message expected in the return value of the
    *       process method for this scenario.
    *     - 'expected_item_count': The number of failed items expected.
-   *     - 'expected_item': The expected failed item.
+   *     - 'expected_items': An array of the expected failed items.
    */
   public function provideProjectGenusMatchFailedCases() {
     $scenarios = [];
@@ -126,7 +126,10 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       [],
       [
         'expected_message' => 'The selected project does not exist. Please contact your administrator to have this added.',
-        'expected_item' => 'Non-existing project',
+        'expected_item_count' => 1,
+        'expected_items' => [
+          'Project: Non-existing project',
+        ],
       ],
     ];
 
@@ -136,29 +139,39 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
         'case' => 'Project has no genus set and could not compare with the genus provided',
         'valid' => FALSE,
         'failedItems' => [
+          'project_provided' => 'An existing project',
           'genus_provided' => 'Tripalus',
         ],
       ],
       [],
       [
         'expected_message' => 'The selected project does not have a genus paired to it. Please contact your administrator to have this set up.',
-        'expected_item' => 'Tripalus',
+        'expected_item_count' => 2,
+        'expected_items' => [
+          'Project: An existing project',
+          'Genus: Tripalus',
+        ],
       ],
     ];
 
     // #2: The selected genus is not one of the genus set to project.
     $scenarios[] = [
       [
-        'case' => 'Genus does not match the genus set to the project',
+        'case' => 'Genus does not match a genus set to the project',
         'valid' => FALSE,
         'failedItems' => [
+          'project_provided' => 'An existing project',
           'genus_provided' => 'Tripalus',
         ],
       ],
       [],
       [
         'expected_message' => 'The selected genus has not been paired to the selected project. Please select a paired genus or contact your administrator if you think one is missing.',
-        'expected_item' => 'Tripalus',
+        'expected_item_count' => 2,
+        'expected_items' => [
+          'Project: An existing project',
+          'Genus: Tripalus',
+        ],
       ],
     ];
 
@@ -186,7 +199,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *   - 'expected_message': The message expected in the return value of the
    *     process method for this scenario.
    *   - 'expected_item_count': The number of failed items expected.
-   *   - 'expected_item': The expected failed item.
+   *   - 'expected_items': An array of the expected failed items.
    *
    * @dataProvider provideProjectGenusMatchFailedCases
    */
@@ -211,12 +224,14 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     // Next, check for expected items. Make sure we have the expected 1 item.
     $selected_list_items = $this->cssSelect('div.tcp-project-genus-match-failures ul li');
     $list_item_count = count($selected_list_items);
-    $this->assertEquals(1, $list_item_count, 'We expected 1 listed item in the render array from processing ProjectGenusMatch failures, but instead found ' . $list_item_count . '.');
+    $this->assertEquals($expectations['expected_item_count'], $list_item_count, 'We expected ' . $expectations['expected_item_count'] . ' list items in the render array from processing ProjectGenusMatch failures, but instead found ' . $list_item_count . '.');
 
     // Grab the contents of 'SimpleXMLElement Object' and assert it matches what
     // we expect.
-    $provided_item = (string) $selected_list_items[0];
-    $this->assertEquals($expectations['expected_item'], $provided_item, 'The render array from processing ProjectGenusMatch failures did not contain the expected failed item.');
+    foreach ($selected_list_items as $provided_item) {
+      $provided_item = (string) $provided_item;
+      $this->assertContains($provided_item, $expectations['expected_items'], 'The render array from processing ProjectGenusMatch failures did not contain one of the expected failed items.');
+    }
   }
 
 }

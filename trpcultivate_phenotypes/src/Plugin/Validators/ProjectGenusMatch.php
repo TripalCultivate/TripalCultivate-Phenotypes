@@ -149,17 +149,23 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
 
       if (!isset($project_genus['genus'])) {
-        // Genus does not match the genus paired to the project.
+        // The project has no genus paired to it.
         $case = 'Project has no genus set and could not compare with the genus provided';
         $valid = FALSE;
-        $failed_items = ['genus_provided' => $genus];
+        $failed_items = [
+          'project_provided' => $project,
+          'genus_provided' => $genus,
+        ];
       }
       else {
         if ($genus != $project_genus['genus']) {
           // Genus does not match the genus paired to the project.
-          $case = 'Genus does not match the genus set to the project';
+          $case = 'Genus does not match a genus set to the project';
           $valid = FALSE;
-          $failed_items = ['genus_provided' => $genus];
+          $failed_items = [
+            'project_provided' => $project,
+            'genus_provided' => $genus,
+          ];
         }
       }
     }
@@ -220,15 +226,23 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // provided tokens array if set, otherwise use our default case message.
     if ($failure['case'] == 'Project does not exist') {
       $message = $combined_tokens['case-message-1'];
-      $item = $failure['failedItems']['project_provided'];
+      $items = [
+        'Project: ' . $failure['failedItems']['project_provided'],
+      ];
     }
     elseif ($failure['case'] == 'Project has no genus set and could not compare with the genus provided') {
       $message = $combined_tokens['case-message-2'];
-      $item = $failure['failedItems']['genus_provided'];
+      $items = [
+        'Project: ' . $failure['failedItems']['project_provided'],
+        'Genus: ' . $failure['failedItems']['genus_provided'],
+      ];
     }
-    elseif ($failure['case'] == 'Genus does not match the genus set to the project') {
+    elseif ($failure['case'] == 'Genus does not match a genus set to the project') {
       $message = $combined_tokens['case-message-3'];
-      $item = $failure['failedItems']['genus_provided'];
+      $items = [
+        'Project: ' . $failure['failedItems']['project_provided'],
+        'Genus: ' . $failure['failedItems']['genus_provided'],
+      ];
     }
     elseif ($failure['case'] == 'Project exists and project-genus match the genus provided') {
       throw new \Exception('The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.');
@@ -255,11 +269,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       'items' => [
         '#theme' => 'item_list',
         '#type' => 'ul',
-        '#items' => [
-          [
-            '#markup' => $item,
-          ],
-        ],
+        '#items' => $items,
       ],
     ];
 
