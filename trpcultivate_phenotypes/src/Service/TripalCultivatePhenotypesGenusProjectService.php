@@ -140,7 +140,7 @@ class TripalCultivatePhenotypesGenusProjectService {
    *   Key is genus/organism id number and value is the genus name/title.
    */
   public function getGenusOfProject($project) {
-    $genus_project = 0;
+    $genus_project = [];
 
     if ($project > 0) {
       $sysvar_genus = array_keys($this->sysvar_genusontology);
@@ -152,15 +152,21 @@ class TripalCultivatePhenotypesGenusProjectService {
       // restrict search to genus that are active/configured using this module.
       $result = $this->chado_connection->query("
         SELECT organism_id AS id, genus FROM {1:organism}
-        WHERE genus = (SELECT value::VARCHAR FROM {1:projectprop}
-          WHERE project_id = :project_id AND type_id = :type_id AND LOWER(value) IN (:active_genus[]) LIMIT 1)
-        LIMIT 1
+        WHERE genus IN (SELECT value::VARCHAR FROM {1:projectprop}
+          WHERE project_id = :project_id AND type_id = :type_id AND LOWER(value) IN (:active_genus[]))
       ", [':project_id' => $project, ':type_id' => $this->sysvar_genus, ':active_genus[]' => $active_genus]);
 
-      $genus_project = $result->fetchObject();
+      $genus_project = $result->fetchAll();
     }
 
-    return ($genus_project) ? ['id' => $genus_project->id, 'genus' => $genus_project->genus] : 0;
+    if (count($genus_project) == 1) {
+      $genus_project = [
+        'id' => $genus_project[0]->id,
+        'genus' => $genus_project[0]->genus,
+      ];
+    }
+
+    return ($genus_project) ? $genus_project : [];
   }
 
 }
