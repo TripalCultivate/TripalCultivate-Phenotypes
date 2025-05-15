@@ -199,6 +199,78 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       ],
     ];
 
+    // #4: 2 tokens provided
+    $scenarios[] = [
+      [
+        'case' => 'Project does not exist',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'False Experiment',
+        ],
+      ],
+      [
+        'project' => 'Experiment',
+        'contact-admin' => 'email your administrator at admin@email.com',
+      ],
+      [
+        'expected_message' => 'The selected Experiment does not exist. Please email your administrator at admin@email.com to have this added.',
+        'expected_item_count' => 1,
+        'expected_items' => [
+          'Experiment: False Experiment',
+        ],
+      ],
+    ];
+
+    // #5: Customize each of the case messages
+    $scenarios[] = [
+      [
+        'case' => 'Genus does not match a genus set to the project',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'An existing project',
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [
+        'case-message-1' => 'The project is having an existential crisis.',
+        'case-message-2' => 'The project has no friends.',
+        'case-message-3' => 'The genus and project do not get along.',
+      ],
+      [
+        'expected_message' => 'The genus and project do not get along.',
+        'expected_item_count' => 2,
+        'expected_items' => [
+          'Project: An existing project',
+          'Genus: Tripalus',
+        ],
+      ],
+    ];
+
+    // #6: Provide a custom case message with tokens
+    $scenarios[] = [
+      [
+        'case' => 'Project has no genus set and could not compare with the genus provided',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'An existing project',
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [
+        'case-message-2' => 'The [project] has no friends. Please [contact-admin].',
+        'project' => 'Research Experiment',
+        // 'contact-admin' token is left as the default.
+      ],
+      [
+        'expected_message' => 'The Research Experiment has no friends. Please contact your administrator.',
+        'expected_item_count' => 2,
+        'expected_items' => [
+          'Research Experiment: An existing project',
+          'Genus: Tripalus',
+        ],
+      ],
+    ];
+
     return $scenarios;
   }
 
