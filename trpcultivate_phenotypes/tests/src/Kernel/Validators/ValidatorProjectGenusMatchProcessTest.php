@@ -125,7 +125,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       ],
       [],
       [
-        'expected_message' => 'The selected project does not exist. Please contact your administrator to have this added.',
+        'expected_message' => 'The selected Project does not exist. Please contact your administrator to have this added.',
         'expected_item_count' => 1,
         'expected_items' => [
           'Project: Non-existing project',
@@ -145,7 +145,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       ],
       [],
       [
-        'expected_message' => 'The selected project does not have a genus paired to it. Please contact your administrator to have this set up.',
+        'expected_message' => 'The selected Project does not have a genus paired to it. Please contact your administrator to have this set up.',
         'expected_item_count' => 2,
         'expected_items' => [
           'Project: An existing project',
@@ -166,7 +166,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
       ],
       [],
       [
-        'expected_message' => 'The selected genus has not been paired to the selected project. Please select a paired genus or contact your administrator if you think one is missing.',
+        'expected_message' => 'The selected genus has not been paired to the selected Project. Please select a paired genus or contact your administrator if you think one is missing.',
         'expected_item_count' => 2,
         'expected_items' => [
           'Project: An existing project',
@@ -176,7 +176,28 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     ];
 
     // -------- TESTING TOKENS ---------
-    // #3:
+    // #3: 1 token provided
+    $scenarios[] = [
+      [
+        'case' => 'Project has no genus set and could not compare with the genus provided',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'My Research Experiment',
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      [
+        'project' => 'Research Experiment',
+      ],
+      [
+        'expected_message' => 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.',
+        'expected_item_count' => 2,
+        'expected_items' => [
+          'Research Experiment: My Research Experiment',
+          'Genus: Tripalus',
+        ],
+      ],
+    ];
 
     return $scenarios;
   }

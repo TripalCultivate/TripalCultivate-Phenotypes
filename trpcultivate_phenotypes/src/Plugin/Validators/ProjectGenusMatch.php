@@ -32,7 +32,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    * @var array
    */
   protected static array $default_tokens = [
-    'project' => 'project',
+    'project' => 'Project',
     'contact-admin' => 'contact your administrator',
     // Case 1: Project does not exist.
     'case-message-1' => 'The selected [project] does not exist. Please [contact-admin] to have this added.',
@@ -227,20 +227,20 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     if ($failure['case'] == 'Project does not exist') {
       $message = $combined_tokens['case-message-1'];
       $items = [
-        'Project: ' . $failure['failedItems']['project_provided'],
+        '[project]: ' . $failure['failedItems']['project_provided'],
       ];
     }
     elseif ($failure['case'] == 'Project has no genus set and could not compare with the genus provided') {
       $message = $combined_tokens['case-message-2'];
       $items = [
-        'Project: ' . $failure['failedItems']['project_provided'],
+        '[project]: ' . $failure['failedItems']['project_provided'],
         'Genus: ' . $failure['failedItems']['genus_provided'],
       ];
     }
     elseif ($failure['case'] == 'Genus does not match a genus set to the project') {
       $message = $combined_tokens['case-message-3'];
       $items = [
-        'Project: ' . $failure['failedItems']['project_provided'],
+        '[project]: ' . $failure['failedItems']['project_provided'],
         'Genus: ' . $failure['failedItems']['genus_provided'],
       ];
     }
@@ -256,6 +256,10 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
 
     // Now replace any tokens that are in our message.
     $replaced_message = $service_TripalTokensParser->replaceTokens($message, $combined_tokens);
+    // Iterate through our items and replace any tokens there.
+    foreach ($items as $key => $item) {
+      $items[$key] = $service_TripalTokensParser->replaceTokens($item, $combined_tokens);
+    }
 
     // Build the render array.
     $render_array = [
