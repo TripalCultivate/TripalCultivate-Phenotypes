@@ -1091,7 +1091,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $message = 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.';
       $item = $validation_result['failedItems']['genus_provided'];
     }
-    elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
+    elseif ($validation_result['case'] == 'Genus does not match a genus set to the project') {
       $message = 'The selected genus has not been paired to the selected Research Experiment. Please select a paired genus or contact your administrator if you think one is missing.';
       $item = $validation_result['failedItems']['genus_provided'];
     }

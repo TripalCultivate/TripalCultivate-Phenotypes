@@ -380,7 +380,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $form_values = ['project' => $project, 'genus' => $genus];
     $validation_status = $instance->validateMetadata($form_values);
 
-    $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
+    $this->assertEquals('Genus does not match a genus set to the project', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
     $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
     $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');

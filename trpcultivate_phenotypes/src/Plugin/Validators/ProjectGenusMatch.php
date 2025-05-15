@@ -39,7 +39,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // Case 2: Project has no genus set and could not compare with the genus
     // provided.
     'case-message-2' => 'The selected [project] does not have a genus paired to it. Please [contact-admin] to have this set up.',
-    // Case 3: Genus does not match the genus set to the project.
+    // Case 3: Genus does not match a genus set to the project.
     'case-message-3' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
   ];
 
@@ -199,7 +199,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   - 'case-message-1': "Project does not exist"
    *   - 'case-message-2': "Project has no genus set and could not compare with
    *     the genus provided"
-   *   - 'case-message-3': "Genus does not match the genus set to the project".
+   *   - 'case-message-3': "Genus does not match a genus set to the project".
    *
    * @return array
    *   A render array of type unordered list which is used to display feedback
