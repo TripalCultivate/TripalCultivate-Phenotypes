@@ -330,4 +330,115 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     }
   }
 
+  /**
+   * Data Provider for triggering exceptions in processSimpleList().
+   *
+   * @return array
+   *   Each scenario is an array with the following:
+   *   - The validation result array that gets passed to the process method. It
+   *     contains the following keys:
+   *     - 'case': a developer-focused string describing the case checked.
+   *     - 'valid': FALSE to indicate that validation failed.
+   *     - 'failedItems': an array of items that failed with the following keys.
+   *       - 'project_provided': The name of the project provided.
+   *       - 'genus_provided': The name of the genus provided.
+   *   - An array of tokens to use for altering the messages that get displayed
+   *     to the user. The key is the token, (ex. 'project'), and the value is
+   *     the new value to be shown for that token.
+   *   - An array of expectations in the rendered output which has the following
+   *     keys:
+   *     - 'expected_message': The message expected in the return value of the
+   *       process method for this scenario.
+   */
+  public function provideExceptionCases() {
+    $scenarios = [];
+
+    // Make tokens an empty array for now. Maybe in the future we'll want to
+    // incorporate them into exception messages?
+    $tokens = [];
+
+    // #0: Case 'Project exists and project-genus match the genus provided'
+    $scenarios[] = [
+      [
+        'case' => 'Project exists and project-genus match the genus provided',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'Non-existing project',
+        ],
+      ],
+      $tokens,
+      [
+        'expected_message' => 'The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.',
+      ],
+    ];
+
+    // #1: Unrecognizable case.
+    $scenarios[] = [
+      [
+        'case' => 'Unrecognizable case string',
+        'valid' => FALSE,
+        'failedItems' => [
+          'project_provided' => 'An existing project',
+          'genus_provided' => 'Tripalus',
+        ],
+      ],
+      $tokens,
+      [
+        'expected_message' => 'The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.',
+      ],
+    ];
+
+    return $scenarios;
+  }
+
+  /**
+   * Tests for exceptions thrown for passed and unrecognizable case strings.
+   *
+   * @param array $validation_result
+   *   The validation result array that gets passed to the process method. It
+   *   contains the following keys:
+   *   - 'case': a developer-focused string describing the case checked.
+   *   - 'valid': FALSE to indicate that validation failed.
+   *   - 'failedItems': an array of items that failed with the following keys.
+   *     - 'project_provided': The name of the project provided.
+   *     - 'genus_provided': The name of the genus provided.
+   * @param array $tokens
+   *   An array of tokens to use for altering the messages that get displayed
+   *   to the user. The key is the token, (ex. 'project'), and the value is
+   *   the new value to be shown for that token.
+   * @param array $expectations
+   *   An array of expectations in the rendered output which has the following
+   *   keys:
+   *   - 'expected_message': The exception message that is expected to be
+   *     triggered.
+   *
+   * @dataProvider provideExceptionCases
+   */
+  public function testProcessSimpleListExceptions(array $validation_result, array $tokens, array $expectations) {
+
+    // Create a plugin instance for this validator.
+    $validator_id = 'project_genus_match';
+    $instance = $this->plugin_manager->createInstance($validator_id);
+
+    // Call the process method on our validation result.
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    try {
+      $instance->processSimpleList($validation_result, $tokens);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertTrue(
+      $exception_caught,
+      'We expected an exception to be caught for case ' . $validation_result['case'] . 'but one was not thrown.',
+    );
+    $this->assertEquals(
+      $expectations['expected_message'],
+      $exception_message,
+      "We expected the exception message to indicate that case " . $validation_result['case'] . " occurred, but the message does not match what was expected.",
+    );
+  }
+
 }
