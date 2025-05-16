@@ -24,10 +24,11 @@ class MetadataInputTest extends ChadoTestKernelBase {
   protected TripalCultivateValidatorManager $plugin_manager;
 
   /**
-   * An array of genera for testing.
+   * An array of genus for testing.
    *
    * Has the following keys:
    * - 'configured': a configured genus.
+   * - 'configured-secondary': a configured genus used as secondary genus.
    * - 'not-configured': a genus that is not configured.
    *
    * @var array
@@ -39,6 +40,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
    *
    * Has the following keys:
    * - 'project-with-configgenus': a project paired with a configured genus.
+   * - 'project-with-2-configgenus': a project paired with 2 configured genus.
    * - 'project-with-genus': a project paired with a non-configured genus.
    * - 'project-genus-not-tru-service': a project paired with a configured genus
    *   without using the genus_project service.
@@ -96,6 +98,19 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->test_genus['configured'] = $genus;
     $this->setOntologyConfig($this->test_genus['configured']);
 
+    $genus = 'Plantanus';
+    // Create our organism and configure it.
+    $organism_id = $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'databasica',
+      ])
+      ->execute();
+
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (configured).');
+    $this->test_genus['configured-secondary'] = $genus;
+    $this->setOntologyConfig($this->test_genus['configured-secondary']);
+
     // Create another organism and not configure.
     $genus = 'notconfiggenus';
     $organism_id = $this->chado_connection->insert('1:organism')
@@ -114,10 +129,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // Create test project with a genus set.
     $projects = [
       'project-with-configgenus' => $this->test_genus['configured'],
+      'project-with-2-configgenus' => $this->test_genus['configured-secondary'],
       'project-with-genus' => $this->test_genus['not-configured'],
       'project-genus-not-tru-service' => $this->test_genus['configured'],
       'just-project' => '',
     ];
+
+    $genus_term = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
+      ->get('trpcultivate.phenotypes.ontology.terms.genus');
 
     foreach ($projects as $test_case => $project_genus) {
       $project = 'Research Project: ' . $test_case;
@@ -139,6 +158,22 @@ class MetadataInputTest extends ChadoTestKernelBase {
           ->setGenusToProject($this->test_project[$test_case]['id'], $this->test_project[$test_case]['genus']);
 
         $this->assertTrue($project_prop, 'We were not able to create a project-genus (for: ' . $test_case . ') property for testing.');
+      }
+
+      if ($test_case == 'project-with-2-configgenus') {
+        // Create project - genus relationship.
+        $project_prop = \Drupal::service('trpcultivate_phenotypes.genus_project')
+          ->setGenusToProject($this->test_project[$test_case]['id'], $this->test_project[$test_case]['genus']);
+
+        // Assign a scondary genus to project.
+        $this->chado_connection->insert('1:projectprop')
+          ->fields([
+            'project_id' => $this->test_project[$test_case]['id'],
+            'type_id' => $genus_term,
+            'value' => $this->test_genus['configured'],
+            'rank' => 2,
+          ])
+          ->execute();
       }
 
       if ($test_case == 'project-genus-not-tru-service') {
@@ -406,6 +441,18 @@ class MetadataInputTest extends ChadoTestKernelBase {
 
     $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
       'Project genus match validator case title does not match expected title for a valid project+genus.');
+    $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
+    $this->assertEmpty($validation_status['failedItems'], 'A valid project+genus does not return a failed item value.');
+
+    // Test a project with multiple genus.
+    $project = $this->test_project['project-with-2-configgenus']['id'];
+    $genus = $this->test_genus['configured-secondary'];
+
+    $form_values = ['project' => $project, 'genus' => $genus];
+    $validation_status = $instance->validateMetadata($form_values);
+
+    $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
+      'Project genus match validator case title does not match expected title for a valid project+genus (project with multiple genus).');
     $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
     $this->assertEmpty($validation_status['failedItems'], 'A valid project+genus does not return a failed item value.');
   }

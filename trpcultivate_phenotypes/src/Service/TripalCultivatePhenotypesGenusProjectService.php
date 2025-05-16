@@ -151,19 +151,33 @@ class TripalCultivatePhenotypesGenusProjectService {
       // Fetch genus paired to a project. If multiple genus have been set prior,
       // restrict search to genus that are active/configured using this module.
       $result = $this->chado_connection->query("
-        SELECT organism_id AS id, genus FROM {1:organism}
-        WHERE genus IN (SELECT value::VARCHAR FROM {1:projectprop}
-          WHERE project_id = :project_id AND type_id = :type_id AND LOWER(value) IN (:active_genus[]))
-      ", [':project_id' => $project, ':type_id' => $this->sysvar_genus, ':active_genus[]' => $active_genus]);
+        SELECT organism_id AS id, genus FROM {1:organism} WHERE genus IN (
+          SELECT value::VARCHAR FROM {1:projectprop} WHERE
+            project_id = :project_id AND
+            type_id = :type_id AND
+            LOWER(value) IN (:active_genus[])
+        ) ORDER BY genus ASC
+        ", [
+          ':project_id' => $project,
+          ':type_id' => $this->sysvar_genus,
+          ':active_genus[]' => $active_genus,
+        ]
+      )
+        ->fetchAllKeyed(0, 1);
 
-      $genus_project = $result->fetchAll();
-    }
+      if ($result) {
+        foreach ($result as $organism_id => $genus) {
+          $item = ['id' => $organism_id, 'genus' => $genus];
 
-    if (count($genus_project) == 1) {
-      $genus_project = [
-        'id' => $genus_project[0]->id,
-        'genus' => $genus_project[0]->genus,
-      ];
+          if (count($result) == 1) {
+            $genus_project = $item;
+            break;
+          }
+          else {
+            $genus_project[] = $item;
+          }
+        }
+      }
     }
 
     return ($genus_project) ? $genus_project : [];

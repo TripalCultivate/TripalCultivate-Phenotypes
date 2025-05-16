@@ -141,7 +141,9 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
         $genus_match = FALSE;
 
         foreach ($project_genus as $value) {
-          if ((is_array($value) && $value['genus'] == $genus) || $value == $genus) {
+          $g = (is_array($value)) ? $value['genus'] : $value;
+
+          if ($g == $genus) {
             $genus_match = TRUE;
             break;
           }
