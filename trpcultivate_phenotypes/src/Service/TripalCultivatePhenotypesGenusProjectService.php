@@ -89,36 +89,40 @@ class TripalCultivatePhenotypesGenusProjectService {
       $is_active_genus = (in_array($g, array_keys($this->sysvar_genusontology))) ? TRUE : FALSE;
 
       if ($is_active_genus) {
-        $result = $this->chado_connection->query("
-          SELECT projectprop_id AS id FROM {1:projectprop}
-          WHERE project_id = :project_id AND type_id = :type_id LIMIT 1
-        ", [':project_id' => $project, ':type_id' => $this->sysvar_genus]);
+        // Pull all genus assigned to the project.
+        $result = $this->chado_connection->select('1:projectprop', 'pp')
+          ->fields('pp', ['value', 'rank'])
+          ->condition('pp.project_id', $project, '=')
+          ->condition('pp.type_id', $this->sysvar_genus, '=')
+          ->orderBy('rank', 'DESC')
+          ->execute();
 
-        $projectprop_id = $result->fetchField();
+        $project_genus = $result->fetchAll();
 
-        if ($projectprop_id > 0) {
-          // Has a genus.
-          if ($replace) {
-            // And wishes to replace with another genus.
-            $this->chado_connection->query("
-              UPDATE {1:projectprop} SET value = :new_genus WHERE projectprop_id = :id
-            ", [':new_genus' => $genus, ':id' => $projectprop_id]);
+        $project_has_genus = FALSE;
+        $next_rank = 0;
+
+        // Determine if the project already had the genus.
+        foreach ($project_genus as $i => $g) {
+          if ($i == 0) {
+            $next_rank = $g->rank;
           }
 
-          // Do nothing if maintain the same genus.
+          if ($g->value == $genus) {
+            $project_has_genus = TRUE;
+            $break;
+          }
         }
-        else {
-          // Not set yet, no record in projectprop.
-          // Create a relationship regardless to replace or not.
-          $sql = "INSERT INTO {1:projectprop} (project_id, type_id, value) VALUES (:project, :config_genus, :genus)";
-          $this->chado_connection->query(
-            $sql,
-            [
-              ':project' => $project,
-              ':config_genus' => $this->sysvar_genus,
-              ':genus' => $genus,
-            ],
-          );
+
+        if (!$project_has_genus) {
+          $this->chado_connection->insert('1:projectprop')
+            ->fields([
+              'project_id' => $project,
+              'type_id' => $this->sysvar_genus,
+              'value' => $genus,
+              'rank' => $next_rank + 1,
+            ])
+            ->execute();
         }
       }
       else {
