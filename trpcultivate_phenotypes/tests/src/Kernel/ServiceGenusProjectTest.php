@@ -190,9 +190,11 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     $this->assertTrue($is_alt_genus_set, 'Project Genus Service failed to set alternate genus to project in scenario ' . $scenario);
 
     $new_genus_of_project = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
+    $key = array_search($expected['alternative_genus'], array_column($new_genus_of_project, 'genus'));
+
     $this->assertEquals(
       $expected['alternative_genus'],
-      $new_genus_of_project['genus'],
+      $new_genus_of_project[$key]['genus'],
       'The genus of project does not match expected alternative genus in scenario ' . $scenario
     );
   }
