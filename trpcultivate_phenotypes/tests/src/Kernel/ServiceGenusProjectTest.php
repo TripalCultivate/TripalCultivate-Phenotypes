@@ -41,18 +41,27 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   ];
 
   /**
-   * Configuration.
-   *
-   * @var \Drupal\Core\Config\Config
-   */
-  private $config;
-
-  /**
-   * A genus used as an alternative genus to the genus a project has been set.
+   * Configuration terms.genus.
    *
    * @var string
    */
-  private $alt_genus = 'AlternativeGenus';
+  private $sysvar_genus;
+
+  /**
+   * A set of configured and not configured genus as test genus input value.
+   *
+   * @var array
+   */
+  private array $genus = [];
+
+  /**
+   * A test project id number.
+   *
+   * The project id number is obtained after creating a project record.
+   *
+   * @var int
+   */
+  private int $project;
 
   /**
    * {@inheritdoc}
@@ -66,29 +75,60 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
 
-    // Fetch module settings.
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-
     // Create a test chado instance and then set it in the container for use by
     // our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
     // Set terms used to create relations.
-    $this->setTermConfig();
+    $terms = $this->setTermConfig();
+    $this->sysvar_genus = $terms['genus'];
 
-    // Create and configure a genus to be used to switch a project genus to
-    // using this genus.
-    $organism_id = $this->chado_connection->insert('1:organism')
+    // Create test genus.
+    $ins_genus = [
+      'configured' => [
+        'Genus1',
+        'Genus2',
+        'Genus3',
+        'Genus4',
+        'Genus5',
+      ],
+      'not-configured' => [
+        'Genus6',
+      ],
+    ];
+
+    foreach ($ins_genus as $type => $genus_set) {
+      foreach ($genus_set as $i => $genus) {
+        $organism_id = $this->chado_connection->insert('1:organism')
+          ->fields([
+            'genus' => $genus,
+            'species' => 'species:' . $i,
+          ])
+          ->execute();
+
+        $this->assertIsNumeric($organism_id, 'Unable to insert genus: ' . $genus);
+
+        $this->genus[$type][$organism_id] = $genus;
+
+        if ($type == 'configured') {
+          $this->setOntologyConfig($genus);
+        }
+      }
+    }
+
+    // Create test project.
+    $project_id = $this->chado_connection->insert('1:project')
       ->fields([
-        'genus' => $this->alt_genus,
-        'species' => 'some species',
+        'name' => 'This is a test project',
+        'description' => 'A project description',
       ])
       ->execute();
 
-    $this->assertIsNumeric($organism_id, 'Unable to create alternative genus');
+    $this->assertIsNumeric($project_id, 'Unable to create project');
+    $this->project = $project_id;
 
-    // Configure the genus.
-    $this->setOntologyConfig($this->alt_genus);
+    $container = \Drupal::getContainer();
+    $this->service_PhenoGenusProject = $container->get('trpcultivate_phenotypes.genus_project');
   }
 
   /**
@@ -97,27 +137,47 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    * @return array
    *   Each genus-project test scenario is an array witht the following values:
    *   - A string, human-readable short description of the test scenario.
-   *   - A string, the name or title of a project.
-   *   - An array, the genus and species of the organism that will be
+   *   - An integer indicating the number of genus to set to the project.
    *     paired with the project. Keyed by 'genus' and 'species'.
    *   - An array of expected values, with the following keys:
    *     - 'project_genus': the expected genus returned by the method
    *     getGenusOfProject().
-   *     - 'alternative_genus': a genus returned after setting a genus.
    */
   public function provideGenusProjectForGenusProjectService() {
     return [
-      // #0: A project with configured genus.
+      // #0: A project with one configured genus.
+      [
+        'A project with a configured genus',
+        1,
+        [
+          'project_genus' => ['Genus1'],
+        ],
+      ],
+
+      // #1: A project with two configured genus.
+      [
+        'A project with two configured genus',
+        2,
+        [
+          'project_genus' => [
+            'Genus1',
+            'Genus2',
+          ],
+        ],
+      ],
+
+      // #3: A project with 5 configured genus.
       [
         'A project with configured genus',
-        'Project - Plant Breeding',
+        5,
         [
-          'genus' => 'a genus',
-          'species' => 'a species',
-        ],
-        [
-          'project_genus' => 'a genus',
-          'alternative_genus' => 'AlternativeGenus',
+          'project_genus' => [
+            'Genus1',
+            'Genus2',
+            'Genus3',
+            'Genus4',
+            'Genus5',
+          ],
         ],
       ],
     ];
@@ -128,75 +188,60 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *
    * @param string $scenario
    *   Human-readable text description of the test scenario.
-   * @param string $project_name
-   *   A string, the name or title of a project.
-   * @param array $project_genus
-   *   An array, the genus and species of the organism that will be
-   *   paired with the project. Keyed by 'genus' and 'species'.
+   * @param int $genus_count
+   *   An integer indicating the number of genus to set to the project.
    * @param array $expected
    *   An array of expected values, with the following keys:
    *     - 'project_genus': the expected genus returned by the method
    *     getGenusOfProject().
-   *     - 'alternative_genus': a genus returned after setting a genus.
    *
    * @dataProvider provideGenusProjectForGenusProjectService
    */
-  public function testGenusProjectService($scenario, $project_name, $project_genus, $expected) {
-    // Create the project record.
-    $project_id = $this->chado_connection->insert('1:project')
-      ->fields([
-        'name' => $project_name,
-        'description' => 'A project description',
-      ])
-      ->execute();
+  public function testGenusProjectService($scenario, $genus_count, $expected) {
 
-    $this->assertIsNumeric($project_id, 'Unable to create project in scenario ' . $scenario);
+    $project_genus = [];
+    for ($i = 0; $i < $genus_count; $i++) {
+      $project_genus[] = 'Genus' . ($i + 1);
+    }
 
-    // Create the genus record.
-    $organism_id = $this->chado_connection->insert('1:organism')
-      ->fields([
-        'genus' => $project_genus['genus'],
-        'species' => $project_genus['species'],
-      ])
-      ->execute();
+    foreach ($project_genus as $genus) {
+      $is_set = $this->service_PhenoGenusProject->setGenusToProject($this->project, $genus);
+      $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario: ' . $scenario);
+    }
 
-    $this->assertIsNumeric($organism_id, 'Unable to create project genus in scenario ' . $scenario);
+    $set_genus = $this->service_PhenoGenusProject->getGenusOfProject($this->project);
 
-    // Configure the genus.
-    $this->setOntologyConfig($project_genus['genus']);
-
-    // Genus Project Service.
-    $this->service_PhenoGenusProject = \Drupal::service('trpcultivate_phenotypes.genus_project');
-    $this->assertNotNull($this->service_PhenoGenusProject, 'Failed to instantiate Genus Project Service in scenario ' . $scenario);
-
-    // Test setGenusToProject().
-    $is_set = $this->service_PhenoGenusProject->setGenusToProject($project_id, $project_genus['genus'], TRUE);
-    $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario ' . $scenario);
-
-    // Keep the same project genus by setting the replace flag to FALSE.
-    $is_set = $this->service_PhenoGenusProject->setGenusToProject($project_id, $project_genus['genus'], FALSE);
-    $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario ' . $scenario);
-
-    // Test getGenusOfProject().
-    $genus_of_project = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
     $this->assertEquals(
+      count($set_genus),
+      count($expected['project_genus']),
+      'The number of genus set does no match expected genus count in scenario: ' . $scenario
+    );
+
+    $this->assertEquals(
+      $set_genus,
       $expected['project_genus'],
-      $genus_of_project['genus'],
-      'The genus of project does not match expected genus in scenario ' . $scenario
+      'The genus set does no match expected genus in scenario: ' . $scenario
     );
 
-    // Replace the genus with the alternative genus.
-    $is_alt_genus_set = $this->service_PhenoGenusProject->setGenusToProject($project_id, $this->alt_genus, TRUE);
-    $this->assertTrue($is_alt_genus_set, 'Project Genus Service failed to set alternate genus to project in scenario ' . $scenario);
+    // Test the rank assigned is the order of the genus as it appears in the
+    // expected genus array (plus 1 - since zero-based index and rank starts 1).
+    $project_genus = $this->chado_connection->select('1:projectprop', 'pp')
+      ->fields('pp', ['value', 'rank'])
+      ->condition('pp.project_id', $this->project, '=')
+      ->condition('pp.type_id', $this->sysvar_genus, '=')
+      ->orderBy('rank', 'ASC')
+      ->execute()
+      ->fetchAll();
 
-    $new_genus_of_project = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
-    $key = array_search($expected['alternative_genus'], array_column($new_genus_of_project, 'genus'));
+    foreach ($project_genus as $row) {
+      $key = array_search($row->value, $expected['project_genus']);
 
-    $this->assertEquals(
-      $expected['alternative_genus'],
-      $new_genus_of_project[$key]['genus'],
-      'The genus of project does not match expected alternative genus in scenario ' . $scenario
-    );
+      $this->assertEquals(
+        $key + 1,
+        $row->rank,
+        'The rank assigned to the genus does not match expected rank value in scenario: ' . $scenario
+      );
+    }
   }
 
 }

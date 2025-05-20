@@ -61,18 +61,17 @@ class TripalCultivatePhenotypesGenusProjectService {
   /**
    * Assign a genus to an experiment/project.
    *
+   * Each genus-project relationship is an entry in projectprop table.
+   *
    * @param int $project
    *   Project (project id number) the parameter $genus will be assigned to.
    * @param string $genus
    *   Genus name/title.
-   * @param bool $replace
-   *   True to replace existing genus of a project with a different genus.
-   *   Default to False.
    *
    * @return bool
    *   True, genus was set successfully or false on error/fail.
    */
-  public function setGenusToProject($project, $genus, $replace = FALSE) {
+  public function setGenusToProject($project, $genus) {
     $error = 0;
 
     if (empty($project) || $project <= 0) {
@@ -135,13 +134,13 @@ class TripalCultivatePhenotypesGenusProjectService {
   }
 
   /**
-   * Get genus of an experiment/project.
+   * Get all genus assigned to a project.
    *
    * @param int $project
    *   Project (project_id number) to search.
    *
    * @return array
-   *   Key is genus/organism id number and value is the genus name/title.
+   *   An array of all the genus assigned to a project.
    */
   public function getGenusOfProject($project) {
     $genus_project = [];
@@ -154,34 +153,15 @@ class TripalCultivatePhenotypesGenusProjectService {
 
       // Fetch genus paired to a project. If multiple genus have been set prior,
       // restrict search to genus that are active/configured using this module.
-      $result = $this->chado_connection->query("
-        SELECT organism_id AS id, genus FROM {1:organism} WHERE genus IN (
-          SELECT value::VARCHAR FROM {1:projectprop} WHERE
-            project_id = :project_id AND
-            type_id = :type_id AND
-            LOWER(value) IN (:active_genus[])
-        ) ORDER BY genus ASC
-        ", [
-          ':project_id' => $project,
-          ':type_id' => $this->sysvar_genus,
-          ':active_genus[]' => $active_genus,
-        ]
-      )
-        ->fetchAllKeyed(0, 1);
+      $result = $this->chado_connection->select('1:projectprop', 'pp')
+        ->fields('pp', ['value'])
+        ->condition('pp.project_id', $project, '=')
+        ->condition('pp.type_id', $this->sysvar_genus, '=')
+        ->where('LOWER(pp.value) IN (:active_genus[])', [':active_genus[]' => $active_genus])
+        ->orderBy('value', 'ASC')
+        ->execute();
 
-      if ($result) {
-        foreach ($result as $organism_id => $genus) {
-          $item = ['id' => $organism_id, 'genus' => $genus];
-
-          if (count($result) == 1) {
-            $genus_project = $item;
-            break;
-          }
-          else {
-            $genus_project[] = $item;
-          }
-        }
-      }
+      $genus_project = $result->fetchCol();
     }
 
     return ($genus_project) ? $genus_project : [];

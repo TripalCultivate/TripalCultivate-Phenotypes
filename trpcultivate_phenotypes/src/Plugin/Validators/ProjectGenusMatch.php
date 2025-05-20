@@ -138,17 +138,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
         $failed_items = ['genus_provided' => $genus];
       }
       else {
-        $genus_match = FALSE;
-
-        foreach ($project_genus as $value) {
-          // Project genus has one or more genus set.
-          $g = (is_array($value)) ? $value['genus'] : $value;
-
-          if ($g == $genus) {
-            $genus_match = TRUE;
-            break;
-          }
-        }
+        $genus_match = in_array($genus, $project_genus);
 
         if (!$genus_match) {
           // Genus does not match the genus paired to the project.
