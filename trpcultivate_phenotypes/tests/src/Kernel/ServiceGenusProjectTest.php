@@ -83,37 +83,20 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     $terms = $this->setTermConfig();
     $this->sysvar_genus = $terms['genus'];
 
-    // Create test genus.
-    $ins_genus = [
-      'configured' => [
-        'Genus1',
-        'Genus2',
-        'Genus3',
-        'Genus4',
-        'Genus5',
-      ],
-      'not-configured' => [
-        'Genus6',
-      ],
-    ];
+    // Create test genus - Genus1, Genus2, Genus3, Genus4 and Genus5.
+    for ($i = 1; $i < 6; $i++) {
+      $genus = 'Genus' . $i;
+      $organism_id = $this->chado_connection->insert('1:organism')
+        ->fields([
+          'genus' => $genus,
+          'species' => 'species:' . $i,
+        ])
+        ->execute();
 
-    foreach ($ins_genus as $type => $genus_set) {
-      foreach ($genus_set as $i => $genus) {
-        $organism_id = $this->chado_connection->insert('1:organism')
-          ->fields([
-            'genus' => $genus,
-            'species' => 'species:' . $i,
-          ])
-          ->execute();
+      $this->assertIsNumeric($organism_id, 'Unable to insert genus: ' . $genus);
 
-        $this->assertIsNumeric($organism_id, 'Unable to insert genus: ' . $genus);
-
-        $this->genus[$type][$organism_id] = $genus;
-
-        if ($type == 'configured') {
-          $this->setOntologyConfig($genus);
-        }
-      }
+      $this->genus[] = $genus;
+      $this->setOntologyConfig($genus);
     }
 
     // Create test project.
