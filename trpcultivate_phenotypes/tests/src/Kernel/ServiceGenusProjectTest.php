@@ -48,7 +48,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   private $sysvar_genus;
 
   /**
-   * A set of configured and not configured genus as test genus input value.
+   * A set of configured genus as test genus input value.
    *
    * @var array
    */
@@ -57,7 +57,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   /**
    * A test project id number.
    *
-   * The project id number is obtained after creating a project record.
+   * The project id number obtained after creating a project record.
    *
    * @var int
    */
@@ -121,25 +121,24 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *   Each genus-project test scenario is an array witht the following values:
    *   - A string, human-readable short description of the test scenario.
    *   - An integer indicating the number of genus to set to the project.
-   *     paired with the project. Keyed by 'genus' and 'species'.
    *   - An array of expected values, with the following keys:
    *     - 'project_genus': the expected genus returned by the method
    *     getGenusOfProject().
    */
   public function provideGenusProjectForGenusProjectService() {
     return [
-      // #0: A project with one configured genus.
+      // #0: A project with one genus.
       [
-        'A project with a configured genus',
+        'A project with a genus',
         1,
         [
           'project_genus' => ['Genus1'],
         ],
       ],
 
-      // #1: A project with two configured genus.
+      // #1: A project with two genus.
       [
-        'A project with two configured genus',
+        'A project with two genus',
         2,
         [
           'project_genus' => [
@@ -149,9 +148,9 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #3: A project with 5 configured genus.
+      // #3: A project with 5 genus.
       [
-        'A project with configured genus',
+        'A project with five genus',
         5,
         [
           'project_genus' => [
@@ -182,12 +181,9 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    */
   public function testGenusProjectService($scenario, $genus_count, $expected) {
 
-    $project_genus = [];
     for ($i = 0; $i < $genus_count; $i++) {
-      $project_genus[] = 'Genus' . ($i + 1);
-    }
+      $genus = 'Genus' . ($i + 1);
 
-    foreach ($project_genus as $genus) {
       $is_set = $this->service_PhenoGenusProject->setGenusToProject($this->project, $genus);
       $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario: ' . $scenario);
     }
@@ -206,7 +202,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
       'The genus set does no match expected genus in scenario: ' . $scenario
     );
 
-    // Test the rank assigned is the order of the genus as it appears in the
+    // Test the rank assigned is the order of each genus as it appears in the
     // expected genus array (plus 1 - since zero-based index and rank starts 1).
     $project_genus = $this->chado_connection->select('1:projectprop', 'pp')
       ->fields('pp', ['value', 'rank'])

@@ -89,25 +89,19 @@ class TripalCultivatePhenotypesGenusProjectService {
 
       if ($is_active_genus) {
         // Pull all genus assigned to the project.
-        $result = $this->chado_connection->select('1:projectprop', 'pp')
+        $project_genus = $this->chado_connection->select('1:projectprop', 'pp')
           ->fields('pp', ['value', 'rank'])
           ->condition('pp.project_id', $project, '=')
           ->condition('pp.type_id', $this->sysvar_genus, '=')
           ->orderBy('rank', 'DESC')
-          ->execute();
-
-        $project_genus = $result->fetchAll();
+          ->execute()
+          ->fetchAll();
 
         $project_has_genus = FALSE;
-        $next_rank = 0;
 
         // Determine if the project already had the genus.
-        foreach ($project_genus as $i => $g) {
-          if ($i == 0) {
-            $next_rank = $g->rank;
-          }
-
-          if ($g->value == $genus) {
+        foreach ($project_genus as $row) {
+          if ($row->value == $genus) {
             $project_has_genus = TRUE;
             $break;
           }
@@ -119,7 +113,7 @@ class TripalCultivatePhenotypesGenusProjectService {
               'project_id' => $project,
               'type_id' => $this->sysvar_genus,
               'value' => $genus,
-              'rank' => $next_rank + 1,
+              'rank' => (isset($project_genus[0])) ? $project_genus[0]->rank + 1 : 1,
             ])
             ->execute();
         }
