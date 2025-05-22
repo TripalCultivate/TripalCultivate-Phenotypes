@@ -251,15 +251,13 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
     }
 
-    // Tripal Token Service.
+    // Now replace any tokens that are in our message or items.
+    // We use the Tripal Token Parser service to ensure that more complicated
+    // tokens are supported.
+    // NOTE: Dependency injection is NOT used since this is a static method.
     $service_TripalTokensParser = \Drupal::service('tripal.token_parser');
-
-    // Now replace any tokens that are in our message.
     $replaced_message = $service_TripalTokensParser->replaceTokens($message, $combined_tokens);
-    // Iterate through our items and replace any tokens there.
-    foreach ($items as $key => $item) {
-      $items[$key] = $service_TripalTokensParser->replaceTokens($item, $combined_tokens);
-    }
+    $items = $service_TripalTokensParser->replaceTokensArray($items, $combined_tokens);
 
     // Build the render array.
     $render_array = [
