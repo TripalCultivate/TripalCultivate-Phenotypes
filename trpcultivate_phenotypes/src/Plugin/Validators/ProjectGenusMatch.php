@@ -190,22 +190,27 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *     - 'genus_provided': The name of the genus provided.
    * @param array $tokens
    *   [OPTIONAL] An array of values to use for token replacement.
+   *   @see ProjectGenusMatch::$default_tokens
    *   The following tokens can be specfied as keys, with value as the
    *   replacement value for the token. These apply to all failure cases.
-   *   - 'project': replaces the word "project".
-   *   - 'contact-admin': replaces the phrase "contact your administrator".
+   *   - 'project': the word to use when referring to the project.
+   *   - 'contact-admin': the phrase to use when the user needs a privileged
+   *     administrator to fix the problem.
    *   The following token keys will substitute the entire existing case message
-   *   with the value of that token.
-   *   - 'case-message-1': "Project does not exist"
-   *   - 'case-message-2': "Project has no genus set and could not compare with
-   *     the genus provided"
-   *   - 'case-message-3': "Genus does not match a genus set to the project".
+   *   to the user with the value of that token.
+   *   - 'case-message-1': the message when a project does not exist.
+   *   - 'case-message-2': the message when a project has no genus set to it.
+   *   - 'case-message-3': the message when the genus selected by the user is
+   *     not configured to the selected project.
    *
    * @return array
-   *   A render array of type unordered list which is used to display feedback
-   *   to the user about the case that failed and the failed items from the
-   *   input file. Each item in the list contains either the project name or the
-   *   genus, whichever one caused the failure.
+   *   A render array of type "item" used to display feedback to the user about
+   *   the validation failure, where:
+   *   - The 'title' is a sentence describing the case triggered
+   *   - The 'items' are an unordered list of one or more of the following,
+   *     provided as context depending on the case that was triggered:
+   *     - The project name selected by the user
+   *     - The genus selected by the user
    *
    * @throws \Exception
    *   - If the failure parameter was not formatted properly.
