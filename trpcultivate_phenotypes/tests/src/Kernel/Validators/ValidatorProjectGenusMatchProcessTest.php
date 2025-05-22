@@ -37,13 +37,6 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
   protected Renderer $renderer;
 
   /**
-   * The genus for configuring and testing with our validator.
-   *
-   * @var string
-   */
-  protected string $genus = 'Tripalus';
-
-  /**
    * Theme used in the test environment.
    *
    * @var string
