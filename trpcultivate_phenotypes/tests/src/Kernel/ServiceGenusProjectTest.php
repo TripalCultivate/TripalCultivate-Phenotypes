@@ -21,7 +21,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  private const string UNCONFIGURED_GENUS = 'UnconfiguredGenus';
+  private const UNCONFIGURED_GENUS = 'UnconfiguredGenus';
 
   /**
    * Term Service.
