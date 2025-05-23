@@ -362,10 +362,11 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test getGenusOfProject() with a genus that is not configured.
+   * Test getGenusOfProject() method.
    */
-  public function testGetGenusOfProjectWithUnconfiguredGenus() {
+  public function testGetGenusOfProject() {
 
+    // Unconfigured genus.
     foreach ($this->genus as $configured_genus) {
       $this->service_PhenoGenusProject->setGenusToProject($this->project, $configured_genus);
     }
@@ -387,6 +388,31 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
       self::UNCONFIGURED_GENUS,
       $project_genus,
       'Unconfigured genus set to a project is not returned by the getGenusOfProject() method.'
+    );
+
+    // Invalid project.
+    foreach (['', 0, 9999] as $project) {
+      $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project);
+
+      $this->assertEmpty(
+        $project_genus,
+        'The return value of getGenusOfProject() method does not match expected value of empty array when project is invalid.'
+      );
+    }
+
+    // Not set with genus.
+    $project_id = $this->chado_connection->insert('1:project')
+      ->fields([
+        'name' => 'This is another test project',
+        'description' => 'A project description',
+      ])
+      ->execute();
+
+    $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
+
+    $this->assertEmpty(
+      $project_genus,
+      'The return value of getGenusOfProject() method does not match expected value of empty array when project has no set genus.'
     );
   }
 
