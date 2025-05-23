@@ -152,7 +152,7 @@ class TripalCultivatePhenotypesGenusProjectService {
         ->condition('pp.project_id', $project, '=')
         ->condition('pp.type_id', $this->sysvar_genus, '=')
         ->where('LOWER(pp.value) IN (:active_genus[])', [':active_genus[]' => $active_genus])
-        ->orderBy('value', 'ASC')
+        ->orderBy('rank', 'ASC')
         ->execute();
 
       $genus_project = $result->fetchCol();
