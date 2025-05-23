@@ -148,7 +148,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #3: A project with 5 genus.
+      // #2: A project with 5 genus.
       [
         'A project with five genus',
         5,
