@@ -17,6 +17,13 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
+   * A genus that is not configured.
+   *
+   * @var string
+   */
+  private const string UNCONFIGURED_GENUS = 'UnconfiguredGenus';
+
+  /**
    * Term Service.
    *
    * @var Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService
@@ -110,7 +117,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // This is not a configured genus.
     $this->chado_connection->insert('1:organism')
       ->fields([
-        'genus' => 'NotConfiguredGenus',
+        'genus' => self::UNCONFIGURED_GENUS,
         'species' => 'unconfigured species',
       ])
       ->execute();
@@ -311,7 +318,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
         'Empty string as genus',
         [
           'project' => 1,
-          'genus' => 'NotConfiguredGenus',
+          'genus' => self::UNCONFIGURED_GENUS,
         ],
         [
           'is_set' => FALSE,
@@ -351,6 +358,35 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
       $expected['log_message'],
       $this->log_message,
       'The log messaged returned by setGenusToProject() with invalid value does not match expected log message in scenario: ' . $scenario
+    );
+  }
+
+  /**
+   * Test getGenusOfProject() with a genus that is not configured.
+   */
+  public function testGetGenusOfProjectWithUnconfiguredGenus() {
+
+    foreach ($this->genus as $configured_genus) {
+      $this->service_PhenoGenusProject->setGenusToProject($this->project, $configured_genus);
+    }
+
+    $genus_project_ins = $this->chado_connection->insert('1:projectprop')
+      ->fields([
+        'project_id' => $this->project,
+        'type_id' => $this->sysvar_genus,
+        'value' => self::UNCONFIGURED_GENUS,
+        'rank' => 10,
+      ])
+      ->execute();
+
+    $this->assertIsNumeric($genus_project_ins, 'Unable to create genus-project (unconfigured genus) entry.');
+
+    $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($this->project);
+
+    $this->assertNotContains(
+      self::UNCONFIGURED_GENUS,
+      $project_genus,
+      'Unconfigured genus set to a project is not returned by the getGenusOfProject() method.'
     );
   }
 
