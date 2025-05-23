@@ -5,6 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal\Services\TripalLogger;
 
 /**
  * Test Tripal Cultivate Phenotypes Genus Project service.
@@ -64,6 +65,13 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   private int $project;
 
   /**
+   * Tripal Logger log message.
+   *
+   * @var string
+   */
+  private string $log_message;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -99,6 +107,14 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
       $this->setOntologyConfig($genus);
     }
 
+    // This is not a configured genus.
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => 'NotConfiguredGenus',
+        'species' => 'unconfigured species',
+      ])
+      ->execute();
+
     // Create test project.
     $project_id = $this->chado_connection->insert('1:project')
       ->fields([
@@ -110,7 +126,20 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     $this->assertIsNumeric($project_id, 'Unable to create project');
     $this->project = $project_id;
 
+    // Mock Tripal Logger.
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
     $container = \Drupal::getContainer();
+    $container->set('tripal.logger', $mock_logger);
     $this->service_PhenoGenusProject = $container->get('trpcultivate_phenotypes.genus_project');
   }
 
@@ -221,6 +250,108 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
         'The rank assigned to the genus does not match expected rank value in scenario: ' . $scenario
       );
     }
+  }
+
+  /**
+   * Data Provider: provides invalid genus and project as test input values.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array keyed by project and genus to represent project and genus
+   *     input values, respectively.
+   *   - An array of expected values, with the following keys:
+   *     - 'is_set': a boolean value returned by setGenusToProject() method to
+   *       indicate the success or failure of the set genus to project request.
+   *     - 'log_message': the Tripal log error message about the failed value.
+   */
+  public function provideInvalidValuesToGenusProjectService() {
+    return [
+      // #0: An empty string value as project input value.
+      [
+        'Empty string as project',
+        [
+          'project' => '',
+          'genus' => 'Genus1',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Project id is empty string, 0 or not a positive number. Could not replace genus.',
+        ],
+      ],
+
+      // #1: Project ID is the value 0.
+      [
+        'Project ID is 0',
+        [
+          'project' => 0,
+          'genus' => 'Genus1',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Project id is empty string, 0 or not a positive number. Could not replace genus.',
+        ],
+      ],
+
+      // #2: Genus is empty string value.
+      [
+        'Empty string as genus',
+        [
+          'project' => 1,
+          'genus' => '',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Genus is an empty string. Could not replace genus.',
+        ],
+      ],
+
+      // #3: Genus is not configured.
+      [
+        'Empty string as genus',
+        [
+          'project' => 1,
+          'genus' => 'NotConfiguredGenus',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Genus is not configured. Could not replace genus.',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test setGenusToProject() method with invalid values.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $input_value
+   *   An array keyed by project and genus to represent project and genus
+   *   input values, respectively.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'is_set': a boolean value returned by setGenusToProject() method to
+   *       indicate the success or failure of the set genus to project request.
+   *     - 'log_message': the Tripal log error message about the failed value.
+   *
+   * @dataProvider provideInvalidValuesToGenusProjectService
+   */
+  public function testGenusProjectServiceWithInvalidValues($scenario, $input_value, $expected) {
+
+    $is_set = $this->service_PhenoGenusProject->setGenusToProject($input_value['project'], $input_value['genus']);
+
+    $this->assertEquals(
+      $is_set,
+      $expected['is_set'],
+      'The setGenusToProject() method is expected to return false when project or genus is an invalid value in scenario: ' . $scenario
+    );
+
+    $this->assertEquals(
+      $expected['log_message'],
+      $this->log_message,
+      'The log messaged returned by setGenusToProject() with invalid value does not match expected log message in scenario: ' . $scenario
+    );
   }
 
 }
