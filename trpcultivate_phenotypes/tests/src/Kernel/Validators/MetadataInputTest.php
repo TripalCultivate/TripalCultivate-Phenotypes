@@ -104,7 +104,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides test form values.
+   * Data Provider: provides invalid test form values.
    *
    * @return array
    *   Each test scenario is an array with the following values:
@@ -210,7 +210,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
         [
           'case' => 'Genus does not exist',
           'valid' => FALSE,
-          'faileItems' => ['genus' => 'not-created'],
+          'failedItems' => ['genus' => 'not-created'],
         ],
       ],
 
@@ -221,7 +221,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
         [
           'case' => 'Genus exists but is not configured',
           'valid' => FALSE,
-          'faileItems' => ['genus' => 'not-created'],
+          'failedItems' => ['genus' => 'not-created'],
         ],
       ],
 

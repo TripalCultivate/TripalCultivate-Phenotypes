@@ -14,6 +14,7 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
  * @group validators
  */
 class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
+
   use PhenotypeImporterTestTrait;
 
   /**
@@ -22,33 +23,6 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    * @var \Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
    */
   protected TripalCultivateValidatorManager $plugin_manager;
-
-  /**
-   * An array of genus for testing.
-   *
-   * Has the following keys:
-   * - 'configured': a configured genus.
-   * - 'configured-secondary': a configured genus used as secondary genus.
-   * - 'not-configured': a genus that is not configured.
-   *
-   * @var array
-   */
-  protected array $test_genus;
-
-  /**
-   * An array of projects for testing.
-   *
-   * Has the following keys:
-   * - 'project-with-configgenus': a project paired with a configured genus.
-   * - 'project-with-2-configgenus': a project paired with 2 configured genus.
-   * - 'project-with-genus': a project paired with a non-configured genus.
-   * - 'project-genus-not-tru-service': a project paired with a configured genus
-   *   without using the genus_project service.
-   * - 'just-project': a project record not paired to a genus.
-   *
-   * @var array
-   */
-  protected array $test_project;
 
   /**
    * Modules to enable.
@@ -63,6 +37,21 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
     'trpcultivate',
     'trpcultivate_phenotypes',
   ];
+
+  /**
+   * An array of project-genus input values for testing.
+   *
+   * 'with-config-genus': a project with a configured genus.
+   * 'with-more-configgenus': a project with multiple configured genus.
+   * 'with-unconfig-genus': a project with unconfigured genus.
+   * 'with-no-genus': a project without a genus.
+   * 'with-other-term': a project with project-genus set not through phenotypes.
+   * 'non-existent': a project that does not exist.
+   * 'conflicting-genus': a project with set genus but is tested with another.
+   *
+   * @var array
+   */
+  private array $test_project_genus;
 
   /**
    * {@inheritdoc}
@@ -82,64 +71,21 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
     $this->container->set('tripal_chado.database', $this->chado_connection);
 
-    // Set plugin manager service.
-    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
-
-    $genus = 'Tripalus';
-    // Create our organism and configure it.
-    $organism_id = $this->chado_connection->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'databasica',
-      ])
-      ->execute();
-
-    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (configured).');
-    $this->test_genus['configured'] = $genus;
-    $this->setOntologyConfig($this->test_genus['configured']);
-
-    $genus = 'Plantanus';
-    // Create our organism and configure it.
-    $organism_id = $this->chado_connection->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'databasica',
-      ])
-      ->execute();
-
-    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (configured).');
-    $this->test_genus['configured-secondary'] = $genus;
-    $this->setOntologyConfig($this->test_genus['configured-secondary']);
-
-    // Create another organism and not configure.
-    $genus = 'notconfiggenus';
-    $organism_id = $this->chado_connection->insert('1:organism')
-      ->fields([
-        'genus' => $genus,
-        'species' => 'databasica',
-      ])
-      ->execute();
-
-    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing (not configured).');
-    $this->test_genus['not-configured'] = $genus;
-
-    // Set terms configuration.
     $this->setTermConfig();
-
-    // Create test project with a genus set.
-    $projects = [
-      'project-with-configgenus' => $this->test_genus['configured'],
-      'project-with-2-configgenus' => $this->test_genus['configured-secondary'],
-      'project-with-genus' => $this->test_genus['not-configured'],
-      'project-genus-not-tru-service' => $this->test_genus['configured'],
-      'just-project' => '',
-    ];
-
     $genus_term = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
       ->get('trpcultivate.phenotypes.ontology.terms.genus');
 
-    foreach ($projects as $test_case => $project_genus) {
-      $project = 'Research Project: ' . $test_case;
+    $test_project_genus = [
+      'with-config-genus' => ['Tripalus'],
+      'with-more-configgenus' => ['Plantanus', 'Tripalus', 'Pinus'],
+      'with-unconfig-genus' => ['notconfiggenus'],
+      'with-no-genus' => [''],
+      'with-other-term' => ['Tripalus'],
+    ];
+
+    foreach ($test_project_genus as $type => $genus) {
+      // Create the project.
+      $project = 'Project: ' . $type;
       $project_id = $this->chado_connection->insert('1:project')
         ->fields([
           'name' => $project,
@@ -147,212 +93,339 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
         ])
         ->execute();
 
-      $this->assertIsNumeric($project_id, 'We were not able to create a project ' . $test_case . ' for testing.');
-      $this->test_project[$test_case]['id']    = $project_id;
-      $this->test_project[$test_case]['name']  = $project;
-      $this->test_project[$test_case]['genus'] = $project_genus;
+      $this->assertIsNumeric($project_id, 'We were not able to create a project ' . $project . ' for testing.');
+      $this->test_project_genus[$type]['project_id'] = $project_id;
+      $this->test_project_genus[$type]['name'] = $project;
 
-      if ($test_case == 'project-with-configgenus') {
-        // Create project - genus relationship.
-        $project_prop = \Drupal::service('trpcultivate_phenotypes.genus_project')
-          ->setGenusToProject($this->test_project[$test_case]['id'], $this->test_project[$test_case]['genus']);
+      // Create and set each genus.
+      $genus_list = [];
+      foreach ($genus as $i => $genus_ins) {
+        if (empty($genus_ins)) {
+          continue;
+        }
 
-        $this->assertTrue($project_prop, 'We were not able to create a project-genus (for: ' . $test_case . ') property for testing.');
-      }
-
-      if ($test_case == 'project-with-2-configgenus') {
-        // Create project - genus relationship.
-        $project_prop = \Drupal::service('trpcultivate_phenotypes.genus_project')
-          ->setGenusToProject($this->test_project[$test_case]['id'], $this->test_project[$test_case]['genus']);
-
-        // Assign a scondary genus to project.
-        $this->chado_connection->insert('1:projectprop')
+        $organism_id = $this->chado_connection->insert('1:organism')
           ->fields([
-            'project_id' => $this->test_project[$test_case]['id'],
-            'type_id' => $genus_term,
-            'value' => $this->test_genus['configured'],
-            'rank' => 2,
+            'genus' => $genus_ins,
+            'species' => 'species:' . $type,
           ])
           ->execute();
-      }
 
-      if ($test_case == 'project-genus-not-tru-service') {
-        // Create project-genus relationship not using the project-genus service
-        // to relate a project to a genus.
-        // Using term: null.
-        $project_prop = $this->chado_connection->insert('1:projectprop')
+        $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing: ' . $genus_ins);
+
+        if ($genus_ins != 'notconfiggenus') {
+          $this->setOntologyConfig($genus_ins);
+        }
+
+        $project_genus_id = $this->chado_connection->insert('1:projectprop')
           ->fields([
             'project_id' => $project_id,
-            'type_id' => 1,
-            'value' => $project_genus,
+            'type_id' => ($type == 'with-other-term') ? 1 : $genus_term,
+            'value' => $genus_ins,
+            'rank' => $i + 1,
           ])
           ->execute();
 
-        $this->assertNotEmpty($project_prop, 'We were not able to create a project-genus (for: ' . $test_case . ') property for testing.');
+        $this->assertIsNumeric($project_genus_id, 'We were not able to create an project-genus property for testing.');
+        $genus_list[] = $genus_ins;
       }
+
+      $this->test_project_genus[$type]['genus'] = $genus_list;
     }
+
+    // Adds a non-existent project.
+    $this->test_project_genus['non-existent'] = [
+      'project_id' => 999,
+      'name' => 'A Spurious Project',
+      'genus' => ['Tripalus'],
+    ];
+
+    // Adds an existing project with configured genus but using a genus
+    // of another project.
+    $project = $this->test_project_genus['with-config-genus'];
+    $this->test_project_genus['conflicting-genus'] = [
+      'project_id' => $project['project_id'],
+      'name' => $project['name'],
+      'genus' => ['Pinus'],
+    ];
+
+    // Set plugin manager service.
+    $this->plugin_manager = $this->container->get('plugin.manager.trpcultivate_validator');
   }
 
   /**
-   * Test project and genus input - project exists and configured genus matches.
+   * Data Provider: provides invalid project-genus test form values.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - Form values input.
+   *   - An array of expected values, with the following keys:
+   *     - 'has_exception': TRUE if exception is expected and FALSE if not.
+   *     - 'error_message': the expected exception message.
    */
-  public function testProjectGenusInput() {
-    // Create a plugin instance for this validator.
-    $validator_id = 'project_genus_match';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+  public function provideInvalidTestFormValues() {
 
-    // Test items that will throw exception:
-    // 1. Passing a string value.
-    // 2. Failed to implement form field element with project and genus.
-    // 3. Passing object or the entire $form_state.
-    // Test passing a string value.
-    $form_values = 'Not a valid form values';
+    return [
+      // #0: An empty string as form values.
+      [
+        'A string value',
+        '',
+        [
+          'has_exception' => TRUE,
+          'error_message' => 'Argument #1 ($form_values) must be of type array, string given',
+        ],
+      ],
 
-    $exception_caught  = FALSE;
+      // #1: No project field in the form values.
+      [
+        'No genus field element',
+        [
+          'genus' => 'Lens',
+        ],
+        [
+          'has_exception' => TRUE,
+          'error_message' => 'Failed to locate project field element',
+        ],
+      ],
+
+      // #2: No genus field in the form values.
+      [
+        'No genus field element',
+        [
+          'project' => 999,
+        ],
+        [
+          'has_exception' => TRUE,
+          'error_message' => 'Failed to locate genus field element',
+        ],
+      ],
+
+      // #3: FormState object passed.
+      [
+        'Drupal FormState object',
+        new FormState(),
+        [
+          'has_exception' => TRUE,
+          'error_message' => 'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given',
+        ],
+      ],
+
+      // #4: All is good.
+      [
+        'Input values are valid',
+        [
+          'project' => 1,
+          'genus' => 'Genus',
+        ],
+        [
+          'has_exception' => FALSE,
+          'error_message' => '',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test project genus match validator with invalid inputs.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param mixed $form_values
+   *   Form values input.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'has_exception': TRUE if exception is expected and FALSE if not.
+   *     - 'error_message': the expected exception message.
+   *
+   * @dataProvider provideInvalidTestFormValues
+   */
+  public function testProjectGenusWithInvalidInput($scenario, $form_values, $expected) {
+
+    $exception_caught = FALSE;
     $exception_message = '';
+
     try {
-      $instance->validateMetadata($form_values);
+      $this->plugin_manager->createInstance('project_genus_match')
+        ->validateMetadata($form_values);
     }
-    catch (\TypeError $e) {
-      $exception_caught  = TRUE;
+    catch (\Throwable $e) {
+      $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
 
-    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a string to project genus match metadata validator.');
+    $this->assertEquals(
+      $expected['has_exception'],
+      $exception_caught,
+      'Failed to catch exception in scenario: ' . $scenario
+    );
+
     $this->assertStringContainsString(
-      'Argument #1 ($form_values) must be of type array, string given', $exception_message,
-      'Expected exception message does not match message when passing string to project genus match metadata validator.');
+      $expected['error_message'],
+      $exception_message,
+      'Expected exception message does not match expected error message in scenario: ' . $scenario
+    );
+  }
 
-    // No project field.
-    $form_values = ['genus' => 'Lens'];
+  /**
+   * Data Provider: provides project-genus test input values.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - Array key to reference an element in the $test_project_genus property.
+   *   - An array of expected values, with the following keys:
+   *     - 'case': the case title that evaluated the project/genus value.
+   *     - 'valid': the validation status value returned.
+   *     - 'failedItems': input items that failed validation, including the
+   *       project and/or genus input values provided.
+   */
+  public function provideTestProjectGenusInput() {
 
-    $exception_caught  = FALSE;
-    $exception_message = '';
-    try {
-      $instance->validateMetadata($form_values);
+    return [
+      // #0: A non-existent project.
+      [
+        'Non-existent project',
+        'non-existent',
+        [
+          'case' => 'Project does not exist',
+          'valid' => FALSE,
+          'failedItems' => [
+            'project_provided' => 'project',
+          ],
+        ],
+      ],
+
+      // #1: A project without genus attached.
+      [
+        'Project without genus',
+        'with-no-genus',
+        [
+          'case' => 'Project has no genus set and could not compare with the genus provided',
+          'valid' => FALSE,
+          'failedItems' => [
+            'genus_provided' => 'genus',
+          ],
+        ],
+      ],
+
+      // #2: Using a genus not set to a project.
+      [
+        'Incorrect genus for a project',
+        'conflicting-genus',
+        [
+          'case' => 'Genus does not match the genus set to the project',
+          'valid' => FALSE,
+          'failedItems' => [
+            'genus_provided' => 'genus',
+          ],
+        ],
+      ],
+
+      // #3: A genus set to a project not through the phenotypes module.
+      [
+        'Project-genus set not through phenotypes',
+        'with-other-term',
+        [
+          'case' => 'Project has no genus set and could not compare with the genus provided',
+          'valid' => FALSE,
+          'failedItems' => [
+            'genus_provided' => 'genus',
+          ],
+        ],
+      ],
+
+      // #3: A project set with a non-configured genus.
+      [
+        'Unconfigured genus to a project',
+        'with-unconfig-genus',
+        [
+          'case' => 'Project has no genus set and could not compare with the genus provided',
+          'valid' => FALSE,
+          'failedItems' => [
+            'genus_provided' => 'genus',
+          ],
+        ],
+      ],
+
+      // #4: Project and genus matched.
+      [
+        'A project-genus match',
+        'with-config-genus',
+        [
+          'case' => 'Project exists and project-genus match the genus provided',
+          'valid' => TRUE,
+          'failedItems' => [],
+        ],
+      ],
+
+      // #5: Project and genus matched from a project with multiple genus set.
+      [
+        'A project-genus match from multiple genus',
+        'with-more-configgenus',
+        [
+          'case' => 'Project exists and project-genus match the genus provided',
+          'valid' => TRUE,
+          'failedItems' => [],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test project-genus match validator.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param string $project_genus_input
+   *   Array key to reference a element in the $test_project_genus property.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'case': the case title that evaluated the project/genus value.
+   *     - 'valid': the validation status value returned.
+   *     - 'failedItems': input items that failed validation, including the
+   *       project and/or genus input values provided.
+   *
+   * @dataProvider provideTestProjectGenusInput
+   */
+  public function testValidatorProjectGenusMatch($scenario, $project_genus_input, $expected) {
+
+    $input_values = $this->test_project_genus[$project_genus_input];
+    $genus = reset($input_values['genus']);
+
+    // Project value can be the project id or project name. Test for both cases.
+    foreach (['project_id', 'name'] as $project_input) {
+      $project = $input_values[$project_input];
+
+      $form_values = ['project' => $project, 'genus' => $genus];
+      $validation_status = $this->plugin_manager->createInstance('project_genus_match')
+        ->validateMetadata($form_values);
+
+      $this->assertEquals(
+        $expected['case'],
+        $validation_status['case'],
+        'Project-genus match validator case title does not match expected title in scenario: ' . $scenario
+      );
+
+      $this->assertEquals(
+        $expected['valid'],
+        $validation_status['valid'],
+        'The validation status value does not match expected value in scenario: ' . $scenario
+      );
+
+      if (!$validation_status['valid']) {
+        $expected_failed_items = [];
+        foreach ($expected['failedItems'] as $item => $input_key) {
+          $expected_failed_items[$item] = $form_values[$input_key];
+        }
+
+        $this->assertEquals(
+          $expected_failed_items,
+          $validation_status['failedItems'],
+          'Failed test value does not match expected failed items in scenario: ' . $scenario
+        );
+      }
     }
-    catch (\Exception $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertTrue($exception_caught, 'Failed to catch exception when no project form field was implemented.');
-    $this->assertStringContainsString('Failed to locate project field element', $exception_message,
-      'Expected exception message does not match message when importer failed to implement a form field element with the name/key project.');
-
-    // No genus field.
-    $form_values = ['project' => 'Test Project'];
-
-    $exception_caught  = FALSE;
-    $exception_message = '';
-    try {
-      $instance->validateMetadata($form_values);
-    }
-    catch (\Exception $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertTrue($exception_caught, 'Failed to catch exception when no genus form field was implemented.');
-    $this->assertStringContainsString('Failed to locate genus field element', $exception_message,
-      'Expected exception message does not match message when importer failed to implement a form field element with the name/key genus.');
-
-    // A Drupal $form_state object.
-    $form_state = new FormState();
-    // A random field.
-    $form_state->setValues(['project' => uniqid()]);
-
-    $exception_caught  = FALSE;
-    $exception_message = '';
-    try {
-      $instance->validateMetadata($form_state);
-    }
-    catch (\TypeError $e) {
-      $exception_caught  = TRUE;
-      $exception_message = $e->getMessage();
-    }
-
-    $this->assertTrue($exception_caught, 'Failed to catch exception when passing a $form_state to project genus match metadata validator.');
-    $this->assertStringContainsString(
-      'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given', $exception_message,
-      'Expected exception message does not match message when passing $form_state to project genus match metadata validator.');
-
-    // Other tests:
-    // Each test checks if projectGenusMatch generated the correct validation
-    // items.
-    // Failed item is the failed project/genus value. Failed information is
-    // contained in the case to indicate project and genus match.
-    // Test project does not exist.
-    $project = 'project-' . uniqid();
-    $genus = $this->test_genus['configured'];
-
-    $form_values = ['project' => $project, 'genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Project does not exist', $validation_status['case'],
-      'Project genus match validator case title does not match expected title for non-existent project.');
-    $this->assertFalse($validation_status['valid'], 'A failed project must return a FALSE valid status.');
-    $this->assertEquals($project, $validation_status['failedItems']['project_provided'], 'Failed project value is expected in failed items.');
-
-    // Test project exists but not attached to any genus.
-    $project = $this->test_project['just-project']['id'];
-    $genus = $this->test_project['just-project']['genus'];
-
-    $form_values = ['project' => $project, 'genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Project has no genus set and could not compare with the genus provided', $validation_status['case'],
-      'Project genus match validator case title does not match expected title for a valid project+genus.');
-    $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
-    $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
-
-    // Test project exists but is attached to a different genus.
-    $project = $this->test_project['project-with-configgenus']['id'];
-    $genus = $this->test_project['project-with-genus']['genus'];
-
-    $form_values = ['project' => $project, 'genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Genus does not match the genus set to the project', $validation_status['case'],
-      'Project genus match validator case title does not match expected title for a valid project+genus.');
-    $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
-    $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
-
-    // Test a project-genus created not using the project-genus service.
-    $project = $this->test_project['project-genus-not-tru-service']['id'];
-    $genus = $this->test_project['project-genus-not-tru-service']['genus'];
-
-    $form_values = ['project' => $project, 'genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Project has no genus set and could not compare with the genus provided', $validation_status['case'],
-      'Project genus match validator case title does not match expected title for a valid project+genus.');
-    $this->assertFalse($validation_status['valid'], 'A failed project-genus must return a FALSE valid status.');
-    $this->assertEquals($genus, $validation_status['failedItems']['genus_provided'], 'Failed genus value is expected in failed items.');
-
-    // Test project with genus set.
-    $project = $this->test_project['project-with-configgenus']['id'];
-    $genus = $this->test_project['project-with-configgenus']['genus'];
-
-    $form_values = ['project' => $project, 'genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
-      'Project genus match validator case title does not match expected title for a valid project+genus.');
-    $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
-    $this->assertEmpty($validation_status['failedItems'], 'A valid project+genus does not return a failed item value.');
-
-    // Test a project with multiple genus.
-    $project = $this->test_project['project-with-2-configgenus']['id'];
-    $genus = $this->test_genus['configured-secondary'];
-
-    $form_values = ['project' => $project, 'genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
-
-    $this->assertEquals('Project exists and project-genus match the genus provided', $validation_status['case'],
-      'Project genus match validator case title does not match expected title for a valid project+genus (project with multiple genus).');
-    $this->assertTrue($validation_status['valid'], 'A valid project+genus must return a TRUE valid status.');
-    $this->assertEmpty($validation_status['failedItems'], 'A valid project+genus does not return a failed item value.');
   }
 
 }
