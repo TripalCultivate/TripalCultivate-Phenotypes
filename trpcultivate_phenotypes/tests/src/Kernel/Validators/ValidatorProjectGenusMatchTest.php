@@ -8,7 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 
 /**
- * Tests Tripal Cultivate Phenotypes Metadata Validator Plugins.
+ * Tests Tripal Cultivate Phenotypes Project-Genus Match Validator Plugin.
  *
  * @group trpcultivate_phenotypes
  * @group validators

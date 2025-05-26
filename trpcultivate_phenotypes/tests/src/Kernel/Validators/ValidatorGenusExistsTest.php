@@ -8,12 +8,12 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 
 /**
- * Tests Tripal Cultivate Phenotypes Metadata Validator Plugins.
+ * Tests Tripal Cultivate Phenotypes Genus Exists Validator Plugin.
  *
  * @group trpcultivate_phenotypes
  * @group validators
  */
-class MetadataInputTest extends ChadoTestKernelBase {
+class ValidatorGenusExistsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
 
