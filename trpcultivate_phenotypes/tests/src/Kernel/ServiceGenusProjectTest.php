@@ -226,9 +226,9 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
 
     $set_genus = $this->service_PhenoGenusProject->getGenusOfProject($this->project);
 
-    $this->assertEquals(
-      count($set_genus),
-      count($expected['project_genus']),
+    $this->assertCount(
+      $genus_count,
+      $set_genus,
       'The number of genus set does no match expected genus count in scenario: ' . $scenario
     );
 
@@ -345,6 +345,18 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    * @dataProvider provideInvalidValuesToGenusProjectService
    */
   public function testGenusProjectServiceWithInvalidValues($scenario, $input_value, $expected) {
+
+    $has_genus = $this->chado_connection->select('1:projectprop', 'pp')
+      ->fields('pp', ['projectprop_id'])
+      ->condition('pp.type_id', $this->sysvar_genus, '=')
+      ->condition('pp.value', $input_value['genus'], '=')
+      ->execute()
+      ->fetchCol();
+
+    $this->assertEmpty(
+      $has_genus,
+      'Could not test the genus input value with existing project-genus properties entry in scenario: ' . $scenario
+    );
 
     $is_set = $this->service_PhenoGenusProject->setGenusToProject($input_value['project'], $input_value['genus']);
 
