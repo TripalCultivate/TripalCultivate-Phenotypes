@@ -41,13 +41,14 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
   /**
    * An array of project-genus input values for testing.
    *
-   * 'with-config-genus': a project with a configured genus.
-   * 'with-more-configgenus': a project with multiple configured genus.
-   * 'with-unconfig-genus': a project with unconfigured genus.
-   * 'with-no-genus': a project without a genus.
-   * 'with-other-term': a project with project-genus set not through phenotypes.
-   * 'non-existent': a project that does not exist.
-   * 'conflicting-genus': a project with set genus but is tested with another.
+   * Has the following keys:
+   * - 'with-config-genus': a project with a configured genus.
+   * - 'with-more-configgenus': a project with multiple configured genus.
+   * - 'with-unconfig-genus': a project with unconfigured genus.
+   * - 'with-no-genus': a project without a genus.
+   * - 'with-other-term': project with project-genus set not through phenotypes.
+   * - 'non-existent': a project that does not exist.
+   * - 'conflicting-genus': a project with set genus but is tested with another.
    *
    * @var array
    */
@@ -154,7 +155,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides invalid project-genus test form values.
+   * Data Provider: provides project-genus test form values.
    *
    * @return array
    *   Each test scenario is an array with the following values:
@@ -164,7 +165,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    *     - 'has_exception': TRUE if exception is expected and FALSE if not.
    *     - 'error_message': the expected exception message.
    */
-  public function provideInvalidTestFormValues() {
+  public function provideProjectGenusTestFormValue() {
 
     return [
       // #0: An empty string as form values.
@@ -211,7 +212,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #4: All is good.
+      // #4: Input values are valid.
       [
         'Input values are valid',
         [
@@ -227,7 +228,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test project genus match validator with invalid inputs.
+   * Test project genus match validator input requirements.
    *
    * @param string $scenario
    *   A string, human-readable short description of the test scenario.
@@ -238,9 +239,9 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    *     - 'has_exception': TRUE if exception is expected and FALSE if not.
    *     - 'error_message': the expected exception message.
    *
-   * @dataProvider provideInvalidTestFormValues
+   * @dataProvider provideProjectGenusTestFormValue
    */
-  public function testProjectGenusWithInvalidInput($scenario, $form_values, $expected) {
+  public function testProjectGenusInputValue($scenario, $form_values, $expected) {
 
     $exception_caught = FALSE;
     $exception_message = '';

@@ -25,18 +25,6 @@ class MetadataInputTest extends ChadoTestKernelBase {
   protected TripalCultivateValidatorManager $plugin_manager;
 
   /**
-   * An array of genus for testing.
-   *
-   * Has the following keys:
-   * - 'configured': a configured genus.
-   * - 'not-created': a genus not created.
-   * - 'not-configured': a genus that is not configured.
-   *
-   * @var array
-   */
-  protected array $test_genus;
-
-  /**
    * Modules to enable.
    *
    * @var array
@@ -49,6 +37,18 @@ class MetadataInputTest extends ChadoTestKernelBase {
     'trpcultivate',
     'trpcultivate_phenotypes',
   ];
+
+  /**
+   * An array of genus for testing.
+   *
+   * Has the following keys:
+   * - 'configured': a configured genus.
+   * - 'not-created': a genus not created.
+   * - 'not-configured': a genus that is not configured.
+   *
+   * @var array
+   */
+  private array $test_genus;
 
   /**
    * {@inheritdoc}
@@ -67,9 +67,6 @@ class MetadataInputTest extends ChadoTestKernelBase {
     // our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
     $this->container->set('tripal_chado.database', $this->chado_connection);
-
-    // Set plugin manager service.
-    $this->plugin_manager = \Drupal::service('plugin.manager.trpcultivate_validator');
 
     $genus = 'Tripalus';
     // Create our organism and configure it.
@@ -97,29 +94,32 @@ class MetadataInputTest extends ChadoTestKernelBase {
     $this->test_genus['not-configured'] = $genus;
 
     // Not created.
-    $this->test_genus['not-created'] = 'genus-' . uniqid();
+    $this->test_genus['not-created'] = 'Pinus';
 
-    // Set terms configuration.
-    $this->setTermConfig();
+    // Set plugin manager service.
+    $this->plugin_manager = $this->container->get('plugin.manager.trpcultivate_validator');
   }
 
   /**
-   * Data Provider: provides invalid test form values.
+   * Data Provider: provides genus test form values.
    *
    * @return array
    *   Each test scenario is an array with the following values:
    *   - A string, human-readable short description of the test scenario.
    *   - Form values input.
    *   - An array of expected values, with the following keys:
+   *     - 'has_exception': TRUE if exception is expected and FALSE if not.
    *     - 'error_message': the expected exception message.
    */
-  public function provideTestFormValues() {
+  public function provideGenusTestFormValue() {
+
     return [
       // #0: An empty string as form values.
       [
         'A string value',
         '',
         [
+          'has_exception' => TRUE,
           'error_message' => 'Argument #1 ($form_values) must be of type array, string given',
         ],
       ],
@@ -129,8 +129,11 @@ class MetadataInputTest extends ChadoTestKernelBase {
         'No genus field element',
         [
           'project_id' => 999,
+          'file_id' => 7,
+          'genes' => TRUE,
         ],
         [
+          'has_exception' => TRUE,
           'error_message' => 'Failed to locate genus field element. GenusExists validator expects a form field element name genus',
         ],
       ],
@@ -140,14 +143,30 @@ class MetadataInputTest extends ChadoTestKernelBase {
         'Drupal FormState object',
         new FormState(),
         [
+          'has_exception' => TRUE,
           'error_message' => 'Argument #1 ($form_values) must be of type array, Drupal\Core\Form\FormState given',
+        ],
+      ],
+
+      // #3: Input value is good.
+      [
+        'Input value is valid',
+        [
+          'project_id' => 999,
+          'file_id' => 7,
+          'genus' => 'Tripalus',
+          'genes' => TRUE,
+        ],
+        [
+          'has_exception' => FALSE,
+          'error_message' => '',
         ],
       ],
     ];
   }
 
   /**
-   * Test genus exists validator with invalid inputs.
+   * Test genus exists validator input requirements.
    *
    * @param string $scenario
    *   A string, human-readable short description of the test scenario.
@@ -155,28 +174,27 @@ class MetadataInputTest extends ChadoTestKernelBase {
    *   Form values input.
    * @param array $expected
    *   An array of expected values, with the following keys:
+   *     - 'has_exception': TRUE if exception is expected and FALSE if not.
    *     - 'error_message': the expected exception message.
    *
-   * @dataProvider provideTestFormValues
+   * @dataProvider provideGenusTestFormValue
    */
-  public function testGenusInputs($scenario, $form_values, $expected) {
-
-    // Create a plugin instance for this validator.
-    $validator_id = 'genus_exists';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+  public function testGenusExistsInputValue($scenario, $form_values, $expected) {
 
     $exception_caught = FALSE;
     $exception_message = '';
 
     try {
-      $instance->validateMetadata($form_values);
+      $this->plugin_manager->createInstance('genus_exists')
+        ->validateMetadata($form_values);
     }
     catch (\Throwable $e) {
       $exception_caught  = TRUE;
       $exception_message = $e->getMessage();
     }
 
-    $this->assertTrue(
+    $this->assertEquals(
+      $expected['has_exception'],
       $exception_caught,
       'Failed to catch exception in scenario: ' . $scenario
     );
@@ -189,7 +207,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides test genus.
+   * Data Provider: provides genus test input value.
    *
    * @return array
    *   Each test scenario is an array with the following values:
@@ -198,10 +216,10 @@ class MetadataInputTest extends ChadoTestKernelBase {
    *   - An array of expected values, with the following keys:
    *     - 'case': the case title that evaluated the genus value.
    *     - 'valid': the validation status value returned.
-   *     - 'failedItems': failed items when validation failed. It includes the
-   *        genus input value provided.
+   *     - 'failedItems': genus input value that failed validation.
    */
   public function provideTestGenusInput() {
+
     return [
       // #0: A non-existent genus.
       [
@@ -210,7 +228,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
         [
           'case' => 'Genus does not exist',
           'valid' => FALSE,
-          'failedItems' => ['genus' => 'not-created'],
+          'failedItems' => [
+            'genus_provided' => 'not-created',
+          ],
         ],
       ],
 
@@ -221,7 +241,9 @@ class MetadataInputTest extends ChadoTestKernelBase {
         [
           'case' => 'Genus exists but is not configured',
           'valid' => FALSE,
-          'failedItems' => ['genus' => 'not-created'],
+          'failedItems' => [
+            'genus_provided' => 'not-configured',
+          ],
         ],
       ],
 
@@ -232,6 +254,7 @@ class MetadataInputTest extends ChadoTestKernelBase {
         [
           'case' => 'Genus exists and is configured with phenotypes',
           'valid' => TRUE,
+          'failedItems' => [],
         ],
       ],
     ];
@@ -248,20 +271,16 @@ class MetadataInputTest extends ChadoTestKernelBase {
    *   An array of expected values, with the following keys:
    *     - 'case': the case title that evaluated the genus value.
    *     - 'valid': the validation status value returned.
-   *     - 'failedItems': failed items when validation failed. It includes the
-   *        genus input value provided.
+   *     - 'failedItems':  genus input value that failed validation.
    *
    * @dataProvider provideTestGenusInput
    */
   public function testValidatorGenusExists($scenario, $genus_input, $expected) {
 
-    // Create a plugin instance for this validator.
-    $validator_id = 'genus_exists';
-    $instance = $this->plugin_manager->createInstance($validator_id);
+    $form_values = ['genus' => $this->test_genus[$genus_input]];
 
-    $genus = $this->test_genus[$genus_input];
-    $form_values = ['genus' => $genus];
-    $validation_status = $instance->validateMetadata($form_values);
+    $validation_status = $this->plugin_manager->createInstance('genus_exists')
+      ->validateMetadata($form_values);
 
     $this->assertEquals(
       $expected['case'],
@@ -276,10 +295,14 @@ class MetadataInputTest extends ChadoTestKernelBase {
     );
 
     if (!$validation_status['valid']) {
+      // Resolve the genus.
+      $key = $expected['failedItems']['genus_provided'];
+      $expected['failedItems']['genus_provided'] = $this->test_genus[$key];
+
       $this->assertEquals(
-        $genus,
-        $validation_status['failedItems']['genus_provided'],
-        'Failed genus value is expected in failed items in scenario: ' . $scenario
+        $expected['failedItems'],
+        $validation_status['failedItems'],
+        'Failed genus value does not match expected failed items in scenario: ' . $scenario
       );
     }
   }
