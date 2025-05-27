@@ -225,9 +225,9 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
         ],
       ],
       [
-        'case-message-1' => 'The project is having an existential crisis.',
-        'case-message-2' => 'The project has no friends.',
-        'case-message-3' => 'The genus and project do not get along.',
+        'case-no-project' => 'The project is having an existential crisis.',
+        'case-no-paired-genus' => 'The project has no friends.',
+        'case-project-genus-mismatch' => 'The genus and project do not get along.',
       ],
       [
         'expected_message' => 'The genus and project do not get along.',
@@ -250,7 +250,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
         ],
       ],
       [
-        'case-message-2' => 'The [project] has no friends. Please [contact-admin].',
+        'case-no-paired-genus' => 'The [project] has no friends. Please [contact-admin].',
         'project' => 'Research Experiment',
         // 'contact-admin' token is left as the default.
       ],

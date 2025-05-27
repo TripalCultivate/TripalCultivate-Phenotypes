@@ -29,18 +29,25 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * An array of default tokens for this validator's process method.
    *
+   * The array keys are the substitutable tokens, values are the corresponding
+   * default value to replace its token.
+   * - 'project': the word to use when referring to the project.
+   * - 'contact-admin': the phrase to use when the user needs a privileged
+   *   administrator to fix the problem.
+   * - 'case-no-project': the message when a project does not exist.
+   * - 'case-no-paired-genus': the message when a project has no genus set to
+   *   it.
+   * - 'case-project-genus-mismatch': the message when the genus selected by the
+   *   user is not configured to the selected project.
+   *
    * @var array
    */
   protected static array $default_tokens = [
     'project' => 'Project',
     'contact-admin' => 'contact your administrator',
-    // Case 1: Project does not exist.
-    'case-message-1' => 'The selected [project] does not exist. Please [contact-admin] to have this added.',
-    // Case 2: Project has no genus set and could not compare with the genus
-    // provided.
-    'case-message-2' => 'The selected [project] does not have a genus paired to it. Please [contact-admin] to have this set up.',
-    // Case 3: Genus does not match a genus set to the project.
-    'case-message-3' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
+    'case-no-project' => 'The selected [project] does not exist. Please [contact-admin] to have this added.',
+    'case-no-paired-genus' => 'The selected [project] does not have a genus paired to it. Please [contact-admin] to have this set up.',
+    'case-project-genus-mismatch' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
   ];
 
   /**
@@ -159,7 +166,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       }
       else {
         if ($genus != $project_genus['genus']) {
-          // Genus does not match the genus paired to the project.
+          // This genus is not paired to the project.
           $case = 'Genus does not match a genus set to the project';
           $valid = FALSE;
           $failed_items = [
@@ -198,10 +205,11 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *     administrator to fix the problem.
    *   The following token keys will substitute the entire existing case message
    *   to the user with the value of that token.
-   *   - 'case-message-1': the message when a project does not exist.
-   *   - 'case-message-2': the message when a project has no genus set to it.
-   *   - 'case-message-3': the message when the genus selected by the user is
-   *     not configured to the selected project.
+   *   - 'case-no-project': the message when a project does not exist.
+   *   - 'case-no-paired-genus': the message when a project has no genus set
+   *     to it.
+   *   - 'case-project-genus-mismatch': the message when the genus selected
+   *     by the user is not configured to the selected project.
    *
    * @return array
    *   A render array of type "item" used to display feedback to the user about
@@ -230,20 +238,20 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // Check for one of the expected cases. Use the message stored in the
     // provided tokens array if set, otherwise use our default case message.
     if ($failure['case'] == 'Project does not exist') {
-      $message = $combined_tokens['case-message-1'];
+      $message = $combined_tokens['case-no-project'];
       $items = [
         '[project]: ' . $failure['failedItems']['project_provided'],
       ];
     }
     elseif ($failure['case'] == 'Project has no genus set and could not compare with the genus provided') {
-      $message = $combined_tokens['case-message-2'];
+      $message = $combined_tokens['case-no-paired-genus'];
       $items = [
         '[project]: ' . $failure['failedItems']['project_provided'],
         'Genus: ' . $failure['failedItems']['genus_provided'],
       ];
     }
     elseif ($failure['case'] == 'Genus does not match a genus set to the project') {
-      $message = $combined_tokens['case-message-3'];
+      $message = $combined_tokens['case-project-genus-mismatch'];
       $items = [
         '[project]: ' . $failure['failedItems']['project_provided'],
         'Genus: ' . $failure['failedItems']['genus_provided'],
