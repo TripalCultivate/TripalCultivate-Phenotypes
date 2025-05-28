@@ -134,7 +134,7 @@ class TripalCultivatePhenotypesGenusProjectService {
    *   Project (project_id number) to search.
    *
    * @return array
-   *   An array of all the genus assigned to a project.
+   *   A list of all the genus assigned to a project.
    */
   public function getGenusOfProject($project) {
     $genus_project = [];
