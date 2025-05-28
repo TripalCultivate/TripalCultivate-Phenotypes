@@ -336,7 +336,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #3: A project set with a non-configured genus.
+      // #4: A project set with a non-configured genus.
       [
         'Unconfigured genus to a project',
         'with-unconfig-genus',
@@ -349,7 +349,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #4: Project and genus matched.
+      // #5: Project and genus matched.
       [
         'A project-genus match',
         'with-config-genus',
@@ -360,7 +360,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #5: Project and genus matched from a project with multiple genus set.
+      // #6: Project and genus matched from a project with multiple genus set.
       [
         'A project-genus match from multiple genus',
         'with-more-configgenus',
