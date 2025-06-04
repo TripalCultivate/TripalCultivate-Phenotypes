@@ -8,6 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
 
 /**
@@ -1616,7 +1617,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->checkValidationStatusArray($validation_result, $validator_name);
+      ImportValidationHelper::checkValidationStatusArray($validation_result, $validator_name);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -1654,7 +1655,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->checkValidationStatusArray(
+      ImportValidationHelper::checkValidationStatusArray(
         $validation_result,
         $validator_name,
         $line_no);
