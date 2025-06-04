@@ -5,6 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal\Services\TripalLogger;
 
 /**
  * Tests associated with the Genus Ontology Service.
@@ -48,6 +49,13 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
   private $config;
 
   /**
+   * Tripal Logger log message.
+   *
+   * @var string
+   */
+  private string $log_message;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp() :void {
@@ -65,6 +73,21 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     // Create a test chado instance and then set it in the container for use by
     // our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+
+    // Mock Tripal Logger.
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
+    $container = \Drupal::getContainer();
+    $container->set('tripal.logger', $mock_logger);
 
     // Genus Ontology Service.
     $this->service_PhenoGenusOntology = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
@@ -281,6 +304,113 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
     $this->assertTrue(
       in_array($genus, $active_genus),
       'The configured genus could not be found in the list of active genus in scenario ' . $scenario
+    );
+  }
+
+  /**
+   * Data Provider: provides invalid input values and expected values to test error
+   * logs and return values.
+   *
+   * @return array
+   *   Each genus test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - A string, the genus name.
+   *   - A string, the species name.
+   *   - An array containing an invalid input for saveGenusOntologyConfigValues.
+   *   - An array of expected values, with the following keys:
+   *     - 'is_saved': a boolean value returned by saveGenusOntologyConfigValues() method to
+   *       indicate the success or failure of saving the genus.
+   *     - 'log_message': the Tripal log error message about the failed value.
+   */
+  public function provideInvalidValuesForGenusOntologyService() {
+    return [
+      // Invalid config_name
+      [
+        'Invalid config name',
+        'Genus1',
+        'species-1',
+        [
+          'Genus1' => [
+            'invalid_config_name' => 'a_value',
+          ],
+        ],
+        [
+          'is_saved' => false,
+          'log_message' => "Error. Failed to save configuration. Unexpected configuration name: invalid_config_name",
+        ],
+      ],
+      // Non-existing Genus
+      [
+        'Non-existing Genus',
+        'Genus2',
+        'species-2',
+        [
+          'Genus3' => [
+              'trait',
+              'method',
+              'unit',
+              'database',
+              'crop_ontology',
+          ],
+        ],
+        [
+          'is_saved' => false,
+          'log_message' => "Error. Failed to save configuration. Unexpected genus: Genus3",
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test genus ontology service with invalid values.
+   *
+   * @param string $scenario
+   *   Human-readable text description of the test scenario.
+   * @param string $genus
+   *   A string, the genus name.
+   * @param string $species
+   *   A string, the species name.
+   * @param array $invalid_input
+   *   An array containing an invalid input for saveGenusOntologyConfigValues.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'is_saved': a boolean value returned by saveGenusOntologyConfigValues() method to
+   *       indicate the success or failure of saving the genus.
+   *     - 'log_message': the Tripal log error message about the failed value.
+   *
+   * @dataProvider provideInvalidValuesForGenusOntologyService
+   */
+  public function testInvalidGenusOntologyService($scenario, $genus, $species, $invalid_input, $expected) {
+    // Create an organism.
+    $organism_id = $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => $species,
+      ])
+      ->execute();
+
+    $this->assertIsNumeric($organism_id, 'Unable to create organism in scenario ' . $scenario);
+
+    // See if the error is logged when the passed config name doesn't exist.
+    $is_saved = $this->service_PhenoGenusOntology->saveGenusOntologyConfigValues($invalid_input);
+    $config_values = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
+
+    $this->assertEquals(
+      $is_saved,
+      $expected['is_saved'],
+      'saveGenusOntologyConfigValues() should return ' . $expected['is_saved'] . ' in scenario ' . $scenario
+    );
+
+    $this->assertEquals(
+      $expected['log_message'],
+      $this->log_message,
+      "The logged error message does not have the message we expected for in scenario " . $scenario
+    );
+
+    $this->assertEquals(
+      NULL,
+      $config_values,
+      "Returns the invalid values that was tried to set instead of null in scenario " . $scenario
     );
   }
 
