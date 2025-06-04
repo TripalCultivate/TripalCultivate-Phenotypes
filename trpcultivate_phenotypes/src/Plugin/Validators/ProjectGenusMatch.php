@@ -27,27 +27,66 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   protected TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject;
 
   /**
-   * An array of default tokens for this validator's process method.
+   * A mapping of all of the tokens for this validator's process method(s).
    *
-   * The array keys are the substitutable tokens, values are the corresponding
-   * default value to replace its token.
-   * - 'project': the word to use when referring to the project.
-   * - 'contact-admin': the phrase to use when the user needs a privileged
-   *   administrator to fix the problem.
-   * - 'case-no-project': the message when a project does not exist.
-   * - 'case-no-paired-genus': the message when a project has no genus set to
-   *   it.
-   * - 'case-project-genus-mismatch': the message when the genus selected by the
-   *   user is not configured to the selected project.
+   * This mapping starts with all of the potential cases for this validator,
+   * followed by additional tokens which are subsitutable within the message(s)
+   * provided to the user when validation fails.
+   *
+   * For each case, the array keys are the substitutable tokens for the entire
+   * case message, and MUST contain the prefix of 'case-', and contain the
+   * following key-value pairs:
+   * - 'token': the same token (same as the parent key- this can helpful for
+   *   code readability). Recall that it must contain the prefex 'case-'.
+   * - 'dev-case': The short, developer-focussed string describing the case.
+   * - 'default-msg': An informative message that gets displayed to the user
+   *   when validation fails for this particular case. This can contain any
+   *   number of smaller, non case-specific tokens contained in square brackets.
+   *
+   * For all remaining tokens, the array key is the substitutable token, and
+   * the following key-pairs:
+   * - 'token': the substitutable text in a message. This would be flanked by
+   *   brackets within a message. For eg. [token]
+   * - 'default-msg': A string that would substitute the associated token
+   *   within a case message.
+   *
+   *  The following tokens are implemented for this mapping, with the following
+   *  descriptions for their 'default-msg' values:
+   *  - 'project': the word to use when referring to the project.
+   *  - 'contact-admin': the phrase to use when the user needs a privileged
+   *    administrator to fix the problem.
+   *  - 'case-no-project': the message when a project does not exist.
+   *  - 'case-no-paired-genus': the message when a project has no genus set to
+   *    it.
+   *  - 'case-project-genus-mismatch': the message when the genus selected by
+   *    the user is not configured to the selected project.
    *
    * @var array
    */
-  protected static array $default_tokens = [
-    'project' => 'Project',
-    'contact-admin' => 'contact your administrator',
-    'case-no-project' => 'The selected [project] does not exist. Please [contact-admin] to have this added.',
-    'case-no-paired-genus' => 'The selected [project] does not have a genus paired to it. Please [contact-admin] to have this set up.',
-    'case-project-genus-mismatch' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
+  protected static array $mapping = [
+    'case-no-project' => [
+      'token' => 'case-no-project',
+      'dev-case' => 'Project does not exist',
+      'default-msg' => 'The selected [project] does not exist. Please [contact-admin] to have this added.',
+    ],
+    'case-no-paired-genus' => [
+      'token' => 'case-no-paired-genus',
+      'dev-case' => 'Project has no genus set and could not compare with the genus provided',
+      'default-msg' => 'The selected [project] does not have a genus paired to it. Please [contact-admin] to have this set up.',
+    ],
+    'case-project-genus-mismatch' => [
+      'token' => 'case-project-genus-mismatch',
+      'dev-case' => 'Genus does not match a genus set to the project',
+      'default-msg' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
+    ],
+    'project' => [
+      'token' => 'project',
+      'default-msg' => 'Project',
+    ],
+    'contact-admin' => [
+      'token' => 'contact-admin',
+      'default-msg' => 'contact your administrator',
+    ],
   ];
 
   /**
