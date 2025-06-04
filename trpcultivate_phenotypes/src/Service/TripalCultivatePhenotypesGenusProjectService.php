@@ -103,7 +103,7 @@ class TripalCultivatePhenotypesGenusProjectService {
         foreach ($project_genus as $row) {
           if ($row->value == $genus) {
             $project_has_genus = TRUE;
-            $break;
+            break;
           }
         }
 

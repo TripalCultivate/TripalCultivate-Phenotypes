@@ -217,12 +217,27 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    */
   public function testGenusProjectService($scenario, $genus_count, $expected) {
 
+    $rand_i = mt_rand(0, $genus_count - 1);
+    $re_set_genus = '';
+
     for ($i = 0; $i < $genus_count; $i++) {
       $genus = 'Genus' . ($i + 1);
 
       $is_set = $this->service_PhenoGenusProject->setGenusToProject($this->project, $genus);
       $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario: ' . $scenario);
+
+      if ($i == $rand_i) {
+        $re_set_genus = $genus;
+      }
     }
+
+    // A randomly selected genus in the scenario is re-set to test that it will
+    // not alter the expected list of genus.
+    $is_set = $this->service_PhenoGenusProject->setGenusToProject($this->project, $re_set_genus);
+    $this->assertTrue(
+      $is_set,
+      'setGenusToProject() method failed to return the expected value TRUE when re-setting a genus in scenario: ' . $scenario
+    );
 
     $set_genus = $this->service_PhenoGenusProject->getGenusOfProject($this->project);
 
