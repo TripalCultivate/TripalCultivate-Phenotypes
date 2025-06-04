@@ -133,7 +133,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
    *    - 'Method Short Name' => 2
    *    - 'Unit' => 4
    */
-  public function provideWrongIndexKeys() {
+  public static function provideWrongIndexKeys() {
 
     $scenarios = [
       // #0: Incorrect 'Trait Name' key
