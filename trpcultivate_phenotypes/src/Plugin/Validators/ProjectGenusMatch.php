@@ -43,10 +43,10 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   when validation fails for this particular case. This can contain any
    *   number of smaller, non case-specific tokens contained in square brackets.
    *
-   * For all remaining tokens, the array key is the substitutable token, and
+   * For all remaining tokens, the array key is the substitutable token, with
    * the following key-pairs:
-   * - 'token': the substitutable text in a message. This would be flanked by
-   *   brackets within a message. For eg. [token]
+   * - 'token': the substitutable text in a message. This text would become
+   *   flanked by brackets within a message. For eg. [token]
    * - 'default-msg': A string that would substitute the associated token
    *   within a case message.
    *
@@ -272,7 +272,8 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // Combine our provided and our default token arrays. Because array_merge
     // will overwrite values in the first array with values from the second
     // array for the same keys, we provide our default tokens first.
-    $combined_tokens = array_merge(ProjectGenusMatch::$default_tokens, $tokens);
+    $default_tokens = array_column(self::$mapping, 'default-msg', 'token');
+    $combined_tokens = array_merge($default_tokens, $tokens);
 
     // Check for one of the expected cases. Use the message stored in the
     // provided tokens array if set, otherwise use our default case message.
