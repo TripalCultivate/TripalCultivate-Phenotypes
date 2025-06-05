@@ -27,8 +27,11 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   protected TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject;
 
   /**
-   * A mapping of all of the tokens for this validator's process method(s).
+   * A mapping of all of the tokens supported by this validator.
    *
+   * @var array
+   *
+   * @todo Move this generic documentation to ValidatorBase in TripalCultivate.
    * This mapping starts with all of the potential cases for this validator,
    * followed by additional tokens which are subsitutable within the message(s)
    * provided to the user when validation fails.
@@ -42,6 +45,8 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    * - 'default-msg': An informative message that gets displayed to the user
    *   when validation fails for this particular case. This can contain any
    *   number of smaller, non case-specific tokens contained in square brackets.
+   * NOTE: The token 'case-valid' is reserved for the valid case for this
+   * validator, and does not have a corresponding default message.
    *
    * For all remaining tokens, the array key is the substitutable token, with
    * the following key-pairs:
@@ -60,8 +65,6 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *    it.
    *  - 'case-project-genus-mismatch': the message when the genus selected by
    *    the user is not configured to the selected project.
-   *
-   * @var array
    */
   protected static array $mapping = [
     'case-no-project' => [
@@ -78,6 +81,10 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       'token' => 'case-project-genus-mismatch',
       'dev-case' => 'Genus does not match a genus set to the project',
       'default-msg' => 'The selected genus has not been paired to the selected [project]. Please select a paired genus or [contact-admin] if you think one is missing.',
+    ],
+    'case-valid' => [
+      'token' => 'case-valid',
+      'dev-case' => 'Project exists and project-genus match the genus provided',
     ],
     'project' => [
       'token' => 'project',
@@ -269,10 +276,11 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
     // @todo Re-add this check when the method is moved to its own Trait
     // Check the format of the failure parameter.
     // $this->checkValidationStatusArray($failure, 'ProjectGenusMatch');
+    // Grab the default messages for all of our tokens (ones with default-msg).
+    $default_tokens = array_column(self::$mapping, 'default-msg', 'token');
     // Combine our provided and our default token arrays. Because array_merge
     // will overwrite values in the first array with values from the second
     // array for the same keys, we provide our default tokens first.
-    $default_tokens = array_column(self::$mapping, 'default-msg', 'token');
     $combined_tokens = array_merge($default_tokens, $tokens);
 
     // Check for one of the expected cases. Use the message stored in the
