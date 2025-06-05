@@ -86,7 +86,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    *     - 'config_array': An array of the configuration values keyed by the
    *       genus configuration key.
    */
-  public function provideGenusForGenusOntologyService() {
+  public static function provideGenusForGenusOntologyService() {
     return [
       // #0: A one-word genus string value.
       [

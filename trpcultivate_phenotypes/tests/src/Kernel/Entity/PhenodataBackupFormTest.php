@@ -420,7 +420,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *   - edit_expectations: an array of expectations indicating what we expect
    *     when the edit form is submitted with the edit_input values.
    */
-  public function providePhenodataBackupValues(): array {
+  public static function providePhenodataBackupValues(): array {
     $scenarios = [];
 
     // Valid data, no changes on edit.
