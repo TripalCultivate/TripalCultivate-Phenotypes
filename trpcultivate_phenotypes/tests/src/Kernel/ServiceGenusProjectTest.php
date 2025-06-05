@@ -161,7 +161,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *     - 'project_genus': the expected genus returned by the method
    *     getGenusOfProject().
    */
-  public function provideGenusProjectForGenusProjectService() {
+  public static function provideGenusProjectForGenusProjectService() {
     return [
       // #0: A project with one genus.
       [

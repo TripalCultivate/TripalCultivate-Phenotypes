@@ -248,7 +248,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *     NOTE: These validation messages are produced by the form via Drupal and
    *     are not related to this module's use of validator plugins.
    */
-  public function provideFormInputValues() {
+  public static function provideFormInputValues() {
     return [
       // #0: Project not provided.
       [
