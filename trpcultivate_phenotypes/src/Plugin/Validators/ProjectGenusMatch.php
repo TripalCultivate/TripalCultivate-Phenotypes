@@ -4,6 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Validators;
 
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
+use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -273,9 +274,8 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    */
   public static function processSimpleList(array $failure, array $tokens = []) {
 
-    // @todo Re-add this check when the method is moved to its own Trait
     // Check the format of the failure parameter.
-    // $this->checkValidationStatusArray($failure, 'ProjectGenusMatch');
+    ImportValidationHelper::checkValidationStatusArray($failure, 'ProjectGenusMatch');
     // Grab the default messages for all of our tokens (ones with default-msg).
     $default_tokens = array_column(self::$mapping, 'default-msg', 'token');
     // Combine our provided and our default token arrays. Because array_merge
