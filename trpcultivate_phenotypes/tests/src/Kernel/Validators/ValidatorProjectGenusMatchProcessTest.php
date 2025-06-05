@@ -103,7 +103,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *     - 'expected_item_count': The number of failed items expected.
    *     - 'expected_items': An array of the expected failed items.
    */
-  public function provideProjectGenusMatchFailedCases() {
+  public static function provideProjectGenusMatchFailedCases() {
     $scenarios = [];
 
     // ------ DEFAULT CASES (no tokens) ------
@@ -343,7 +343,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *     - 'expected_message': The message expected in the return value of the
    *       process method for this scenario.
    */
-  public function provideExceptionCases() {
+  public static function provideExceptionCases() {
     $scenarios = [];
 
     // Make tokens an empty array for now. Maybe in the future we'll want to
