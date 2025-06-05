@@ -8,6 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
 
 /**
@@ -165,7 +166,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *     - 'expected_message': The message expected in the return value of the
    *       process method for this scenario.
    */
-  public function provideGenusExistsFailedCases() {
+  public static function provideGenusExistsFailedCases() {
     $scenarios = [];
 
     // #0: The genus does not exist
@@ -258,7 +259,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *     - 'expected_item_count': The number of failed items expected.
    *     - 'expected_item': The expected failed item.
    */
-  public function provideValidDataFileFailedCases() {
+  public static function provideValidDataFileFailedCases() {
     $scenarios = [];
 
     // #0: An invalid file ID is provided.
@@ -403,7 +404,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *     - 'expected_message': The message expected in the return value of the
    *       process method for this scenario.
    */
-  public function provideValidHeadersFailedCases() {
+  public static function provideValidHeadersFailedCases() {
     $scenarios = [];
 
     // #0: The header row is empty.
@@ -543,7 +544,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *       the failed validation status, further keyed by:
    *       - 'line_contents': The raw contents of this line that failed.
    */
-  public function provideValidDelimitedFileFailedCases() {
+  public static function provideValidDelimitedFileFailedCases() {
     $scenarios = [];
 
     // #0: The first row is empty (single whitespace).
@@ -804,7 +805,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *       - 'expected_columns': A comma-separated list of column headers that
    *         map to the expected columns with empty values.
    */
-  public function provideEmptyCellFailedCases() {
+  public static function provideEmptyCellFailedCases() {
     $scenarios = [];
 
     // #0: One empty required column on line #5
@@ -981,7 +982,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *       invalid value. For example:
    *       - 2 => [ 'Type' => 'Invalid Value' ]
    */
-  public function provideValueInListFailedCases() {
+  public static function provideValueInListFailedCases() {
     $scenarios = [];
 
     // #0: An invalid value in a required column on one row.
@@ -1225,7 +1226,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *         trait combo that failed.
    *       - 'expected_unit': The expected unit of the trait combo that failed.
    */
-  public function provideDuplicateTraitsFailedCases() {
+  public static function provideDuplicateTraitsFailedCases() {
     $scenarios = [];
 
     // #0: A duplicate trait was found at line #3 in the input file.
@@ -1497,7 +1498,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *     - 'expected_details': The details in the message expected to be in the
    *        exception being triggered.
    */
-  public function provideFaultyValidationStatusArray() {
+  public static function provideFaultyValidationStatusArray() {
     $scenarios = [];
 
     // #0: 'case' and 'failedItems' keys are missing.
@@ -1616,7 +1617,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->checkValidationStatusArray($validation_result, $validator_name);
+      ImportValidationHelper::checkValidationStatusArray($validation_result, $validator_name);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -1654,7 +1655,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $this->importer->checkValidationStatusArray(
+      ImportValidationHelper::checkValidationStatusArray(
         $validation_result,
         $validator_name,
         $line_no);
@@ -1720,7 +1721,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *       by the case message that is not recognized by the process validation
    *       method for this validator.
    */
-  public function providePassedAndUnrecognizableCases() {
+  public static function providePassedAndUnrecognizableCases() {
     $scenarios = [];
 
     $unrecognized_case_string = 'unrecognizable case';
