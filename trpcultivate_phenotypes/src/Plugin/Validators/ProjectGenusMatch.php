@@ -202,7 +202,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
       // the genus provided in the genus field.
       $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
 
-      if (!isset($project_genus['genus'])) {
+      if (empty($project_genus)) {
         // The project has no genus paired to it.
         $case = 'Project has no genus set and could not compare with the genus provided';
         $valid = FALSE;
@@ -211,16 +211,14 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
           'genus_provided' => $genus,
         ];
       }
-      else {
-        if ($genus != $project_genus['genus']) {
-          // This genus is not paired to the project.
-          $case = 'Genus does not match a genus set to the project';
-          $valid = FALSE;
-          $failed_items = [
-            'project_provided' => $project,
-            'genus_provided' => $genus,
-          ];
-        }
+      elseif (!in_array($genus, $project_genus)) {
+        // This genus is not paired to the project.
+        $case = 'Genus does not match a genus set to the project';
+        $valid = FALSE;
+        $failed_items = [
+          'project_provided' => $project,
+          'genus_provided' => $genus,
+        ];
       }
     }
 
