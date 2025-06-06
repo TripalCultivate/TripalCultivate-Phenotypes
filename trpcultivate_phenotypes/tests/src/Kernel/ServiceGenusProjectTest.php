@@ -5,6 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal\Services\TripalLogger;
 
 /**
  * Test Tripal Cultivate Phenotypes Genus Project service.
@@ -14,6 +15,13 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 class ServiceGenusProjectTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
+
+  /**
+   * A genus that is not configured.
+   *
+   * @var string
+   */
+  private const UNCONFIGURED_GENUS = 'UnconfiguredGenus';
 
   /**
    * Term Service.
@@ -41,18 +49,34 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
   ];
 
   /**
-   * Configuration.
-   *
-   * @var \Drupal\Core\Config\Config
-   */
-  private $config;
-
-  /**
-   * A genus used as an alternative genus to the genus a project has been set.
+   * Configuration terms.genus.
    *
    * @var string
    */
-  private $alt_genus = 'AlternativeGenus';
+  private $sysvar_genus;
+
+  /**
+   * A set of configured genus as test genus input value.
+   *
+   * @var array
+   */
+  private array $genus = [];
+
+  /**
+   * A test project id number.
+   *
+   * The project id number obtained after creating a project record.
+   *
+   * @var int
+   */
+  private int $project;
+
+  /**
+   * Tripal Logger log message.
+   *
+   * @var string
+   */
+  private string $log_message;
 
   /**
    * {@inheritdoc}
@@ -66,29 +90,64 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
 
-    // Fetch module settings.
-    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
-
     // Create a test chado instance and then set it in the container for use by
     // our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
     // Set terms used to create relations.
-    $this->setTermConfig();
+    $terms = $this->setTermConfig();
+    $this->sysvar_genus = $terms['genus'];
 
-    // Create and configure a genus to be used to switch a project genus to
-    // using this genus.
-    $organism_id = $this->chado_connection->insert('1:organism')
+    // Create test genus - Genus1, Genus2, Genus3, Genus4 and Genus5.
+    for ($i = 1; $i < 6; $i++) {
+      $genus = 'Genus' . $i;
+      $organism_id = $this->chado_connection->insert('1:organism')
+        ->fields([
+          'genus' => $genus,
+          'species' => 'species:' . $i,
+        ])
+        ->execute();
+
+      $this->assertIsNumeric($organism_id, 'Unable to insert genus: ' . $genus);
+
+      $this->genus[] = $genus;
+      $this->setOntologyConfig($genus);
+    }
+
+    // This is not a configured genus.
+    $this->chado_connection->insert('1:organism')
       ->fields([
-        'genus' => $this->alt_genus,
-        'species' => 'some species',
+        'genus' => self::UNCONFIGURED_GENUS,
+        'species' => 'unconfigured species',
       ])
       ->execute();
 
-    $this->assertIsNumeric($organism_id, 'Unable to create alternative genus');
+    // Create test project.
+    $project_id = $this->chado_connection->insert('1:project')
+      ->fields([
+        'name' => 'This is a test project',
+        'description' => 'A project description',
+      ])
+      ->execute();
 
-    // Configure the genus.
-    $this->setOntologyConfig($this->alt_genus);
+    $this->assertIsNumeric($project_id, 'Unable to create project');
+    $this->project = $project_id;
+
+    // Mock Tripal Logger.
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
+    $container = \Drupal::getContainer();
+    $container->set('tripal.logger', $mock_logger);
+    $this->service_PhenoGenusProject = $container->get('trpcultivate_phenotypes.genus_project');
   }
 
   /**
@@ -97,27 +156,46 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    * @return array
    *   Each genus-project test scenario is an array witht the following values:
    *   - A string, human-readable short description of the test scenario.
-   *   - A string, the name or title of a project.
-   *   - An array, the genus and species of the organism that will be
-   *     paired with the project. Keyed by 'genus' and 'species'.
+   *   - An integer indicating the number of genus to set to the project.
    *   - An array of expected values, with the following keys:
    *     - 'project_genus': the expected genus returned by the method
    *     getGenusOfProject().
-   *     - 'alternative_genus': a genus returned after setting a genus.
    */
   public static function provideGenusProjectForGenusProjectService() {
     return [
-      // #0: A project with configured genus.
+      // #0: A project with one genus.
       [
-        'A project with configured genus',
-        'Project - Plant Breeding',
+        'A project with a genus',
+        1,
         [
-          'genus' => 'a genus',
-          'species' => 'a species',
+          'project_genus' => ['Genus1'],
         ],
+      ],
+
+      // #1: A project with two genus.
+      [
+        'A project with two genus',
+        2,
         [
-          'project_genus' => 'a genus',
-          'alternative_genus' => 'AlternativeGenus',
+          'project_genus' => [
+            'Genus1',
+            'Genus2',
+          ],
+        ],
+      ],
+
+      // #2: A project with 5 genus.
+      [
+        'A project with five genus',
+        5,
+        [
+          'project_genus' => [
+            'Genus1',
+            'Genus2',
+            'Genus3',
+            'Genus4',
+            'Genus5',
+          ],
         ],
       ],
     ];
@@ -128,72 +206,240 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *
    * @param string $scenario
    *   Human-readable text description of the test scenario.
-   * @param string $project_name
-   *   A string, the name or title of a project.
-   * @param array $project_genus
-   *   An array, the genus and species of the organism that will be
-   *   paired with the project. Keyed by 'genus' and 'species'.
+   * @param int $genus_count
+   *   An integer indicating the number of genus to set to the project.
    * @param array $expected
    *   An array of expected values, with the following keys:
    *     - 'project_genus': the expected genus returned by the method
    *     getGenusOfProject().
-   *     - 'alternative_genus': a genus returned after setting a genus.
    *
    * @dataProvider provideGenusProjectForGenusProjectService
    */
-  public function testGenusProjectService($scenario, $project_name, $project_genus, $expected) {
-    // Create the project record.
+  public function testGenusProjectService($scenario, $genus_count, $expected) {
+
+    $rand_i = mt_rand(0, $genus_count - 1);
+    $re_set_genus = '';
+
+    for ($i = 0; $i < $genus_count; $i++) {
+      $genus = 'Genus' . ($i + 1);
+
+      $is_set = $this->service_PhenoGenusProject->setGenusToProject($this->project, $genus);
+      $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario: ' . $scenario);
+
+      if ($i == $rand_i) {
+        $re_set_genus = $genus;
+      }
+    }
+
+    // A randomly selected genus in the scenario is re-set to test that it will
+    // not alter the expected list of genus.
+    $is_set = $this->service_PhenoGenusProject->setGenusToProject($this->project, $re_set_genus);
+    $this->assertTrue(
+      $is_set,
+      'setGenusToProject() method failed to return the expected value TRUE when re-setting a genus in scenario: ' . $scenario
+    );
+
+    $set_genus = $this->service_PhenoGenusProject->getGenusOfProject($this->project);
+
+    $this->assertCount(
+      $genus_count,
+      $set_genus,
+      'The number of genus set does no match expected genus count in scenario: ' . $scenario
+    );
+
+    $this->assertEquals(
+      $set_genus,
+      $expected['project_genus'],
+      'The genus set does no match expected genus in scenario: ' . $scenario
+    );
+
+    // Test the rank assigned is the order of each genus as it appears in the
+    // expected genus array (plus 1 - since zero-based index and rank starts 1).
+    $project_genus = $this->chado_connection->select('1:projectprop', 'pp')
+      ->fields('pp', ['value', 'rank'])
+      ->condition('pp.project_id', $this->project, '=')
+      ->condition('pp.type_id', $this->sysvar_genus, '=')
+      ->orderBy('rank', 'ASC')
+      ->execute()
+      ->fetchAll();
+
+    foreach ($project_genus as $row) {
+      $key = array_search($row->value, $expected['project_genus']);
+
+      $this->assertEquals(
+        $key + 1,
+        $row->rank,
+        'The rank assigned to the genus does not match expected rank value in scenario: ' . $scenario
+      );
+    }
+  }
+
+  /**
+   * Data Provider: provides invalid genus and project as test input values.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array keyed by project and genus to represent project and genus
+   *     input values, respectively.
+   *   - An array of expected values, with the following keys:
+   *     - 'is_set': a boolean value returned by setGenusToProject() method to
+   *       indicate the success or failure of the set genus to project request.
+   *     - 'log_message': the Tripal log error message about the failed value.
+   */
+  public function provideInvalidValuesToGenusProjectService() {
+    return [
+      // #0: An empty string value as project input value.
+      [
+        'Empty string as project',
+        [
+          'project' => '',
+          'genus' => 'Genus1',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Project id is empty string, 0 or not a positive number. Could not replace genus.',
+        ],
+      ],
+
+      // #1: Project ID is the value 0.
+      [
+        'Project ID is 0',
+        [
+          'project' => 0,
+          'genus' => 'Genus1',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Project id is empty string, 0 or not a positive number. Could not replace genus.',
+        ],
+      ],
+
+      // #2: Genus is empty string value.
+      [
+        'Empty string as genus',
+        [
+          'project' => 1,
+          'genus' => '',
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Genus is an empty string. Could not replace genus.',
+        ],
+      ],
+
+      // #3: Genus is not configured.
+      [
+        'Empty string as genus',
+        [
+          'project' => 1,
+          'genus' => self::UNCONFIGURED_GENUS,
+        ],
+        [
+          'is_set' => FALSE,
+          'log_message' => 'Error, Genus is not configured. Could not replace genus.',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test setGenusToProject() method with invalid values.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $input_value
+   *   An array keyed by project and genus to represent project and genus
+   *   input values, respectively.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'is_set': a boolean value returned by setGenusToProject() method to
+   *       indicate the success or failure of the set genus to project request.
+   *     - 'log_message': the Tripal log error message about the failed value.
+   *
+   * @dataProvider provideInvalidValuesToGenusProjectService
+   */
+  public function testGenusProjectServiceWithInvalidValues($scenario, $input_value, $expected) {
+
+    $has_genus = $this->chado_connection->select('1:projectprop', 'pp')
+      ->fields('pp', ['projectprop_id'])
+      ->condition('pp.type_id', $this->sysvar_genus, '=')
+      ->condition('pp.value', $input_value['genus'], '=')
+      ->execute()
+      ->fetchCol();
+
+    $this->assertEmpty(
+      $has_genus,
+      'Could not test the genus input value with existing project-genus properties entry in scenario: ' . $scenario
+    );
+
+    $is_set = $this->service_PhenoGenusProject->setGenusToProject($input_value['project'], $input_value['genus']);
+
+    $this->assertEquals(
+      $is_set,
+      $expected['is_set'],
+      'The setGenusToProject() method is expected to return false when project or genus is an invalid value in scenario: ' . $scenario
+    );
+
+    $this->assertEquals(
+      $expected['log_message'],
+      $this->log_message,
+      'The log messaged returned by setGenusToProject() with invalid value does not match expected log message in scenario: ' . $scenario
+    );
+  }
+
+  /**
+   * Test getGenusOfProject() method.
+   */
+  public function testGetGenusOfProject() {
+
+    // Unconfigured genus.
+    foreach ($this->genus as $configured_genus) {
+      $this->service_PhenoGenusProject->setGenusToProject($this->project, $configured_genus);
+    }
+
+    $genus_project_ins = $this->chado_connection->insert('1:projectprop')
+      ->fields([
+        'project_id' => $this->project,
+        'type_id' => $this->sysvar_genus,
+        'value' => self::UNCONFIGURED_GENUS,
+        'rank' => 10,
+      ])
+      ->execute();
+
+    $this->assertIsNumeric($genus_project_ins, 'Unable to create genus-project (unconfigured genus) entry.');
+
+    $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($this->project);
+
+    $this->assertNotContains(
+      self::UNCONFIGURED_GENUS,
+      $project_genus,
+      'Unconfigured genus set to a project is not returned by the getGenusOfProject() method.'
+    );
+
+    // Invalid project.
+    foreach (['', 0, 9999] as $project) {
+      $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project);
+
+      $this->assertEmpty(
+        $project_genus,
+        'The return value of getGenusOfProject() method does not match expected value of empty array when project is invalid.'
+      );
+    }
+
+    // Not set with genus.
     $project_id = $this->chado_connection->insert('1:project')
       ->fields([
-        'name' => $project_name,
+        'name' => 'This is another test project',
         'description' => 'A project description',
       ])
       ->execute();
 
-    $this->assertIsNumeric($project_id, 'Unable to create project in scenario ' . $scenario);
+    $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
 
-    // Create the genus record.
-    $organism_id = $this->chado_connection->insert('1:organism')
-      ->fields([
-        'genus' => $project_genus['genus'],
-        'species' => $project_genus['species'],
-      ])
-      ->execute();
-
-    $this->assertIsNumeric($organism_id, 'Unable to create project genus in scenario ' . $scenario);
-
-    // Configure the genus.
-    $this->setOntologyConfig($project_genus['genus']);
-
-    // Genus Project Service.
-    $this->service_PhenoGenusProject = \Drupal::service('trpcultivate_phenotypes.genus_project');
-    $this->assertNotNull($this->service_PhenoGenusProject, 'Failed to instantiate Genus Project Service in scenario ' . $scenario);
-
-    // Test setGenusToProject().
-    $is_set = $this->service_PhenoGenusProject->setGenusToProject($project_id, $project_genus['genus'], TRUE);
-    $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario ' . $scenario);
-
-    // Keep the same project genus by setting the replace flag to FALSE.
-    $is_set = $this->service_PhenoGenusProject->setGenusToProject($project_id, $project_genus['genus'], FALSE);
-    $this->assertTrue($is_set, 'Project Genus Service failed to set a genus to project in scenario ' . $scenario);
-
-    // Test getGenusOfProject().
-    $genus_of_project = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
-    $this->assertEquals(
-      $expected['project_genus'],
-      $genus_of_project['genus'],
-      'The genus of project does not match expected genus in scenario ' . $scenario
-    );
-
-    // Replace the genus with the alternative genus.
-    $is_alt_genus_set = $this->service_PhenoGenusProject->setGenusToProject($project_id, $this->alt_genus, TRUE);
-    $this->assertTrue($is_alt_genus_set, 'Project Genus Service failed to set alternate genus to project in scenario ' . $scenario);
-
-    $new_genus_of_project = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
-    $this->assertEquals(
-      $expected['alternative_genus'],
-      $new_genus_of_project['genus'],
-      'The genus of project does not match expected alternative genus in scenario ' . $scenario
+    $this->assertEmpty(
+      $project_genus,
+      'The return value of getGenusOfProject() method does not match expected value of empty array when project has no set genus.'
     );
   }
 

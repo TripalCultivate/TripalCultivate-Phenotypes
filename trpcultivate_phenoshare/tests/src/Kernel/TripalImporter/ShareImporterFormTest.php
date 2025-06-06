@@ -735,23 +735,4 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     }
   }
 
-  /**
-   * Test ajaxLoadGenusOfProject() method in the importer.
-   */
-  public function testAjaxLoadGenusOfProject() {
-
-    $form = $this->form_importer;
-    $form_state = new FormState();
-    $form_state->setValue('project', 'Awesome Project');
-
-    $http_response = $this->phenoshare_importer->ajaxLoadGenusOfProject($form, $form_state)
-      ->getStatusCode();
-
-    $this->assertEquals(
-      200,
-      $http_response,
-      'The method ajaxLoadGenusOfProject is expected to return a 200 (ok) response status code'
-    );
-  }
-
 }

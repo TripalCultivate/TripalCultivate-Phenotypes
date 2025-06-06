@@ -61,18 +61,17 @@ class TripalCultivatePhenotypesGenusProjectService {
   /**
    * Assign a genus to an experiment/project.
    *
+   * Each genus-project relationship is an entry in projectprop table.
+   *
    * @param int $project
    *   Project (project id number) the parameter $genus will be assigned to.
    * @param string $genus
    *   Genus name/title.
-   * @param bool $replace
-   *   True to replace existing genus of a project with a different genus.
-   *   Default to False.
    *
    * @return bool
    *   True, genus was set successfully or false on error/fail.
    */
-  public function setGenusToProject($project, $genus, $replace = FALSE) {
+  public function setGenusToProject($project, $genus) {
     $error = 0;
 
     if (empty($project) || $project <= 0) {
@@ -89,36 +88,34 @@ class TripalCultivatePhenotypesGenusProjectService {
       $is_active_genus = (in_array($g, array_keys($this->sysvar_genusontology))) ? TRUE : FALSE;
 
       if ($is_active_genus) {
-        $result = $this->chado_connection->query("
-          SELECT projectprop_id AS id FROM {1:projectprop}
-          WHERE project_id = :project_id AND type_id = :type_id LIMIT 1
-        ", [':project_id' => $project, ':type_id' => $this->sysvar_genus]);
+        // Pull all genus assigned to the project.
+        $project_genus = $this->chado_connection->select('1:projectprop', 'pp')
+          ->fields('pp', ['value', 'rank'])
+          ->condition('pp.project_id', $project, '=')
+          ->condition('pp.type_id', $this->sysvar_genus, '=')
+          ->orderBy('rank', 'DESC')
+          ->execute()
+          ->fetchAll();
 
-        $projectprop_id = $result->fetchField();
+        $project_has_genus = FALSE;
 
-        if ($projectprop_id > 0) {
-          // Has a genus.
-          if ($replace) {
-            // And wishes to replace with another genus.
-            $this->chado_connection->query("
-              UPDATE {1:projectprop} SET value = :new_genus WHERE projectprop_id = :id
-            ", [':new_genus' => $genus, ':id' => $projectprop_id]);
+        // Determine if the project already had the genus.
+        foreach ($project_genus as $row) {
+          if ($row->value == $genus) {
+            $project_has_genus = TRUE;
+            break;
           }
-
-          // Do nothing if maintain the same genus.
         }
-        else {
-          // Not set yet, no record in projectprop.
-          // Create a relationship regardless to replace or not.
-          $sql = "INSERT INTO {1:projectprop} (project_id, type_id, value) VALUES (:project, :config_genus, :genus)";
-          $this->chado_connection->query(
-            $sql,
-            [
-              ':project' => $project,
-              ':config_genus' => $this->sysvar_genus,
-              ':genus' => $genus,
-            ],
-          );
+
+        if (!$project_has_genus) {
+          $this->chado_connection->insert('1:projectprop')
+            ->fields([
+              'project_id' => $project,
+              'type_id' => $this->sysvar_genus,
+              'value' => $genus,
+              'rank' => (isset($project_genus[0])) ? $project_genus[0]->rank + 1 : 1,
+            ])
+            ->execute();
         }
       }
       else {
@@ -131,16 +128,16 @@ class TripalCultivatePhenotypesGenusProjectService {
   }
 
   /**
-   * Get genus of an experiment/project.
+   * Get all genus assigned to a project.
    *
    * @param int $project
    *   Project (project_id number) to search.
    *
    * @return array
-   *   Key is genus/organism id number and value is the genus name/title.
+   *   A list of all the genus assigned to a project.
    */
   public function getGenusOfProject($project) {
-    $genus_project = 0;
+    $genus_project = [];
 
     if ($project > 0) {
       $sysvar_genus = array_keys($this->sysvar_genusontology);
@@ -150,17 +147,18 @@ class TripalCultivatePhenotypesGenusProjectService {
 
       // Fetch genus paired to a project. If multiple genus have been set prior,
       // restrict search to genus that are active/configured using this module.
-      $result = $this->chado_connection->query("
-        SELECT organism_id AS id, genus FROM {1:organism}
-        WHERE genus = (SELECT value::VARCHAR FROM {1:projectprop}
-          WHERE project_id = :project_id AND type_id = :type_id AND LOWER(value) IN (:active_genus[]) LIMIT 1)
-        LIMIT 1
-      ", [':project_id' => $project, ':type_id' => $this->sysvar_genus, ':active_genus[]' => $active_genus]);
+      $result = $this->chado_connection->select('1:projectprop', 'pp')
+        ->fields('pp', ['value'])
+        ->condition('pp.project_id', $project, '=')
+        ->condition('pp.type_id', $this->sysvar_genus, '=')
+        ->where('LOWER(pp.value) IN (:active_genus[])', [':active_genus[]' => $active_genus])
+        ->orderBy('rank', 'ASC')
+        ->execute();
 
-      $genus_project = $result->fetchObject();
+      $genus_project = $result->fetchCol();
     }
 
-    return ($genus_project) ? ['id' => $genus_project->id, 'genus' => $genus_project->genus] : 0;
+    return ($genus_project) ? $genus_project : [];
   }
 
 }
