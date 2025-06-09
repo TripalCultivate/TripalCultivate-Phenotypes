@@ -270,7 +270,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   - If the case string returned by the validator implied validation passed.
    *   - If the case string returned by the validator is not recognized.
    */
-  public static function processSimpleList(array $failure, array $tokens = []) {
+  public static function processItemWithSimpleList(array $failure, array $tokens = []) {
 
     // Check the format of the failure parameter.
     ImportValidationHelper::checkValidationStatusArray($failure, 'ProjectGenusMatch');

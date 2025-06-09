@@ -82,7 +82,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider for testProcessSimpleList().
+   * Data Provider for testProcessItemWithSimpleList().
    *
    * @return array
    *   Each scenario is an array with the following:
@@ -292,14 +292,14 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideProjectGenusMatchFailedCases
    */
-  public function testProcessSimpleList(array $validation_result, array $tokens, array $expectations) {
+  public function testProcessItemWithSimpleList(array $validation_result, array $tokens, array $expectations) {
 
     // Create a plugin instance for this validator.
     $validator_id = 'project_genus_match';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Call the process method on our validation result.
-    $render_array = $instance->processSimpleList($validation_result, $tokens);
+    $render_array = $instance->processItemWithSimpleList($validation_result, $tokens);
 
     // Render the array we were returned.
     $rendered_markup = $this->renderer->renderRoot($render_array);
@@ -313,7 +313,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     // Next, check for expected items. Make sure we have the expected 1 item.
     $selected_list_items = $this->cssSelect('div.tcp-project-genus-match-failures ul li');
     $list_item_count = count($selected_list_items);
-    $this->assertEquals($expectations['expected_item_count'], $list_item_count, 'We expected ' . $expectations['expected_item_count'] . ' list items in the render array from processing ProjectGenusMatch failures, but instead found ' . $list_item_count . '.');
+    $this->assertCount($expectations['expected_item_count'], $selected_list_items, 'We expected ' . $expectations['expected_item_count'] . ' list items in the render array from processing ProjectGenusMatch failures, but instead found ' . $list_item_count . '.');
 
     // Grab the contents of 'SimpleXMLElement Object' and assert it matches what
     // we expect.
@@ -324,7 +324,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider for triggering exceptions in processSimpleList().
+   * Data Provider for triggering exceptions in processItemWithSimpleList().
    *
    * @return array
    *   Each scenario is an array with the following:
@@ -407,7 +407,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideExceptionCases
    */
-  public function testProcessSimpleListExceptions(array $validation_result, array $tokens, array $expectations) {
+  public function testProcessItemWithSimpleListExceptions(array $validation_result, array $tokens, array $expectations) {
 
     // Create a plugin instance for this validator.
     $validator_id = 'project_genus_match';
@@ -417,7 +417,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $instance->processSimpleList($validation_result, $tokens);
+      $instance->processItemWithSimpleList($validation_result, $tokens);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;

@@ -981,7 +981,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         $tokens = [
           'project' => 'Research Experiment',
         ];
-        $messages[$validator_name]['details'] = ProjectGenusMatch::processSimpleList($failures[$validator_name], $tokens);
+        $messages[$validator_name]['details'] = ProjectGenusMatch::processItemWithSimpleList($failures[$validator_name], $tokens);
       }
       else {
         $messages[$validator_name]['status'] = 'pass';
