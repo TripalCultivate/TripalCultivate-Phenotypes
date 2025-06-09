@@ -242,7 +242,7 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *     - 'genus_provided': The name of the genus provided.
    * @param array $tokens
    *   [OPTIONAL] An array of values to use for token replacement.
-   *   @see ProjectGenusMatch::$default_tokens
+   *   @see ProjectGenusMatch::$mapping
    *   The following tokens can be specfied as keys, with value as the
    *   replacement value for the token. These apply to all failure cases.
    *   - 'project': the word to use when referring to the project.
