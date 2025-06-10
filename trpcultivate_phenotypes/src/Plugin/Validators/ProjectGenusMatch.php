@@ -30,32 +30,8 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * A mapping of all of the tokens supported by this validator.
    *
-   * @var array
-   *
-   * @todo Move this generic documentation to ValidatorBase in TripalCultivate.
-   * This mapping starts with all of the potential cases for this validator,
-   * followed by additional tokens which are subsitutable within the message(s)
-   * provided to the user when validation fails.
-   *
-   * For each case, the array keys are the substitutable tokens for the entire
-   * case message, and MUST contain the prefix of 'case-', and contain the
-   * following key-value pairs:
-   * - 'token': the same token (same as the parent key- this can helpful for
-   *   code readability). Recall that it must contain the prefex 'case-'.
-   * - 'dev-case': The short, developer-focussed string describing the case.
-   * - 'default-msg': An informative message that gets displayed to the user
-   *   when validation fails for this particular case. This can contain any
-   *   number of smaller, non case-specific tokens contained in square brackets.
-   * NOTE: The token 'case-valid' is reserved for the valid case for this
-   * validator, and does not have a corresponding default message.
-   *
-   * For all remaining tokens, the array key is the substitutable token, with
-   * the following key-pairs:
-   * - 'token': the substitutable text in a message. This text would become
-   *   flanked by brackets within a message. For eg. [token]
-   * - 'default-msg': A string that would substitute the associated token
-   *   within a case message.
-   *
+   *  An associative array mapping tokens to their details where each element
+   *  may contain a default message but must contain the dev-case and token.
    *  The following tokens are implemented for this mapping, with the following
    *  descriptions for their 'default-msg' values:
    *  - 'project': the word to use when referring to the project.
@@ -66,6 +42,8 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *    it.
    *  - 'case-project-genus-mismatch': the message when the genus selected by
    *    the user is not configured to the selected project.
+   *
+   * @var array
    */
   protected static array $mapping = [
     'case-no-project' => [
