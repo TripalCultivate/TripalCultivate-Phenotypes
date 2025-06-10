@@ -30,20 +30,22 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * A mapping of all of the tokens supported by this validator.
    *
-   *  An associative array mapping tokens to their details where each element
-   *  may contain a default message but must contain the dev-case and token.
-   *  The following tokens are implemented for this mapping, with the following
-   *  descriptions for their 'default-msg' values:
-   *  - 'project': the word to use when referring to the project.
-   *  - 'contact-admin': the phrase to use when the user needs a privileged
-   *    administrator to fix the problem.
-   *  - 'case-no-project': the message when a project does not exist.
-   *  - 'case-no-paired-genus': the message when a project has no genus set to
-   *    it.
-   *  - 'case-project-genus-mismatch': the message when the genus selected by
-   *    the user is not configured to the selected project.
+   * An associative array mapping tokens to their details where each element
+   * may contain a default message but must contain the dev-case and token.
+   * The following tokens are implemented for this mapping, with the following
+   * descriptions for their 'default-msg' values:
+   * - 'project': the word to use when referring to the project.
+   * - 'contact-admin': the phrase to use when the user needs a privileged
+   *   administrator to fix the problem.
+   * - 'case-no-project': the message when a project does not exist.
+   * - 'case-no-paired-genus': the message when a project has no genus set to
+   *   it.
+   * - 'case-project-genus-mismatch': the message when the genus selected by
+   *   the user is not configured to the selected project.
    *
    * @var array
+   *
+   * @see TripalCultivate/src/TripalCultivateValidator/TripalCultivateValidatorBase::$mapping
    */
   protected static array $mapping = [
     'case-no-project' => [
