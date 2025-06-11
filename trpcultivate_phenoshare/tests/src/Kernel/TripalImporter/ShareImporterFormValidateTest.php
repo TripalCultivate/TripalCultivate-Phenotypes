@@ -289,7 +289,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         [
           'project_genus_match' => [
-            'title' => 'Genus does not match the genus set to the project',
+            'title' => 'Research Experiment exists and has been configured with selected genus',
             'status' => 'fail',
             'details' => 'The selected genus has not been paired to the selected Research Experiment. Please select a paired genus or contact your administrator if you think one is missing.',
           ],

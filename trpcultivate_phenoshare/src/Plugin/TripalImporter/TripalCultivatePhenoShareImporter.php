@@ -10,6 +10,7 @@ use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\trpcultivate_phenotypes\Plugin\Validators\ProjectGenusMatch;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
@@ -976,7 +977,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     if (array_key_exists($validator_name, $failures)) {
       if (!empty($failures[$validator_name])) {
         $messages[$validator_name]['status'] = 'fail';
-        $messages[$validator_name]['details'] = $this->processProjectGenusMatchFailures($failures[$validator_name]);
+        // Change wording in messages from 'project' to 'Research Experiment'.
+        $tokens = [
+          'project' => 'Research Experiment',
+        ];
+        $messages[$validator_name]['details'] = ProjectGenusMatch::processItemWithSimpleList($failures[$validator_name], $tokens);
       }
       else {
         $messages[$validator_name]['status'] = 'pass';
@@ -1036,77 +1041,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     }
 
     return $messages;
-  }
-
-  /**
-   * Process failed validation from ProjectGenusMatch into a render array.
-   *
-   * @param array $validation_result
-   *   An associative array that was returned by the ProjectGenusMatch validator
-   *   in the event of failed validation. It contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed with the following keys.
-   *     - 'project_provided': The name of the project provided.
-   *     - 'genus_provided': The name of the genus provided.
-   *
-   * @return array
-   *   A render array of type unordered list which is used to display feedback
-   *   to the user about the case that failed and the failed items from the
-   *   input file. Each item in the list contains the project that was entered
-   *   in the form which failed validation.
-   *
-   * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
-   *   - If the case string returned by the validator implied validation passed.
-   *   - If the case string returned by the validator is not recognized.
-   */
-  public function processProjectGenusMatchFailures(array $validation_result) {
-
-    // Check the format of the validation_result parameter.
-    ImportValidationHelper::checkValidationStatusArray($validation_result, 'ProjectGenusMatch');
-
-    // Check for one of the expected cases.
-    if ($validation_result['case'] == 'Project does not exist') {
-      $message = 'The selected Research Experiment does not exist. Please contact your administrator to have this added.';
-      $item = $validation_result['failedItems']['project_provided'];
-    }
-    elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
-      $message = 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.';
-      $item = $validation_result['failedItems']['genus_provided'];
-    }
-    elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
-      $message = 'The selected genus has not been paired to the selected Research Experiment. Please select a paired genus or contact your administrator if you think one is missing.';
-      $item = $validation_result['failedItems']['genus_provided'];
-    }
-    elseif ($validation_result['case'] == 'Project exists and project-genus match the genus provided') {
-      throw new \Exception('The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.');
-    }
-    else {
-      throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
-    }
-
-    // Build the render array.
-    $render_array = [
-      '#type' => 'item',
-      '#title' => $message,
-      '#wrapper_attributes' => [
-        'class' => [
-          'tcp-project-genus-match-failures',
-        ],
-      ],
-      'items' => [
-        '#theme' => 'item_list',
-        '#type' => 'ul',
-        '#items' => [
-          [
-            '#markup' => $item,
-          ],
-        ],
-      ],
-    ];
-
-    return $render_array;
   }
 
   /**

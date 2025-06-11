@@ -287,7 +287,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *       indicate the success or failure of the set genus to project request.
    *     - 'log_message': the Tripal log error message about the failed value.
    */
-  public function provideInvalidValuesToGenusProjectService() {
+  public static function provideInvalidValuesToGenusProjectService() {
     return [
       // #0: An empty string value as project input value.
       [

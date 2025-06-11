@@ -111,7 +111,7 @@ class ValidatorGenusExistsTest extends ChadoTestKernelBase {
    *     - 'has_exception': TRUE if exception is expected and FALSE if not.
    *     - 'error_message': the expected exception message.
    */
-  public function provideGenusTestFormValue() {
+  public static function provideGenusTestFormValue() {
 
     return [
       // #0: An empty string as form values.
@@ -218,7 +218,7 @@ class ValidatorGenusExistsTest extends ChadoTestKernelBase {
    *     - 'valid': the validation status value returned.
    *     - 'failedItems': genus input value that failed validation.
    */
-  public function provideTestGenusInput() {
+  public static function provideTestGenusInput() {
 
     return [
       // #0: A non-existent genus.

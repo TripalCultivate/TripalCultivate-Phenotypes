@@ -165,7 +165,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    *     - 'has_exception': TRUE if exception is expected and FALSE if not.
    *     - 'error_message': the expected exception message.
    */
-  public function provideProjectGenusTestFormValue() {
+  public static function provideProjectGenusTestFormValue() {
 
     return [
       // #0: An empty string as form values.
@@ -281,7 +281,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    *     - 'failedItems': input items that failed validation, including the
    *       project and/or genus input values provided.
    */
-  public function provideTestProjectGenusInput() {
+  public static function provideTestProjectGenusInput() {
 
     return [
       // #0: A non-existent project.
@@ -305,6 +305,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
           'case' => 'Project has no genus set and could not compare with the genus provided',
           'valid' => FALSE,
           'failedItems' => [
+            'project_provided' => 'project',
             'genus_provided' => 'genus',
           ],
         ],
@@ -315,9 +316,10 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
         'Incorrect genus for a project',
         'conflicting-genus',
         [
-          'case' => 'Genus does not match the genus set to the project',
+          'case' => 'Genus does not match a genus set to the project',
           'valid' => FALSE,
           'failedItems' => [
+            'project_provided' => 'project',
             'genus_provided' => 'genus',
           ],
         ],
@@ -331,6 +333,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
           'case' => 'Project has no genus set and could not compare with the genus provided',
           'valid' => FALSE,
           'failedItems' => [
+            'project_provided' => 'project',
             'genus_provided' => 'genus',
           ],
         ],
@@ -344,6 +347,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
           'case' => 'Project has no genus set and could not compare with the genus provided',
           'valid' => FALSE,
           'failedItems' => [
+            'project_provided' => 'project',
             'genus_provided' => 'genus',
           ],
         ],
