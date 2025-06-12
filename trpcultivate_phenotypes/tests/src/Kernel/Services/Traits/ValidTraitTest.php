@@ -4,6 +4,8 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\Core\Url;
+use Drupal\Core\Database\StatementWrapperIterator;
 
 /**
  * Tests that a valid trait/method/unit combination can be inserted/retrieved.
@@ -204,6 +206,96 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
+  }
+
+  /**
+   * Test setTraitGenus() method for error cases.
+   */
+  public function testSetTraitGenus() {
+    // Test case for where the genus is not configured
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $this->service_traits->setTraitGenus('Test Genus');
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'Exception: The genus Test Genus was not configured for'.
+      'use with Tripal Cultivate Phenotypes. To configure this genus, go to ' .
+      Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
+      ' and set the controlled vocabularies associated with this genus.',
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
+
+    // Test case for where the name is not returned
+    $mock_statement = $this->getMockBuilder(StatementWrapperIterator::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['fetchField'])
+      ->getMock();
+    $mock_statement->method('fetchField')
+      ->willReturn(null);
+
+    $mock_database = $this->getMockBuilder(ChadoConnection::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods(['query'])
+      ->getMock();
+    $mock_database->method('query')
+      ->willReturn($mock_statement);
+
+    $this->container->set('tripal_chado.database', $mock_database);
+
+    $this->container->set('trpcultivate_phenotypes.traits', null);
+    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $this->service_traits->setTraitGenus($this->genus);
+    }
+    catch (\Exception $e) {
+      $exception_message = $e->getMessage();
+    }
+    $this->assertStringStartsWith(
+      'We were unable to retrieve the name for the Genus ',
+      $exception_message,
+      "The expected error was not thrown.",
+    );
+
+    // Test case where the terms are not set correctly
+    $new_terms = [
+      'method_to_trait_relationship_type' => 0,
+      'unit_to_method_relationship_type' => -2,
+    ];
+    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+    foreach ($new_terms as $key => $value) {
+      $this->config->set("trpcultivate.phenotypes.ontology.terms.$key", $new_terms[$key]);
+    }
+    $terms_config = $this->config->get('trpcultivate.phenotypes.ontology.terms');
+
+    $this->container->set('trpcultivate_phenotypes.traits', null);
+    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $this->service_traits->setTraitGenus($this->genus);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'Exception: Term(s) method_to_trait_relationship_type, unit_to_method_relationship_type used to create trait
+      asset relationships was not configured. To configure terms, go to' .Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
+      'and set the controlled vocabulary associated with the term.',
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
   }
 
   /**
