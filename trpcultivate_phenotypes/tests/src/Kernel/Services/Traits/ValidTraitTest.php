@@ -43,7 +43,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * Modules to enable.
    */
   protected static $modules = [
-   'tripal',
+    'system',
+    'tripal',
    'tripal_chado',
    'trpcultivate_phenotypes'
   ];
@@ -73,6 +74,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set test environment.
     \Drupal::state()->set('is_a_test_environment', TRUE);
+
+    $this->prepareEnvironment(['TripalTerm']);
 
     // Open connection to Chado
 		$this->chado_connection = $this->getTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
@@ -299,6 +302,48 @@ class ValidTraitTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test the insertTrait() method
+   */
+  public function testInsertTrait() {
+    // Set the genus to null.
+    $this->genus = null;
+
+    // Generate some fake/unique names.
+    $trait_name  = 'TraitABC'  . uniqid();
+    $method_name = 'MethodABC' . uniqid();
+    $unit_name   = 'UnitABC'   . uniqid();
+    $trait = [
+      'Trait Name' => $trait_name,
+      'Trait Description' => $trait_name  . ' Description',
+      'Method Short Name' => $method_name . '-SName',
+      'Collection Method' => $method_name . ' - Pull from ground',
+      'Unit' => $unit_name,
+      'Type' => 'Quantitative'
+    ];
+
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $this->service_traits->insertTrait($trait);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'Exception: No genus has been set. See setting a genus in the'.
+      'Traits Service and make sure to use a configured genus. To configure a'.
+      'genus or see all configured genus, go to ' .
+      Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
+    // Set the genus back to original genus.
+    $this->genus = 'Tripalus';
+  }
+
+  /**
    * Test that we can retrieve a trait we just inserted.
    */
   public function testTraitsServiceGetters() {
@@ -480,6 +525,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Test get trait method using trait name or trait id as parameter
     // to getTraitMethod() method.
 
+    // Test getTraitMethod() with invalid trait name.
+    $this->service_traits->getTraitMethod('Invalid Trait');
+
     // Based on the summary of traits assets above, test the following.
     // 1. A Trait has 3 methods - A, B, C Method.
     // 2. C Trait has 1 method - D Method.
@@ -524,6 +572,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Test get unit method using method name or method id as parameter
     // to getMethodUnit() method.
 
+    // Test getMethodUnit() method with invalid method.
+    $this->service_traits->getMethodUnit('Invalid Method');
+
     // Based on the summary of traits assets above, test the following.
     // B Method has 4 units - A, B, C, and D Unit
     // D Method has 1 unit - E Unit
@@ -565,6 +616,10 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Test get unit data type method using unit name or unit id as parameter
     // to getMethodUnitDataType() method.
+
+    // Test getMethodUnitDataType() with invalid unit.
+    $this->service_traits->getMethodUnitDataType('Invalid Unit');
+
     // From the trait asset insert test, E Unit was set to Qualitative data type.
     $e_unit_type_byname = $this->service_traits->getMethodUnitDataType('E Unit');
     $e_unit = $expected_cvterms['E Unit'];
@@ -577,6 +632,129 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Is it Quantitative?
     $this->assertEquals($e_unit_type_byid, 'Quantitative',
       'E Unit data type returned by unit type getter does not match expected data type (Quantitative).');
+
+    // Test to trigger Multiple data types error.
+
+    // Insert two values with the same cvterm_id and type_id.
+    $this->chado_connection->insert('1:cvtermprop')
+    ->fields([
+      'cvterm_id' => $trait_assets['unit'],
+      'type_id' => $this->terms['unit_type'],
+      'value' => 'Value 1'
+    ])
+    ->execute();
+
+    $this->chado_connection->insert('1:cvtermprop')
+    ->fields([
+      'cvterm_id' => $trait_assets['unit'],
+      'type_id' => $this->terms['unit_type'],
+      'value' => 'Value 2'
+    ])
+    ->execute();
+
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $this->service_traits->getMethodUnitDataType('E Unit');
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'Exception: A multiple data type error occurred while retrieving
+      a unit data type. Failed to retrieve data type for unit : E Unit in cv : . Multiple data types found for the same unit.',
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
+
+    // Test the getPhenoCvTerm() method.
+
+    // Create a reflaction class to access protected method.
+    $reflection = new \ReflectionClass($this->service_traits);
+
+    // Set accessible for protected method.
+    $method = $reflection->getMethod('getPhenoCvTerm');
+    $method->setAccessible(true);
+
+    // Select E unit from cvterm table to get cv_name and cvtem_id.
+    $sql =  "SELECT * FROM {1:cvterm} AS ct JOIN {1:cv} USING (cv_id) WHERE ct.name = :name;";
+    $query= $this->chado_connection->query($sql, [
+      ':name' => 'E Unit',
+      ])->fetchAll();
+    $vocab_name = $query[0]->name;
+    $cvterm_id = $query[0]->cvterm_id;
+
+    // Updating the term to make it obsolete.
+    $this->chado_connection->update('1:cvterm')
+      ->fields(['is_obsolete' => 1])
+      ->condition('cvterm_id', $cvterm_id)
+      ->execute();
+
+    // Set the vocab_name in $values to be the cv_name we got above.
+    $values = ['vocab_name'=>$vocab_name, 'term'=>['name' => 'E Unit']];
+    $term = $this->createTripalTerm($values, 'chado_id_space', 'chado_vocabulary');
+
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $method->invokeArgs($this->service_traits, ['E Unit', 'unit']);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'Exception: A duplicate term error occurred while retrieving a trait asset.
+      Failed to retrieve $type : $key in cv : '. $vocab_name. '. '.
+      'Multiple copies of the same term found in the CV',
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
+
+    // Test the getPhenoCvterm() method with Invalid trait asset type.
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $method->invokeArgs($this->service_traits, ['E unit', 'Invalid']);
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'Exception: Not a valid trait asset type value provided. Trait
+      asset getter expects type to be the string trait, method or unit.' .
+       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
+
+    // Test the no genus error within the method getPhenoCvTerm().
+    $this->container->set('trpcultivate_phenotypes.traits', null);
+    $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
+
+    $exception_caught = FALSE;
+    $exception_message = 'NONE';
+    $exception_message = '';
+    try {
+      $this->service_traits->getMethodUnitDataType('E Unit');
+    }
+    catch (\Exception $e) {
+      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
+    }
+    $this->assertEquals(
+      'No genus has been set. See setting a genus in the'.
+      'Traits Service and make sure to use a configured genus. To configure a'.
+      'genus or see all configured genus, go to ' .
+       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
+      $exception_caught,
+      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+    );
   }
 
   /**
