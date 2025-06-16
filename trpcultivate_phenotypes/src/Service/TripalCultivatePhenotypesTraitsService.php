@@ -486,6 +486,7 @@ class TripalCultivatePhenotypesTraitsService {
    *   getPhenoCvterm()
    */
   public function getMethodUnitDataType($unit) {
+    $genus_config = $this->config;
     $unit_rec = $this->getPhenoCvterm($unit, 'unit');
     if (!$unit_rec) {
       // Unit was not found.
