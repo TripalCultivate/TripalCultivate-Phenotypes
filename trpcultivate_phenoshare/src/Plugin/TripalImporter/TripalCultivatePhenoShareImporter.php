@@ -2,21 +2,19 @@
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\trpcultivate_phenotypes\Plugin\Validators\ProjectGenusMatch;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
-use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
+use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -508,20 +506,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'type_column' => 'x',
         'property_table' => 'project',
       ],
-      // Used by script to pre-select genus paired to project entered.
-      '#id' => 'trpcultivate-fld-project',
-
-      // AJAX.
-      '#ajax' => [
-        'callback' => [self::class, 'ajaxLoadGenusOfProject'],
-        'disable-refocus' => TRUE,
-        'event' => 'blur',
-        'progress' => [
-          'type' => 'throbber',
-          'message' => '',
-        ],
-        'wrapper' => 'trpcultivate-field-genus-wrapper',
-      ],
     ];
 
     // Field Genus:
@@ -535,7 +519,8 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#options' => $active_genus,
       '#weight' => -90,
       '#required' => TRUE,
-      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment.'),
+      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded.
+        This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
       '#description_display' => 'after',
 
       // States.
@@ -818,7 +803,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
               // ***************************************************************
               if ($line_no == 1) {
                 // Split line into an array of values.
-                $header_row = TripalCultivateValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+                $header_row = ImportValidationHelper::splitRowIntoColumns($line, $file_mime_type);
 
                 foreach ($validators['header-row'] as $validator_name => $validator) {
                   // Set failures for this validator name to an empty array to
@@ -850,7 +835,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
               elseif ($line_no > 1) {
                 // Split line into an array using the delimiter supported by
                 // this importer when it was configured.
-                $data_row = TripalCultivateValidatorBase::splitRowIntoColumns($line, $file_mime_type);
+                $data_row = ImportValidationHelper::splitRowIntoColumns($line, $file_mime_type);
 
                 // Call each validator on this row of the file.
                 foreach ($validators['data-row'] as $validator_name => $validator) {
@@ -992,7 +977,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     if (array_key_exists($validator_name, $failures)) {
       if (!empty($failures[$validator_name])) {
         $messages[$validator_name]['status'] = 'fail';
-        $messages[$validator_name]['details'] = $this->processProjectGenusMatchFailures($failures[$validator_name]);
+        // Change wording in messages from 'project' to 'Research Experiment'.
+        $tokens = [
+          'project' => 'Research Experiment',
+        ];
+        $messages[$validator_name]['details'] = ProjectGenusMatch::processItemWithSimpleList($failures[$validator_name], $tokens);
       }
       else {
         $messages[$validator_name]['status'] = 'pass';
@@ -1055,77 +1044,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   }
 
   /**
-   * Process failed validation from ProjectGenusMatch into a render array.
-   *
-   * @param array $validation_result
-   *   An associative array that was returned by the ProjectGenusMatch validator
-   *   in the event of failed validation. It contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed with the following keys.
-   *     - 'project_provided': The name of the project provided.
-   *     - 'genus_provided': The name of the genus provided.
-   *
-   * @return array
-   *   A render array of type unordered list which is used to display feedback
-   *   to the user about the case that failed and the failed items from the
-   *   input file. Each item in the list contains the project that was entered
-   *   in the form which failed validation.
-   *
-   * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
-   *   - If the case string returned by the validator implied validation passed.
-   *   - If the case string returned by the validator is not recognized.
-   */
-  public function processProjectGenusMatchFailures(array $validation_result) {
-
-    // Check the format of the validation_result parameter.
-    $this->checkValidationStatusArray($validation_result, 'ProjectGenusMatch');
-
-    // Check for one of the expected cases.
-    if ($validation_result['case'] == 'Project does not exist') {
-      $message = 'The selected Research Experiment does not exist. Please contact your administrator to have this added.';
-      $item = $validation_result['failedItems']['project_provided'];
-    }
-    elseif ($validation_result['case'] == 'Project has no genus set and could not compare with the genus provided') {
-      $message = 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.';
-      $item = $validation_result['failedItems']['genus_provided'];
-    }
-    elseif ($validation_result['case'] == 'Genus does not match the genus set to the project') {
-      $message = 'The selected genus has not been paired to the selected Research Experiment. Please select a paired genus or contact your administrator if you think one is missing.';
-      $item = $validation_result['failedItems']['genus_provided'];
-    }
-    elseif ($validation_result['case'] == 'Project exists and project-genus match the genus provided') {
-      throw new \Exception('The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.');
-    }
-    else {
-      throw new \Exception('The case string returned by the ProjectGenusMatch validator is not recognized as a potential case.');
-    }
-
-    // Build the render array.
-    $render_array = [
-      '#type' => 'item',
-      '#title' => $message,
-      '#wrapper_attributes' => [
-        'class' => [
-          'tcp-project-genus-match-failures',
-        ],
-      ],
-      'items' => [
-        '#theme' => 'item_list',
-        '#type' => 'ul',
-        '#items' => [
-          [
-            '#markup' => $item,
-          ],
-        ],
-      ],
-    ];
-
-    return $render_array;
-  }
-
-  /**
    * Processes failed validation from ValidDataFile into a render array.
    *
    * @param array $validation_result
@@ -1156,7 +1074,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   public function processValidDataFileFailures(array $validation_result) {
 
     // Check the format of the validation_result parameter.
-    $this->checkValidationStatusArray($validation_result, 'ValidDataFile');
+    ImportValidationHelper::checkValidationStatusArray($validation_result, 'ValidDataFile');
     // Get the current user in case we trigger a case that needs to log a
     // message to the administrator.
     $current_user = \Drupal::currentUser();
@@ -1252,7 +1170,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    */
   public function processValidHeadersFailures(array $validation_result) {
     // Check the format of the validation_result parameter.
-    $this->checkValidationStatusArray($validation_result, 'ValidHeaders');
+    ImportValidationHelper::checkValidationStatusArray($validation_result, 'ValidHeaders');
 
     if ($validation_result['case'] == 'Header row is an empty value') {
       $message = 'The file has an empty row where the header was expected.';
@@ -1374,7 +1292,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // different cases into different tables.
     foreach ($failures as $line_no => $validation_result) {
       // Check the format of the validation_result parameter.
-      $this->checkValidationStatusArray($validation_result, 'ValidDelimitedFile', $line_no);
+      ImportValidationHelper::checkValidationStatusArray($validation_result, 'ValidDelimitedFile', $line_no);
       // Keeps track of which table this one line's validation result gets added
       // to based on the case it triggered.
       $table_case = '';
@@ -1496,7 +1414,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     foreach ($failures as $line_no => $validation_result) {
       // Check the format of the validation_result parameter.
-      $this->checkValidationStatusArray($validation_result, 'EmptyCell', $line_no);
+      ImportValidationHelper::checkValidationStatusArray($validation_result, 'EmptyCell', $line_no);
 
       if ($validation_result['case'] == 'Empty value found in required column(s)') {
         $table['message'] = 'The following line number and column header combinations were empty, but a value is required.';
@@ -1551,78 +1469,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ];
 
     return $render_array;
-  }
-
-  /**
-   * Sanity checks to ensure the validation status array is compliant.
-   *
-   * @param array $validation_result
-   *   An associative array that was returned by a validator in the event of
-   *   failed validation. It should contain the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed which is specific to the
-   *     validator.
-   * @param string $validator_name
-   *   The name of the validator that produced the validation_result array.
-   * @param int|null $line_no
-   *   The line number in the input file that triggered the failed validation
-   *   status.
-   *
-   * @return bool
-   *   Returns TRUE if the validation_result array is compliant and ready for
-   *   processing, FALSE otherwise.
-   *
-   * @throws \Exception
-   *   If any one or more of the following occur:
-   *   - The validation_result array does not contain one of the following
-   *     keys: 'case', 'valid', 'failedItems'.
-   *   - The value for 'valid' is not FALSE, indicating it was not properly
-   *     set to be a failed validation status.
-   *   - The value for 'failedItems' is not an array.
-   *   - The value for 'failedItems' is an empty array.
-   */
-  public function checkValidationStatusArray(array $validation_result, string $validator_name, int|null $line_no = NULL) {
-
-    $error_message = '';
-    $errors_found = 0;
-    // Check for validation status keys: 'case', 'valid', 'failedItems'.
-    $keys = ['case', 'valid', 'failedItems'];
-    $missing_keys = array_diff($keys, array_keys($validation_result));
-    if ($missing_keys) {
-      $errors_found++;
-      $error_message = "Expected to find key(s) '" . implode("', '", $missing_keys) . "' in the validation result array. ";
-    }
-    // Check that key 'valid' is set to FALSE.
-    if (array_key_exists('valid', $validation_result) && ($validation_result['valid'] !== FALSE)) {
-      $errors_found++;
-      $error_message .= "Expected the validation result to contain a value of FALSE for the key 'valid' since it should only reach this point if validation failed. ";
-    }
-    if (array_key_exists('failedItems', $validation_result)) {
-      // Check that 'failedItems' contains a value of type array.
-      if (!is_array($validation_result['failedItems'])) {
-        $errors_found++;
-        $error_message .= "Expected the validation result to contain an array for the key 'failedItems', but it did not. ";
-      }
-      // Check that 'failedItems' is not an empty array.
-      elseif ($validation_result['failedItems'] === []) {
-        $errors_found++;
-        $error_message .= "Expected the validation result to have content for the key 'failedItems', but it was set to an empty array. ";
-      }
-    }
-    // If any errors were found, throw an exception that includes the number of
-    // errors, line number if applicable, and a sentence describing each error.
-    if ($errors_found > 0) {
-      $error_message = trim($error_message);
-      if ($line_no) {
-        $append_line_no = " at line #$line_no of the input file";
-      }
-      else {
-        $append_line_no = '';
-      }
-      throw new \Exception("ERROR: Found $errors_found problem(s) with the validation result array returned by the $validator_name validator$append_line_no. Details: $error_message");
-    }
-    return TRUE;
   }
 
   /**
@@ -1767,51 +1613,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     }
 
     return $has_fail;
-  }
-
-  /**
-   * Load genus of project.
-   *
-   * @param array $form
-   *   Drupal form array.
-   * @param object $form_state
-   *   Drupal form state object.
-   *
-   * @return Drupal\Core\Ajax\AjaxResponse
-   *   Drupal AJAX Response.
-   */
-  public static function ajaxLoadGenusOfProject($form, &$form_state) {
-    // Project name.
-    $project = $form_state->getValue('project');
-
-    $response = new AjaxResponse();
-
-    if (!empty($project)) {
-      // The project entered through the auto-complete project field
-      // returns a string, the project name. Additional step of resolving
-      // the name to its project id is required to determine the genus.
-      // T4 - this values is from autocomplete field which seems to contain the
-      // project id (id) part.
-      $project = preg_replace('/\([0-9]\)$/', '', $project);
-      $project_name = trim($project);
-      $project_id = ChadoProjectAutocompleteController::getProjectId($project_name);
-
-      // Get genus of project.
-      $genus_of_project = \Drupal::service('trpcultivate_phenotypes.genus_project')
-        ->getGenusOfProject($project_id);
-
-      // Set the value of genus field to default (- Select -) when genus
-      // is not set for the project.
-      $genus_of_project = ($genus_of_project['genus']) ?? '';
-    }
-    else {
-      // Set the value of genus to default.
-      $genus_of_project = '';
-    }
-
-    $response->addCommand(new InvokeCommand('#trpcultivate-fld-genus', 'val', [$genus_of_project]));
-
-    return $response;
   }
 
 }
