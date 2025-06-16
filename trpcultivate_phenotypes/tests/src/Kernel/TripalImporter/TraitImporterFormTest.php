@@ -419,13 +419,13 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
   public function testDescribeUploadFileFormat() {
     // Create a user.
     $user_username = 'user-collector';
-    $this->user = User::create([
+    $user = User::create([
       'name' => $user_username,
       'roles' => ['authenticated user'],
     ]);
-    $this->user->save();
+    $user->save();
 
-    \Drupal::currentUser()->setAccount($this->user);
+    \Drupal::currentUser()->setAccount($user);
 
     // Fire up Tripal Trait Importer Plugin.
     $importer_plugin_manager = \Drupal::service('tripal.importer');
