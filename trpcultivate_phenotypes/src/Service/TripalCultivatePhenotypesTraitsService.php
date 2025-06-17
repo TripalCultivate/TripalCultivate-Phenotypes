@@ -4,6 +4,9 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Url;
+use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 
 /**
  * Phenotypes traits service.
@@ -34,6 +37,21 @@ class TripalCultivatePhenotypesTraitsService {
    */
   protected ChadoConnection $chado_connection;
 
+    /**
+   * The Chado Buddy cvterm.
+   *
+   * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
+   */
+
+  protected ChadoCvtermBuddy $cvterm_buddy;
+
+  /**
+   * The Chado Buddy Dbxref.
+   *
+   * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy
+   */
+  protected ChadoDbxrefBuddy $dbxref_buddy;
+
   /**
    * Genus ontology configuration values.
    *
@@ -60,6 +78,7 @@ class TripalCultivatePhenotypesTraitsService {
     TripalCultivatePhenotypesGenusOntologyService $genus_ontology,
     TripalCultivatePhenotypesTermsService $terms,
     ChadoConnection $chado,
+    ChadoBuddyPluginManager $buddy_manager,
   ) {
     // Genus ontology service.
     $this->service_PhenoGenusOntology = $genus_ontology;
@@ -67,6 +86,11 @@ class TripalCultivatePhenotypesTraitsService {
     $this->service_PhenoTerms = $terms;
     // Chado connection.
     $this->chado_connection = $chado;
+
+    // Chado cvterm buddy.
+    $this->cvterm_buddy = $buddy_manager->createInstance('chado_cvterm_buddy', []);
+    // Chado dbxref buddy.
+    $this->dbxref_buddy = $buddy_manager->createInstance('chado_dbxref_buddy', []);
 
     // Terms configurations.
     // Terms focused on adding traits, required by this service.
@@ -171,9 +195,7 @@ class TripalCultivatePhenotypesTraitsService {
    *     (e.g. centimeters)
    *   - Type: Quantitative or Qualitative.
    * @param string $schema
-   *   The name of the schema that the terms are expected to live in. This is
-   *   passed to the legacy chado_insert_cvterm() and if NULL, the default
-   *   chado instance will be used.
+   *    The Chado schema name to use.
    *
    * @return array
    *   An array with the following keys where each value is the id of new cvterm
@@ -184,7 +206,7 @@ class TripalCultivatePhenotypesTraitsService {
    *    - the genus/terms are not configured
    *    - the Trait Name, Method Short Name or Unit are not a non-empty string
    *    - the Trait Name, Method Short Name or Unit are not unique
-   *    - chado_insert_cvterm() fails to insert the term
+   *    - upsertCvterm() fails to insert the term
    *    - we fail to insert a relationship or the unit type.
    *
    * @dependencies
@@ -193,6 +215,12 @@ class TripalCultivatePhenotypesTraitsService {
   public function insertTrait(array $trait, ?string $schema = NULL) {
     // Configuration settings of the genus.
     $genus_config = $this->config;
+
+    if ($schema) {
+      $this->cvterm_buddy->connection->setSchemaName($schema);
+      $this->dbxref_buddy->connection->setSchemaName($schema);
+    }
+
     if (!$genus_config) {
       // Genus not set.
       throw new \Exception('No genus has been set. See setting a genus in the
@@ -229,20 +257,21 @@ class TripalCultivatePhenotypesTraitsService {
       else {
         // A new trait asset, create a record.
         $rec = [
-          'id' => $genus_config['database']['name'] . ':' . $values['name'],
-          'name' => $values['name'],
-          'cv_name' => $genus_config[$type]['name'],
-          'definition' => $values['description'],
+          'db.name' => $genus_config['database']['name'],
+          'cv.name' => $genus_config[$type]['name'],
+          'dbxref.accession' => $values['name'],
+          'cvterm.name' => $values['name'],
+          'cvterm.definition' => $values['description'],
         ];
 
-        $ins = chado_insert_cvterm($rec, [], $schema);
+        $ins = $this->cvterm_buddy->upsertCvterm($rec, []);
         if (!$ins) {
           // Could not insert cvterm.
           throw new \Exception('A database error occurred while inserting a term.
-          Failed to insert term ' . $type . ' : ' . $term);
+          Failed to insert term ' . $type . ' : ' . $rec);
         }
 
-        $arr_trait[$type]['id'] = $ins->cvterm_id;
+        $arr_trait[$type]['id'] = $ins->getValue('cvterm.cvterm_id');
       }
     }
 

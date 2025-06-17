@@ -91,24 +91,6 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $this->cvdbon = $this->setOntologyConfig($this->genus);
     $this->terms = $this->setTermConfig();
 
-    // Install required dependencies - T3 legacy functions.
-    $tripal_chado_path = 'modules/contrib/tripal/tripal_chado/src/api/';
-    $tripal_chado_api = [
-      'tripal_chado.cv.api.php',
-      'tripal_chado.variables.api.php',
-      'tripal_chado.schema.api.php'
-    ];
-
-    if ($handle = opendir($tripal_chado_path)) {
-      while (false !== ($file = readdir($handle))) {
-        if (strlen($file) > 2 && in_array($file, $tripal_chado_api)) {
-          include_once($tripal_chado_path . $file);
-        }
-      }
-
-      closedir($handle);
-    }
-
     // Set the traits service.
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
   }
