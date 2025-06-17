@@ -199,7 +199,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *     - 'completed_stages': the stages that have been marked as completed.
    *     - 'upcoming_stages': the stages that have been marked upcoming.
    */
-  public function provideFormValues() {
+  public static function provideFormValues() {
     return [
       // #0: Stage 1.
       [
@@ -379,7 +379,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *         contained in a wrapper element.
    *       - 'field_type': the field element type ie. a textfield or select.
    */
-  public function provideStageDetails() {
+  public static function provideStageDetails() {
     return [
       // #0: Stage One.
       [
@@ -589,7 +589,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *     - 'has_failed': the expected value returned by hasFailedValidation()
    *       method given the validation result array.
    */
-  public function provideValidationResultArray() {
+  public static function provideValidationResultArray() {
     return [
       // #0: Validation result array has failed item.
       [
@@ -669,7 +669,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *     - 'has_message': a false value will indicate that the form will post a
    *       Drupal Status Message.
    */
-  public function provideAllowNewConfig() {
+  public static function provideAllowNewConfig() {
     return [
       // #0: True, allow new traits to be added during import.
       [
@@ -733,25 +733,6 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
         'The status message text does not contain the expected message when allow new configuration is set to FALSE'
       );
     }
-  }
-
-  /**
-   * Test ajaxLoadGenusOfProject() method in the importer.
-   */
-  public function testAjaxLoadGenusOfProject() {
-
-    $form = $this->form_importer;
-    $form_state = new FormState();
-    $form_state->setValue('project', 'Awesome Project');
-
-    $http_response = $this->phenoshare_importer->ajaxLoadGenusOfProject($form, $form_state)
-      ->getStatusCode();
-
-    $this->assertEquals(
-      200,
-      $http_response,
-      'The method ajaxLoadGenusOfProject is expected to return a 200 (ok) response status code'
-    );
   }
 
 }

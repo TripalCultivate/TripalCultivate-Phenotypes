@@ -172,7 +172,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    *     NOTE: These validation messages are produced by the form via Drupal and
    *     are not related to this module's use of validator plugins.
    */
-  public function provideFilesForValidation() {
+  public static function provideFilesForValidation() {
 
     // Set our default variables for genus.
     $valid_genus = 'Tripalus';
