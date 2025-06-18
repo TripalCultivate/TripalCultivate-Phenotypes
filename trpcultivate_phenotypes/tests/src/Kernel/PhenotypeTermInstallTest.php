@@ -41,6 +41,9 @@ class PhenotypeTermInstallTest extends ChadoTestKernelBase {
 
     // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+
+    // Install module configuration.
+    $this->installConfig(['trpcultivate_phenotypes']);
   }
 
   /**
@@ -49,6 +52,18 @@ class PhenotypeTermInstallTest extends ChadoTestKernelBase {
   public function testInstallOntologyTerms() {
     // Call the trpcultivate_phenotypes_install_ontologyterms() method.
     trpcultivate_phenotypes_install_ontologyterms();
+
+    // Call defineTerms in Term Service.
+    $terms = \Drupal::service('trpcultivate_phenotypes.terms')
+      ->defineTerms();
+
+    foreach ($terms as $term) {
+      // Check if the term exists in the database.
+      $exists = $this->chado_connection->query('SELECT * FROM {1:cvterm} WHERE name = :name', [':name' => $term['name']])->fetchField();
+
+      // Assert that the term exists.
+      $this->assertNotEmpty($exists, "The term '{$term['name']}' should exist in the database.");
+    }
   }
 
 }
