@@ -37,7 +37,7 @@ class TripalCultivatePhenotypesTraitsService {
    */
   protected ChadoConnection $chado_connection;
 
-    /**
+  /**
    * The Chado Buddy cvterm.
    *
    * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
@@ -195,7 +195,7 @@ class TripalCultivatePhenotypesTraitsService {
    *     (e.g. centimeters)
    *   - Type: Quantitative or Qualitative.
    * @param string $schema
-   *    The Chado schema name to use.
+   *   The Chado schema name to use.
    *
    * @return array
    *   An array with the following keys where each value is the id of new cvterm
