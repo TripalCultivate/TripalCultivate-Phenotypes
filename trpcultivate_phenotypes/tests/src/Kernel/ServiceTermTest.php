@@ -155,6 +155,31 @@ class ServiceTermTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test Term Service getTermId() method.
+   *
+   * @param string $scenario
+   *   A string, human-readable short descriptionn of the test scenario.
+   * @param string $input_term_identifier
+   *   A string, term identifier input.
+   * @param array $expected
+   *   An array of expected values, with the following keys.
+   *     - 'term_exists': boolean value to idicate if a term identifier exits
+   *    (TRUE) or of if it is a non-existent identifier (FALSE).
+   *
+   * @dataProvider provideTermIdentifierForGetTermIdMethod
+   */
+  public function testGetTermId($scenario, $input_term_identifier, $expected) {
+    $term_id = $this->service_PhenoTerms->getTermId($input_term_identifier);
+    $term_exists = ($term_id > 0) ? TRUE : FALSE;
+
+    $this->assertEquals(
+      $expected['term_exists'],
+      $term_exists,
+      'getTermId() should return ' . $expected['term_exists'] . ' for the input indentifier in scenario ' . $scenario
+    );
+  }
+
+  /**
    * Data Provider: provides terms to test Term Service saveTermConfigValues().
    *
    * @return array
@@ -196,108 +221,6 @@ class ServiceTermTest extends ChadoTestKernelBase {
         ],
       ],
     ];
-  }
-
-  /**
-   * Data Provider: provide terms to test saveTermConfigValues Invalid term key.
-   *
-   * @return array
-   *   Each term test scenario is an array with the following values:
-   *   - A string, human-readable short description of the test scenario.
-   *   - An array, term input with the following keys:
-   *     - 'name': the name of the term.
-   *     - 'cv': the cv vocabulary the term will be associated.
-   *   - A string, the term identifier of the module the term array will
-   *     be saved and mapped to.
-   *   - An array of expected values, with the following keys.
-   *     - 'is_saved': the expected return value of the method.
-   *     - 'log_messages': the expected error log message.
-   */
-  public function provideInvalidTermsForSaveTermConfigValuesMethod() {
-    return [
-      // #0: Non-existant term key
-      [
-        'non-existant term',
-        [
-          'name' => 'null',
-          'cv' => 'null',
-        ],
-        'Invalid term key',
-        [
-          'is_saved' => FALSE,
-          'log_message' => 'Error. Failed to save configuration: Invalid term key=1',
-        ],
-      ],
-      // #1: Empty term key
-      [
-        'empty term',
-        [
-          'name' => 'null',
-          'cv' => 'null',
-        ],
-        '',
-        [
-          'is_saved' => FALSE,
-          'log_message' => 'Error. Failed to save configuration: =1',
-        ],
-      ],
-    ];
-  }
-
-  /**
-   * Data Provider: provides invalid config values to saveTermConfigValues().
-   *
-   * @return array
-   *   Each term test scenario is an array with the following values:
-   *   - A string, human-readable short description of the test scenario.
-   *   - An array or a string, invalid input for the config values.
-   *   - An array of expected values, with the following keys.
-   *     - 'is_saved': the expected return value of the method.
-   */
-  public function provideInvalidConfigForSaveTermConfigValuesMethod() {
-    return [
-      // #0: An Empty array
-      [
-        'an empty array',
-        [],
-        [
-          'is_saved' => FALSE,
-        ],
-      ],
-      // #1: Is not an array
-      [
-        'a string',
-        '',
-        [
-          'is_saved' => FALSE,
-        ],
-      ],
-    ];
-  }
-
-  /**
-   * Test Term Service getTermId() method.
-   *
-   * @param string $scenario
-   *   A string, human-readable short descriptionn of the test scenario.
-   * @param string $input_term_identifier
-   *   A string, term identifier input.
-   * @param array $expected
-   *   An array of expected values, with the following keys.
-   *     - 'term_exists': boolean value to idicate if a term identifier exits
-   *    (TRUE) or of if it is a non-existent identifier (FALSE).
-   *
-   * @dataProvider provideTermIdentifierForGetTermIdMethod
-   */
-  public function testGetTermId($scenario, $input_term_identifier, $expected) {
-    $term_id = $this->service_PhenoTerms->getTermId($input_term_identifier);
-    $term_exists = ($term_id > 0) ? TRUE : FALSE;
-
-    $this->assertEquals(
-      $expected['term_exists'],
-      $term_exists,
-      'getTermId() should return ' . $expected['term_exists'] . ' for the input indentifier in scenario ' . $scenario
-    );
   }
 
   /**
@@ -347,6 +270,52 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $cvterm_id,
       'saveTermConfigValues() failed to save term in the expected term identifier in scenario ' . $scenario
     );
+  }
+
+  /**
+   * Data Provider: provide terms to test saveTermConfigValues Invalid term key.
+   *
+   * @return array
+   *   Each term test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array, term input with the following keys:
+   *     - 'name': the name of the term.
+   *     - 'cv': the cv vocabulary the term will be associated.
+   *   - A string, the term identifier of the module the term array will
+   *     be saved and mapped to.
+   *   - An array of expected values, with the following keys.
+   *     - 'is_saved': the expected return value of the method.
+   *     - 'log_messages': the expected error log message.
+   */
+  public static function provideInvalidTermsForSaveTermConfigValuesMethod() {
+    return [
+      // #0: Non-existant term key
+      [
+        'non-existant term',
+        [
+          'name' => 'null',
+          'cv' => 'null',
+        ],
+        'Invalid term key',
+        [
+          'is_saved' => FALSE,
+          'log_message' => 'Error. Failed to save configuration: Invalid term key=1',
+        ],
+      ],
+      // #1: Empty term key
+      [
+        'empty term',
+        [
+          'name' => 'null',
+          'cv' => 'null',
+        ],
+        '',
+        [
+          'is_saved' => FALSE,
+          'log_message' => 'Error. Failed to save configuration: =1',
+        ],
+      ],
+    ];
   }
 
   /**
@@ -405,6 +374,37 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $cvterm_id,
       'saveTermConfigValues() saved the term even when the key is not existing in scenario: ' . $scenario
     );
+  }
+
+  /**
+   * Data Provider: provides invalid config values to saveTermConfigValues().
+   *
+   * @return array
+   *   Each term test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array or a string, invalid input for the config values.
+   *   - An array of expected values, with the following keys.
+   *     - 'is_saved': the expected return value of the method.
+   */
+  public static function provideInvalidConfigForSaveTermConfigValuesMethod() {
+    return [
+      // #0: An Empty array
+      [
+        'an empty array',
+        [],
+        [
+          'is_saved' => FALSE,
+        ],
+      ],
+      // #1: Is not an array
+      [
+        'a string',
+        '',
+        [
+          'is_saved' => FALSE,
+        ],
+      ],
+    ];
   }
 
   /**

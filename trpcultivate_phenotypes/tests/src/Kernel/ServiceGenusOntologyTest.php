@@ -322,7 +322,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    *        the success or failure of saving the genus.
    *     - 'log_message': the Tripal log error message about the failed value.
    */
-  public function provideInvalidValuesForGenusOntologyService() {
+  public static function provideInvalidValuesForGenusOntologyService() {
     return [
       // Invalid config_name.
       [
