@@ -308,8 +308,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides invalid input values and expected values to test error
-   * logs and return values.
+   * Data Provider: provides invalid input values for ontology service.
    *
    * @return array
    *   Each genus test scenario is an array with the following values:
@@ -318,13 +317,14 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    *   - A string, the species name.
    *   - An array containing an invalid input for saveGenusOntologyConfigValues.
    *   - An array of expected values, with the following keys:
-   *     - 'is_saved': a boolean value returned by saveGenusOntologyConfigValues() method to
-   *       indicate the success or failure of saving the genus.
+   *     - 'is_saved': a boolean value returned by
+   *        saveGenusOntologyConfigValues() method to indicate
+   *        the success or failure of saving the genus.
    *     - 'log_message': the Tripal log error message about the failed value.
    */
   public function provideInvalidValuesForGenusOntologyService() {
     return [
-      // Invalid config_name
+      // Invalid config_name.
       [
         'Invalid config name',
         'Genus1',
@@ -335,26 +335,26 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
           ],
         ],
         [
-          'is_saved' => false,
+          'is_saved' => FALSE,
           'log_message' => "Error. Failed to save configuration. Unexpected configuration name: invalid_config_name",
         ],
       ],
-      // Non-existing Genus
+      // Non-existing Genus.
       [
         'Non-existing Genus',
         'Genus2',
         'species-2',
         [
           'Genus3' => [
-              'trait',
-              'method',
-              'unit',
-              'database',
-              'crop_ontology',
+            'trait',
+            'method',
+            'unit',
+            'database',
+            'crop_ontology',
           ],
         ],
         [
-          'is_saved' => false,
+          'is_saved' => FALSE,
           'log_message' => "Error. Failed to save configuration. Unexpected genus: Genus3",
         ],
       ],
@@ -374,8 +374,9 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    *   An array containing an invalid input for saveGenusOntologyConfigValues.
    * @param array $expected
    *   An array of expected values, with the following keys:
-   *     - 'is_saved': a boolean value returned by saveGenusOntologyConfigValues() method to
-   *       indicate the success or failure of saving the genus.
+   *     - 'is_saved': a boolean value returned by
+   *        saveGenusOntologyConfigValues() method to indicate
+   *        the success or failure of saving the genus.
    *     - 'log_message': the Tripal log error message about the failed value.
    *
    * @dataProvider provideInvalidValuesForGenusOntologyService

@@ -6,7 +6,7 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
- * Tests trpcultivate_phenotypes.module
+ * Tests trpcultivate_phenotypes.module.
  *
  * @group trpcultivate_phenotypes
  */
@@ -50,4 +50,5 @@ class PhenotypeTermInstallTest extends ChadoTestKernelBase {
     // Call the trpcultivate_phenotypes_install_ontologyterms() method.
     trpcultivate_phenotypes_install_ontologyterms();
   }
+
 }

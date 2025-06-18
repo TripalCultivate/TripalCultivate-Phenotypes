@@ -199,8 +199,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider: provides terms to test Term Service saveTermConfigValues()
-   * with Invalid term key.
+   * Data Provider: provide terms to test saveTermConfigValues Invalid term key.
    *
    * @return array
    *   Each term test scenario is an array with the following values:
@@ -226,7 +225,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
         'Invalid term key',
         [
           'is_saved' => FALSE,
-          'log_message' => 'Error. Failed to save configuration: Invalid term key=1'
+          'log_message' => 'Error. Failed to save configuration: Invalid term key=1',
         ],
       ],
       // #1: Empty term key
@@ -239,15 +238,14 @@ class ServiceTermTest extends ChadoTestKernelBase {
         '',
         [
           'is_saved' => FALSE,
-          'log_message' => 'Error. Failed to save configuration: =1'
+          'log_message' => 'Error. Failed to save configuration: =1',
         ],
-      ]
+      ],
     ];
   }
 
   /**
-   * Data Provider: provides invalid configuration values to test Term Service
-   * saveTermConfigValues() with failure cases.
+   * Data Provider: provides invalid config values to saveTermConfigValues().
    *
    * @return array
    *   Each term test scenario is an array with the following values:
@@ -256,8 +254,8 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *   - An array of expected values, with the following keys.
    *     - 'is_saved': the expected return value of the method.
    */
-  public function provideInvalidConfigForSaveTermConfigValuesMethod(){
-      return [
+  public function provideInvalidConfigForSaveTermConfigValuesMethod() {
+    return [
       // #0: An Empty array
       [
         'an empty array',
@@ -352,8 +350,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test Term Service for failure cases in saveTermConfigValues() method
-   * with invalid term keys.
+   * Test for failure cases in saveTermConfigValues() method with invalid key.
    *
    * @param string $scenario
    *   A string, human-readable short description of the test scenario.
@@ -387,7 +384,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $cvterm_id = $cvterm->cvterm_id;
     }
 
-    // Test to see if saveTermConfigValues() returns false
+    // Test to see if saveTermConfigValues() returns false.
     $is_saved = $this->service_PhenoTerms->saveTermConfigValues([$term_identifier => $cvterm_id]);
     $this->assertEquals(
       $expected['is_saved'],
@@ -395,14 +392,14 @@ class ServiceTermTest extends ChadoTestKernelBase {
       'saveTermConfigValues() should return ' . $expected['is_saved'] . ' in scenario: ' . $scenario
     );
 
-    // Test whether the correct error log message is returned
+    // Test whether the correct error log message is returned.
     $this->assertEquals(
       $expected['log_message'],
       $this->log_message,
       "The logged error message does not have the message we expected for in scenario " . $scenario
     );
 
-    // Test to see whether the term is not saved as expected
+    // Test to see whether the term is not saved as expected.
     $this->assertNotEquals(
       $this->service_PhenoTerms->getTermId($term_identifier),
       $cvterm_id,
@@ -411,8 +408,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test Term Service for Failure cases in saveTermConfigValues() method when
-   * configuration value is invalid.
+   * Test for Failure cases in saveTermConfigValues() with invalid config value.
    *
    * @param string $scenario
    *   A string, human-readable short description of the test scenario.
@@ -425,12 +421,12 @@ class ServiceTermTest extends ChadoTestKernelBase {
    * @dataProvider provideInvalidConfigForSaveTermConfigValuesMethod
    */
   public function testSaveTermConfigValuesMethodFailure($scenario, $config_value, $expected) {
-    // Test when the config values is not valid
+    // Test when the config values is not valid.
     $is_saved = $this->service_PhenoTerms->saveTermConfigValues($config_value);
     $this->assertEquals(
       $expected['is_saved'],
       $is_saved,
-      'saveTermConfigValues() should return FALSE when config_values is '. $scenario
+      'saveTermConfigValues() should return FALSE when config_values is ' . $scenario
     );
   }
 
