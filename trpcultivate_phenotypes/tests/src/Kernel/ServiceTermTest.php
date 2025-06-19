@@ -90,7 +90,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *     - 'term_exists': boolean value to idicate if a term identifier exits
    *    of if it is a non-existent identifier.
    */
-  public function provideTermIdentifierForGetTermIdMethod() {
+  public static function provideTermIdentifierForGetTermIdMethod() {
     return [
       // #0: An integer term identifier.
       [
@@ -145,7 +145,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *   - An array of expected values, with the following keys.
    *     - 'is_saved': the expected return value of the method.
    */
-  public function provideTermsForSaveTermConfigValuesMethod() {
+  public static function provideTermsForSaveTermConfigValuesMethod() {
     return [
       // #0: New term.
       [

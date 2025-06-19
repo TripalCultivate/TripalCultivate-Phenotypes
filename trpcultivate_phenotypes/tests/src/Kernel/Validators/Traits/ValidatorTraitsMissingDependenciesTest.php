@@ -59,7 +59,7 @@ class ValidatorTraitsMissingDependenciesTest extends ChadoTestKernelBase {
    *     - 'expected_message': the exception message expected when trying to set
    *       the genus for a badly configured validator.
    */
-  public function provideBadlyConfiguredValidators() {
+  public static function provideBadlyConfiguredValidators() {
     $senarios = [];
 
     $senarios['no_connection'] = [
