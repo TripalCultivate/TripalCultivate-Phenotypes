@@ -268,7 +268,7 @@ class TripalCultivatePhenotypesTraitsService {
         if (!$ins) {
           // Could not insert cvterm.
           throw new \Exception('A database error occurred while inserting a term.
-          Failed to insert term ' . $type . ' : ' . $rec);
+          Failed to insert term ' . $type . ' : ' . $rec['cvterm.name']);
         }
 
         $arr_trait[$type]['id'] = $ins->getValue('cvterm.cvterm_id');
