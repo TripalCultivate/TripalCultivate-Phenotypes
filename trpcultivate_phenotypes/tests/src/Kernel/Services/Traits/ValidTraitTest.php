@@ -189,6 +189,34 @@ class ValidTraitTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test the insertTrait method with schema not null.
+   */
+  public function testInsertTraitWithSchema() {
+    // Set genus to use by the traits service.
+    $this->service_traits->setTraitGenus($this->genus);
+
+    // Get schema name.
+    $schema = $this->chado_connection->getSchemaName();
+
+    // A trait to insert.
+    $trait = 'Trait Name';
+    $method = 'My Method';
+    $unit = 'cm';
+
+    $trait_combo = [
+      'Trait Name' => $trait,
+      'Trait Description' => 'Trait Description',
+      'Method Short Name' => $method,
+      'Collection Method' => 'Some collection method',
+      'Unit' => $unit,
+      'Type' => 'Quantitative',
+    ];
+
+    // Insert the trait by schema.
+    $this->service_traits->insertTrait($trait_combo, $schema);
+  }
+
+  /**
    * Test that we can retrieve a trait we just inserted.
    */
   public function testTraitsServiceGetters() {
