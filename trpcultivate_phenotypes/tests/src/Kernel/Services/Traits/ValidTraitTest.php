@@ -249,7 +249,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
       ' and set the controlled vocabularies associated with this genus.',
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when the genus is not configured, but one wasn't thrown.",
     );
 
     // Test case for where the name is not returned.
@@ -283,7 +283,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $this->assertStringStartsWith(
       'We were unable to retrieve the name for the Genus ',
       $exception_message,
-      "The expected error was not thrown.",
+      "We expected an exception to be caught when the name for genus was not
+      found, but the error was not thrown.",
     );
 
     // Test case where the terms are not set correctly.
@@ -313,14 +314,14 @@ class ValidTraitTest extends ChadoTestKernelBase {
       asset relationships was not configured. To configure terms, go to' . Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
       'and set the controlled vocabulary associated with the term.',
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when the terms are not configured, but one wasn't thrown.",
     );
   }
 
   /**
-   * Test the insertTrait() method.
+   * Test the insertTrait() method when the genus is not set.
    */
-  public function testInsertTrait() {
+  public function testInsertTraitUnsetGenus() {
     // Set the genus to null.
     $this->genus = NULL;
 
@@ -350,7 +351,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'genus or see all configured genus, go to ' .
       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when no genus is set, but one wasn't thrown.",
     );
     // Set the genus back to original genus.
     $this->genus = 'Tripalus';
@@ -671,7 +672,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'Exception: A multiple data type error occurred while retrieving
       a unit data type. Failed to retrieve data type for unit : E Unit in cv : . Multiple data types found for the same unit.',
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when multiple data types for
+      one unit is found, but one wasn't thrown.",
     );
 
     // Test the getPhenoCvTerm() method.
@@ -712,7 +714,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
       Failed to retrieve $type : $key in cv : ' . $vocab_name . '. ' .
       'Multiple copies of the same term found in the CV',
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when duplicate terms are found,
+      but one wasn't thrown.",
     );
 
     // Test the getPhenoCvterm() method with Invalid trait asset type.
@@ -728,7 +731,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
       asset getter expects type to be the string trait, method or unit.' .
        Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when invalid trait asset type value
+       is povided, but one wasn't thrown.",
     );
 
     // Test the no genus error within the method getPhenoCvTerm().
@@ -748,7 +752,8 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'genus or see all configured genus, go to ' .
        Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
       $exception_caught,
-      "We expected an exception to be caught for this scenario, but one wasn't thrown.",
+      "We expected an exception to be caught when no genus is configured,
+      but one wasn't thrown.",
     );
   }
 
