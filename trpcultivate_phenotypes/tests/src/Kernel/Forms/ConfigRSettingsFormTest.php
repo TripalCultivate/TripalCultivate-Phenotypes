@@ -46,10 +46,10 @@ class ConfigRSettingsFormTest extends ChadoTestKernelBase {
     // Set values for form state.
     $form_state->setValue('words', 'num,log');
     $form_state->setValue('chars', '#,*');
-    $form_state->setValue('replace', 'num,log');
+    $form_state->setValue('replace', 'num = number');
 
     $rsettingsform->validateForm($form, $form_state);
-    $this->assertTrue(
+    $this->assertFalse(
       $form_state->hasAnyErrors(),
       'The form state should be valid but there are form errors for some reason.',
     );
