@@ -233,22 +233,19 @@ class ValidTraitTest extends ChadoTestKernelBase {
    */
   public function testSetTraitGenus() {
     // Test case for where the genus is not configured.
-    $exception_caught = FALSE;
-    $exception_message = 'NONE';
     $exception_message = '';
     try {
       $this->service_traits->setTraitGenus('Test Genus');
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
     $this->assertEquals(
-      'Exception: The genus Test Genus was not configured for' .
-      'use with Tripal Cultivate Phenotypes. To configure this genus, go to ' .
+      'The genus "Test Genus" was not configured for
+      use with Tripal Cultivate Phenotypes. To configure this genus, go to ' .
       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
       ' and set the controlled vocabularies associated with this genus.',
-      $exception_caught,
+      $exception_message,
       "We expected an exception to be caught when the genus is not configured, but one wasn't thrown.",
     );
 
@@ -272,7 +269,6 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $this->container->set('trpcultivate_phenotypes.traits', NULL);
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
 
-    $exception_message = 'NONE';
     $exception_message = '';
     try {
       $this->service_traits->setTraitGenus($this->genus);
@@ -299,21 +295,20 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     $this->container->set('trpcultivate_phenotypes.traits', NULL);
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
-    $exception_caught = FALSE;
-    $exception_message = 'NONE';
+
     $exception_message = '';
     try {
       $this->service_traits->setTraitGenus($this->genus);
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
       $exception_message = $e->getMessage();
     }
     $this->assertEquals(
-      'Exception: Term(s) method_to_trait_relationship_type, unit_to_method_relationship_type used to create trait
-      asset relationships was not configured. To configure terms, go to' . Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
+      'Term(s) method_to_trait_relationship_type, unit_to_method_relationship_type used to create trait
+      asset relationships was not configured. To configure terms, go to'
+      . Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString() .
       'and set the controlled vocabulary associated with the term.',
-      $exception_caught,
+      $exception_message,
       "We expected an exception to be caught when the terms are not configured, but one wasn't thrown.",
     );
   }
@@ -338,19 +333,19 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'Type' => 'Quantitative',
     ];
 
-    $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $this->service_traits->insertTrait($trait);
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
     $this->assertEquals(
-      'Exception: No genus has been set. See setting a genus in the' .
-      'Traits Service and make sure to use a configured genus. To configure a' .
-      'genus or see all configured genus, go to ' .
-      Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
-      $exception_caught,
+      'No genus has been set. See setting a genus in the
+        Traits Service and make sure to use a configured genus. To configure a
+        genus or see all configured genus, go to ' .
+        Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
+      $exception_message,
       "We expected an exception to be caught when no genus is set, but one wasn't thrown.",
     );
     // Set the genus back to original genus.
@@ -661,17 +656,16 @@ class ValidTraitTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
-    $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $this->service_traits->getMethodUnitDataType('E Unit');
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
-    $this->assertEquals(
-      'Exception: A multiple data type error occurred while retrieving
-      a unit data type. Failed to retrieve data type for unit : E Unit in cv : . Multiple data types found for the same unit.',
-      $exception_caught,
+    $this->assertStringStartsWith(
+      'A multiple data type error occurred while retrieving',
+      $exception_message,
       "We expected an exception to be caught when multiple data types for
       one unit is found, but one wasn't thrown.",
     );
@@ -702,35 +696,33 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $values = ['vocab_name' => $vocab_name, 'term' => ['name' => 'E Unit']];
     $this->createTripalTerm($values, 'chado_id_space', 'chado_vocabulary');
 
-    $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $method->invokeArgs($this->service_traits, ['E Unit', 'unit']);
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
-    $this->assertEquals(
-      'Exception: A duplicate term error occurred while retrieving a trait asset.
-      Failed to retrieve $type : $key in cv : ' . $vocab_name . '. ' .
-      'Multiple copies of the same term found in the CV',
-      $exception_caught,
+    $this->assertStringStartsWith(
+      'A duplicate term error occurred while retrieving a trait asset.
+          Failed to retrieve $type : $key in cv : ',
+      $exception_message,
       "We expected an exception to be caught when duplicate terms are found,
       but one wasn't thrown.",
     );
 
     // Test the getPhenoCvterm() method with Invalid trait asset type.
-    $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $method->invokeArgs($this->service_traits, ['E unit', 'Invalid']);
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
     $this->assertEquals(
-      'Exception: Not a valid trait asset type value provided. Trait
-      asset getter expects type to be the string trait, method or unit.' .
-       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
-      $exception_caught,
+      'Not a valid trait asset type value provided. Trait
+        asset getter expects type to be the string trait, method or unit.',
+      $exception_message,
       "We expected an exception to be caught when invalid trait asset type value
        is povided, but one wasn't thrown.",
     );
@@ -739,19 +731,19 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $this->container->set('trpcultivate_phenotypes.traits', NULL);
     $this->service_traits = \Drupal::service('trpcultivate_phenotypes.traits');
 
-    $exception_caught = FALSE;
+    $exception_message = '';
     try {
       $this->service_traits->getMethodUnitDataType('E Unit');
     }
     catch (\Exception $e) {
-      $exception_caught = TRUE;
+      $exception_message = $e->getMessage();
     }
     $this->assertEquals(
-      'No genus has been set. See setting a genus in the' .
-      'Traits Service and make sure to use a configured genus. To configure a' .
-      'genus or see all configured genus, go to ' .
-       Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
-      $exception_caught,
+      'No genus has been set. See setting a genus in the
+        Traits Service and make sure to use a configured genus. To configure a
+        genus or see all configured genus, go to ' .
+        Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString(),
+      $exception_message,
       "We expected an exception to be caught when no genus is configured,
       but one wasn't thrown.",
     );
