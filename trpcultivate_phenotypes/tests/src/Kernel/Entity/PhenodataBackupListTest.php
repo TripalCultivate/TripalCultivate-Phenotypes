@@ -72,6 +72,10 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
       'name' => 'Researcher with no backups',
       'permissions' => ['view_own phenodata_backup'],
     ],
+    'view_own_1' => [
+      'name' => 'A user with one backup',
+      'permissions' => ['view_own phenodata_backup'],
+    ],
     'view_own_3' => [
       'name' => 'Researcher with 3 backups',
       'permissions' => ['view_own phenodata_backup'],
@@ -129,6 +133,10 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
       ->fields(['name' => 'Project B'])
       ->execute();
 
+    $project_c_id = $this->chado_connection->insert('1:project')
+      ->fields(['name' => 'Project C'])
+      ->execute();
+
     // Create users.
     // Create first UID1 so, the other users are not super-admin.
     $this->createUser([], NULL, FALSE, ['uid' => 1]);
@@ -153,7 +161,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
         'id' => uniqid(),
         'file_id' => $file_id,
         'project_id' => $project_a_id,
-        'comments' => 'This is a comment for $i',
+        'comments' => 'This is a comment for backup #' . $i,
         'backup_date' => date('Y-M-d H:i:s'),
         'user_id' => $this->users['view_own_3']['id'],
       ];
@@ -171,7 +179,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
       'id' => uniqid(),
       'file_id' => $file_id,
       'project_id' => $project_a_id,
-      'comments' => 'This is a comment for $i',
+      'comments' => 'This is a comment for a backup file',
       'backup_date' => date('Y-M-d H:i:s'),
       'user_id' => $this->users['view_all']['id'],
     ];
@@ -183,13 +191,24 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
       'id' => uniqid(),
       'file_id' => $file_id,
       'project_id' => $project_a_id,
-      'comments' => 'This is a comment for $i',
+      'comments' => 'This is a comment for a backup file',
       'backup_date' => date('Y-M-d H:i:s'),
       'user_id' => $this->users['admin']['id'],
     ];
     $entity_storage->create($values)
       ->save();
 
+    // A user with one backup.
+    $values = [
+      'id' => uniqid(),
+      'file_id' => $file_id,
+      'project_id' => $project_c_id,
+      'comments' => 'This is a comment for a backup file',
+      'backup_date' => date('Y-M-d H:i:s'),
+      'user_id' => $this->users['view_own_1']['id'],
+    ];
+    $entity_storage->create($values)
+      ->save();
   }
 
   /**
@@ -253,7 +272,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
       [
         'auth_level' => 2,
         'headers' => $admin_headers,
-        'num_backups' => 5,
+        'num_backups' => 6,
         'has_project_a' => 4,
       ],
     ];
@@ -264,7 +283,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
       [
         'auth_level' => 2,
         'headers' => $admin_headers,
-        'num_backups' => 5,
+        'num_backups' => 6,
         'has_project_a' => 4,
       ],
     ];
@@ -508,6 +527,44 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     $this->assertCount(1, $errors, "We got errors when we submitting the form with a valid project_id.");
     $this->assertArrayHasKey('project_id', $errors, "We expected the project_id to be flagged in errors when a non-existing project_id was submitted.");
     $this->assertStringContainsString('The Research Experiment is not recognized', (string) $errors['project_id'], "The error did not contain what we expected when a non-existing project_id is supplied.");
+  }
+
+  /**
+   * Test filtering of data backup by project through altering the query string.
+   */
+  public function testBackupFilterByModifyingUrl() {
+    // Login the current user.
+    $current_user = $this->users['view_own_3']['object'];
+    $this->setCurrentUser($current_user);
+
+    // Request to filter backup with non-existent project id.
+    $request = REQUEST::create('/admin/structure/phenodata-backup?project_id=99999');
+    $response = $this->container->get('http_kernel')->handle($request);
+
+    $config_entity_list_markup = (string) $response->getContent();
+
+    $this->assertStringContainsString(
+      'The Research Experiment is not recognized or you do not have permission to see backups for it.',
+      $config_entity_list_markup,
+      'The backup page did not contain the expected error message if a non-existent project is supplied as a filter criteria in the url'
+    );
+
+    // Request filter to backup with a project user has no permission.
+    user_logout();
+    $current_user = $this->users['view_own_1']['object'];
+    $this->setCurrentUser($current_user);
+    $project_a_id = 1;
+
+    // User view_own_1 has a single backup in Project C and this is attempting
+    // to access backups in Project A own by another user.
+    $request = REQUEST::create('/admin/structure/phenodata-backup?project_id=' . $project_a_id);
+    $response = $this->container->get('http_kernel')->handle($request);
+
+    $this->assertStringContainsString(
+      'The Research Experiment is not recognized or you do not have permission to see backups for it.',
+      $config_entity_list_markup,
+      'The backup page did not contain the expected error message if a non-existent project is supplied as a filter criteria in the url'
+    );
   }
 
 }
