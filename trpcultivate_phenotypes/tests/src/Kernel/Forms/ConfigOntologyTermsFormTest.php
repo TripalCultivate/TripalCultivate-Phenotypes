@@ -276,6 +276,22 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
 
     // Call submitForm().
     $this->ontology_form->submitForm($form, $form_state);
+
+    // Test if the Config values are saved properly.
+    $config_values = $service_genusontology->getGenusOntologyConfigValues('Lens');
+    $this->assertNotNull($config_values, "The genus Ontology Config values are not set properly and returned null");
+    $k = 1;
+    foreach ($config_values as $key => $value) {
+      $this->assertEquals($value, $k, "The genus Ontology Config values are not set properly, so we did not get the expected values.");
+      $k++;
+    }
+
+    // Test whether the allow new values are saved properly.
+    $allow_new = $form_state->getValue('allow_new');
+    $config = $this->config('trpcultivate_phenotypes.settings');
+    $new_val = $config->get('trpcultivate.phenotypes.ontology.allownew');
+    $this->assertEquals($allow_new, $new_val, "Allow new traits are not saved properly.");
+
   }
 
 }
