@@ -163,7 +163,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *   A string, term identifier input.
    * @param array $expected
    *   An array of expected values, with the following keys.
-   *     - 'term_exists': boolean value to idicate if a term identifier exits
+   *     - 'term_exists': boolean value to indicate if a term identifier exits
    *    (TRUE) or of if it is a non-existent identifier (FALSE).
    *
    * @dataProvider provideTermIdentifierForGetTermIdMethod
@@ -245,7 +245,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     // Create or fectch input term.
     $term_exists = $this->chado_connection->select('1:cvterm', 'cvt')
       ->fields('cvt', ['cvterm_id'])
-      ->condition('cvt.name', $input_term['name'])
+      ->condition('cvt.name', $input_term['name'], '=')
       ->execute()
       ->fetchField();
 
@@ -400,6 +400,16 @@ class ServiceTermTest extends ChadoTestKernelBase {
       [
         'a string',
         '',
+        [
+          'is_saved' => FALSE,
+        ],
+      ],
+      // #2: Not a registered config name.
+      [
+        'not a config name',
+        [
+          'not_a_config_name' => 1,
+        ],
         [
           'is_saved' => FALSE,
         ],
