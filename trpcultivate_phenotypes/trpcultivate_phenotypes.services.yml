@@ -14,4 +14,4 @@ services:
 
   trpcultivate_phenotypes.traits:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService'
-    arguments: ['@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms', '@tripal_chado.database', '@tripal_chado.chado_buddy', ]
+    arguments: ['@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms', '@tripal_chado.database', '@tripal_chado.chado_buddy']
