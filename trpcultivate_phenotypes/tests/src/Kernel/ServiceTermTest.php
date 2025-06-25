@@ -6,6 +6,9 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 
 /**
  * Test Tripal Cultivate Phenotypes Terms service.
@@ -59,6 +62,28 @@ class ServiceTermTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
+   * The Chado Buddy service manager.
+   *
+   * @var Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager
+   */
+  protected ChadoBuddyPluginManager $buddy_manager;
+
+  /**
+   * The Chado Buddy cvterm.
+   *
+   * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
+   */
+
+  protected ChadoCvtermBuddy $cvterm_buddy;
+
+  /**
+   * The Chado Buddy Dbxref.
+   *
+   * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy
+   */
+  protected ChadoDbxrefBuddy $dbxref_buddy;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -69,6 +94,13 @@ class ServiceTermTest extends ChadoTestKernelBase {
 
     // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+
+    $this->buddy_manager = $this->container->get('tripal_chado.chado_buddy');
+
+    // Chado cvterm buddy.
+    $this->cvterm_buddy = $this->buddy_manager->createInstance('chado_cvterm_buddy', []);
+    // Chado dbxref buddy.
+    $this->dbxref_buddy = $this->buddy_manager->createInstance('chado_dbxref_buddy', []);
 
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
@@ -199,8 +231,10 @@ class ServiceTermTest extends ChadoTestKernelBase {
       [
         'new term',
         [
-          'name' => 'New Term',
-          'cv' => 'local',
+          'cvterm.name' => 'New Term',
+          'cv.name' => 'local',
+          'db.name' => 'null',
+          'dbxref.accession' => 'New Term',
         ],
         'genus',
         [
@@ -212,8 +246,10 @@ class ServiceTermTest extends ChadoTestKernelBase {
       [
         'existing term',
         [
-          'name' => 'null',
-          'cv' => 'null',
+          'cvterm.name' => 'null',
+          'cv.name' => 'null',
+          'db.name' => 'null',
+          'dbxref.accession' => 'null',
         ],
         'location',
         [
@@ -245,7 +281,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     // Create or fectch input term.
     $term_exists = $this->chado_connection->select('1:cvterm', 'cvt')
       ->fields('cvt', ['cvterm_id'])
-      ->condition('cvt.name', $input_term['name'], '=')
+      ->condition('cvt.name', $input_term['cvterm.name'], '=')
       ->execute()
       ->fetchField();
 
@@ -253,8 +289,8 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $cvterm_id = $term_exists;
     }
     else {
-      $cvterm = chado_insert_cvterm($input_term, [], $schema = NULL);
-      $cvterm_id = $cvterm->cvterm_id;
+      $cvterm = $this->cvterm_buddy->upsertCvterm($input_term, []);
+      $cvterm_id = $cvterm->getValue('cvterm.cvterm_id');
     }
 
     $is_saved = $this->service_PhenoTerms->saveTermConfigValues([$term_identifier => $cvterm_id]);
@@ -339,19 +375,11 @@ class ServiceTermTest extends ChadoTestKernelBase {
    */
   public function testSaveTermConfigValuesMethodInvalidKey($scenario, $input_term, $term_identifier, $expected) {
     // Create or fectch input term.
-    $term_exists = $this->chado_connection->select('1:cvterm', 'cvt')
+    $cvterm_id = $this->chado_connection->select('1:cvterm', 'cvt')
       ->fields('cvt', ['cvterm_id'])
-      ->condition('cvt.name', $input_term['name'])
+      ->condition('cvt.name', $input_term['name'], '=')
       ->execute()
       ->fetchField();
-
-    if ($term_exists) {
-      $cvterm_id = $term_exists;
-    }
-    else {
-      $cvterm = chado_insert_cvterm($input_term, [], $schema = NULL);
-      $cvterm_id = $cvterm->cvterm_id;
-    }
 
     // Test to see if saveTermConfigValues() returns false.
     $is_saved = $this->service_PhenoTerms->saveTermConfigValues([$term_identifier => $cvterm_id]);
@@ -369,9 +397,9 @@ class ServiceTermTest extends ChadoTestKernelBase {
     );
 
     // Test to see whether the term is not saved as expected.
-    $this->assertNotEquals(
+    $this->assertEquals(
       $this->service_PhenoTerms->getTermId($term_identifier),
-      $cvterm_id,
+      0,
       'saveTermConfigValues() saved the term even when the key is not existing in scenario: ' . $scenario
     );
   }
