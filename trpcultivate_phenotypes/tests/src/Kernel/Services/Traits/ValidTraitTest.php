@@ -199,16 +199,12 @@ class ValidTraitTest extends ChadoTestKernelBase {
     $schema = $this->chado_connection->getSchemaName();
 
     // A trait to insert.
-    $trait = 'Trait Name';
-    $method = 'My Method';
-    $unit = 'cm';
-
     $trait_combo = [
-      'Trait Name' => $trait,
+      'Trait Name' => 'Trait Name',
       'Trait Description' => 'Trait Description',
-      'Method Short Name' => $method,
+      'Method Short Name' => 'My Method',
       'Collection Method' => 'Some collection method',
-      'Unit' => $unit,
+      'Unit' => 'cm',
       'Type' => 'Quantitative',
     ];
 
