@@ -305,7 +305,7 @@ class TripalCultivatePhenotypesGenusOntologyService {
 
       // Test if a genus is active by using the trait configuration.
       $config_trait = $this->config
-        ->get($this->sysvar_genus_ontology . '.' . $genus_key . '.' . 'trait');
+        ->get($this->sysvar_genus_ontology . '.' . $genus_key . '.trait');
 
       if ($config_trait && $config_trait > 0) {
         $active_genus[] = $genus;
