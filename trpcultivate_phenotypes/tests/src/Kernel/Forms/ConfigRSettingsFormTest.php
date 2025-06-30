@@ -40,6 +40,14 @@ class ConfigRSettingsFormTest extends ChadoTestKernelBase {
     // Create a form instance.
     $rsettingsform = TripalCultivatePhenotypesRSettingsForm::create($container);
 
+    $this->assertNotNull($rsettingsform, 'The form instance should not be null, but returned null.');
+
+    $this->assertEquals(
+    $rsettingsform->getFormId(),
+    'trpcultivate_phenotypes_r_settings_form',
+    'The form ID should match the expected value: trpcultivate_phenotypes_r_settings_form.',
+    );
+
     $form = [];
     $form_state = new FormState();
 
@@ -56,19 +64,20 @@ class ConfigRSettingsFormTest extends ChadoTestKernelBase {
 
     $rsettingsform->submitForm($form, $form_state);
 
-    $config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
+    $r_config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
+      ->get('trpcultivate.phenotypes.r_config');
 
     // Assert that the configuration was saved correctly.
     $this->assertNotNull(
-      $config->get('trpcultivate.phenotypes.r_config.words'),
+      $r_config['words'],
       'Words configuration was not saved correctly.'
     );
     $this->assertNotNull(
-      $config->get('trpcultivate.phenotypes.r_config.chars'),
+      $r_config['chars'],
       'Char configuration was not saved correctly.'
     );
     $this->assertNotNull(
-      $config->get('trpcultivate.phenotypes.r_config.replace'),
+      $r_config['replace'],
       'Replace configuration was not saved correctly.'
     );
   }

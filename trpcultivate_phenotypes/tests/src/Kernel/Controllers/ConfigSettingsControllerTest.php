@@ -44,6 +44,7 @@ class ConfigSettingsControllerTest extends ChadoTestKernelBase {
 
     // Check that the render array is an array with the expected keys.
     $this->assertArrayHasKey('rrules', $render_arr, 'Render array should have a rrules key.');
+    $this->assertEquals('R TRANSFORMATION RULES', (string) $render_arr['rrules']['#title'], 'The title of the rrules section should be "R TRANSFORMATION RULES".');
     $this->assertArrayHasKey('watermarking', $render_arr, 'Render array should have a watermarking key.');
     $this->assertArrayHasKey('ontologies', $render_arr, 'Render array should have an ontologies key.');
   }
