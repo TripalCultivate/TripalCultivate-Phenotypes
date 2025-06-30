@@ -5,6 +5,10 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
+use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 
 /**
  * Test Tripal Cultivate Phenotypes Terms service.
@@ -44,11 +48,40 @@ class ServiceTermTest extends ChadoTestKernelBase {
   private $config;
 
   /**
+   * Tripal Logger log message.
+   *
+   * @var string
+   */
+  private string $log_message;
+
+  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
+
+  /**
+   * The Chado Buddy service manager.
+   *
+   * @var Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager
+   */
+  protected ChadoBuddyPluginManager $buddy_manager;
+
+  /**
+   * The Chado Buddy cvterm.
+   *
+   * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy
+   */
+
+  protected ChadoCvtermBuddy $cvterm_buddy;
+
+  /**
+   * The Chado Buddy Dbxref.
+   *
+   * @var \Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy
+   */
+  protected ChadoDbxrefBuddy $dbxref_buddy;
 
   /**
    * {@inheritdoc}
@@ -62,6 +95,13 @@ class ServiceTermTest extends ChadoTestKernelBase {
     // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
+    $this->buddy_manager = $this->container->get('tripal_chado.chado_buddy');
+
+    // Chado cvterm buddy.
+    $this->cvterm_buddy = $this->buddy_manager->createInstance('chado_cvterm_buddy', []);
+    // Chado dbxref buddy.
+    $this->dbxref_buddy = $this->buddy_manager->createInstance('chado_dbxref_buddy', []);
+
     // Install module configuration.
     $this->installConfig(['trpcultivate_phenotypes']);
     $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
@@ -70,6 +110,21 @@ class ServiceTermTest extends ChadoTestKernelBase {
 
     $this->installConfig('trpcultivate');
     trpcultivate_install_terms();
+
+    // Mock Tripal Logger.
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
+    $container = \Drupal::getContainer();
+    $container->set('tripal.logger', $mock_logger);
 
     // Term Service.
     $this->service_PhenoTerms = \Drupal::service('trpcultivate_phenotypes.terms');
@@ -132,6 +187,31 @@ class ServiceTermTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test Term Service getTermId() method.
+   *
+   * @param string $scenario
+   *   A string, human-readable short descriptionn of the test scenario.
+   * @param string $input_term_identifier
+   *   A string, term identifier input.
+   * @param array $expected
+   *   An array of expected values, with the following keys.
+   *     - 'term_exists': boolean value to indicate if a term identifier exits
+   *    (TRUE) or of if it is a non-existent identifier (FALSE).
+   *
+   * @dataProvider provideTermIdentifierForGetTermIdMethod
+   */
+  public function testGetTermId($scenario, $input_term_identifier, $expected) {
+    $term_id = $this->service_PhenoTerms->getTermId($input_term_identifier);
+    $term_exists = ($term_id > 0) ? TRUE : FALSE;
+
+    $this->assertEquals(
+      $expected['term_exists'],
+      $term_exists,
+      'getTermId() should return ' . $expected['term_exists'] . ' for the input indentifier in scenario ' . $scenario
+    );
+  }
+
+  /**
    * Data Provider: provides terms to test Term Service saveTermConfigValues().
    *
    * @return array
@@ -151,8 +231,10 @@ class ServiceTermTest extends ChadoTestKernelBase {
       [
         'new term',
         [
-          'name' => 'New Term',
-          'cv' => 'local',
+          'cvterm.name' => 'New Term',
+          'cv.name' => 'local',
+          'db.name' => 'null',
+          'dbxref.accession' => 'New Term',
         ],
         'genus',
         [
@@ -164,8 +246,10 @@ class ServiceTermTest extends ChadoTestKernelBase {
       [
         'existing term',
         [
-          'name' => 'null',
-          'cv' => 'null',
+          'cvterm.name' => 'null',
+          'cv.name' => 'null',
+          'db.name' => 'null',
+          'dbxref.accession' => 'null',
         ],
         'location',
         [
@@ -173,31 +257,6 @@ class ServiceTermTest extends ChadoTestKernelBase {
         ],
       ],
     ];
-  }
-
-  /**
-   * Test Term Service getTermId() method.
-   *
-   * @param string $scenario
-   *   A string, human-readable short descriptionn of the test scenario.
-   * @param string $input_term_identifier
-   *   A string, term identifier input.
-   * @param array $expected
-   *   An array of expected values, with the following keys.
-   *     - 'term_exists': boolean value to idicate if a term identifier exits
-   *    (TRUE) or of if it is a non-existent identifier (FALSE).
-   *
-   * @dataProvider provideTermIdentifierForGetTermIdMethod
-   */
-  public function testGetTermId($scenario, $input_term_identifier, $expected) {
-    $term_id = $this->service_PhenoTerms->getTermId($input_term_identifier);
-    $term_exists = ($term_id > 0) ? TRUE : FALSE;
-
-    $this->assertEquals(
-      $expected['term_exists'],
-      $term_exists,
-      'getTermId() should return ' . $expected['term_exists'] . ' for the input indentifier in scenario ' . $scenario
-    );
   }
 
   /**
@@ -222,7 +281,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
     // Create or fectch input term.
     $term_exists = $this->chado_connection->select('1:cvterm', 'cvt')
       ->fields('cvt', ['cvterm_id'])
-      ->condition('cvt.name', $input_term['name'])
+      ->condition('cvt.name', $input_term['cvterm.name'], '=')
       ->execute()
       ->fetchField();
 
@@ -230,8 +289,8 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $cvterm_id = $term_exists;
     }
     else {
-      $cvterm = chado_insert_cvterm($input_term, [], $schema = NULL);
-      $cvterm_id = $cvterm->cvterm_id;
+      $cvterm = $this->cvterm_buddy->upsertCvterm($input_term, []);
+      $cvterm_id = $cvterm->getValue('cvterm.cvterm_id');
     }
 
     $is_saved = $this->service_PhenoTerms->saveTermConfigValues([$term_identifier => $cvterm_id]);
@@ -246,6 +305,166 @@ class ServiceTermTest extends ChadoTestKernelBase {
       $this->service_PhenoTerms->getTermId($term_identifier),
       $cvterm_id,
       'saveTermConfigValues() failed to save term in the expected term identifier in scenario ' . $scenario
+    );
+  }
+
+  /**
+   * Data Provider: provide terms to test saveTermConfigValues Invalid term key.
+   *
+   * @return array
+   *   Each term test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array, term input with the following keys:
+   *     - 'name': the name of the term.
+   *     - 'cv': the cv vocabulary the term will be associated.
+   *   - A string, the term identifier of the module the term array will
+   *     be saved and mapped to.
+   *   - An array of expected values, with the following keys.
+   *     - 'is_saved': the expected return value of the method.
+   *     - 'log_messages': the expected error log message.
+   */
+  public static function provideInvalidTermsForSaveTermConfigValuesMethod() {
+    return [
+      // #0: Non-existant term key
+      [
+        'non-existant term',
+        [
+          'name' => 'null',
+          'cv' => 'null',
+        ],
+        'Invalid term key',
+        [
+          'is_saved' => FALSE,
+          'log_message' => 'Error. Failed to save configuration: Invalid term key=1',
+        ],
+      ],
+      // #1: Empty term key
+      [
+        'empty term',
+        [
+          'name' => 'null',
+          'cv' => 'null',
+        ],
+        '',
+        [
+          'is_saved' => FALSE,
+          'log_message' => 'Error. Failed to save configuration: =1',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test for failure cases in saveTermConfigValues() method with invalid key.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $input_term
+   *   An array, term input with the following keys:
+   *     - 'name': the name of the term.
+   *     - 'cv': the cv vocabulary the term will be associated.
+   * @param string $term_identifier
+   *   A string, the term identifier of the module the term array will
+   *   be saved and mapped to.
+   * @param array $expected
+   *   An array of expected values, with the following keys.
+   *     - 'is_saved': the expected return value of the method.
+   *     - 'log_messages': the expected error log message.
+   *
+   * @dataProvider provideInvalidTermsForSaveTermConfigValuesMethod
+   */
+  public function testSaveTermConfigValuesMethodInvalidKey($scenario, $input_term, $term_identifier, $expected) {
+    // Create or fectch input term.
+    $cvterm_id = $this->chado_connection->select('1:cvterm', 'cvt')
+      ->fields('cvt', ['cvterm_id'])
+      ->condition('cvt.name', $input_term['name'], '=')
+      ->execute()
+      ->fetchField();
+
+    // Test to see if saveTermConfigValues() returns false.
+    $is_saved = $this->service_PhenoTerms->saveTermConfigValues([$term_identifier => $cvterm_id]);
+    $this->assertEquals(
+      $expected['is_saved'],
+      $is_saved,
+      'saveTermConfigValues() should return ' . $expected['is_saved'] . ' in scenario: ' . $scenario
+    );
+
+    // Test whether the correct error log message is returned.
+    $this->assertEquals(
+      $expected['log_message'],
+      $this->log_message,
+      "The logged error message does not have the message we expected for in scenario " . $scenario
+    );
+
+    // Test to see whether the term is not saved as expected.
+    $this->assertEquals(
+      $this->service_PhenoTerms->getTermId($term_identifier),
+      0,
+      'saveTermConfigValues() saved the term even when the key is not existing in scenario: ' . $scenario
+    );
+  }
+
+  /**
+   * Data Provider: provides invalid config values to saveTermConfigValues().
+   *
+   * @return array
+   *   Each term test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array or a string, invalid input for the config values.
+   *   - An array of expected values, with the following keys.
+   *     - 'is_saved': the expected return value of the method.
+   */
+  public static function provideInvalidConfigForSaveTermConfigValuesMethod() {
+    return [
+      // #0: An Empty array
+      [
+        'an empty array',
+        [],
+        [
+          'is_saved' => FALSE,
+        ],
+      ],
+      // #1: Is not an array
+      [
+        'a string',
+        '',
+        [
+          'is_saved' => FALSE,
+        ],
+      ],
+      // #2: Not a registered config name.
+      [
+        'not a config name',
+        [
+          'not_a_config_name' => 1,
+        ],
+        [
+          'is_saved' => FALSE,
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test for Failure cases in saveTermConfigValues() with invalid config value.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param mixed $config_value
+   *   An array or string, invalid input for the config values.
+   * @param array $expected
+   *   An array of expected values, with the following keys.
+   *     - 'is_saved': the expected return value of the method.
+   *
+   * @dataProvider provideInvalidConfigForSaveTermConfigValuesMethod
+   */
+  public function testSaveTermConfigValuesMethodFailure($scenario, $config_value, $expected) {
+    // Test when the config values is not valid.
+    $is_saved = $this->service_PhenoTerms->saveTermConfigValues($config_value);
+    $this->assertEquals(
+      $expected['is_saved'],
+      $is_saved,
+      'saveTermConfigValues() should return FALSE when config_values is ' . $scenario
     );
   }
 

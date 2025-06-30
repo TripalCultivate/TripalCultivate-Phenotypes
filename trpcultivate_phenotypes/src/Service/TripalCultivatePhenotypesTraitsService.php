@@ -508,7 +508,7 @@ class TripalCultivatePhenotypesTraitsService {
       // Unit appears to have multiple data types.
       throw new \Exception('A multiple data type error occurred while retrieving
       a unit data type. Failed to retrieve data type for unit : ' . $unit . ' in cv : ' .
-      $genus_config['unit']['name'] . '. Multiple data types found for the same unit.');
+      $this->config['unit']['name'] . '. Multiple data types found for the same unit.');
     }
 
     return ($data_type) ? reset($data_type) : NULL;

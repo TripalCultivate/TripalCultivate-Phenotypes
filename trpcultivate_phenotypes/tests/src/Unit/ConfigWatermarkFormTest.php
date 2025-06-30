@@ -137,4 +137,5 @@ class ConfigWatermarkFormTest extends UnitTestCase {
       'If watermark charts was set to false, then the formValidate() method is expected to submit the form without a watermark image.'
     );
   }
+
 }
