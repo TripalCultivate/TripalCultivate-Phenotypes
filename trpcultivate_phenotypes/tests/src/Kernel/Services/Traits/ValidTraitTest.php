@@ -118,8 +118,11 @@ class ValidTraitTest extends ChadoTestKernelBase {
     // Set genus to use by the traits service.
     $this->service_traits->setTraitGenus($this->genus);
 
+    // Get schema name.
+    $schema = $this->chado_connection->getSchemaName();
+
     // Save the trait.
-    $trait_assets = $this->service_traits->insertTrait($trait);
+    $trait_assets = $this->service_traits->insertTrait($trait, $schema);
 
     // Trait, method and unit.
     $sql = "SELECT * FROM {1:cvterm} WHERE cvterm_id = :id LIMIT 1";
@@ -186,30 +189,6 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     $this->assertNotNull($data_type, 'Failed to insert unit property - additional type.');
     $this->assertEquals($data_type->value, 'Quantitative', 'Unit property - additional type does not match expected value (Quantitative).');
-  }
-
-  /**
-   * Test the insertTrait method with schema not null.
-   */
-  public function testInsertTraitWithSchema() {
-    // Set genus to use by the traits service.
-    $this->service_traits->setTraitGenus($this->genus);
-
-    // Get schema name.
-    $schema = $this->chado_connection->getSchemaName();
-
-    // A trait to insert.
-    $trait_combo = [
-      'Trait Name' => 'Trait Name',
-      'Trait Description' => 'Trait Description',
-      'Method Short Name' => 'My Method',
-      'Collection Method' => 'Some collection method',
-      'Unit' => 'cm',
-      'Type' => 'Quantitative',
-    ];
-
-    // Insert the trait by schema.
-    $this->service_traits->insertTrait($trait_combo, $schema);
   }
 
   /**
