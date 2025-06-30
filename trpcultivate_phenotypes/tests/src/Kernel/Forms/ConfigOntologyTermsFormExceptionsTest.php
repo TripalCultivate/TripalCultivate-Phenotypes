@@ -102,9 +102,9 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
     // Test for the case where the config value is not an array or null.
     $this->ontology_form->buildForm($form, $form_state);
 
-    $warnings = \Drupal::messenger()->messagesByType('warning');
-    $this->assertCount(1, $warnings,
-      'We expect a warning when config value for a genus is not an array, but it was not given.');
+    $errors = \Drupal::messenger()->messagesByType('error');
+    $this->assertCount(1, $errors,
+      'We expect an error message when config value for a genus is not an array, but it was not thrown.');
 
     // Test the case with no genus set.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
