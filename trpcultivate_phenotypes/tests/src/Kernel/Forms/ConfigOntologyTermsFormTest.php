@@ -127,7 +127,7 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
 
     $warnings = \Drupal::messenger()->messagesByType('warning');
     $this->assertCount(2, $warnings,
-      'We expect a warning about the watermark being able to bypass but it was not thrown.');
+      'We expect a warning indicating that the vocabulries cannot be changed once they are uploaded, but there were not any.');
 
     $this->assertEquals(
       'Tripal Cultivate Phenotypes require that phenotypic traits be housed in
