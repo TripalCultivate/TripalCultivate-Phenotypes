@@ -238,155 +238,6 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider for testProcessValidDataFileFailures().
-   *
-   * @return array
-   *   Each scenario is an array with the following:
-   *   - The validation result array that gets passed to the process method. It
-   *     contains the following keys:
-   *     - 'case': a developer-focused string describing the case checked.
-   *     - 'valid': FALSE to indicate that validation failed.
-   *     - 'failedItems': an array of items that failed with the following keys.
-   *       - 'filename': The provided name of the file.
-   *       - 'fid': The fid of the provided file.
-   *       - 'mime': The mime type of the input file if it is not supported.
-   *       - 'extension': The extension of the input file if not supported.
-   *   - An array of expectations in the rendered output which has the following
-   *     keys:
-   *     - 'expected_message': The message expected in the return value of the
-   *       process method for this scenario.
-   *     - 'expected_item_count': The number of failed items expected.
-   *     - 'expected_item': The expected failed item.
-   */
-  public static function provideValidDataFileFailedCases() {
-    $scenarios = [];
-
-    // #0: An invalid file ID is provided.
-    $scenarios[] = [
-      [
-        'case' => 'Invalid file id number',
-        'valid' => FALSE,
-        'failedItems' => [
-          'fid' => 'wrongid',
-        ],
-      ],
-      [
-        'expected_message' => 'A problem occurred in between uploading the file and submitting it for validation.',
-        'expected_item_count' => 0,
-      ],
-    ];
-
-    // #1: An empty file was provided.
-    $filename = 'empty_file.txt';
-    $scenarios[] = [
-      [
-        'case' => 'The file has no data and is an empty file',
-        'valid' => FALSE,
-        'failedItems' => [
-          'filename' => $filename,
-          'fid' => 123,
-        ],
-      ],
-      [
-        'expected_message' => 'The file provided has no contents in it to import. Please ensure your file has the expected header row and at least one row of data.',
-        'expected_item_count' => 1,
-        'expected_item' => 'Filename: ' . $filename,
-      ],
-    ];
-
-    // #2: The file MIME type is unsupported.
-    $mime = 'application/pdf';
-    $extension = 'tsv';
-    $scenarios[] = [
-      [
-        'case' => 'Unsupported file MIME type',
-        'valid' => FALSE,
-        'failedItems' => [
-          'mime' => $mime,
-          'extension' => $extension,
-        ],
-      ],
-      [
-        'expected_message' => 'The type of file uploaded is not supported by this importer. Please ensure your file has one of the supported file extensions and was saved using software that supports that type of file.',
-        'expected_item_count' => 1,
-        'expected_item' => "The file extension indicates the file is \"$extension\" but our system detected the file is of type \"$mime\"",
-      ],
-    ];
-
-    // #3: The data file couldn't be opened.
-    $filename = 'unopenable.tsv';
-    $scenarios[] = [
-      [
-        'case' => 'Data file cannot be opened',
-        'valid' => FALSE,
-        'failedItems' => [
-          'filename' => $filename,
-          'fid' => 456,
-        ],
-      ],
-      [
-        'expected_message' => 'The file provided could not be opened. Please contact your administrator for help.',
-        'expected_item_count' => 1,
-        'expected_item' => 'Filename: ' . $filename,
-      ],
-    ];
-
-    return $scenarios;
-  }
-
-  /**
-   * Tests the message processor method for ValidDataFile validator.
-   *
-   * @param array $validation_result
-   *   The validation result array that gets passed to the process method. It
-   *   contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed with the following keys.
-   *     - 'filename': The provided name of the file.
-   *     - 'fid': The fid of the provided file.
-   *     - 'mime': The mime type of the input file if it is not supported.
-   *     - 'extension': The extension of the input file if not supported.
-   * @param array $expectations
-   *   An array of the expected items in the rendered output. It has the
-   *   following keys:
-   *   - 'expected_message': The message expected in the return value of the
-   *     process method for this scenario.
-   *   - 'expected_item_count': The number of failed items expected.
-   *   - 'expected_item': The expected failed item.
-   *
-   * @dataProvider provideValidDataFileFailedCases
-   */
-  public function testProcessValidDataFileFailures(array $validation_result, array $expectations) {
-    // Call the process method on our validation result.
-    $render_array = $this->importer->processValidDataFileFailures($validation_result);
-    // Render the array we were returned.
-    $rendered_markup = $this->renderer->renderRoot($render_array);
-    $this->setRawContent($rendered_markup);
-
-    // Check the rendered output.
-    // First check that we were given the correct message.
-    $selected_message_title = $this->cssSelect('div.tcp-valid-data-file-failures label');
-    $provided_message = (string) $selected_message_title[0];
-    $this->assertStringContainsString(
-      $expectations['expected_message'],
-      $provided_message,
-      'The message expected from processing ValidDataFile failures for this scenario did not match the one in the rendered output.'
-    );
-
-    // Next, check for expected items.
-    $selected_list_items = $this->cssSelect('div.tcp-valid-data-file-failures ul li');
-    $list_item_count = count($selected_list_items);
-    $this->assertEquals($expectations['expected_item_count'], $list_item_count, 'We expected ' . $expectations['expected_item_count'] . ' list items in the render array from processing ValidDataFile failures, but instead found ' . $list_item_count . '.');
-    // If this is a case where we expect an item, grab the contents of
-    // 'SimpleXMLElement Object' and assert it matches what we expect.
-    if (array_key_exists('expected_item', $expectations)) {
-      $provided_item = (string) $selected_list_items[0];
-      $this->assertEquals($expectations['expected_item'], $provided_item, 'The render array from processing ValidDataFile failures did not contain the expected failed item.');
-    }
-  }
-
-  /**
    * Data Provider for testProcessValidHeadersFailures().
    *
    * @return array
@@ -1382,36 +1233,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #1: ValidDataFile passed + unrecognizable validation case message.
-    $scenarios[] = [
-      'processValidDataFileFailures',
-      [
-        'process_method_params' => [
-          [
-            'case' => 'Data file is valid',
-            'valid' => FALSE,
-            'failedItems' => [
-              'fid' => 100,
-            ],
-          ],
-        ],
-        'expected_message' => 'The case string returned by the ValidDataFile validator implies validation passed, but valid is set to FALSE.',
-      ],
-      [
-        'process_method_params' => [
-          [
-            'case' => $unrecognized_case_string,
-            'valid' => FALSE,
-            'failedItems' => [
-              'fid' => 100,
-            ],
-          ],
-        ],
-        'expected_message' => 'The case string returned by the ValidDataFile validator is not recognized as a potential case.',
-      ],
-    ];
-
-    // #2: ValidHeaders passed + unrecognizable validation case message.
+    // #1: ValidHeaders passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValidHeadersFailures',
       [
@@ -1440,7 +1262,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #3: ValidDelimitedFile passed + unrecognizable validation case message.
+    // #2: ValidDelimitedFile passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValidDelimitedFileFailures',
       [
@@ -1473,7 +1295,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #5: ValueInList passed + unrecognizable validation case message.
+    // #3: ValueInList passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValueInListFailures',
       [
@@ -1508,7 +1330,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #6: DuplicateTraits passed + unrecognizable validation case message.
+    // #4: DuplicateTraits passed + unrecognizable validation case message.
     $scenarios[] = [
       'processDuplicateTraitsFailures',
       [
