@@ -57,8 +57,8 @@ PHPUnit for testing and QLTY Cloud to ensure good test coverage and maintainabil
 There are more details on [our QLTY Cloud project page] describing our specific
 maintainability issues and test coverage.
 
-![MaintainabilityBadge]
-![TestCoverageBadge]
+[![Maintainability](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate/maintainability.svg)](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes)
+[![Code Coverage](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate/coverage.svg)](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes)
 
 The following compatibility is proven via automated testing workflows.
 
