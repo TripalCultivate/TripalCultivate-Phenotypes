@@ -9,6 +9,7 @@ use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
+use Drupal\trpcultivate\Plugin\Validators\EmptyCell;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
@@ -354,7 +355,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
       $form['validation_result'] = [
         '#type' => 'inline_template',
-        '#theme' => 'result_window',
+        '#theme' => 'validation_result_window',
         '#data' => [
           'validation_result' => $validation_result,
         ],
@@ -713,6 +714,8 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ],
     ];
 
+    $header_names = array_column($this->headers, 'name');
+
     // A flag to indicate whether any data row level validation can be set to
     // pass or remains as 'todo' if there are no failures at that stage. This is
     // because we don't want to mislead the user to think all data rows pass
@@ -785,7 +788,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     if (array_key_exists($validator_name, $failures)) {
       if (!empty($failures[$validator_name])) {
         $messages[$validator_name]['status'] = 'fail';
-        $messages[$validator_name]['details'] = $this->processEmptyCellFailures($failures[$validator_name]);
+
+        $metadata = [
+          'column_headers' => $header_names,
+        ];
+        $messages[$validator_name]['details'] = EmptyCell::processListWithDescribedTable($failures[$validator_name], $metadata);
       }
       // Only pass if raw row validation didn't fail.
       elseif (!$raw_row_failed) {
@@ -1221,98 +1228,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         ],
       ],
       '#items' => $tables,
-    ];
-
-    return $render_array;
-  }
-
-  /**
-   * Processes failed validation from EmptyCell into a render array.
-   *
-   * @param array $failures
-   *   An associative array that stores the validation failures by the
-   *   EmptyCell validator. It is keyed by the line number of the input
-   *   file where validation failed, and the value is an associative array
-   *   returned by the validator. Here is the overall structure of $failures:
-   *   - [LINE NUMBER]:
-   *     - 'case': a developer-focused string describing the case checked.
-   *     - 'valid': FALSE to indicate that validation failed.
-   *     - 'failedItems': an array of items that failed:
-   *       - 'empty_indices': A list of column indices in the line which were
-   *         checked and found to be empty.
-   *
-   * @return array
-   *   A render array of type unordered list which is used to display feedback
-   *   to the user about the case(s) that failed and the failed items from the
-   *   input file. This unordered list will include a table that lists the row
-   *   and column combinations with empty cells. It has the following headers:
-   *   - 'Line Number'
-   *   - 'Column(s) with empty value'
-   *
-   * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
-   *   - If the case string returned by the validator implied validation passed.
-   *   - If the case string returned by the validator is not recognized.
-   */
-  public function processEmptyCellFailures(array $failures) {
-    // Define our table header.
-    $table_header = ['Line Number', 'Column(s) with empty value'];
-    $table['rows'] = [];
-
-    foreach ($failures as $line_no => $validation_result) {
-      // Check the format of the validation_result parameter.
-      ImportValidationHelper::checkValidationStatusArray($validation_result, 'EmptyCell', $line_no);
-
-      if ($validation_result['case'] == 'Empty value found in required column(s)') {
-        $table['message'] = 'The following line number and column header combinations were empty, but a value is required.';
-        // Convert indices in failedItems to column headers.
-        $failed_indices = $validation_result['failedItems']['empty_indices'];
-        // For each index with an empty value, grab the column name from our
-        // $headers property and add to an array of header names.
-        $empty_headers = [];
-        foreach ($failed_indices as $index) {
-          array_push($empty_headers, $this->headers[$index]['name']);
-        }
-        // Implode the empty headers array into a string and then add it as a
-        // row to our table.
-        $columns_string = implode(", ", $empty_headers);
-        array_push($table['rows'], [
-          $line_no,
-          $columns_string,
-        ]);
-      }
-      elseif ($validation_result['case'] == 'No empty values found in required column(s)') {
-        throw new \Exception("The case string returned by the EmptyCell validator at line #$line_no implies validation passed, but valid is set to FALSE.");
-      }
-      else {
-        throw new \Exception("The case string returned by the EmptyCell validator at line #$line_no is not recognized as a potential case.");
-      }
-    }
-
-    // Build the render array for our table.
-    $render_array = [
-      '#theme' => 'item_list',
-      '#type' => 'ul',
-      '#attributes' => [
-        'class' => [
-          'tcp-empty-cell-failures',
-        ],
-      ],
-      '#items' => [
-        [
-          [
-            '#prefix' => '<div class="case-message">',
-            '#markup' => $table['message'],
-            '#suffix' => '</div>',
-          ],
-          [
-            '#type' => 'table',
-            '#header' => $table_header,
-            '#attributes' => [],
-            '#rows' => $table['rows'],
-          ],
-        ],
-      ],
     ];
 
     return $render_array;
