@@ -11,6 +11,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate\Plugin\Validators\EmptyCell;
+use Drupal\trpcultivate\Plugin\Validators\ValidDataFile;
 use Drupal\trpcultivate_phenotypes\Plugin\Validators\ProjectGenusMatch;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
@@ -996,7 +997,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     if (array_key_exists($validator_name, $failures)) {
       if (!empty($failures[$validator_name])) {
         $messages[$validator_name]['status'] = 'fail';
-        $messages[$validator_name]['details'] = $this->processValidDataFileFailures($failures[$validator_name]);
+        $messages[$validator_name]['details'] = ValidDataFile::processItemWithSimpleList($failures[$validator_name]);
       }
       else {
         $messages[$validator_name]['status'] = 'pass';
@@ -1048,108 +1049,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     }
 
     return $messages;
-  }
-
-  /**
-   * Processes failed validation from ValidDataFile into a render array.
-   *
-   * @param array $validation_result
-   *   An associative array that was returned by the ValidDataFile validator in
-   *   the event of failed validation. It contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed with one or more of the
-   *     following keys:
-   *     - 'filename': The provided name of the file.
-   *     - 'fid': The fid of the provided file.
-   *     - 'mime': The mime type of the input file if it is not supported.
-   *     - 'extension': The extension of the input file if not supported.
-   *
-   * @return array
-   *   A render array of type unordered list which is used to display feedback
-   *   to the user about the case that failed and the failed items from the
-   *   input file. The one item in the list is either the filename, as below:
-   *   - Filename: $validation_result['failedItems']['filename']
-   *   OR it is a message informing the user that their file's extension and
-   *   mime type are not compatible.
-   *
-   * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
-   *   - If the case string returned by the validator implied validation passed.
-   *   - If the case string returned by the validator is not recognized.
-   */
-  public function processValidDataFileFailures(array $validation_result) {
-
-    // Check the format of the validation_result parameter.
-    ImportValidationHelper::checkValidationStatusArray($validation_result, 'ValidDataFile');
-    // Get the current user in case we trigger a case that needs to log a
-    // message to the administrator.
-    $current_user = \Drupal::currentUser();
-    $username = $current_user->getAccountName();
-    // Define our items array.
-    $items = [];
-
-    if (($validation_result['case'] == 'Invalid file id number') ||
-        ($validation_result['case'] == 'File id failed to load a file object')) {
-      $message = 'A problem occurred in between uploading the file and submitting it for validation. Please try uploading and submitting it again, or contact your administrator if the problem persists.';
-
-      // Get the fid of the uploaded file.
-      $fid = $validation_result['failedItems']['fid'];
-      // Log a message for the administrator to help with debugging the issue.
-      $this->logger->info("The user $username uploaded a file with FID $fid using the Pheno Share Importer, but could not import it as something is wrong with the filename/FID. More specifically, the case message '" . $validation_result['case'] . "' was reported.");
-    }
-    elseif ($validation_result['case'] == 'The file has no data and is an empty file') {
-      $message = 'The file provided has no contents in it to import. Please ensure your file has the expected header row and at least one row of data.';
-      $items = [
-        'Filename: ' . $validation_result['failedItems']['filename'],
-      ];
-    }
-    elseif (($validation_result['case'] == 'Unsupported file MIME type') ||
-            ($validation_result['case'] == 'Unsupported file mime type and unsupported extension')) {
-      $message = "The type of file uploaded is not supported by this importer. Please ensure your file has one of the supported file extensions and was saved using software that supports that type of file. For example, a 'tsv' file should be saved as such by a spreadsheet editor such as Microsoft Excel.";
-      // Give more info to the user AND log a message to the administrator using
-      // these failed items:
-      $file_mime = $validation_result['failedItems']['mime'];
-      $file_extension = $validation_result['failedItems']['extension'];
-      $items = [
-        "The file extension indicates the file is \"$file_extension\" but our system detected the file is of type \"$file_mime\"",
-      ];
-      $this->logger->info("The user $username uploaded a file to the Pheno Share Importer with file extension \"$file_extension\" and mime type \"$file_mime\"");
-    }
-    elseif ($validation_result['case'] == 'Data file cannot be opened') {
-      $message = 'The file provided could not be opened. Please contact your administrator for help.';
-      $filename = $validation_result['failedItems']['filename'];
-      $fid = $validation_result['failedItems']['fid'];
-      $items = [
-        'Filename: ' . $filename,
-      ];
-      // Log more info for the administrator.
-      $this->logger->info("The user $username uploaded a file with FID $fid using the Pheno Share Importer, but the file could not be opened using \'@fopen\'. Filename was '$filename'.");
-    }
-    elseif ($validation_result['case'] == 'Data file is valid') {
-      throw new \Exception('The case string returned by the ValidDataFile validator implies validation passed, but valid is set to FALSE.');
-    }
-    else {
-      throw new \Exception('The case string returned by the ValidDataFile validator is not recognized as a potential case.');
-    }
-
-    // Build the render array.
-    $render_array = [
-      '#type' => 'item',
-      '#title' => $message,
-      '#wrapper_attributes' => [
-        'class' => [
-          'tcp-valid-data-file-failures',
-        ],
-      ],
-      'items' => [
-        '#theme' => 'item_list',
-        '#type' => 'ul',
-        '#items' => $items,
-      ],
-    ];
-
-    return $render_array;
   }
 
   /**
