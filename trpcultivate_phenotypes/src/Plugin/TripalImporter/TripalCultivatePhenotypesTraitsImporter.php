@@ -11,6 +11,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate\Plugin\Validators\ValidDataFile;
 use Drupal\trpcultivate\Plugin\Validators\EmptyCell;
+use Drupal\trpcultivate\Plugin\Validators\ValidHeaders;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
@@ -777,7 +778,11 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
     if (array_key_exists($validator_name, $failures)) {
       if (!empty($failures[$validator_name])) {
         $messages[$validator_name]['status'] = 'fail';
-        $messages[$validator_name]['details'] = $this->processValidHeadersFailures($failures[$validator_name]);
+
+        $metadata = [
+          'column_headers' => $header_names,
+        ];
+        $messages[$validator_name]['details'] = ValidHeaders::processListWithDescribedTable($failures[$validator_name], $metadata);
       }
       else {
         $messages[$validator_name]['status'] = 'pass';
@@ -891,103 +896,6 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
         '#items' => [
           [
             '#markup' => $validation_result['failedItems']['genus_provided'],
-          ],
-        ],
-      ],
-    ];
-
-    return $render_array;
-  }
-
-  /**
-   * Processes failed validation from ValidHeaders into a render array.
-   *
-   * @param array $validation_result
-   *   An associative array that was returned by the ValidHeaders validator in
-   *   the event of failed validation. It contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed, either:
-   *     - 'headers': A string indicating the header row is empty.
-   *     - an array of column headers that was in the input file.
-   *
-   * @return array
-   *   A render array of type unordered list which is used to display feedback
-   *   to the user about the case that failed and the failed items from the
-   *   input file. This unordered list will include a table with a row of the
-   *   expected headers followed by a row of the provided headers.
-   *
-   * @throws \Exception
-   *   - If the validation_result parameter was not formatted properly.
-   *   - If the case string returned by the validator implied validation passed.
-   *   - If the case string returned by the validator is not recognized.
-   */
-  public function processValidHeadersFailures(array $validation_result) {
-    // Check the format of the validation_result parameter.
-    ImportValidationHelper::checkValidationStatusArray($validation_result, 'ValidHeaders');
-
-    if ($validation_result['case'] == 'Header row is an empty value') {
-      $message = 'The file has an empty row where the header was expected.';
-      $provided_headers = [];
-    }
-    elseif ($validation_result['case'] == 'Headers do not match expected headers') {
-      $message = 'One or more of the column headers in the input file does not match what was expected. Please check if your column header is in the correct order and matches the template exactly.';
-      $provided_headers = $validation_result['failedItems'];
-    }
-    elseif ($validation_result['case'] == 'Headers provided does not have the expected number of headers') {
-      $num_expected_columns = count($this->headers);
-      $message = "This importer requires a strict number of $num_expected_columns column headers. Please ensure your column header matches the template exactly and remove any additional column headers from the file.";
-      $provided_headers = $validation_result['failedItems'];
-    }
-    elseif ($validation_result['case'] == 'Headers exist and match expected headers') {
-      throw new \Exception('The case string returned by the ValidHeaders validator implies validation passed, but valid is set to FALSE.');
-    }
-    else {
-      throw new \Exception('The case string returned by the ValidHeaders validator is not recognized as a potential case.');
-    }
-    // Get the expected and actual headers to build the rows in our table render
-    // array.
-    $expected_headers = array_column($this->headers, 'name');
-
-    // Build the render array.
-    $render_array = [
-      '#theme' => 'item_list',
-      '#type' => 'ul',
-      '#attributes' => [
-        'class' => [
-          'tcp-valid-headers-failures',
-        ],
-      ],
-      '#items' => [
-        [
-          [
-            '#prefix' => '<div class="case-message">',
-            '#markup' => $message,
-            '#suffix' => '</div>',
-          ],
-          [
-            '#type' => 'table',
-            '#attributes' => [],
-            '#rows' => [
-              [
-                'data' => [
-                  'header' => [
-                    'data' => 'Expected Headers',
-                    'header' => TRUE,
-                  ],
-                ] + $expected_headers,
-                'class' => ['expected-headers'],
-              ],
-              [
-                'data' => [
-                  'header' => [
-                    'data' => 'Provided Headers',
-                    'header' => TRUE,
-                  ],
-                ] + $provided_headers,
-                'class' => ['provided-headers'],
-              ],
-            ],
           ],
         ],
       ],
