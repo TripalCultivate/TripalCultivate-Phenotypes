@@ -238,136 +238,6 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Data Provider for testProcessValidHeadersFailures().
-   *
-   * @return array
-   *   Each scenario is an array with the following:
-   *   - The validation result array that gets passed to the process method. It
-   *     contains the following keys:
-   *     - 'case': a developer-focused string describing the case checked.
-   *     - 'valid': FALSE to indicate that validation failed.
-   *     - 'failedItems': an array of items that failed with the following keys.
-   *       - 'headers': A string indicating the header row is empty.
-   *       - an array of column headers that was in the input file.
-   *   - An array of expectations in the rendered output which has the following
-   *     keys:
-   *     - 'expected_message': The message expected in the return value of the
-   *       process method for this scenario.
-   */
-  public static function provideValidHeadersFailedCases() {
-    $scenarios = [];
-
-    // #0: The header row is empty.
-    $scenarios[] = [
-      [
-        'case' => 'Header row is an empty value',
-        'valid' => FALSE,
-        'failedItems' => [
-          'headers' => 'headers array is an empty array',
-        ],
-      ],
-      [
-        'expected_message' => 'The file has an empty row where the header was expected.',
-      ],
-    ];
-
-    // #1: Correct number of headers, but there's a mismatch.
-    $scenarios[] = [
-      [
-        'case' => 'Headers do not match expected headers',
-        'valid' => FALSE,
-        'failedItems' => [
-          'Trait Name',
-          'Trait Description',
-          '',
-          'Method Description',
-          'Unit',
-          'Type',
-        ],
-      ],
-      [
-        'expected_message' => 'One or more of the column headers in the input file does not match what was expected.',
-      ],
-    ];
-
-    // #2: Incorrect number of headers
-    $scenarios[] = [
-      [
-        'case' => 'Headers provided does not have the expected number of headers',
-        'valid' => FALSE,
-        'failedItems' => [
-          'Trait Name',
-          'Trait Description',
-          'Method Short Name',
-          'Method Description',
-        ],
-      ],
-      [
-        'expected_message' => 'This importer requires a strict number of 6 column headers.',
-      ],
-    ];
-
-    return $scenarios;
-  }
-
-  /**
-   * Tests the message processor method for ValidHeaders validator.
-   *
-   * @param array $validation_result
-   *   The validation result array that gets passed to the process method. It
-   *   contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed with the following keys.
-   *     - 'headers': A string indicating the header row is empty.
-   *     - an array of column headers that was in the input file.
-   * @param array $expectations
-   *   An array of the expected items in the rendered output. It has the
-   *   following keys:
-   *   - 'expected_message': The message expected in the return value of the
-   *     process method for this scenario.
-   *
-   * @dataProvider provideValidHeadersFailedCases
-   */
-  public function testProcessValidHeadersFailures(array $validation_result, array $expectations) {
-    // Call the process method on our validation result.
-    $render_array = $this->importer->processValidHeadersFailures($validation_result);
-    // Render the array we were returned.
-    $rendered_markup = $this->renderer->renderRoot($render_array);
-    $this->setRawContent($rendered_markup);
-
-    // Check the rendered output.
-    // First check that we were given the correct message.
-    $selected_message_markup = $this->cssSelect('ul li div.case-message');
-    $this->assertStringContainsString(
-      $expectations['expected_message'],
-      (string) $selected_message_markup[0],
-      'The message expected from processing ValidHeaders failures for this scenario did not match the message in the render array.'
-    );
-    // Check that we have a table that contains the expected 2 rows.
-    $selected_table_rows = $this->cssSelect('tbody tr');
-    $this->assertCount(2, $selected_table_rows, 'The rendered table by processValidHeadersFailures does not contain the expected 2 rows for this scenario.');
-    // Check for the "Provided Headers" heading on the 2nd row.
-    $selected_provided_headers_th = $this->cssSelect('tbody tr.provided-headers th');
-    $this->assertEquals(
-      'Provided Headers',
-      (string) $selected_provided_headers_th[0],
-      'The second row of the rendered table does not contain the "Provided Headers" table header for this scenario.'
-    );
-    // Check that the row values are the same as what we provided.
-    $selected_provided_headers_td = $this->cssSelect('tbody tr.provided-headers td');
-    // If the headers row was empty, check that we have no values in row 2.
-    if (array_key_exists('headers', $validation_result['failedItems'])) {
-      $this->assertEmpty($selected_provided_headers_td, "The values in the \"Provided Headers\" row were expected to be empty since an empty header was provided, but are not.");
-    }
-    else {
-      // Iterate through our provided headers to compare with what's in the
-      // rendered provided headers row.
-      $this->assertEquals($validation_result['failedItems'], $selected_provided_headers_td, "The header row provided does not match the second row (the \'provided headers\' row) of the rendered table.");
-    }
-  }
-
-  /**
    * Data Provider for testProcessValueInListFailures().
    *
    * @return array
@@ -967,36 +837,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #1: ValidHeaders passed + unrecognizable validation case message.
-    $scenarios[] = [
-      'processValidHeadersFailures',
-      [
-        'process_method_params' => [
-          [
-            'case' => 'Headers exist and match expected headers',
-            'valid' => FALSE,
-            'failedItems' => [
-              'headers' => 'headers array is an empty array',
-            ],
-          ],
-        ],
-        'expected_message' => 'The case string returned by the ValidHeaders validator implies validation passed, but valid is set to FALSE.',
-      ],
-      [
-        'process_method_params' => [
-          [
-            'case' => $unrecognized_case_string,
-            'valid' => FALSE,
-            'failedItems' => [
-              'headers' => 'headers array is an empty array',
-            ],
-          ],
-        ],
-        'expected_message' => 'The case string returned by the ValidHeaders validator is not recognized as a potential case.',
-      ],
-    ];
-
-    // #2: ValueInList passed + unrecognizable validation case message.
+    // #1: ValueInList passed + unrecognizable validation case message.
     $scenarios[] = [
       'processValueInListFailures',
       [
@@ -1031,7 +872,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       ],
     ];
 
-    // #3: DuplicateTraits passed + unrecognizable validation case message.
+    // #2: DuplicateTraits passed + unrecognizable validation case message.
     $scenarios[] = [
       'processDuplicateTraitsFailures',
       [
