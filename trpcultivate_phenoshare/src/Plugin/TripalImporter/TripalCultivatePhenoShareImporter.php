@@ -12,6 +12,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate\Plugin\Validators\EmptyCell;
 use Drupal\trpcultivate\Plugin\Validators\ValidDataFile;
+use Drupal\trpcultivate\Plugin\Validators\ValidDelimitedFile;
 use Drupal\trpcultivate_phenotypes\Plugin\Validators\ProjectGenusMatch;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
@@ -168,6 +169,13 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   protected $service_Messenger;
 
   /**
+   * Expected column settings.
+   *
+   * @var array
+   */
+  private $expected_columns;
+
+  /**
    * Constructs the Phenotypes Share importer.
    *
    * @param array $configuration
@@ -290,6 +298,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // this number to be strict = FALSE, thus extra columns are allowed.
     $num_columns = count($this->headers);
     $instance->setExpectedColumns($num_columns, FALSE);
+    $this->expected_columns = $instance->getExpectedColumns();
     // Set the MIME type of this input file.
     $instance->setFileMimeType($file_mime_type);
     $validators['raw-row']['valid_delimited_file'] = $instance;
@@ -1011,7 +1020,12 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         // Set this flag so that data row-level validation doesn't pass.
         $raw_row_failed = TRUE;
         $messages[$validator_name]['status'] = 'fail';
-        $messages[$validator_name]['details'] = $this->processValidDelimitedFileFailures($failures[$validator_name]);
+
+        $metadata = [
+          'strict_flag' => $this->expected_columns['strict'],
+          'number_of_columns' => $this->expected_columns['number_of_columns'],
+        ];
+        $messages[$validator_name]['details'] = ValidDelimitedFile::processListWithDescribedTable($failures[$validator_name], $metadata);
       }
       else {
         $messages[$validator_name]['status'] = 'pass';
