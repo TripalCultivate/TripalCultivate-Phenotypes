@@ -1085,7 +1085,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         $messages[$validator_name]['status'] = 'fail';
 
         $metadata = [
-          'column_headers' => $header_names[0],
+          'column_headers' => [$header_names[0]],
         ];
         $messages[$validator_name]['details'] = GermplasmNameExists::processListWithDescribedTable($failures[$validator_name], $metadata);
       }
