@@ -20,7 +20,6 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Drupal\trpcultivate\Service\ImportValidationHelper;
-use Drupal\trpcultivate\TripalCultivateValidator\ValidatorTraits\Organism;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -54,7 +53,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
 
-  use StringTranslationTrait, Organism;
+  use StringTranslationTrait;
 
   /**
    * The field name to reference the current stage form field element.
@@ -855,7 +854,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
                 // Split line into an array using the delimiter supported by
                 // this importer when it was configured.
                 $data_row = ImportValidationHelper::splitRowIntoColumns($line, $file_mime_type);
-                $this->setGenus($form_values['genus']);
 
                 // Call each validator on this row of the file.
                 foreach ($validators['data-row'] as $validator_name => $validator) {
