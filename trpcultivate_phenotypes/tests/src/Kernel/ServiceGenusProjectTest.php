@@ -12,6 +12,7 @@ use Drupal\tripal\Services\TripalLogger;
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ServiceGenusProjectTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -215,6 +216,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideGenusProjectForGenusProjectService
    */
+  #[DataProvider('provideGenusProjectForGenusProjectService')]
   public function testGenusProjectService($scenario, $genus_count, $expected) {
 
     $rand_i = mt_rand(0, $genus_count - 1);
@@ -359,6 +361,7 @@ class ServiceGenusProjectTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideInvalidValuesToGenusProjectService
    */
+  #[DataProvider('provideInvalidValuesToGenusProjectService')]
   public function testGenusProjectServiceWithInvalidValues($scenario, $input_value, $expected) {
 
     $has_genus = $this->chado_connection->select('1:projectprop', 'pp')

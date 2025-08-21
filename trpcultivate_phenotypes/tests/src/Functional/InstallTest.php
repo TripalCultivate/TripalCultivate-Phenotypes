@@ -13,6 +13,8 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
  * @group TripPheno Phenotypes
  * @group Installation
  */
+#[Group('TripPheno Phenotypes')]
+#[Group('Installation')]
 class InstallTest extends ChadoTestBrowserBase {
 
   /**

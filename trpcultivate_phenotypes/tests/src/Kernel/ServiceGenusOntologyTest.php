@@ -12,6 +12,7 @@ use Drupal\tripal\Services\TripalLogger;
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ServiceGenusOntologyTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -189,6 +190,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideGenusForGenusOntologyService
    */
+  #[DataProvider('provideGenusForGenusOntologyService')]
   public function testGenusOntologyService($scenario, $genus, $species, $expected) {
     // Create an organism.
     $organism_id = $this->chado_connection->insert('1:organism')
@@ -381,6 +383,7 @@ class ServiceGenusOntologyTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideInvalidValuesForGenusOntologyService
    */
+  #[DataProvider('provideInvalidValuesForGenusOntologyService')]
   public function testInvalidGenusOntologyService($scenario, $genus, $species, $invalid_input, $expected) {
     // Create an organism.
     $organism_id = $this->chado_connection->insert('1:organism')

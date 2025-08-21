@@ -18,6 +18,10 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
  * @group row_validators
  * @group trait_importer_validators
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validators')]
+#[Group('row_validators')]
+#[Group('trait_importer_validators')]
 class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -184,6 +188,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideWrongIndexKeys
    */
+  #[DataProvider('provideWrongIndexKeys')]
   public function testIndexKeyExceptions(string $label, array $indices) {
 
     // Create a plugin instance for this validator.

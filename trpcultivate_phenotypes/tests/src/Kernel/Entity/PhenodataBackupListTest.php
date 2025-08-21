@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class PhenodataBackupListTest extends ChadoTestKernelBase {
 
   use TripalCultivateImporterTestTrait;
@@ -317,6 +318,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    */
+  #[DataProvider('providePhenodataBackupScenarios')]
   public function testPhenodataBackupListRequest(string $current_user, array $expected) {
 
     // Login the current user.
@@ -398,6 +400,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    */
+  #[DataProvider('providePhenodataBackupScenarios')]
   public function testPhenodataBackupListLoad(string $current_user, array $expected) {
 
     // Login the current user.

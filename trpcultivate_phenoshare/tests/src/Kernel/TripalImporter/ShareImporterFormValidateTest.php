@@ -15,6 +15,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  *
  * @group shareImporter
  */
+#[Group('shareImporter')]
 class ShareImporterFormValidateTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
@@ -600,6 +601,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormInputValues
    */
+  #[DataProvider('provideFormInputValues')]
   public function testShareImporterFormValidateStage1(
     string $scenario,
     array $input_values,

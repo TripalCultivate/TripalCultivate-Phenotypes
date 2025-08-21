@@ -13,6 +13,8 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
  * @group trpcultivate_phenotypes
  * @group validators
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validators')]
 class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
 
   /**
@@ -292,6 +294,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideProjectGenusMatchFailedCases
    */
+  #[DataProvider('provideProjectGenusMatchFailedCases')]
   public function testProcessItemWithSimpleList(array $validation_result, array $tokens, array $expectations) {
 
     // Create a plugin instance for this validator.
@@ -407,6 +410,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideExceptionCases
    */
+  #[DataProvider('provideExceptionCases')]
   public function testProcessItemWithSimpleListExceptions(array $validation_result, array $tokens, array $expectations) {
 
     // Create a plugin instance for this validator.

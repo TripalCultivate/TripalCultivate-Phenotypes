@@ -10,6 +10,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class PhenotypeTermInstallTest extends ChadoTestKernelBase {
 
   /**

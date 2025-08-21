@@ -5,55 +5,59 @@ declare(strict_types=1);
 namespace Drupal\trpcultivate_phenotypes\Entity;
 
 use Drupal\Core\Config\Entity\ConfigEntityBase;
+use Drupal\Core\Entity\Attribute\ConfigEntityType;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\trpcultivate_phenotypes\ListBuilder\PhenodataBackupListBuilder;
+use Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm;
+use Drupal\Core\Entity\EntityDeleteForm;
 
 /**
  * Defines the phenotypic data backup entity type.
- *
- * @ConfigEntityType(
- *   id = "phenodata_backup",
- *   label = @Translation("Phenotypic Data Backup"),
- *   label_collection = @Translation("Phenotypic Data Backups"),
- *   label_singular = @Translation("phenotypic data backup"),
- *   label_plural = @Translation("phenotypic data backups"),
- *   label_count = @PluralTranslation(
- *     singular = "@count phenotypic data backup",
- *     plural = "@count phenotypic data backups",
- *   ),
- *   handlers = {
- *     "list_builder" = "Drupal\trpcultivate_phenotypes\ListBuilder\PhenodataBackupListBuilder",
- *     "form" = {
- *       "add" = "Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm",
- *       "edit" = "Drupal\trpcultivate_phenotypes\Form\PhenodataBackupForm",
- *       "delete" = "Drupal\Core\Entity\EntityDeleteForm",
- *     },
- *   },
- *   config_prefix = "phenodata_backup",
- *   admin_permission = "administer phenodata_backup",
- *   links = {
- *     "collection" = "/admin/structure/phenodata-backup",
- *     "add-form" = "/admin/structure/phenodata-backup/add",
- *     "edit-form" = "/admin/structure/phenodata-backup/{phenodata_backup}",
- *     "delete-form" = "/admin/structure/phenodata-backup/{phenodata_backup}/delete",
- *   },
- *   entity_keys = {
- *     "id" = "id",
- *     "uuid" = "uuid",
- *     "file_id" = "file_id",
- *     "project_id" = "project_id",
- *     "comments" = "comments",
- *     "backup_date" = "backup_date",
- *     "user_id" = "user_id",
- *   },
- *   config_export = {
- *     "id",
- *     "file_id",
- *     "project_id",
- *     "comments",
- *     "backup_date",
- *     "user_id",
- *   },
- * )
  */
+#[ConfigEntityType(
+ id: 'phenodata_backup',
+ label: new TranslatableMarkup('Phenotypic Data Backup'),
+ label_collection: new TranslatableMarkup('Phenotypic Data Backups'),
+ label_singular: new TranslatableMarkup('phenotypic data backup'),
+ label_plural: new TranslatableMarkup('phenotypic data backups'),
+ label_count: [
+   'singular' => '@count phenotypic data backup',
+   'plural' => '@count phenotypic data backups',
+ ],
+ handlers: [
+   'list_builder' => PhenodataBackupListBuilder::class,
+   'form' => [
+     'add' => PhenodataBackupForm::class,
+     'edit' => PhenodataBackupForm::class,
+     'delete' => EntityDeleteForm::class,
+   ],
+ ],
+ config_prefix: 'phenodata_backup',
+ admin_permission: 'administer phenodata_backup',
+ links: [
+   'collection' => '/admin/structure/phenodata-backup',
+   'add-form' => '/admin/structure/phenodata-backup/add',
+   'edit-form' => '/admin/structure/phenodata-backup/{phenodata_backup}',
+   'delete-form' => '/admin/structure/phenodata-backup/{phenodata_backup}/delete',
+ ],
+ entity_keys: [
+   'id' => 'id',
+   'uuid' => 'uuid',
+   'file_id' => 'file_id',
+   'project_id' => 'project_id',
+   'comments' => 'comments',
+   'backup_date' => 'backup_date',
+   'user_id' => 'user_id',
+ ],
+ config_export: [
+   'id',
+   'file_id',
+   'project_id',
+   'comments',
+   'backup_date',
+   'user_id',
+ ],
+)]
 final class PhenodataBackup extends ConfigEntityBase implements PhenodataBackupInterface {
 
   /**

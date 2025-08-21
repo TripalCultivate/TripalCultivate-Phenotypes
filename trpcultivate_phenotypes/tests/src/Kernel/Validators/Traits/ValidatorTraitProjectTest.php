@@ -13,6 +13,8 @@ use Drupal\tripal\Services\TripalLogger;
  * @group trpcultivate_phenotypes
  * @group validator_traits
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validator_traits')]
 class ValidatorTraitProjectTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

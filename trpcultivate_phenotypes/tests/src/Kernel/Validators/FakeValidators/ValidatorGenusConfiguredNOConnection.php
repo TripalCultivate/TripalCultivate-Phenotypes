@@ -7,18 +7,19 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\GenusConfigured;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
+use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValidator;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Fake Validator that does not implement any of its own methods.
  *
  * Used to test the GenusConfigured trait with NO ChadoConnection.
- *
- * @TripalCultivateValidator(
- *   id = "validator_configured_genus_no_connection",
- *   validator_name = @Translation("Validator Using GenusConfigured Trait"),
- *   input_types = {"header-row", "data-row"}
- * )
  */
+#[TripalCultivateValidator(
+   id: 'validator_configured_genus_no_connection',
+   validator_name: new TranslatableMarkup('Validator Using GenusConfigured Trait'),
+   input_types: ['header-row', 'data-row']
+ )]
 class ValidatorGenusConfiguredNOConnection extends TripalCultivateValidatorBase {
 
   use GenusConfigured;

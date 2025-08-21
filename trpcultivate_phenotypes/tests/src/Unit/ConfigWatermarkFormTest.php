@@ -19,6 +19,7 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettin
  * @coversDefaultClass Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ConfigWatermarkFormTest extends UnitTestCase {
 
   /**

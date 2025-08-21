@@ -9,12 +9,14 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\user\Entity\User;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Tests the form + form-related functionality of the Share Importer.
  *
  * @group shareImporter
  */
+#[Group('shareImporter')]
 class ShareImporterFormTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
@@ -270,6 +272,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormValues
    */
+  #[DataProvider('provideFormValues')]
   public function testForm($scenario, $stage_index, $trigger_element, $expected) {
 
     // Build $form_state parameter. These values are used to determine
@@ -473,6 +476,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideStageDetails
    */
+  #[DataProvider('provideStageDetails')]
   public function testStages($scenario, $stage_wrapper, $stage_method, $expected) {
 
     // Build $form parameter.
@@ -643,6 +647,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideValidationResultArray
    */
+  #[DataProvider('provideValidationResultArray')]
   public function testHasFailedValidation($scenario, $validation_result_array, $expected) {
 
     $has_failed = $this->phenoshare_importer
@@ -705,6 +710,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideAllowNewConfig
    */
+  #[DataProvider('provideAllowNewConfig')]
   public function testFormAllowNewNotification($scenario, $set_value, $expected) {
 
     $form = $this->form_importer;

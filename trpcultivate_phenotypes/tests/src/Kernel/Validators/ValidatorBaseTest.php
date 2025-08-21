@@ -12,6 +12,8 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  * @group trpcultivate_phenotypes
  * @group validators
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validators')]
 class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**

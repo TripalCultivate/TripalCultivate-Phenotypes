@@ -15,6 +15,9 @@ use Drupal\Core\Database\StatementWrapperIterator;
  * @group services
  * @group traits
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('services')]
+#[Group('traits')]
 class ValidTraitTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 

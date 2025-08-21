@@ -15,6 +15,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  *
  * @group traitsImporter
  */
+#[Group('traitsImporter')]
 class TraitImporterFormValidateTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
@@ -418,6 +419,7 @@ class TraitImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFilesForValidation
    */
+  #[DataProvider('provideFilesForValidation')]
   public function testTraitFormValidation(string $submitted_genus, string $filename, array $expected_validator_results, int $expected_num_form_validation_errors) {
 
     $formBuilder = \Drupal::formBuilder();

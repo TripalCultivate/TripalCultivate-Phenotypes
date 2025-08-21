@@ -20,36 +20,36 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\tripal\TripalImporter\Attribute\TripalImporter;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
  *
  * An importer focused on phenotypic data which has already been published or
  * which is ready to be freely shared.
- *
- * @TripalImporter(
- *   id = "trpcultivate-phenotypes-share-importer",
- *   label = @Translation("Tripal Cultivate: Open Science Phenotypic Data"),
- *   description = @Translation("Imports phenotypic data which has already been published or which is ready to be freely shared."),
- *   file_types = {"tsv"},
- *   upload_description = @Translation("Please provide a data file."),
- *   upload_title = @Translation("Phenotypic Data File"),
- *   use_analysis = FALSE,
- *   require_analysis = FALSE,
- *   use_button = TRUE,
- *   submit_disabled = TRUE,
- *   button_text = "Import",
- *   file_upload = TRUE,
- *   file_local  = FALSE,
- *   file_remote = FALSE,
- *   file_required = TRUE,
- *   cardinality = 1,
- *   menu_path = "",
- *   callback = "",
- *   callback_module = "",
- *   callback_path = "",
- * )
  */
+#[TripalImporter(
+   id: 'trpcultivate-phenotypes-share-importer',
+   label: new TranslatableMarkup('Tripal Cultivate: Open Science Phenotypic Data'),
+   description: new TranslatableMarkup('Imports phenotypic data which has already been published or which is ready to be freely shared.'),
+   file_types: ['tsv'],
+   upload_description: new TranslatableMarkup('Please provide a data file.'),
+   upload_title: new TranslatableMarkup('Phenotypic Data File'),
+   use_analysis: FALSE,
+   require_analysis: FALSE,
+   use_button: TRUE,
+   submit_disabled: TRUE,
+   button_text: new TranslatableMarkup('Import'),
+   file_upload: TRUE,
+   file_local: FALSE,
+   file_remote: FALSE,
+   file_required: TRUE,
+   cardinality: 1,
+   menu_path: '',
+   callback: '',
+   callback_path: '',
+ )]
 class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
 
   use StringTranslationTrait;

@@ -16,6 +16,7 @@ use Drupal\trpcultivate_phenotypes\Entity\PhenodataBackup;
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class PhenodataBackupFormTest extends ChadoTestKernelBase {
 
   use TripalCultivateImporterTestTrait;
@@ -327,6 +328,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    */
+  #[DataProvider('providePhenodataBackupScenarios')]
   public function testPhenodataBackupFormAccess(string $current_user, array $test_backups, array $expected) {
 
     // Login the current user.
@@ -466,6 +468,7 @@ class PhenodataBackupFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupValues
    */
+  #[DataProvider('providePhenodataBackupValues')]
   public function testPhenodataBackupFormSubmit(array $create_input, array $create_expectations, array $edit_input, array $edit_expectations) {
 
     // Login the current user.

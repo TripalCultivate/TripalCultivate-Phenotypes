@@ -17,6 +17,7 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm;
  * @coversDefaultClass Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ConfigRRulesFormTest extends UnitTestCase {
   /**
    * An instance of the R rules configuration form.

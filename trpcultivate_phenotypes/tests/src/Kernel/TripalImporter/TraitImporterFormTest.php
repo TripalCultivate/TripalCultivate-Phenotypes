@@ -16,6 +16,7 @@ use Drupal\user\Entity\User;
  *
  * @group traitsImporter
  */
+#[Group('traitsImporter')]
 class TraitImporterFormTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;

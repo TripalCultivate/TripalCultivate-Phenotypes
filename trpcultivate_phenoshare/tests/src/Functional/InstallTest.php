@@ -12,6 +12,8 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
  * @group TripPheno Share
  * @group Installation
  */
+#[Group('TripPheno Share')]
+#[Group('Installation')]
 class InstallTest extends ChadoTestBrowserBase {
 
   /**

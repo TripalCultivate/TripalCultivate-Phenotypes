@@ -13,6 +13,8 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
  * @group trpcultivate_phenotypes
  * @group validators
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validators')]
 class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -241,6 +243,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideProjectGenusTestFormValue
    */
+  #[DataProvider('provideProjectGenusTestFormValue')]
   public function testProjectGenusInputValue($scenario, $form_values, $expected) {
 
     $exception_caught = FALSE;
@@ -393,6 +396,7 @@ class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideTestProjectGenusInput
    */
+  #[DataProvider('provideTestProjectGenusInput')]
   public function testValidatorProjectGenusMatch($scenario, $project_genus_input, $expected) {
 
     $input_values = $this->test_project_genus[$project_genus_input];

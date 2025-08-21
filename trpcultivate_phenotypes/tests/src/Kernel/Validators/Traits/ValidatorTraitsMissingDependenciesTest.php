@@ -11,6 +11,8 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
  * @group trpcultivate_phenotypes
  * @group validator_traits
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validator_traits')]
 class ValidatorTraitsMissingDependenciesTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -120,6 +122,7 @@ class ValidatorTraitsMissingDependenciesTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideBadlyConfiguredValidators
    */
+  #[DataProvider('provideBadlyConfiguredValidators')]
   public function testConfiguredGenusBadlyConfigured($case, $validator_defn, $expected_message) {
 
     // Create a fake plugin instance for testing.

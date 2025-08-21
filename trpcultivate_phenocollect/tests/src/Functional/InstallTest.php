@@ -12,6 +12,8 @@ use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
  * @group TripPheno Collect
  * @group Installation
  */
+#[Group('TripPheno Collect')]
+#[Group('Installation')]
 class InstallTest extends ChadoTestBrowserBase {
 
   /**

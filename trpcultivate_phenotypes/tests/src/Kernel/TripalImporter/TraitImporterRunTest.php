@@ -15,6 +15,7 @@ use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotyp
  *
  * @group traitsImporter
  */
+#[Group('traitsImporter')]
 class TraitImporterRunTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;

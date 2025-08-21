@@ -7,16 +7,17 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValidator;
 
 /**
  * Validate that genus exists and is configured.
- *
- * @TripalCultivateValidator(
- *   id = "genus_exists",
- *   validator_name = @Translation("Genus Exists and Configured Validator"),
- *   input_types = {"metadata"}
- * )
  */
+#[TripalCultivateValidator(
+   id: 'genus_exists',
+   validator_name: new TranslatableMarkup('Genus Exists and Configured Validator'),
+   input_types: ['metadata']
+ )]
 class GenusExists extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**

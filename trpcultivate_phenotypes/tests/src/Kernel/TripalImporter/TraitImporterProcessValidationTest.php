@@ -15,6 +15,7 @@ use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotyp
  *
  * @group traitsImporter
  */
+#[Group('traitsImporter')]
 class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
 
   use AssertContentTrait;
@@ -217,6 +218,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideGenusExistsFailedCases
    */
+  #[DataProvider('provideGenusExistsFailedCases')]
   public function testProcessGenusExistsFailures(array $validation_result, array $expectations) {
     // Call the process method on our validation result.
     $render_array = $this->importer->processGenusExistsFailures($validation_result);
@@ -466,6 +468,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideDuplicateTraitsFailedCases
    */
+  #[DataProvider('provideDuplicateTraitsFailedCases')]
   public function testProcessDuplicateTraitsFailures(array $failures, array $expectations) {
     // Process our test failures array.
     $render_array = $this->importer->processDuplicateTraitsFailures($failures);
@@ -681,6 +684,7 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePassedAndUnrecognizableCases
    */
+  #[DataProvider('providePassedAndUnrecognizableCases')]
   public function testProcessFailuresExceptions(string $process_method, array $passed_case, array $unrecognized_case) {
     // Test with a passed validation case string.
     $exception_caught = FALSE;

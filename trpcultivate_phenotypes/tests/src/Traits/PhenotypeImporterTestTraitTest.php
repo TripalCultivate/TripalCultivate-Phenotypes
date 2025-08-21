@@ -11,6 +11,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
  *
  * @group trpcultivate_phenotypes_test_trait
  */
+#[Group('trpcultivate_phenotypes_test_trait')]
 class PhenotypeImporterTestTraitTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
