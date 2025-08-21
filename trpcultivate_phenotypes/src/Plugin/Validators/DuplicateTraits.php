@@ -15,6 +15,12 @@ use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValida
 
 /**
  * Validate duplicate traits within a file.
+ *
+ * @TripalCultivateValidator(
+ *   id = "duplicate_traits",
+ *   validator_name = @Translation("Duplicate Traits Validator"),
+ *   input_types = {"data-row"},
+ * )
  */
 #[TripalCultivateValidator(
    id: 'duplicate_traits',

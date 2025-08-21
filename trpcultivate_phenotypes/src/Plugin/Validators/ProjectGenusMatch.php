@@ -13,6 +13,12 @@ use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValida
 
 /**
  * Validate that project exits and project-genus match the genus provided.
+ *
+ * @TripalCultivateValidator(
+ *   id = "project_genus_match",
+ *   validator_name = @Translation("Project Exists and Genus Match Validator"),
+ *   input_types = {"metadata"}
+ * )
  */
 #[TripalCultivateValidator(
    id: 'project_genus_match',

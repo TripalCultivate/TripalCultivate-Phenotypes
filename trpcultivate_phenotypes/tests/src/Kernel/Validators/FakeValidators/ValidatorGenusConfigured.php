@@ -14,6 +14,12 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
  * Fake Validator that does not implement any of its own methods.
  *
  * Used to test the GenusConfigured trait.
+ *
+ * @TripalCultivateValidator(
+ *   id = "validator_requiring_configured_genus",
+ *   validator_name = @Translation("Validator Using GenusConfigured Trait"),
+ *   input_types = {"header-row", "data-row"}
+ * )
  */
 #[TripalCultivateValidator(
    id: 'validator_requiring_configured_genus',

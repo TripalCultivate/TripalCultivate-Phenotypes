@@ -27,6 +27,29 @@ use Drupal\tripal\TripalImporter\Attribute\TripalImporter;
  * Tripal Cultivate Phenotypes - Traits Importer.
  *
  * An importer for traits with a defined method and unit.
+ *
+ * @TripalImporter(
+ *   id = "trpcultivate-phenotypes-traits-importer",
+ *   label = @Translation("Tripal Cultivate: Phenotypic Trait Importer"),
+ *   description = @Translation("Loads Traits for phenotypic data into the system. This is useful for large phenotypic datasets to ease the upload process."),
+ *   file_types = {"tsv"},
+ *   upload_description = @Translation("Please provide a data file."),
+ *   upload_title = @Translation("Phenotypic Trait Data File*"),
+ *   use_analysis = FALSE,
+ *   require_analysis = FALSE,
+ *   use_button = True,
+ *   submit_disabled = FALSE,
+ *   button_text = "Import",
+ *   file_upload = TRUE,
+ *   file_local = FALSE,
+ *   file_remote = FALSE,
+ *   file_required = TRUE,
+ *   cardinality = 1,
+ *   menu_path = "",
+ *   callback = "",
+ *   callback_module = "",
+ *   callback_path = "",
+ * )
  */
 #[TripalImporter(
    id: 'trpcultivate-phenotypes-traits-importer',
