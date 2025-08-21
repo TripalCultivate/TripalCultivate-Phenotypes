@@ -7,6 +7,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Url;
 use Drupal\Core\Database\StatementWrapperIterator;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests that a valid trait/method/unit combination can be inserted/retrieved.

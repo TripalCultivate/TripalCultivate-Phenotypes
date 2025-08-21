@@ -18,7 +18,7 @@ use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValida
  */
 #[TripalCultivateValidator(
    id: 'duplicate_traits',
-   validator_name: new TranslatableMarkup("Duplicate Traits Validator"),
+   validator_name: new TranslatableMarkup('Duplicate Traits Validator'),
    input_types: ['data-row'],
  )]
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {

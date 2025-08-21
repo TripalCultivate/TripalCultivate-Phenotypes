@@ -16,7 +16,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
  * Used to test the GenusConfigured trait.
  */
 #[TripalCultivateValidator(
-   id: "validator_requiring_configured_genus",
+   id: 'validator_requiring_configured_genus',
    validator_name: new TranslatableMarkup('Validator Using GenusConfigured Trait'),
    input_types: ['header-row', 'data-row']
  )]
