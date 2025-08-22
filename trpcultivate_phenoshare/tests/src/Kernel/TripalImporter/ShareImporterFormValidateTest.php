@@ -9,12 +9,15 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests the formValidate() functionality of the Share Importer.
  *
  * @group shareImporter
  */
+#[Group('shareImporter')]
 class ShareImporterFormValidateTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
@@ -600,6 +603,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideFormInputValues
    */
+  #[DataProvider('provideFormInputValues')]
   public function testShareImporterFormValidateStage1(
     string $scenario,
     array $input_values,

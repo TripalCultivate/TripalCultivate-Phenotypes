@@ -8,6 +8,8 @@ use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValidator;
 
 /**
  * Validate that project exits and project-genus match the genus provided.
@@ -18,6 +20,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   input_types = {"metadata"}
  * )
  */
+#[TripalCultivateValidator(
+   id: 'project_genus_match',
+   validator_name: new TranslatableMarkup('Project Exists and Genus Match Validator'),
+   input_types: ['metadata']
+ )]
 class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**

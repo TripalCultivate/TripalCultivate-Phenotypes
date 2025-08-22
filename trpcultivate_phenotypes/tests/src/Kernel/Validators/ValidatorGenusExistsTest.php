@@ -6,6 +6,8 @@ use Drupal\Core\Form\FormState;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests Tripal Cultivate Phenotypes Genus Exists Validator Plugin.
@@ -13,6 +15,8 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
  * @group trpcultivate_phenotypes
  * @group validators
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validators')]
 class ValidatorGenusExistsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -179,6 +183,7 @@ class ValidatorGenusExistsTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideGenusTestFormValue
    */
+  #[DataProvider('provideGenusTestFormValue')]
   public function testGenusExistsInputValue($scenario, $form_values, $expected) {
 
     $exception_caught = FALSE;
@@ -275,6 +280,7 @@ class ValidatorGenusExistsTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideTestGenusInput
    */
+  #[DataProvider('provideTestGenusInput')]
   public function testValidatorGenusExists($scenario, $genus_input, $expected) {
 
     $form_values = ['genus' => $this->test_genus[$genus_input]];

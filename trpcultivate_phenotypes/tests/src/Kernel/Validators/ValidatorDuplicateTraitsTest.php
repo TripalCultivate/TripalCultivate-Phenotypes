@@ -7,6 +7,8 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests the Duplicate Traits validator.
@@ -18,6 +20,10 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
  * @group row_validators
  * @group trait_importer_validators
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('validators')]
+#[Group('row_validators')]
+#[Group('trait_importer_validators')]
 class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -184,6 +190,7 @@ class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideWrongIndexKeys
    */
+  #[DataProvider('provideWrongIndexKeys')]
   public function testIndexKeyExceptions(string $label, array $indices) {
 
     // Create a plugin instance for this validator.
