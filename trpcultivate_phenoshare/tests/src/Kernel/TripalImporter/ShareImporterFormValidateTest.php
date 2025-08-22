@@ -562,7 +562,35 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         FALSE,
       ],
 
-      // #11: No validation error.
+      // #11: Contains correct header and one line of correct data.
+      // 1st line has reference to a non-existent germplasm name.
+      [
+        'empty column after empty line',
+        [
+          'project' => self::TEST_PROJECT,
+          'genus' => self::TEST_GENUS,
+          'file' => [
+            'filename' => 'reference_to_non_existent_germplasm.tsv',
+            'source' => 'share',
+          ],
+        ],
+        [
+          'project_genus_match' => ['status' => 'pass'],
+          'valid_data_file' => ['status' => 'pass'],
+          'valid_delimited_file' => ['status' => 'pass'],
+          'valid_header' => ['status' => 'pass'],
+          'empty_cell' => ['status' => 'pass'],
+          'germplasm_name_exists' => [
+            'title' => 'Germplasm Name exists in the database',
+            'status' => 'fail',
+            'details' => 'The following germplasm names do not match any existing in this site. Please make sure you have entered the names exactly as they appear on the germplasm pages or contact your administrator to have them added if they do not yet exist.',
+          ],
+        ],
+        0,
+        FALSE,
+      ],
+
+      // #12: No validation error.
       [
         'all pass',
         [
