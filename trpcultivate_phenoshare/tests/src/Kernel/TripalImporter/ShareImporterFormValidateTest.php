@@ -159,10 +159,25 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
     // Configure module.
     $this->setTermConfig();
 
-    $this->chado_connection->insert('1:organism')
+    $organism_id = $this->chado_connection->insert('1:organism')
       ->fields([
         'genus' => self::TEST_GENUS,
         'species' => 'some species',
+      ])
+      ->execute();
+
+    // Insert a test germplasm.
+    // Stock-1 appears as value of Gerplasm Name column-row combination in
+    // valid_header_valid_row.tsv file fixture.
+    $this->chado_connection->insert('1:stock')
+      ->fields([
+        'organism_id' => $organism_id,
+        'name' => 'Stock-1',
+        'dbxref_id' => 1,
+        'uniquename' => 'STOCK:1',
+        'description' => 'A test germplasm used by valid_header_valid_row.tsv test file fixture',
+        'type_id' => 1,
+        'is_obsolete' => 'f',
       ])
       ->execute();
 
