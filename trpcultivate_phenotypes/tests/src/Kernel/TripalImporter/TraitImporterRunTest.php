@@ -9,12 +9,14 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests the functionality of the run() method of the Traits Importer.
  *
  * @group traitsImporter
  */
+#[Group('traitsImporter')]
 class TraitImporterRunTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;

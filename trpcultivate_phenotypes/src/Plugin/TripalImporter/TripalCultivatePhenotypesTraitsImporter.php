@@ -20,6 +20,8 @@ use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Drupal\trpcultivate\Service\ImportValidationHelper;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\tripal\TripalImporter\Attribute\TripalImporter;
 
 /**
  * Tripal Cultivate Phenotypes - Traits Importer.
@@ -49,6 +51,27 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   callback_path = "",
  * )
  */
+#[TripalImporter(
+   id: 'trpcultivate-phenotypes-traits-importer',
+   label: new TranslatableMarkup('Tripal Cultivate: Phenotypic Trait Importer'),
+   description: new TranslatableMarkup('Loads Traits for phenotypic data into the system. This is useful for large phenotypic datasets to ease the upload process.'),
+   file_types: ['tsv'],
+   upload_description: new TranslatableMarkup('Please provide a data file.'),
+   upload_title: new TranslatableMarkup('Phenotypic Trait Data File*'),
+   use_analysis: FALSE,
+   require_analysis: FALSE,
+   use_button: TRUE,
+   submit_disabled: FALSE,
+   button_text: new TranslatableMarkup('Import'),
+   file_upload: TRUE,
+   file_local: FALSE,
+   file_remote: FALSE,
+   file_required: TRUE,
+   cardinality: 1,
+   menu_path: '',
+   callback: '',
+   callback_path: '',
+  )]
 class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implements ContainerFactoryPluginInterface {
 
   use StringTranslationTrait;

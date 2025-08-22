@@ -9,12 +9,15 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Symfony\Component\HttpFoundation\Request;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Tests associated with the Phenodata Backup listing.
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class PhenodataBackupListTest extends ChadoTestKernelBase {
 
   use TripalCultivateImporterTestTrait;
@@ -317,6 +320,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    */
+  #[DataProvider('providePhenodataBackupScenarios')]
   public function testPhenodataBackupListRequest(string $current_user, array $expected) {
 
     // Login the current user.
@@ -398,6 +402,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
    *
    * @dataProvider providePhenodataBackupScenarios
    */
+  #[DataProvider('providePhenodataBackupScenarios')]
   public function testPhenodataBackupListLoad(string $current_user, array $expected) {
 
     // Login the current user.

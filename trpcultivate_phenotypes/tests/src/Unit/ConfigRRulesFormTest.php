@@ -10,6 +10,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Tests\UnitTestCase;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Class definition ConfigRRulesFormTest.
@@ -17,6 +18,7 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm;
  * @coversDefaultClass Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ConfigRRulesFormTest extends UnitTestCase {
   /**
    * An instance of the R rules configuration form.

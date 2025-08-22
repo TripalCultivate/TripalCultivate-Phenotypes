@@ -10,6 +10,8 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\Genu
 use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\TripalCultivatePhenotypesValidatorBase;
 use Drupal\trpcultivate\TripalCultivateValidator\ValidatorTraits\ColumnIndices;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValidator;
 
 /**
  * Validate duplicate traits within a file.
@@ -20,6 +22,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *   input_types = {"data-row"},
  * )
  */
+#[TripalCultivateValidator(
+   id: 'duplicate_traits',
+   validator_name: new TranslatableMarkup('Duplicate Traits Validator'),
+   input_types: ['data-row'],
+ )]
 class DuplicateTraits extends TripalCultivatePhenotypesValidatorBase implements ContainerFactoryPluginInterface {
 
   /**

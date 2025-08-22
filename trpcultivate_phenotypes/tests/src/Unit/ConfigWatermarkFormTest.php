@@ -12,6 +12,7 @@ use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Tests\UnitTestCase;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Class definition ConfigWatermarkFormTest.
@@ -19,6 +20,7 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettin
  * @coversDefaultClass Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ConfigWatermarkFormTest extends UnitTestCase {
 
   /**

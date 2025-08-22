@@ -5,12 +5,14 @@ namespace Drupal\Tests\tripalcultivate_phenotypes\Traits;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Test importer test trait.
  *
  * @group trpcultivate_phenotypes_test_trait
  */
+#[Group('trpcultivate_phenotypes_test_trait')]
 class PhenotypeImporterTestTraitTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

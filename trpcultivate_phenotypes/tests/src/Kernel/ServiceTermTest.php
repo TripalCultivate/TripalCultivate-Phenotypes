@@ -9,12 +9,15 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
 use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
 use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 
 /**
  * Test Tripal Cultivate Phenotypes Terms service.
  *
  * @group trpcultivate_phenotypes
  */
+#[Group('trpcultivate_phenotypes')]
 class ServiceTermTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -200,6 +203,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideTermIdentifierForGetTermIdMethod
    */
+  #[DataProvider('provideTermIdentifierForGetTermIdMethod')]
   public function testGetTermId($scenario, $input_term_identifier, $expected) {
     $term_id = $this->service_PhenoTerms->getTermId($input_term_identifier);
     $term_exists = ($term_id > 0) ? TRUE : FALSE;
@@ -277,6 +281,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideTermsForSaveTermConfigValuesMethod
    */
+  #[DataProvider('provideTermsForSaveTermConfigValuesMethod')]
   public function testSaveTermConfigValuesMethod($scenario, $input_term, $term_identifier, $expected) {
     // Create or fectch input term.
     $term_exists = $this->chado_connection->select('1:cvterm', 'cvt')
@@ -373,6 +378,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideInvalidTermsForSaveTermConfigValuesMethod
    */
+  #[DataProvider('provideInvalidTermsForSaveTermConfigValuesMethod')]
   public function testSaveTermConfigValuesMethodInvalidKey($scenario, $input_term, $term_identifier, $expected) {
     // Create or fectch input term.
     $cvterm_id = $this->chado_connection->select('1:cvterm', 'cvt')
@@ -458,6 +464,7 @@ class ServiceTermTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideInvalidConfigForSaveTermConfigValuesMethod
    */
+  #[DataProvider('provideInvalidConfigForSaveTermConfigValuesMethod')]
   public function testSaveTermConfigValuesMethodFailure($scenario, $config_value, $expected) {
     // Test when the config values is not valid.
     $is_saved = $this->service_PhenoTerms->saveTermConfigValues($config_value);
