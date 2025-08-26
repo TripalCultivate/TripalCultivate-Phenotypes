@@ -362,7 +362,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         ],
         [
           'project_genus_match' => [
-            'title' => 'Project has no genus set and could not compare with the genus provided',
+            'title' => 'Research Experiment exists and has been configured with selected genus',
             'status' => 'fail',
             'details' => 'The selected Research Experiment does not have a genus paired to it. Please contact your administrator to have this set up.',
           ],
@@ -567,7 +567,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
 
       // #11: 1st line has reference to a non-existent germplasm name.
       [
-        'empty column after empty line',
+        'non-existent germplasm',
         [
           'project' => self::TEST_PROJECT,
           'genus' => self::TEST_GENUS,
@@ -583,7 +583,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
           'valid_header' => ['status' => 'pass'],
           'empty_cell' => ['status' => 'pass'],
           'germplasm_name_exists' => [
-            'title' => 'Germplasm Name exists in the database',
+            'title' => 'Germplasm exist(s) in the database',
             'status' => 'fail',
             'details' => 'The following germplasm names do not match any existing in this site. Please make sure you have entered the names exactly as they appear on the germplasm pages or contact your administrator to have them added if they do not yet exist.',
           ],
@@ -719,6 +719,16 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         $validation_element_data[$validation_plugin]['status'],
         "We expected the form validation element to indicate the $validation_plugin plugin had the specified status in scenario: $scenario."
       );
+
+      // Test validation result title matches expected failed validation result
+      // title text.
+      if (isset($expected['title'])) {
+        $this->assertEquals(
+          $validation_element_data[$validation_plugin]['title'],
+          $expected['title'],
+          'Failed validation title does not match the expected failed validation title'
+        );
+      }
 
       // We don't want the value of 'details' in $expectations (from the data
       // provider) to be empty since assertStringContainsString() will evaluate
