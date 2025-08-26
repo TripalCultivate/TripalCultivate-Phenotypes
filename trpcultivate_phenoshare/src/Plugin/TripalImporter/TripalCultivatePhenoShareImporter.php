@@ -1005,7 +1005,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'details' => '',
       ],
       'germplasm_name_exists' => [
-        'title' => 'Germplasm Name exists in the database',
+        'title' => 'Germplasm exist(s) in the database',
         'status' => 'todo',
         'details' => '',
       ],
