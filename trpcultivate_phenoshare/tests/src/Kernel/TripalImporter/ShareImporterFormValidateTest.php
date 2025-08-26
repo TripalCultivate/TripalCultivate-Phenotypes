@@ -565,8 +565,7 @@ class ShareImporterFormValidateTest extends ChadoTestKernelBase {
         FALSE,
       ],
 
-      // #11: Contains correct header and one line of correct data.
-      // 1st line has reference to a non-existent germplasm name.
+      // #11: 1st line has reference to a non-existent germplasm name.
       [
         'empty column after empty line',
         [
