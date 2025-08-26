@@ -354,7 +354,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ];
     $instance->setIndices($indices);
     $validators['data-row']['empty_cell'] = $instance;
-
+    // - All germplasm names exist in the database
     $instance = $this->service_validatorPluginManager->createInstance('germplasm_name_exists');
     $instance->setIndices($header_index['Germplasm Name']);
     $instance->setGenus($form_values['genus']);
