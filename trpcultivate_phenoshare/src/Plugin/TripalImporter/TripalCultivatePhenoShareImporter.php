@@ -11,6 +11,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate\Plugin\Validators\EmptyCell;
+use Drupal\trpcultivate\Plugin\Validators\GermplasmNameExists;
 use Drupal\trpcultivate\Plugin\Validators\ValidDataFile;
 use Drupal\trpcultivate\Plugin\Validators\ValidDelimitedFile;
 use Drupal\trpcultivate\Plugin\Validators\ValidHeaders;
@@ -353,6 +354,14 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     ];
     $instance->setIndices($indices);
     $validators['data-row']['empty_cell'] = $instance;
+    // - All germplasm names exist in the database
+    $instance = $this->service_validatorPluginManager->createInstance('germplasm_name_exists');
+    $indices = [
+      $header_index['Germplasm Name'],
+    ];
+    $instance->setIndices($indices);
+    $instance->setGenus($form_values['genus']);
+    $validators['data-row']['germplasm_name_exists'] = $instance;
 
     return $validators;
   }
@@ -998,6 +1007,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'status' => 'todo',
         'details' => '',
       ],
+      'germplasm_name_exists' => [
+        'title' => 'Germplasm exist(s) in the database',
+        'status' => 'todo',
+        'details' => '',
+      ],
     ];
 
     $header_names = array_column($this->headers, 'name');
@@ -1082,6 +1096,24 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
           'column_headers' => $header_names,
         ];
         $messages[$validator_name]['details'] = EmptyCell::processListWithDescribedTable($failures[$validator_name], $metadata);
+      }
+      // Only pass if raw row validation didn't fail.
+      elseif (!$raw_row_failed) {
+        $messages[$validator_name]['status'] = 'pass';
+      }
+      // Otherwise, leave status as 'todo' since 1+ raw rows failed.
+    }
+
+    // GermplasmNameExists.
+    $validator_name = 'germplasm_name_exists';
+    if (array_key_exists($validator_name, $failures)) {
+      if (!empty($failures[$validator_name])) {
+        $messages[$validator_name]['status'] = 'fail';
+
+        $metadata = [
+          'column_headers' => [$header_names[0]],
+        ];
+        $messages[$validator_name]['details'] = GermplasmNameExists::processListWithDescribedTable($failures[$validator_name], $metadata);
       }
       // Only pass if raw row validation didn't fail.
       elseif (!$raw_row_failed) {
