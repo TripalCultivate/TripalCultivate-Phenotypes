@@ -1,5 +1,0 @@
-# Create a tab titled Phenotypes in a Research Experiment content type.
-trpcultivate_phenoshare.tab_phenotypes:
-  route_name: trpcultivate_phenoshare.experiment_configuration
-  title: 'Phenotypes'
-  base_route: entity.tripal_entity.canonical

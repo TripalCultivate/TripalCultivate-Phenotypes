@@ -1,9 +1,1 @@
 # Routing Tripal Culitivate Phenotypes Share
-
-trpcultivate_phenoshare.experiment_configuration:
-  path: '/bio_data/configure'
-  defaults:
-    _controller: '\Drupal\trpcultivate_phenoshare\Controller\ExperimentConfiguration'
-    _title: 'Experiment Configuration'
-  requirements:
-    _permission: 'administer tripal content'
