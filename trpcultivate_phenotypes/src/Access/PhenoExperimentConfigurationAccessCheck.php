@@ -26,7 +26,7 @@ class PhenoExperimentConfigurationAccessCheck implements AccessInterface {
    *
    * @param \Drupal\tripal\Entity\TripalEntity $tripal_entity
    *   Tripal entity.
-   * @param use Drupal\Core\Session\AccountInterface $account
+   * @param Drupal\Core\Session\AccountInterface $account
    *   Run access checks for this account. This is the user requesting access.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
@@ -38,4 +38,5 @@ class PhenoExperimentConfigurationAccessCheck implements AccessInterface {
       ? AccessResult::allowed()
       : AccessResult::forbidden();
   }
+
 }

@@ -55,3 +55,95 @@ function trpcultivate_phenotypes_install() {
     throw new \Exception('Cannot create a job to install terms:' . $e->getMessage);
   }
 }
+
+/**
+ * Implements hook_schema().
+ */
+function trpcultivate_phenotypes_schema() {
+
+  return [
+    'trpcultivate_phenocombo' => [
+      'description' => 'Keeps track of traits-combo (measurements) a research experiment intends to take.',
+      'fields' => [
+        'combo_id' => [
+          'description' => 'The primary identifier of a trait combo.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'project_id' => [
+          'description' => 'Links to the research experiment this combo is specific to.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'attr_id' => [
+          'description' => 'The trait being measured (i.e. Canopy Height).',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'observable_id' => [
+          'description' => 'The method used (i.e. used measuring stick from the ground to the highest greenery without touching the plant).',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'unit_id' => [
+          'description' => 'The unit used (i.e. cm or inches).',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ],
+        'label' => [
+          'description' => 'Experiment-specific column header.',
+          'type' => 'varchar',
+          'not null' => TRUE,
+        ],
+        'is_archived' => [
+          'description' => 'True if a combo has been archived and describes a previous state of configuration.',
+          'type' => 'bool',
+          'not null' => TRUE,
+          'default' => FALSE,
+        ],
+        'is_required' => [
+          'description' => 'True if a combo must exists in the data file and must have a value.',
+          'type' => 'bool',
+          'not null' => TRUE,
+          'default' => FALSE,
+        ],
+        'was_collected' => [
+          'description' => 'Indicates that a combo was used in the run of the COLLECT Importer.',
+          'type' => 'bool',
+          'not null' => TRUE,
+          'default' => FALSE,
+        ],
+        'was_shared' => [
+          'description' => 'Indicates that a combo was used in the run of the SHARE Importer.',
+          'type' => 'bool',
+          'not null' => TRUE,
+          'default' => FALSE,
+        ],
+        'uid' => [
+          'description' => 'The Drupal user who configured this combo.',
+          'type' => 'int',
+          'not null' => TRUE,
+        ],
+        'timestamp' => [
+          'description' => 'The datetime that this combo was configured.',
+          'type' => 'int',
+          'not null' => TRUE,
+        ],
+      ],
+      'primary key' => ['combo_id'],
+      'unique_keys' => [
+        'composite_key' => [
+          'project_id',
+          'attr_id',
+          'observable_id',
+          'unit_id',
+        ],
+      ],
+    ],
+  ];
+}
