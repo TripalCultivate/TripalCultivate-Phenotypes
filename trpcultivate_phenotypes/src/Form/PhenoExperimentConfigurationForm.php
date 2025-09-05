@@ -57,6 +57,31 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $this->messenger()
       ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
 
+    $label_tip = 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.';
+
+    $traits_table = [
+      '#type' => 'table',
+      '#header' => [
+        [
+          'data' => [
+            '#markup' => 'label <span alt="' . $label_tip . '" title="' . $label_tip . '">?</span>',
+            '#allowed_tags' => ['span'],
+          ],
+        ],
+        'Trait-Method-Unit',
+        [
+          'data' => 'Remove',
+          'style' => 'width: 1%',
+        ],
+      ],
+      '#rows' => [],
+      '#attributes' => [
+        'id' => 'pheno-experiment-traits-summary-table',
+      ],
+    ];
+
+    $form['pheno_experiment_traits_summary_table'] = $traits_table;
+
     return $form;
   }
 
