@@ -3,3 +3,9 @@ entity.phenodata_backup.add_form:
   title: 'Backup Phenotypic Data'
   appears_on:
     - entity.phenodata_backup.collection
+
+trpcultivate_phenotypes.add_trait:
+  route_name: trpcultivate_phenotypes.experiment_configuration
+  title: 'Add Trait'
+  appears_on:
+    - trpcultivate_phenotypes.experiment_configuration
