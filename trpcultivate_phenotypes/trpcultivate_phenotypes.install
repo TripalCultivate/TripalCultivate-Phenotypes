@@ -61,7 +61,7 @@ function trpcultivate_phenotypes_install() {
  */
 function trpcultivate_phenotypes_schema() {
 
-  return [
+  $schema = [
     'trpcultivate_phenocombo' => [
       'description' => 'Keeps track of traits-combo (measurements) a research experiment intends to take.',
       'fields' => [
@@ -95,6 +95,11 @@ function trpcultivate_phenotypes_schema() {
           'unsigned' => TRUE,
           'not null' => TRUE,
         ],
+        'uid' => [
+          'description' => 'The Drupal user who configured this combo (user.uid).',
+          'type' => 'int',
+          'not null' => TRUE,
+        ],
         'label' => [
           'description' => 'Experiment-specific column header.',
           'type' => 'varchar',
@@ -124,11 +129,6 @@ function trpcultivate_phenotypes_schema() {
           'not null' => TRUE,
           'default' => 0,
         ],
-        'uid' => [
-          'description' => 'The Drupal user who configured this combo.',
-          'type' => 'int',
-          'not null' => TRUE,
-        ],
         'timestamp' => [
           'description' => 'The datetime that this combo was configured.',
           'type' => 'int',
@@ -136,6 +136,38 @@ function trpcultivate_phenotypes_schema() {
         ],
       ],
       'primary key' => ['combo_id'],
+      'foreign keys' => [
+        'project_id' => [
+          'table' => 'project',
+          'columns' => [
+            'project_id' => 'project_id',
+          ],
+        ],
+        'attr_id' => [
+          'table' => 'cvterm',
+          'columns' => [
+            'attr_id' => 'cvterm_id',
+          ],
+        ],
+        'observable_id' => [
+          'table' => 'cvterm',
+          'columns' => [
+            'observable_id' => 'cvterm_id',
+          ],
+        ],
+        'unit_id' => [
+          'table' => 'cvterm',
+          'columns' => [
+            'unit_id' => 'cvterm_id',
+          ],
+        ],
+        'uid' => [
+          'table' => 'users',
+          'columns' => [
+            'uid' => 'uid',
+          ],
+        ],
+      ],
       'unique_keys' => [
         'composite_key' => [
           'project_id',
@@ -146,4 +178,6 @@ function trpcultivate_phenotypes_schema() {
       ],
     ],
   ];
+
+  return $schema;
 }
