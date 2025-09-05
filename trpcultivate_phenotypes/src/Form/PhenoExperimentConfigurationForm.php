@@ -64,8 +64,13 @@ class PhenoExperimentConfigurationForm extends FormBase {
       '#header' => [
         [
           'data' => [
-            '#markup' => 'label <span alt="' . $label_tip . '" title="' . $label_tip . '">?</span>',
-            '#allowed_tags' => ['span'],
+            '#markup' => 'label <span alt="' . $label_tip . '" title="' . $label_tip . '">
+              <svg id="pheno-label-help-icon" height="16" width="16">
+                <circle cx="8" cy="8" r="8" />
+                <text x="8" y="12" text-anchor="middle" font-size="11" font-family="Arial" fill="#FFFFFF">?</text>
+              </svg>
+            </span>',
+            '#allowed_tags' => ['span', 'svg', 'circle', 'text'],
           ],
         ],
         'Trait-Method-Unit',
