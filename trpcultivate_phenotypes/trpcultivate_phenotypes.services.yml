@@ -24,4 +24,4 @@ services:
 
   trpcultivate_phenotypes.experiment_configuration_form:
     class: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
-    arguments: ['@tripal_chado.database']
+    arguments: ['@tripal_chado.database', '@current_route_match']
