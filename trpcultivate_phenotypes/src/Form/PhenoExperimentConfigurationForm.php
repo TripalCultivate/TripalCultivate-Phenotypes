@@ -90,13 +90,15 @@ class PhenoExperimentConfigurationForm extends FormBase {
             '#allowed_tags' => ['span', 'svg', 'circle', 'text'],
           ],
         ],
-        'Trait-Method-Unit',
+        [
+          'data' => 'Trait-Method-Unit',
+          'style' => 'width: 75%',
+        ],
         [
           'data' => 'Remove',
           'style' => 'width: 1%',
         ],
       ],
-      '#rows' => [],
       '#attributes' => [
         'id' => 'pheno-experiment-traits-summary-table',
       ],
@@ -105,6 +107,14 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // Get experiment/project id slug value.
     // Query all traits.
     // Resove ids.
+    $traits_table['#rows'] = [
+      [
+        'DTF @50%',
+        'Days to Flower DTF50 (cm) Quantitative - Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut eu urna ultrices, tincidunt tellus id, semper elit. Ut fringilla ex ut molestie efficitur. Nunc eros mi, luctus sit amet arcu non, efficitur consequat enim',
+        'x',
+      ],
+    ];
+
     $form['pheno_experiment_traits_summary_table'] = $traits_table;
 
     return $form;
