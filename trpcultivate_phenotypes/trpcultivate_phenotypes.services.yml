@@ -21,7 +21,3 @@ services:
     arguments: []
     tags:
       - { name: 'access_check', applies_to: '_pheno_experiment_configuration_access_check' }
-
-  trpcultivate_phenotypes.experiment_configuration_form:
-    class: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
-    arguments: ['@tripal_chado.database', '@current_route_match']

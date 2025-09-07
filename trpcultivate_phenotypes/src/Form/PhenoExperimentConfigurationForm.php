@@ -24,7 +24,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   /**
    * Research experiment id.
    *
-   * @var \Drupal\tripal\Entity\TripalEntity;
+   * @var \Drupal\tripal\Entity\TripalEntity
    */
   private TripalEntity $research_experiment;
 
@@ -33,6 +33,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
+   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
+   *   Route match service.
    */
   public function __construct(
     ChadoConnection $chado_connection,
@@ -41,6 +43,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $this->chado_connection = $chado_connection;
     $this->research_experiment = $route_match->getParameter('tripal_entity');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+
+    return new static(
+      $container->get('tripal_chado.database'),
+      $container->get('current_route_match'),
+    );
   }
 
   /**
@@ -90,11 +103,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
     ];
 
     // Get experiment/project id slug value.
-
     // Query all traits.
-
     // Resove ids.
-
     $form['pheno_experiment_traits_summary_table'] = $traits_table;
 
     return $form;

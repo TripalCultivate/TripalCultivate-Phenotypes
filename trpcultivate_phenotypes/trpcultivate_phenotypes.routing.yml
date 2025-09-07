@@ -40,7 +40,7 @@ trpcultivate_phenotypes.experiment_configuration:
   path: '/bio_data/{tripal_entity}/configure'
   defaults:
     _title: 'Phenotypes:'
-    _form: trpcultivate_phenotypes.experiment_configuration_form
+    _form: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
   requirements:
     _permission: 'administer tripal content'
     _pheno_experiment_configuration_access_check: true
