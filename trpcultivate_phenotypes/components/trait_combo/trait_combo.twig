@@ -1,0 +1,20 @@
+<div {{ attributes.addClass('tcp-trait-combo') }}>
+
+	<def>{{ name }} Required|Shared|Collected|Archived</def>
+	<em>{{ definition }}</em>
+
+    {{ multiselect_method ? '<div>' : '' }}
+		  {% for method in method_unit_combo %}
+			  <def>{{ method['method_shortname'] }}: ({{ method['unit'] }})
+				  <small>{{ method  ['type'] }}</small>
+			  </def>
+			  {{ method['collection_method'] }}
+
+				{% if multiselect_method %}
+           {{ field_label }} {{ add }}
+				{% endif %}
+
+		  {% endfor %}
+    {{ multiselect_method ? '</div>' : '' }}
+
+</div>

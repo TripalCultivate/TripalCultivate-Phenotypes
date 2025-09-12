@@ -1,0 +1,30 @@
+name: trait_combo
+props:
+  type: object
+  required:
+    - name
+    - definition
+    - method_unit_combo
+    - multiselect_method
+  properties:
+    multiselect_method:
+      type: boolean
+      title: Multi-select method.
+      description: Indicate that a trait will list all available methods.
+    name:
+      type: string
+      title: Trait name.
+      description: The trait name.
+    definition:
+      type: string
+      title: Trait definition.
+      description: The trait definition.
+    method_unit_combo:
+      type: array
+      title: Method - Unit combo.
+      description: Method, unit, type and colleciton method information.
+slots:
+  field_label:
+    title: A label field.
+  add:
+    title: Add trait using the custom label provided.
