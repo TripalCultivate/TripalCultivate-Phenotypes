@@ -109,16 +109,18 @@ class PhenoExperimentConfigurationForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $experiment_id = $this->research_experiment->getID();
-    if (!$experiment_id) {
+    $experiment = $this->research_experiment->get('exp_name')->getValue();
+    if (!$experiment) {
       throw new NotFoundHttpException();
     }
+
+    ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
     $this->messenger()
       ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
 
     // Update the title to show which reseach experiment is being setup.
-    $form['#title'] = 'Phenotypes: ' . $this->research_experiment->label();
+    $form['#title'] = 'Phenotypes: ' . $experiment_name;
 
     // Setup traits summary listing table.
     $headers = [];
@@ -174,15 +176,11 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // Create a mapping array to map cv name to a genus, set a group colour, and
     // populate the genus filter select field.
     $genus_map = [];
-    foreach ($experiment_genus as $i => $g) {
-      $cv_id = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($g)['trait'];
+    foreach ($experiment_genus as $genus) {
+      $cv_id = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus)['trait'];
 
-      $genus_map[$cv_id] = [
-        'genus' => $g,
-        'bg' => ($i % 2) ? '#F7F7F7' : '#FFFFFF',
-      ];
-
-      $form[$summary_table_name]['#header']['trait_combo']['data']['#options'][$g] = $g;
+      $genus_map[$cv_id] = $genus;
+      $form[$summary_table_name]['#header']['trait_combo']['data']['#options'][$genus] = $genus;
     }
 
     $rows = [];
@@ -192,9 +190,18 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
 
     $query
-      ->fields('tc', ['combo_id', 'attr_id', 'observable_id', 'unit_id', 'label'])
+      ->fields('tc', [
+        'combo_id',
+        'attr_id',
+        'observable_id',
+        'unit_id', 'label',
+        'is_archived',
+        'is_required',
+        'was_shared',
+        'was_collected',
+      ])
       ->fields('t', ['cv_id'])
-      ->condition('tc.project_id', $this->research_experiment->getID(), '=')
+      ->condition('tc.project_id', $experiment_id, '=')
       ->orderBy('v.name', 'ASC')
       ->orderBy('is_required', 'DESC')
       ->orderBy('label', 'ASC');
@@ -202,13 +209,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $query_result = $query->execute();
 
     $set_genus = [];
+    $bg_white = FALSE;
+
     foreach ($query_result as $trait_row) {
       // Set genus.
-      $genus = $genus_map[$trait_row->cv_id]['genus'];
+      $genus = $genus_map[$trait_row->cv_id];
       if (!in_array($genus, $set_genus)) {
         $this->service_PhenoTraits->setTraitGenus($genus);
         array_push($set_genus, $genus);
+
+        $bg_white = !$bg_white;
       }
+
+      $bg_color = ($bg_white) ? '#FFFFFF' : '#F7F7F7';
 
       ['trait' => $trait, 'method' => $method, 'unit' => $unit] = $this->service_PhenoTraits->getTraitMethodUnitCombo(
         $trait_row->attr_id,
@@ -240,12 +253,18 @@ class PhenoExperimentConfigurationForm extends FormBase {
                     'collection_method' => $method->definition,
                   ],
                 ],
+                'status' => [
+                  'archived' => $trait_row->is_archived,
+                  'required' => $trait_row->is_required,
+                  'shared' => $trait_row->was_shared,
+                  'collected' => $trait_row->was_collected,
+                ],
               ],
             ],
           ],
           'x',
         ],
-        'style' => 'background-color:' . $genus_map[$trait_row->cv_id]['bg'],
+        'style' => 'background-color:' . $bg_color,
       ];
     }
 

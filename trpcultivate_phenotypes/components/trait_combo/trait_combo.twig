@@ -1,6 +1,17 @@
 <div {{ attributes.addClass('tcp-trait-combo') }}>
 
-	<def>{{ name }} Required|Shared|Collected|Archived</def>
+	<def>
+		{{ name }}
+
+    {% if status %}
+      {% for status_item, status_value in status %}
+        {% if status_value == 1 %}
+				  <span class="tcp-pheno-{{ status_item }}" title="{{ status_item }}">&nbsp;</span>
+        {% endif %}
+   		{% endfor %}
+    {% endif %}
+	</def>
+
 	<em>{{ definition }}</em>
 
     {{ multiselect_method ? '<div>' : '' }}

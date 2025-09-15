@@ -23,6 +23,10 @@ props:
       type: array
       title: Method - Unit combo.
       description: Method, unit, type and colleciton method information.
+    status:
+      type: array
+      title: Trait status
+      description: The status (is required, was shared, was collected and is archived) of a trait in an experiment.
 slots:
   field_label:
     title: A label field.
