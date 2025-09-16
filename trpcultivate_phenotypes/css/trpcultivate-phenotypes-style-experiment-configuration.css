@@ -1,0 +1,37 @@
+/**
+ * @file
+ * Style experiment configuration.
+ */
+
+ #tcp-experiment-traits-summary-table {
+  cursor: pointer;
+ }
+
+/* Trait-method-combo column */
+#tcp-experiment-traits-summary-table td:nth-child(2) {
+  width: 75%;
+}
+
+/* Remove column */
+#tcp-experiment-traits-summary-table td:last-child {
+  text-align: center;
+  width: 1%;
+}
+
+/* Trait-method-combo */
+#tcp-experiment-traits-summary-table td {
+  vertical-align: top;
+}
+
+/* Organize traits by genus by shading */
+.tcp-group-shade-grey {
+  background-color: #F7F7F7;
+}
+
+.tcp-group-shade-white {
+  background-color: #FFFFFF;
+}
+
+.tcp-group-border {
+  border-top: 5px solid #DADADA;
+}

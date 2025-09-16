@@ -54,6 +54,13 @@ class PhenoExperimentConfigurationForm extends FormBase {
   private TripalEntity $research_experiment;
 
   /**
+   * The research experiment genus used to filter the the table.
+   *
+   * @var string
+   */
+  private $filter_genus;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
@@ -81,6 +88,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $this->service_PhenoTraits = $service_PhenoTraits;
 
     $this->research_experiment = $route_match->getParameter('tripal_entity');
+
+    // If the /genus slug is not provided, show all trait.
+    $filter_genus = $route_match->getParameter('genus');
+    $this->filter_genus = ($filter_genus == '') ? 0 : $filter_genus;
   }
 
   /**
@@ -111,21 +122,20 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $experiment = $this->research_experiment->get('exp_name')->getValue();
     if (!$experiment) {
+      // Research experiment entity does not exist.
       throw new NotFoundHttpException();
     }
 
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
-    $this->messenger()
-      ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
-
     // Update the title to show which reseach experiment is being setup.
     $form['#title'] = 'Phenotypes: ' . $experiment_name;
 
     // Setup traits summary listing table.
-    $headers = [];
+    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
     $summary_table_name = 'experiment_traits_summary_table';
 
+    $headers = [];
     $headers = [
       'label' => [
         'data' => [
@@ -141,18 +151,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
       'trait_combo' => [
         'data' => [
           '#type' => 'select',
-          '#options' => [0 => 'Filter by genus'],
-          '#default_value' => 0,
+          '#options' => [0 => 'All Genus'],
+          '#value' => $this->filter_genus,
           '#theme_wrappers' => [],
           '#prefix' => '<span>Trait Method Unit: </span><span>',
           '#suffix' => '</span>',
+          '#attributes' => [
+            'id' => 'tcp-filter-trait-table-by-genus',
+          ],
         ],
-        'style' => 'width: 75%;',
       ],
-      'remove' => [
-        'data' => 'Remove',
-        'style' => 'width: 1%;',
-      ],
+      'remove' => 'Remove',
     ];
 
     $form[$summary_table_name] = [
@@ -172,6 +181,14 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $this->messenger()->addError('The Research Experiment has either no genus set or has one but is not properly configured.');
       return $form;
     }
+
+    if ($this->filter_genus && !in_array($this->filter_genus, $experiment_genus)) {
+      // Filter genus does not exist.
+      throw new NotFoundHttpException();
+    }
+
+    $this->messenger()
+      ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
 
     // Create a mapping array to map cv name to a genus, set a group colour, and
     // populate the genus filter select field.
@@ -206,22 +223,27 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ->orderBy('is_required', 'DESC')
       ->orderBy('label', 'ASC');
 
+    if ($this->filter_genus) {
+      $query->condition('t.cv_id', array_search($this->filter_genus, $genus_map), '=');
+    }
+
     $query_result = $query->execute();
 
     $set_genus = [];
-    $bg_white = FALSE;
+    $a_group = FALSE;
 
-    foreach ($query_result as $trait_row) {
+    foreach ($query_result as $i => $trait_row) {
+      $first_row = FALSE;
+
       // Set genus.
       $genus = $genus_map[$trait_row->cv_id];
       if (!in_array($genus, $set_genus)) {
         $this->service_PhenoTraits->setTraitGenus($genus);
         array_push($set_genus, $genus);
 
-        $bg_white = !$bg_white;
+        $a_group = !$a_group;
+        $first_row = TRUE;
       }
-
-      $bg_color = ($bg_white) ? '#FFFFFF' : '#F7F7F7';
 
       ['trait' => $trait, 'method' => $method, 'unit' => $unit] = $this->service_PhenoTraits->getTraitMethodUnitCombo(
         $trait_row->attr_id,
@@ -229,11 +251,25 @@ class PhenoExperimentConfigurationForm extends FormBase {
         $trait_row->unit_id,
       );
 
+      // To aid grouping of traits by genus, darken the top border of the first
+      // row (trait) in the same genus and apply shade to the group.
+      $group_class = [];
+      array_push($group_class, ($a_group) ? 'tcp-group-shade-white' : 'tcp-group-shade-grey');
+      if ($first_row && $i > 0) {
+        array_push($group_class, 'tcp-group-border');
+      }
+
+      // Use the trait status to disable the remove option.
+      $remove = 'x';
+      if ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) {
+        $remove = '-';
+      }
+
       $rows[] = [
         'data' => [
           [
             'data' => [
-              '#markup' => $trait_row->label . '<br /><small>' . $genus . '</small>',
+              '#markup' => ($this->filter_genus) ? $trait_row->label : $trait_row->label . '<br /><small>' . $genus . '</small>',
             ],
           ],
           [
@@ -262,9 +298,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
               ],
             ],
           ],
-          'x',
+          $remove,
         ],
-        'style' => 'background-color:' . $bg_color,
+        'class' => implode(' ', $group_class),
       ];
     }
 

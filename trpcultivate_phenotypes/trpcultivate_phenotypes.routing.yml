@@ -37,10 +37,11 @@ trpcultivate_phenotypes.settings_ontology:
 
 # Experiment Configuration Page.
 trpcultivate_phenotypes.experiment_configuration:
-  path: '/bio_data/{tripal_entity}/configure'
+  path: '/bio_data/{tripal_entity}/configure/{genus}'
   defaults:
     _title: 'Phenotypes:'
     _form: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
+    genus: ''
   requirements:
     _permission: 'administer tripal content'
     _pheno_experiment_configuration_access_check: true
@@ -49,6 +50,8 @@ trpcultivate_phenotypes.experiment_configuration:
     parameters:
       tripal_entity:
         type: 'entity:tripal_entity'
+        bundle:
+          - research_experiment
 
 # Phenodata Backup Config Entity Routes:
 entity.phenodata_backup.collection:
