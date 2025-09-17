@@ -24,14 +24,15 @@
 }
 
 /* Organize traits by genus by shading */
-.tcp-group-shade-grey {
-  background-color: #F7F7F7;
+.tcp-group-shade-dark {
+  background-color: light-dark(#F7F7F7, #333333);
 }
 
-.tcp-group-shade-white {
-  background-color: #FFFFFF;
+.tcp-group-shade-light {
+  background-color: light-dark(#FFFFFF, #4A4A4C);
 }
 
+/* Organize traits by genus by horizontal line */
 .tcp-group-border {
   border-top: 5px solid #DADADA;
 }

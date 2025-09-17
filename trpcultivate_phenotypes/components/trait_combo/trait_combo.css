@@ -30,12 +30,13 @@
 .tcp-pheno-archived {
   background-repeat: no-repeat;
   height: 16px;
-  width: 16px;
   padding: 0 7px;
+  width: 16px;
 }
 
 .tcp-pheno-required {
   background-image: url(icons/star_require.svg);
+  filter: invert(0);
 }
 
 .tcp-pheno-shared {
@@ -48,4 +49,13 @@
 
 .tcp-pheno-archived {
   background-image: url(icons/box_archive.svg);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tcp-pheno-required,
+  .tcp-pheno-shared,
+  .tcp-pheno-collected,
+  .tcp-pheno-archived {
+    filter: invert(1) brightness(2);
+  }
 }
