@@ -6,7 +6,6 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
-use Drupal\tripal\Entity\TripalEntity;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
@@ -51,7 +50,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @var \Drupal\tripal\Entity\TripalEntity
    */
-  private TripalEntity $research_experiment;
+  private $research_experiment;
 
   /**
    * The research experiment genus used to filter the the table.
