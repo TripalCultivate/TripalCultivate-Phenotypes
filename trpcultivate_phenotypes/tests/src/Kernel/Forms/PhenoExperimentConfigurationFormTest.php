@@ -366,4 +366,141 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     );
   }
 
+  /**
+   * Test page markup.
+   */
+  public function testPageMarkup() {
+
+    $http_kernel_service = $this->container->get('http_kernel');
+
+    // All genus.
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $this->research_experiment_entity->id(),
+      'genus' => 0,
+    ])
+      ->toString();
+
+    $user = $this->createUser(['administer tripal content'], 'TripalAdmin');
+    $this->setCurrentUser($user);
+
+    $request = Request::create($page_url);
+    $page = $http_kernel_service->handle($request)->getContent();
+
+    ['record_id' => $eperiment_id, 'value' => $experiment_name] = $this->research_experiment_entity->get('exp_name')
+      ->getValue()[0];
+
+    $this->assertStringContainsString(
+      'Phenotypes: ' . $experiment_name,
+      (string) $page,
+      'The page does not contain the expected page title.'
+    );
+
+    $genus_map = [];
+    $genus_ontology_service = $this->container->get('trpcultivate_phenotypes.genus_ontology');
+    foreach (array_keys($this->trait_set) as $genus) {
+      $cv_id = $genus_ontology_service->getGenusOntologyConfigValues($genus)['trait'];
+      $genus_map[$cv_id] = $genus;
+    }
+
+    $this->setRawContent($page);
+
+    $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tc');
+    $query->join('1:cvterm', 't', 'tc.attr_id = t.cvterm_id');
+    $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
+
+    $query
+      ->fields('tc', [
+        'combo_id',
+        'attr_id',
+        'observable_id',
+        'unit_id', 'label',
+        'is_archived',
+        'is_required',
+        'was_shared',
+        'was_collected',
+      ])
+      ->fields('t', ['cv_id'])
+      ->condition('tc.project_id', $experiment_id, '=')
+      ->orderBy('v.name', 'ASC')
+      ->orderBy('is_required', 'DESC')
+      ->orderBy('label', 'ASC');
+
+    $query_result = $query->execute();
+
+    $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
+
+    // Using the same query setup, test that the expected row is at the same
+    // table item row number in the markup.
+    $genus_class = [];
+    $status_class = [
+      'tcp-pheno-required',
+      'tcp-pheno-shared',
+      'tcp-pheno-collected',
+      'tcp-pheno-archived',
+    ];
+
+    foreach ($query_result as $i => $trait_row) {
+      $genus = $genus_map[$trait_row->cv_id];
+      if (!in_array($genus_class, $genus)) {
+        $trait_service->setTraitGenus($genus);
+
+        $class = ($i == 0) ? 'tcp-group-shade-light' : 'tcp-group-shade-dark';
+        $table_rows = $this->cssSelect("tbody tr.$class");
+      }
+
+      ['trait' => $trait, 'method' => $method, 'unit' => $unit] = $trait_service->getTraitMethodUnitCombo(
+        $trait_row->attr_id,
+        $trait_row->observable_id,
+        $trait_row->unit_id,
+      );
+
+      $this->assertStringContainsString(
+        $trait,
+        (string) $table_rows[$i][0],
+        'The trait combo name ' . $trait . ' is expected to appear at table row number ' . $i
+      );
+
+      $this->assertStringContainsString(
+        $method,
+        (string) $table_rows[$i][0],
+        'The trait combo method ' . $method . ' is expected to appear at table row number ' . $i
+      );
+
+      $this->assertStringContainsString(
+        $unit,
+        (string) $table_rows[$i][0],
+        'The trait combo unit ' . $unit . ' is expected to appear at table row number ' . $i
+      );
+
+      $this->assertStringContainsString(
+        $trait_row->label,
+        (string) $table_rows[$i][0],
+        'The trait combo label ' . $trait_row->label . ' is expected to appear at table row number ' . $i
+      );
+
+      $this->assertStringContainsString(
+        $remove = ($trait_row->is_archived || $trait_row->was_collected || $trait_row->was_shared) ? '-' : 'x',
+        (string) $table_rows[$i][0],
+        'The trait combo is expected to have ' . $remove . ' for the remove trait option.'
+      );
+
+      $trait_status = [
+        $trait_row->is_archived,
+        $trait_row->is_required,
+        $trait_row->was_collected,
+        $trait_row->was_share,
+      ];
+
+      foreach ($trait_status as $i => $status) {
+        if ($status == 1) {
+          $this->assertStringContainsString(
+            $status_class[$i],
+            (string) $table_rows[$i][0],
+            'The trait combo is expected to have the icon status css class name of ' . $status_class[$i]
+          );
+        }
+      }
+    }
+  }
+
 }
