@@ -2,12 +2,15 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Forms;
 
+use Drupal\Core\Url;
+use Drupal\Component\Utility\Random;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Tests associated with PhenoExperimentConfigurationForm class.
@@ -123,6 +126,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       'trpcultivate',
     ]);
     $this->installSchema('trpcultivate_phenotypes', ['trpcultivate_phenocombo']);
+    $this->installEntitySchema('user');
 
     \trpcultivate_install_terms();
     $this->container->get('tripal_chado.terms_init')
@@ -223,6 +227,50 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       PhenoExperimentConfigurationForm::create($this->container)->getFormId(),
       'The form id returned does not match expected form id of experiment configuration form'
     );
+  }
+
+  /**
+   * Test access permission requirements.
+   */
+  public function testPageAccess() {
+
+    $http_kernel_service = $this->container->get('http_kernel');
+    $random = new Random();
+
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $this->research_experiment_entity->id(),
+      'genus' => 0,
+    ])
+      ->toString();
+
+    // Permissions and page status access codes.
+    // 403 - unauthorized access.
+    // 200 - Ok.
+    // @see trpcultivate_phenotypes.experiment_configuration route.
+    $permissions = [
+      '' => 403,
+      'access content' => 403,
+      'manage tripal jobs' => 403,
+      'administer tripal content' => 200,
+    ];
+
+    $i = 0;
+    foreach ($permissions as $permission => $access_code) {
+      // Create a user with the permission.
+      $new_user = $this->createUser(($permission) ? [$permission] : [], $random->name(), FALSE, ['uid' => $i]);
+      $this->assertNotEquals($new_user->id(), 1, 'Test user must not have the magic user id of 1');
+      $this->setCurrentUser($new_user);
+
+      $request = Request::create($page_url);
+      $this->assertEquals(
+        $access_code,
+        $http_kernel_service->handle($request)->getStatusCode(),
+        'User access permission does not match expected access permission.'
+      );
+
+      user_logout();
+      $i += 2;
+    }
   }
 
 }
