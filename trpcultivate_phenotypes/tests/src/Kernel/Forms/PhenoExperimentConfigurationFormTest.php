@@ -4,6 +4,9 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Forms;
 
 use Drupal\Core\Url;
 use Drupal\Component\Utility\Random;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Routing\RouteMatch;
+use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -271,6 +274,96 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       user_logout();
       $i += 2;
     }
+  }
+
+  /**
+   * Test buildForm().
+   */
+  public function testBuildForm() {
+
+    $form = [];
+    $form_state = new FormState();
+
+    // Experiment configuration form.
+    // Prepare the route with slug value before loading the form.
+    // @see drupal/core/tests/Drupal/Tests/Core/Routing/RouteMatchTest.php
+    $route_path = $this->container->get('router.route_provider')
+      ->getRouteByName(self::ROUTE_NAME);
+
+    $request = new Request();
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route_path);
+    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $route_match = RouteMatch::createFromRequest($request);
+    $this->container->set('current_route_match', $route_match);
+
+    $config_form = PhenoExperimentConfigurationForm::create($this->container)
+      ->buildForm($form, $form_state);
+
+    ['record_id' => $experiment_id, 'value' => $experiment_name] = $this->research_experiment_entity->get('exp_name')->getValue()[0];
+
+    // Test table render array.
+    $this->assertEquals(
+      $config_form['#title'],
+      'Phenotypes: ' . $experiment_name,
+      'The page does not contain the word Phenotypes: followed by the experiment name as the title of the page.'
+    );
+
+    $summary_table_name = 'experiment_traits_summary_table';
+    $this->assertArrayHasKey(
+      $summary_table_name,
+      $config_form,
+      'The form expects a key ' . $summary_table_name . ' that holds the table render array.'
+    );
+
+    $this->assertEquals(
+      $config_form[$summary_table_name]['#type'],
+      'table',
+      'The render array is expected to have a type table.'
+    );
+
+    $headers = ['label', 'trait_combo', 'remove'];
+    $this->assertEquals(
+      array_keys($config_form[$summary_table_name]['#header']),
+      $headers,
+      'The summary listing table render array is missing expected header.',
+    );
+
+    $filter_genus_options = array_map(function ($g) {
+      return explode(':', $g)[0];
+    }, array_keys($this->trait_set));
+
+    array_unshift($filter_genus_options, 'All Genus');
+
+    $this->assertEquals(
+      array_values($config_form[$summary_table_name]['#header'][$headers[1]]['data']['#options']),
+      $filter_genus_options,
+      'The filter by genus field does not contain the expected filter options.'
+    );
+
+    $db_trait_count = $this->container->get('database')
+      ->select('trpcultivate_phenocombo', 'c')
+      ->condition('c.project_id', $experiment_id, '=')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    $setup_trait_count = array_reduce($this->trait_set, function ($prev, $cur) {
+      return $prev + count($cur);
+    });
+
+    $this->assertEquals(
+      $db_trait_count,
+      $setup_trait_count,
+      'The setup failed to insert the expected number of traits.'
+    );
+
+    $render_array_count = count($config_form[$summary_table_name]['#rows']);
+    $this->assertEquals(
+      $render_array_count,
+      $setup_trait_count,
+      'The table render array #rows property key does not contain the expected number of traits.'
+    );
   }
 
 }
