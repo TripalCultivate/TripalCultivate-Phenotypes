@@ -456,8 +456,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $status_class = [
       'tcp-pheno-archived',
       'tcp-pheno-required',
-      'tcp-pheno-collected',
       'tcp-pheno-shared',
+      'tcp-pheno-collected',
     ];
 
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
@@ -505,8 +505,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       $trait_status = [
         $trait_row->is_archived,
         $trait_row->is_required,
-        $trait_row->was_collected,
         $trait_row->was_shared,
+        $trait_row->was_collected,
       ];
 
       foreach ($trait_status as $j => $status) {
