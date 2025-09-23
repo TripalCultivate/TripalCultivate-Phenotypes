@@ -575,6 +575,12 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         return $t['Trait Name'];
       }, $traits);
 
+      $this->assertEquals(
+        $count = count($all_trait[$genus]),
+        count($config_form[$summary_table_name]['#rows']),
+        'The number of traits in genus ' . $genus . ' does not match expected count - ' . $count
+      );
+
       foreach ($config_form[$summary_table_name]['#rows'] as $row) {
         $this->assertContains(
           $trait_name = $row['data'][1]['data']['#props']['name'],
