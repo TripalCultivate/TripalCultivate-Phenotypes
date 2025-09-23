@@ -216,6 +216,14 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
       $genus_project_service->setGenusToProject($project_id, $genus);
     }
+
+    // This Tripal content type - research study is for testing out
+    // invalid values.
+    TripalEntity::create([
+      'id' => 2,
+      'type' => 'research_study',
+      'label' => 'A Research Study',
+    ]);
   }
 
   /**
@@ -228,71 +236,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       PhenoExperimentConfigurationForm::create($this->container)->getFormId(),
       'The form id returned does not match expected form id of experiment configuration form.'
     );
-  }
-
-  /**
-   * Test access permission requirements.
-   */
-  public function testPageAccess() {
-
-    $http_kernel_service = $this->container->get('http_kernel');
-
-    $page_url = Url::fromRoute(self::ROUTE_NAME, [
-      'tripal_entity' => $this->research_experiment_entity->id(),
-      'genus' => 0,
-    ])
-      ->toString();
-
-    // Permissions and page status access codes.
-    // 403 - unauthorized access.
-    // 200 - Ok.
-    // @see trpcultivate_phenotypes.experiment_configuration route.
-    $route = $this->container->get('router.route_provider')
-      ->getRouteByName(self::ROUTE_NAME);
-
-    $users = [
-      0 => [
-        'name' => 'Anonymous',
-        'permissions' => [],
-        'access' => 403,
-        'is_admin' => FALSE,
-      ],
-      1 => [
-        'name' => 'Administrator',
-        'permissions' => [],
-        'access' => 200,
-        'is_admin' => TRUE,
-      ],
-      2 => [
-        'name' => 'Authenticated User',
-        'permissions' => ['access content'],
-        'access' => 403,
-        'is_admin' => FALSE,
-      ],
-      3 => [
-        'name' => 'Tripal Content Administrator',
-        'permissions' => [$route->getRequirements()['_permission']],
-        'access' => 200,
-        'is_admin' => FALSE,
-      ],
-    ];
-
-    foreach ($users as $uid => $user) {
-      $new_user = $this->createUser($user['permissions'], $user['name'], $user['is_admin'], ['uid' => $uid]);
-      if (!$user['is_admin']) {
-        // Ensure non-administrator account was not assigned 1 as user id.
-        $this->assertNotEquals($new_user->id(), 1, 'Test user must not have the magic user id of 1');
-      }
-
-      $this->setCurrentUser($new_user);
-      $request = Request::create($page_url);
-
-      $this->assertEquals(
-        $user['access'],
-        $http_kernel_service->handle($request)->getStatusCode(),
-        'User access permission does not match expected access permission.'
-      );
-    }
   }
 
   /**
@@ -589,6 +532,255 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         );
       }
     }
+  }
+
+  /**
+   * Provide user with various access permission to test page access.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array of values that describes the test user account setup. The
+   *     following keys are used.
+   *     - 'uid': the Drupal user id number.
+   *     - 'name': user account name.
+   *     - 'permissions': an array of permission requirements.
+   *     - 'is_admin': indicates if the account is administrator account.
+   *   - An array of expected values, with the following keys:
+   *     - 'access_code': access status code returned when accessing a route.
+   */
+  public static function provideTestUser() {
+
+    return [
+      // #0: Anonymous user.
+      [
+        'anonymous user',
+        [
+          'uid' => 0,
+          'name' => 'Anonymous',
+          'permissions' => [],
+          'is_admin' => FALSE,
+        ],
+        [
+          'access_code' => 403,
+        ],
+      ],
+
+      // #1: Drupal administrator.
+      [
+        'Drupal admin',
+        [
+          'uid' => 1,
+          'name' => 'Administrator',
+          'permissions' => [],
+          'is_admin' => TRUE,
+        ],
+        [
+          'access_code' => 200,
+        ],
+      ],
+
+      // #2: Authenticated user.
+      [
+        'authenticated user',
+        [
+          'uid' => 2,
+          'name' => 'Authenticated User',
+          'permissions' => ['access content'],
+          'is_admin' => FALSE,
+        ],
+        [
+          'access_code' => 403,
+        ],
+      ],
+
+      // #3: Tripal content administrator.
+      [
+        'Tripal content administrator',
+        [
+          'uid' => 3,
+          'name' => 'Tripal Content Administrator',
+          'permissions' => ['administer tripal content'],
+          'is_admin' => FALSE,
+        ],
+        [
+          'access_code' => 200,
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test access permission requirements.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $user
+   *   An array of values that describes the test user account setup. The
+   *   following keys are used.
+   *     - 'uid': the Drupal user id number.
+   *     - 'name': user account name.
+   *     - 'permissions': an array of permission requirements.
+   *     - 'is_admin': indicates if the account is administrator account.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'access_code': access status code returned when accessing a route.
+   *
+   * @dataProvider provideTestUser
+   */
+  public function testPageAccess(string $scenario, array $user, array $expected) {
+
+    user_logout();
+
+    $new_user = $this->createUser(
+      $user['permissions'],
+      $user['name'],
+      $user['is_admin'],
+      ['uid' => $user['uid']]
+    );
+
+    if (!$user['is_admin']) {
+      // Ensure non-administrator account was not assigned 1 as user id.
+      $this->assertNotEquals($new_user->id(), 1, 'Non-admin test user must not have the magic user id of 1.');
+    }
+
+    $this->setCurrentUser($new_user);
+
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $this->research_experiment_entity->id(),
+      'genus' => 0,
+    ])
+      ->toString();
+
+    $request = Request::create($page_url);
+
+    $this->assertEquals(
+      $expected['access_code'],
+      $this->container->get('http_kernel')->handle($request)->getStatusCode(),
+      'User access permission does not match expected access permission in scenario ' . $scenario
+    );
+  }
+
+  /**
+   * Provide test values to route parameters.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array of values that will plug into the parameter requirements
+   *     of the route. The following keys are used.
+   *     - 'tripal_entity': the research experiment Tripal entity id.
+   *     - 'genus': the genus to be used a filter value.
+   *   - An array of expected values, with the following key:
+   *     - 'message': the expected message for a every set of parameter values.
+   */
+  public static function provideInvalidValues() {
+
+    return [
+      // #0: Experiment does not exist.
+      [
+        'research experiment does not exists',
+        [
+          'tripal_entity' => 999,
+          'genus' => 0,
+        ],
+        [
+          'message' => 'Page not found',
+        ],
+      ],
+
+      // #1: Genus does not exist.
+      [
+        'genus does not exist',
+        [
+          'tripal_entity' => 1,
+          'genus' => 'Rosa',
+        ],
+        [
+          'message' => 'Page not found',
+        ],
+      ],
+
+      // #2: Both do not exist.
+      [
+        'non-existent research experiment and genus',
+        [
+          'tripal_entity' => 999,
+          'genus' => 'Rosa',
+        ],
+        [
+          'message' => 'Page not found',
+        ],
+      ],
+
+      // #3: Not the correct content type (research study id 2 in setUp()).
+      [
+        'not a research experiment content type',
+        [
+          'tripal_entity' => 2,
+          'genus' => 'Lens',
+        ],
+        [
+          'message' => 'Page not found',
+        ],
+      ],
+
+      // #4: Valid parameters.
+      [
+        'valid research experiment and genus',
+        [
+          'tripal_entity' => 1,
+          'genus' => 'Lens',
+        ],
+        [
+          'message' => '',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test page exceptions.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $slug_values
+   *   An array of values that will plug into the parameter requirements
+   *   of the route. The following keys are used.
+   *     - 'tripal_entity': the research experiment Tripal entity id.
+   *     - 'genus': the genus to be used a filter value.
+   * @param array $expected
+   *   An array of expected values, with the following key:
+   *     - 'message': the expected message for a every set of parameter values.
+   *
+   * @dataProvider provideInvalidValues
+   */
+  public function testPageExceptions(string $scenario, array $slug_values, array $expected) {
+
+    if (!$this->container->get('current_user')->id()) {
+      $route = $this->container->get('router.route_provider')
+        ->getRouteByName(self::ROUTE_NAME);
+
+      $this->setCurrentUser(
+        $this->createUser([$route->getRequirements()['_permission']])
+      );
+    }
+
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $slug_values['tripal_entity'],
+      'genus' => $slug_values['genus'],
+    ])
+      ->toString();
+
+    $request = Request::create($page_url);
+    $page = $this->container->get('http_kernel')->handle($request)
+      ->getContent();
+
+    $this->assertStringContainsString(
+      $expected['message'],
+      (string) $page,
+      'The page does not contain expected error message in scenario ' . $scenario
+    );
   }
 
 }
