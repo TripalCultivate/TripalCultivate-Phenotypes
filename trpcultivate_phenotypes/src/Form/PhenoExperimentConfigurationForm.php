@@ -25,7 +25,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Genus-ontotology service.
+   * Genus-Ontotology service.
    *
    * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultiavtePhenotypesGenusOntologyService
    */
@@ -53,7 +53,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   private $research_experiment;
 
   /**
-   * The research experiment genus used to filter the the table.
+   * The genus used to filter the traits table and show only related traits.
    *
    * @var string
    */
@@ -130,7 +130,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // Update the title to show which reseach experiment is being setup.
     $form['#title'] = 'Phenotypes: ' . $experiment_name;
 
-    // Setup traits summary listing table.
+    // Prepare traits summary table render array.
     $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
     $summary_table_name = 'experiment_traits_summary_table';
 
@@ -189,8 +189,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $this->messenger()
       ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
 
-    // Create a mapping array to map cv name to a genus, set a group colour, and
-    // populate the genus filter select field.
+    // Create a mapping array to map cv name to a genus and populate the genus
+    // filter select field with available genus options.
     $genus_map = [];
     foreach ($experiment_genus as $genus) {
       $cv_id = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus)['trait'];
@@ -201,6 +201,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $rows = [];
 
+    // Query the list of traits in an experiment. Sort the result first by the
+    // genus, cv name (based on the cv_id) and then by trait is_required status
+    // value (required traits first) and finally, by trait name alphabetically.
     $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tc');
     $query->join('1:cvterm', 't', 'tc.attr_id = t.cvterm_id');
     $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
@@ -234,7 +237,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
     foreach ($query_result as $i => $trait_row) {
       $first_row = FALSE;
 
-      // Set genus.
       $genus = $genus_map[$trait_row->cv_id];
       if (!in_array($genus, $set_genus)) {
         $this->service_PhenoTraits->setTraitGenus($genus);
