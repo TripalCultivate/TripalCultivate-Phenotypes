@@ -139,11 +139,11 @@ class PhenoExperimentConfigurationForm extends FormBase {
       'label' => [
         'data' => [
           '#type' => 'component',
-          '#component' => 'trpcultivate_phenotypes:help_text',
+          '#component' => 'trpcultivate_phenotypes:icon_text',
           '#slots' => [],
           '#props' => [
+            'icon_name' => 'help',
             'label' => 'Label',
-            'help_text' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
           ],
         ],
       ],
@@ -318,48 +318,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     // Populate table rows array.
     $form[$summary_table_name]['#rows'] = $rows;
-
-    $form['a'] = [
-      '#type' => 'component',
-      '#component' => 'trpcultivate_phenotypes:icon_text',
-      '#props' => [
-        'icon_name' => 'archived',
-      ],
-    ];
-
-    $form['b'] = [
-      '#type' => 'component',
-      '#component' => 'trpcultivate_phenotypes:icon_text',
-      '#props' => [
-        'icon_name' => 'required',
-      ],
-    ];
-
-    $form['c'] = [
-      '#type' => 'component',
-      '#component' => 'trpcultivate_phenotypes:icon_text',
-      '#props' => [
-        'icon_name' => 'shared',
-      ],
-    ];
-
-    $form['d'] = [
-      '#type' => 'component',
-      '#component' => 'trpcultivate_phenotypes:icon_text',
-      '#props' => [
-        'icon_name' => 'collected',
-      ],
-    ];
-
-    $form['e'] = [
-      '#type' => 'component',
-      '#component' => 'trpcultivate_phenotypes:icon_text',
-      '#props' => [
-        'icon_name' => 'help',
-        'link_to' => 'knowpulse.usask.ca',
-        'label' => 'Label',
-      ],
-    ];
 
     return $form;
   }

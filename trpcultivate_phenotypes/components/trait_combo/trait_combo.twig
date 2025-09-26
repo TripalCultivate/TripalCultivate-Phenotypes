@@ -6,7 +6,7 @@
     {% if status %}
       {% for status_item, status_value in status %}
         {% if status_value == 1 %}
-				  <span></span>
+				  {{ include('trpcultivate_phenotypes:icon_text', { icon_name: status_item }) }}
         {% endif %}
    		{% endfor %}
     {% endif %}
