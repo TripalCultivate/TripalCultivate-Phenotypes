@@ -199,6 +199,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $form[$summary_table_name]['#header']['trait_combo']['data']['#options'][$genus] = $genus;
     }
 
+    // Determine if the page will default to a genus or all genus.
+    if (count($experiment_genus) == 1) {
+      $single_genus = $experiment_genus[0];
+
+      $form[$summary_table_name]['#header']['trait_combo']['data']['#value'] = $single_genus;
+      // From the Phenotypes tab, the url is /configure, update to include the
+      // the default genus - /configure/genus.
+      $form['#attached']['drupalSettings']['tcpSettings']['genus'] = $single_genus;
+      $this->filter_genus = $single_genus;
+    }
+
     $rows = [];
 
     // Query the list of traits in an experiment. Sort the result first by the

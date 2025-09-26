@@ -6,10 +6,17 @@
   Drupal.behaviors.filterTraitTableByGenus = {
     attach: function (context, settings) {
 
-      $('#tcp-filter-trait-table-by-genus').change(function() {
-        var selectValue = $(this).val();
+      var pathname = window.location.pathname;
+      var tcpSettings = drupalSettings.tcpSettings;
 
-        var pathname = window.location.pathname;
+      if (tcpSettings && !pathname.includes('/' + tcpSettings.genus)) {
+        // Update url to include the default single genus.
+        window.history.pushState({}, '', pathname + '/' + tcpSettings.genus);
+      }
+
+      $('#tcp-filter-trait-table-by-genus').change(function() {
+
+        var selectValue = $(this).val();
         var pathPcs = pathname.split('/');
         var newLocation;
 
