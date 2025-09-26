@@ -319,6 +319,48 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // Populate table rows array.
     $form[$summary_table_name]['#rows'] = $rows;
 
+    $form['a'] = [
+      '#type' => 'component',
+      '#component' => 'trpcultivate_phenotypes:icon_text',
+      '#props' => [
+        'icon_name' => 'archived',
+      ],
+    ];
+
+    $form['b'] = [
+      '#type' => 'component',
+      '#component' => 'trpcultivate_phenotypes:icon_text',
+      '#props' => [
+        'icon_name' => 'required',
+      ],
+    ];
+
+    $form['c'] = [
+      '#type' => 'component',
+      '#component' => 'trpcultivate_phenotypes:icon_text',
+      '#props' => [
+        'icon_name' => 'shared',
+      ],
+    ];
+
+    $form['d'] = [
+      '#type' => 'component',
+      '#component' => 'trpcultivate_phenotypes:icon_text',
+      '#props' => [
+        'icon_name' => 'collected',
+      ],
+    ];
+
+    $form['e'] = [
+      '#type' => 'component',
+      '#component' => 'trpcultivate_phenotypes:icon_text',
+      '#props' => [
+        'icon_name' => 'help',
+        'link_to' => 'knowpulse.usask.ca',
+        'label' => 'Label',
+      ],
+    ];
+
     return $form;
   }
 
