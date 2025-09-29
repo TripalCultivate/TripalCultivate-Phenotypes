@@ -1,15 +1,30 @@
 /**
  * @file
- * Style experiment configuration.
+ * Style experiment configuration summary table.
  */
 
- #tcp-experiment-traits-summary-table {
+#tcp-experiment-traits-summary-table {
   cursor: pointer;
- }
+}
+
+#tcp-experiment-traits-summary-table td {
+  vertical-align: top;
+}
 
 /* Trait-method-combo column */
 #tcp-experiment-traits-summary-table td:nth-child(2) {
   width: 75%;
+}
+
+/* Combo icons */
+#tcp-experiment-traits-summary-table svg {
+  filter: invert(0);
+}
+
+@media (prefers-color-scheme: dark) {
+  #tcp-experiment-traits-summary-table svg {
+    filter: invert(1) brightness(2);
+  }
 }
 
 /* Remove column */
@@ -18,18 +33,13 @@
   width: 1%;
 }
 
-/* Trait-method-combo */
-#tcp-experiment-traits-summary-table td {
-  vertical-align: top;
-}
-
 /* Organize traits by genus by shading */
 .tcp-group-shade-dark {
   background-color: light-dark(#F7F7F7, #333333);
 }
 
 .tcp-group-shade-light {
-  background-color: light-dark(#FFFFFF, #4A4A4C);
+  background-color: light-dark(#FFFFFF, #2A2A2D);
 }
 
 /* Organize traits by genus by horizontal line */

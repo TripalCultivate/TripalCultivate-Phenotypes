@@ -6,7 +6,9 @@
     {% if status %}
       {% for status_item, status_value in status %}
         {% if status_value == 1 %}
-				  {{ include('trpcultivate_phenotypes:icon_text', { icon_name: status_item }) }}
+				  <span {{ attributes.setAttribute('class', 'tcp-pheno-' ~ status_item) }}>
+					  {{ include('trpcultivate_phenotypes:icon_text', { icon_name: status_item }) }}
+          </span>
         {% endif %}
    		{% endfor %}
     {% endif %}

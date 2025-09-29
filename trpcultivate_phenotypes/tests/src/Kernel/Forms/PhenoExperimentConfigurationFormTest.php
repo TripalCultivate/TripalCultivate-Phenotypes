@@ -387,9 +387,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ])
       ->fields('t', ['cv_id'])
       ->condition('tc.project_id', $experiment_id, '=')
-      ->orderBy('v.name', 'ASC')
-      ->orderBy('is_required', 'DESC')
-      ->orderBy('label', 'ASC');
+      ->orderBy('v.name', 'ASC');
 
     $query_result = $query->execute();
 
@@ -494,13 +492,14 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $all_trait = [];
 
     // Switch between the genus.
+    $request = new Request();
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
+    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+
     foreach ($this->trait_set as $organism => $traits) {
       $genus = explode(':', $organism)[0];
 
-      $request = new Request();
-      $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
-      $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-      $request->attributes->set('tripal_entity', $this->research_experiment_entity);
       $request->attributes->set('genus', $genus);
       $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
