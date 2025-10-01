@@ -224,15 +224,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
         'combo_id',
         'attr_id',
         'observable_id',
-        'unit_id', 'label',
+        'unit_id',
+        'label',
         'is_archived',
         'is_required',
         'was_shared',
         'was_collected',
       ])
-      ->fields('t', ['cv_id'])
+      ->fields('t', ['cv_id', 'name'])
       ->condition('tc.project_id', $experiment_id, '=')
-      ->orderBy('v.name', 'ASC');
+      ->orderBy('v.name', 'ASC')
+      ->orderBy('t.name', 'ASC');
 
     if ($this->filter_genus) {
       $query->condition('t.cv_id', array_search($this->filter_genus, $genus_map), '=');
