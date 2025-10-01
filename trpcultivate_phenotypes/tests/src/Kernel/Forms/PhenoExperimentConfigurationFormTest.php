@@ -389,7 +389,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->fields('t', ['cv_id', 'name'])
       ->condition('tc.project_id', $experiment_id, '=')
       ->orderBy('v.name', 'ASC')
-      ->orderBy('t.name', 'ASC');
+      ->orderBy('t.name', 'ASC')
+      ->orderBy('label', 'ASC');
 
     $query_result = $query->execute();
 

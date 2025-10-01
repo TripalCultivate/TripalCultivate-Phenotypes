@@ -234,7 +234,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ->fields('t', ['cv_id', 'name'])
       ->condition('tc.project_id', $experiment_id, '=')
       ->orderBy('v.name', 'ASC')
-      ->orderBy('t.name', 'ASC');
+      ->orderBy('t.name', 'ASC')
+      ->orderBy('label', 'ASC');
 
     if ($this->filter_genus) {
       $query->condition('t.cv_id', array_search($this->filter_genus, $genus_map), '=');
