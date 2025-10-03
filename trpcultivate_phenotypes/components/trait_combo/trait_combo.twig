@@ -4,11 +4,17 @@
 		{{ name }}
 
     {% if status %}
+
+		  {% set status_fa_map = {
+				'archived': 'fa-box-archive',
+				'required': 'fa-star',
+				'shared': 'fa-hand-holding-heart',
+				'collected': 'fa-ruler'
+			} %}
+
       {% for status_item, status_value in status %}
         {% if status_value == 1 %}
-				  <span {{ attributes.setAttribute('class', 'tcp-pheno-' ~ status_item) }}>
-					  {{ include('trpcultivate_phenotypes:icon_text', { icon_name: status_item }) }}
-          </span>
+					<i {{ attributes.setAttribute('class', 'tcp-pheno-' ~ status_item ~ ' fa-solid ' ~ status_fa_map[status_item]) }}></i>
         {% endif %}
    		{% endfor %}
     {% endif %}

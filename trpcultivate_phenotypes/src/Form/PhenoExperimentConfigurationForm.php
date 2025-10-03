@@ -9,6 +9,8 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
+use PhpParser\Node\Expr\Cast\Object_;
+use stdClass;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -138,13 +140,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $headers = [
       'label' => [
         'data' => [
-          '#type' => 'component',
-          '#component' => 'trpcultivate_phenotypes:icon_text',
-          '#slots' => [],
-          '#props' => [
-            'icon_name' => 'help',
-            'label' => 'Label',
-          ],
+          '#markup' => 'Label <i class="fa-solid fa-circle-question"></i>',
         ],
       ],
       'trait_combo' => [
@@ -169,11 +165,29 @@ class PhenoExperimentConfigurationForm extends FormBase {
       '#rows' => [],
       '#empty' => 'No traits found',
       '#sticky' => FALSE,
-      '#allowed_tags' => ['br', 'em', 'def', 'svg', 'small', 'span', 'text', 'circle', 'select'],
+      '#allowed_tags' => ['br', 'em', 'def', 'small', 'span', 'select'],
       '#attributes' => [
         'id' => 'tcp-experiment-traits-summary-table',
       ],
     ];
+
+    // Ensure research experiment has at least one configured genus.
+    $configured_genus = 0;
+    $exp_genus = $this->research_experiment->get('exp_germgenus')->getValue();
+
+    foreach ($exp_genus as $germgenus) {
+      $is_configured = $this->service_PhenoGenusOntology
+        ->getGenusOntologyConfigValues($germgenus['value']);
+
+      if (!$is_configured) {
+        $configured_genus++;
+      }
+    }
+
+    if ($configured_genus == count($exp_genus)) {
+      $this->messenger()->addError('The Research Experiment has no configured genus set.');
+      return $form;
+    }
 
     $experiment_genus = $this->service_PhenoGenusProject->getGenusOfProject($experiment_id);
     if (!$experiment_genus) {
