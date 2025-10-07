@@ -6,6 +6,7 @@ use Drupal\Core\Url;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Tests\tripal\Traits\TripalTestTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -16,11 +17,17 @@ use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Tests associated with PhenoExperimentConfigurationForm class.
+ *
+ * @group trpcultivate_phenotypes
+ * @group configuration
  */
+#[Group('trpcultivate_phenotypes')]
+#[Group('configuration')]
 class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
   use UserCreationTrait;
+  use TripalTestTrait;
 
   /**
    * Modules to enable.
@@ -66,12 +73,23 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   const ROUTE_NAME = 'trpcultivate_phenotypes.experiment_configuration';
 
   /**
+   * Expected research experiment entity id to describe a setup.
+   *
+   * @var array.
+   */
+  const ENTITY_ID = [
+    'good' => 1,
+    'incomplete' => 2,
+    'is_not' => 3,
+  ];
+
+  /**
    * Test genus with a set of test traits.
    *
    * @var array
    */
   private $trait_set = [
-    'Lens:culinaris' => [
+    'Lens' => [
       [
         'Trait Name' => 'Days to Flower',
         'Trait Description' => 'DTF trait description text',
@@ -97,7 +115,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         'Type' => 'Qualitative',
       ],
     ],
-    'Triticum:durum' => [
+    'Triticum' => [
       [
         'Trait Name' => 'Green Cotyledon Colour',
         'Trait Description' => 'GCC trait description text',
@@ -135,95 +153,131 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->installTerms();
 
     \trpcultivate_import_contenttypes();
-    $this->setTermConfig();
+    $config_terms = $this->setTermConfig();
 
-    // Create experiment (project).
-    $experiment_name = 'My Research Experiment';
-    $project_id = $this->chado_connection->insert('1:project')
-      ->fields(['name'])
-      ->values(['name' => $experiment_name])
-      ->execute();
+    // Create test records.
+    $good_research = 'A Good Research Experiment';
+    $experiments = [
+      $good_research => [
+        'id' => self::ENTITY_ID['good'],
+        'genus' => ['Lens', 'Triticum'],
+        'configure_genus' => TRUE,
+        'has_traits' => TRUE,
+        'content_type' => 'research_experiment',
+      ],
+      'Incomplete Research Experiment' => [
+        'id' => self::ENTITY_ID['incomplete'],
+        'genus' => ['NOT_CONFIGURED_GENUS'],
+        'configure_genus' => FALSE,
+        'has_traits' => FALSE,
+        'content_type' => 'research_experiment',
+      ],
+      'Not a Research Experiment' => [
+        'id' => self::ENTITY_ID['is_not'],
+        'genus' => [],
+        'configure_genus' => FALSE,
+        'has_traits' => FALSE,
+        'content_type' => 'research_study',
+      ],
+    ];
 
-    // Create tripal entity.
-    $this->research_experiment_entity = TripalEntity::create([
-      'id' => uniqid(),
-      'type' => 'research_experiment',
-      'label' => $experiment_name,
-    ]);
-
-    $this->research_experiment_entity
-      ->set('exp_name', ['record_id' => $project_id, 'value' => $experiment_name])
-      ->save();
-
-    // Configure the genus.
-    $genus_key = [];
-    foreach ($this->trait_set as $organism => $traits) {
-      [$genus, $species] = explode(':', $organism);
-      $genus_key[$organism] = $genus;
-
-      $this->chado_connection->insert('1:organism')
-        ->fields(['genus', 'species', 'type_id'])
-        ->values([
-          'genus' => $genus,
-          'species' => $species,
-          'type_id' => 1,
-        ])
+    foreach ($experiments as $exp_name => $exp_values) {
+      // Create Research Experiment Tripal content.
+      $project_id = $this->chado_connection->insert('1:project')
+        ->fields(['name'])
+        ->values(['name' => $exp_name])
         ->execute();
 
-      $this->setOntologyConfig($genus);
-    }
+      $entity = TripalEntity::create([
+        'id' => $exp_values['id'],
+        'type' => $exp_values['content_type'],
+        'label' => $exp_name,
+      ]);
 
-    // Insert trait-method-unit then add combo to an experiment.
-    $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
-    $genus_project_service = $this->container->get('trpcultivate_phenotypes.genus_project');
-    $database_service = $this->container->get('database');
+      // Create and configure genus.
+      if ($exp_values['genus'] && $exp_values['content_type'] == 'research_experiment') {
+        $entity
+          ->set('exp_name', ['record_id' => $project_id, 'value' => $exp_name]);
 
-    foreach ($genus_key as $organism => $genus) {
-      $trait_service->setTraitGenus($genus);
+        foreach ($exp_values['genus'] as $i => $genus) {
+          $this->chado_connection->insert('1:organism')
+            ->fields(['genus', 'species', 'type_id'])
+            ->values([
+              'genus' => $genus,
+              'species' => $this->getRandomGenerator()->word(10),
+              'type_id' => 1,
+            ])
+            ->execute();
 
-      foreach ($this->trait_set[$organism] as $trait) {
-        $ids = $trait_service->insertTrait($trait);
+          if ($exp_values['configure_genus']) {
+            $this->setOntologyConfig($genus);
+          }
 
-        $database_service->insert('trpcultivate_phenocombo')
-          ->fields([
-            'project_id',
-            'attr_id',
-            'observable_id',
-            'unit_id',
-            'label',
-            'is_archived',
-            'is_required',
-            'was_collected',
-            'was_shared',
-            'uid',
-            'timestamp',
-          ])
-          ->values([
-            $project_id,
-            $ids['trait'],
-            $ids['method'],
-            $ids['unit'],
-            $trait['Trait Name'] . ':' . $trait['Method Short Name'],
-            mt_rand(0, 1),
-            mt_rand(0, 1),
-            mt_rand(0, 1),
-            mt_rand(0, 1),
-            $this->container->get('current_user')->id(),
-            time(),
-          ])
-          ->execute();
+          $this->chado_connection->insert('1:projectprop')
+            ->fields([
+              'project_id' => $project_id,
+              'type_id' => $config_terms['genus'],
+              'value' => $genus,
+              'rank' => $i + 1,
+            ])
+            ->execute();
+
+          $entity
+            ->set('exp_germgenus', ['record_id' => $project_id, 'value' => $genus]);
+        }
       }
 
-      $genus_project_service->setGenusToProject($project_id, $genus);
+      $entity->save();
+
+      if ($exp_values['id'] == 1) {
+        // Save the one entity with genus configured properly.
+        $this->research_experiment_entity = $entity;
+      }
     }
 
-    // This Tripal content type - research study is for testing out
-    // invalid values.
-    TripalEntity::create([
-      'id' => 2,
-      'type' => 'research_study',
-      'label' => 'A Research Study',
-    ]);
+    // Install trait combos to good research experiment.
+    $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
+    $db_service = $this->container->get('database');
+    $experiment = $this->research_experiment_entity->get('exp_name')->getValue()[0];
+
+    foreach ($experiments[$good_research]['genus'] as $genus) {
+      $trait_service->setTraitGenus($genus);
+
+      $insert_combo = $db_service->insert('trpcultivate_phenocombo')
+        ->fields([
+          'project_id',
+          'attr_id',
+          'observable_id',
+          'unit_id',
+          'label',
+          'is_archived',
+          'is_required',
+          'was_collected',
+          'was_shared',
+          'uid',
+          'timestamp',
+        ]);
+
+      foreach ($this->trait_set[$genus] as $combo) {
+        $ids = $trait_service->insertTrait($combo);
+
+        $insert_combo->values([
+          $experiment['record_id'],
+          $ids['trait'],
+          $ids['method'],
+          $ids['unit'],
+          $combo['Trait Name'] . ':' . $combo['Method Short Name'],
+          mt_rand(0, 1),
+          mt_rand(0, 1),
+          mt_rand(0, 1),
+          mt_rand(0, 1),
+          $this->container->get('current_user')->id(),
+          time(),
+        ]);
+      }
+
+      $insert_combo->execute();
+    }
   }
 
   /**
@@ -292,7 +346,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     );
 
     $filter_genus_options = array_map(function ($g) {
-      return explode(':', $g)[0];
+      return $g;
     }, array_keys($this->trait_set));
 
     array_unshift($filter_genus_options, 'All Genus');
@@ -363,7 +417,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
     $genus_map = [];
     foreach (array_keys($this->trait_set) as $genus) {
-      $genus = explode(':', $genus)[0];
       $cv_id = $genus_ontology_service->getGenusOntologyConfigValues($genus)['trait'];
       $genus_map[$cv_id] = $genus;
     }
@@ -501,7 +554,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $request->attributes->set('tripal_entity', $this->research_experiment_entity);
 
     foreach ($this->trait_set as $organism => $traits) {
-      $genus = explode(':', $organism)[0];
+      $genus = $organism;
 
       $request->attributes->set('genus', $genus);
       $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
@@ -630,6 +683,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideTestUser
    */
+  #[DataProvider('provideTestUser')]
   public function testPageAccess(string $scenario, array $user, array $expected) {
 
     user_logout();
@@ -695,11 +749,11 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       [
         'genus does not exist',
         [
-          'tripal_entity' => 1,
+          'tripal_entity' => self::ENTITY_ID['good'],
           'genus' => 'Rosa',
         ],
         [
-          'message' => 'Page not found',
+          'message' => 'The requested page could not be found',
         ],
       ],
 
@@ -719,7 +773,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       [
         'not a research experiment content type',
         [
-          'tripal_entity' => 2,
+          'tripal_entity' => self::ENTITY_ID['is_not'],
           'genus' => 'Lens',
         ],
         [
@@ -727,11 +781,23 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #4: Valid parameters.
+      // # 4: A valid entity with a genus not configured.
+      [
+        'experiment with a non-configured genus',
+        [
+          'tripal_entity' => self::ENTITY_ID['incomplete'],
+          'genus' => 'NOT_CONFIGURED_GENUS',
+        ],
+        [
+          'message' => 'The Research Experiment has no configured genus set',
+        ],
+      ],
+
+      // #5: Valid parameters.
       [
         'valid research experiment and genus',
         [
-          'tripal_entity' => 1,
+          'tripal_entity' => self::ENTITY_ID['good'],
           'genus' => 'Lens',
         ],
         [
@@ -757,6 +823,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    *
    * @dataProvider provideInvalidValues
    */
+  #[DataProvider('provideInvalidValues')]
   public function testPageExceptions(string $scenario, array $slug_values, array $expected) {
 
     if (!$this->container->get('current_user')->id()) {

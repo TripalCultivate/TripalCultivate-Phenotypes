@@ -16,17 +16,6 @@
   width: 75%;
 }
 
-/* Combo icons */
-#tcp-experiment-traits-summary-table svg {
-  filter: invert(0);
-}
-
-@media (prefers-color-scheme: dark) {
-  #tcp-experiment-traits-summary-table svg {
-    filter: invert(1) brightness(2);
-  }
-}
-
 /* Remove column */
 #tcp-experiment-traits-summary-table td:last-child {
   text-align: center;

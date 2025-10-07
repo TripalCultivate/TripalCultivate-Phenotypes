@@ -9,8 +9,6 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
-use PhpParser\Node\Expr\Cast\Object_;
-use stdClass;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -140,7 +138,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $headers = [
       'label' => [
         'data' => [
-          '#markup' => 'Label <i class="fa-solid fa-circle-question"></i>',
+          '#markup' => 'Label <i class="fa-solid fa-circle-question" title="A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment."></i>',
         ],
       ],
       'trait_combo' => [
@@ -190,11 +188,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     $experiment_genus = $this->service_PhenoGenusProject->getGenusOfProject($experiment_id);
-    if (!$experiment_genus) {
-      $this->messenger()->addError('The Research Experiment has either no genus set or has one but is not properly configured.');
-      return $form;
-    }
-
     if ($this->filter_genus && !in_array($this->filter_genus, $experiment_genus)) {
       // Filter genus does not exist.
       throw new NotFoundHttpException();
