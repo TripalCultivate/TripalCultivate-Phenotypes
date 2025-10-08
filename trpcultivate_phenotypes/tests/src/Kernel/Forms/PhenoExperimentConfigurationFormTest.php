@@ -80,7 +80,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   const ENTITY_ID = [
     'good' => 1,
     'incomplete' => 2,
-    'is_not' => 3,
+    'no_trait' => 3,
+    'is_not' => 4,
   ];
 
   /**
@@ -162,14 +163,18 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         'id' => self::ENTITY_ID['good'],
         'genus' => ['Lens', 'Triticum'],
         'configure_genus' => TRUE,
-        'has_traits' => TRUE,
         'content_type' => 'research_experiment',
       ],
       'Incomplete Research Experiment' => [
         'id' => self::ENTITY_ID['incomplete'],
         'genus' => ['NOT_CONFIGURED_GENUS'],
         'configure_genus' => FALSE,
-        'has_traits' => FALSE,
+        'content_type' => 'research_experiment',
+      ],
+      'Research Experiment without a Trait' => [
+        'id' => self::ENTITY_ID['no_trait'],
+        'genus' => ['Rosa'],
+        'configure_genus' => TRUE,
         'content_type' => 'research_experiment',
       ],
       'Not a Research Experiment' => [
@@ -793,12 +798,36 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         ],
       ],
 
-      // #5: Valid parameters.
+      // # 5: A valid entity with a genus but without traits.
       [
-        'valid research experiment and genus',
+        'experiment with genus but without traits',
+        [
+          'tripal_entity' => self::ENTITY_ID['no_trait'],
+          'genus' => 'Rosa',
+        ],
+        [
+          'message' => 'No traits found',
+        ],
+      ],
+
+      // 6: Valid parameters, listing specific genus.
+      [
+        'valid research experiment and a genus',
         [
           'tripal_entity' => self::ENTITY_ID['good'],
           'genus' => 'Lens',
+        ],
+        [
+          'message' => '',
+        ],
+      ],
+
+      // 7: Valid parameters, listing for all genus.
+      [
+        'valid research experiment and all genus',
+        [
+          'tripal_entity' => self::ENTITY_ID['good'],
+          'genus' => 0,
         ],
         [
           'message' => '',
