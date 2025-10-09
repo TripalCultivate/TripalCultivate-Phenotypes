@@ -83,3 +83,38 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
 
   return $items;
 }
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * NOTE: this only removes the delete tab/option. The functionality to
+ * delete using the delete entity route may still be used.
+ */
+function trpcultivate_phenotypes_menu_local_tasks_alter(&$menu_tasks) {
+
+  // Remove the Delete tab if research experiment has phenotypes.
+  // Apply this delete tab restriction to the following Tripal content types.
+  $content_types = [
+    'research_experiment',
+  ];
+
+  $page_parameters = \Drupal::service('current_route_match')
+    ->getParameters();
+
+  if ($tripal_entity = $page_parameters->get('tripal_entity')) {
+    if (in_array($tripal_entity->bundle(), $content_types)) {
+      $research_experiment = $tripal_entity->get('exp_name')->getValue()[0];
+
+      $has_pheno = \Drupal::service('database')
+        ->select('trpcultivate_phenocombo', 'tc')
+        ->condition('tc.project_id', $research_experiment['record_id'], '=')
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+
+      if ($has_pheno) {
+        $menu_tasks['tabs'][0]['entity.tripal_entity.delete_form'] = [];
+      }
+    }
+  }
+}
