@@ -272,9 +272,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
       );
 
       // To aid grouping of traits by genus, darken the top border of the first
-      // row (trait) in the same genus and apply shade to the group.
+      // row (trait) in the same genus.
       $group_class = [];
-      array_push($group_class, ($a_group) ? 'tcp-group-shade-light' : 'tcp-group-shade-dark');
       if ($first_row && $i > 0) {
         array_push($group_class, 'tcp-group-border');
       }
