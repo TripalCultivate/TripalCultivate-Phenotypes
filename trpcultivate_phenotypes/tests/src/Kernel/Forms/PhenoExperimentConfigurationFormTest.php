@@ -350,10 +350,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       'The summary listing table render array is missing expected header.',
     );
 
-    $filter_genus_options = array_map(function ($g) {
-      return $g;
-    }, array_keys($this->trait_set));
-
+    $filter_genus_options = array_keys($this->trait_set);
     array_unshift($filter_genus_options, 'All Genus');
 
     $this->assertEquals(
