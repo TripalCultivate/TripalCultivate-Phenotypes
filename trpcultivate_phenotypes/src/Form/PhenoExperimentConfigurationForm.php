@@ -5,6 +5,7 @@ namespace Drupal\trpcultivate_phenotypes\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
@@ -50,7 +51,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @var \Drupal\tripal\Entity\TripalEntity
    */
-  private $research_experiment;
+  private TripalEntity $research_experiment;
 
   /**
    * The genus used to filter the traits table and show only related traits.

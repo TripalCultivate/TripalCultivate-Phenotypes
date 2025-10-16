@@ -63,7 +63,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    *
    * @var \Drupal\tripal\Entity\TripalEntity
    */
-  private $research_experiment_entity;
+  private TripalEntity $research_experiment_entity;
 
   /**
    * Route name.
@@ -289,6 +289,15 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    * Test getFormId().
    */
   public function testGetFormId() {
+
+    $route = $this->container->get('router.route_provider')
+      ->getRouteByName(self::ROUTE_NAME);
+
+    $request = new Request();
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
+    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
     $this->assertEquals(
       'content_bio_data_research_experiment_configure_form',
