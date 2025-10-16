@@ -335,8 +335,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     // Test table render array.
     $this->assertEquals(
       $config_form['#title'],
-      'Phenotypes: ' . $experiment_name,
-      'The page does not contain the word Phenotypes: followed by the experiment name as the title of the page.'
+      'Configure Phenotypes for ' . $experiment_name,
+      'The page does not contain the phrase "Configure Phenotypes for" followed by the experiment name as the title of the page.'
     );
 
     $summary_table_name = 'experiment_traits_summary_table';
@@ -419,7 +419,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->getValue()[0];
 
     $this->assertStringContainsString(
-      'Phenotypes: ' . $experiment_name,
+      'Configure Phenotypes for ' . $experiment_name,
       (string) $page,
       'The page does not contain the expected page title containing the experiment name.'
     );

@@ -129,7 +129,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
     // Update the title to show which reseach experiment is being setup.
-    $form['#title'] = 'Phenotypes: ' . $experiment_name;
+    $form['#title'] = 'Configure Phenotypes for ' . $experiment_name;
 
     // Prepare traits summary table render array.
     $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
