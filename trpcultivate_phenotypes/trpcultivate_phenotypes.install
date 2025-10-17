@@ -181,3 +181,22 @@ function trpcultivate_phenotypes_schema() {
 
   return $schema;
 }
+
+/**
+ * Implements hook_update_N().
+ */
+function trpcultivate_phenotypes_update_8201() {
+
+  $db = \Drupal::service('database')
+    ->schema();
+
+  $schema = trpcultivate_phenotypes_schema();
+  $pheno_combo = array_keys($schema)[0];
+
+  if (!$db->tableExists($pheno_combo)) {
+    $db->createTable($pheno_combo, $schema[$pheno_combo]);
+
+    \Drupal::service('tripal.logger')
+      ->notice('The relation ' . $pheno_combo . ' has been created.');
+  }
+}
