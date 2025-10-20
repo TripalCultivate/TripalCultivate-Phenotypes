@@ -1,0 +1,24 @@
+.tcp-trait-combo def {
+  font-weight: 500;
+  display: block;
+}
+
+.tcp-trait-combo > div {
+  border-left: 3px solid #CCCCCC;
+  padding-left: 20px;
+}
+
+.tcp-trait-combo input[type="text"] {
+  width: 85%;
+}
+
+.tcp-trait-combo def:last-child,
+.tcp-trait-combo div def:not(first-child) {
+  font-size: 0.9em;
+  margin-top: 20px;
+}
+
+.tcp-trait-combo small {
+  color: #CCCCCC;
+  font-style: italic;
+}
