@@ -185,7 +185,7 @@ function trpcultivate_phenotypes_schema() {
 /**
  * Adds database table storing Experiment Phenotype configuration.
  */
-function trpcultivate_phenotypes_update_8201() {
+function trpcultivate_phenotypes_update_10001() {
 
   $db = \Drupal::service('database')
     ->schema();
