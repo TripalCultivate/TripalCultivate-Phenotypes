@@ -41,11 +41,11 @@
 
       // Add event listener to Add Trait button.
       $('#tcp-add-trait-to-experiment', context)
-        .on('traitSummaryPage')
-        .on('click', function(e) {
+        .once('traitSummaryPage')
+        .on('click', function(event) {
 
-          e.preventDefault();
-          alert();
+          // Stop the form from submitting.
+          event.preventDefault();
       });
 
       ///
