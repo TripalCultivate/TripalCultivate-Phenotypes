@@ -132,11 +132,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $form['#title'] = 'Configure Phenotypes for ' . $experiment_name;
 
     // Prepare traits summary table render array.
-    $form['#attached']['library'] = [
-      'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration',
-      'core/drupal.dialog.ajax',
-    ];
-
+    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
     $summary_table_name = 'experiment_traits_summary_table';
 
     $headers = [];
