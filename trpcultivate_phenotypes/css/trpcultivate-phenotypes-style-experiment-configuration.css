@@ -26,8 +26,3 @@
 .tcp-group-border {
   border-top: 8px solid #DADADA;
 }
-
-/* Popup window */
-#tcp-popup-window {
-  width: auto; min-height: 66.6px; max-height: 601.6px; height: auto;
-}
