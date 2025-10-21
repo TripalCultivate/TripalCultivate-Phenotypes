@@ -41,7 +41,7 @@ trpcultivate-phenotypes-experiment-configuration:
    theme:
      css/trpcultivate-phenotypes-style-experiment-configuration.css: {}
  js:
-   js/trpcultivate-phenotypes-script-filter-trait-table-by-genus.js: {}
+   js/trpcultivate-phenotypes-script-experiment-configuration.js: {}
  dependencies:
    - core/jquery
    - core/once
