@@ -26,3 +26,8 @@
 .tcp-group-border {
   border-top: 8px solid #DADADA;
 }
+
+/* Add trait popup window */
+#tcp-add-trait-form {
+  padding-top: 20px;
+}

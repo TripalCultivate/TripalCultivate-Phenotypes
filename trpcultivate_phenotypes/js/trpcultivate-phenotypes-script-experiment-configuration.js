@@ -41,12 +41,22 @@
 
       // Add event listener to Add Trait button.
       $('#tcp-add-trait-to-experiment', context)
-        .once('traitSummaryPage')
         .on('click', function(event) {
 
           // Stop the form from submitting.
           event.preventDefault();
       });
+
+      // Drupal got the stacking order of the popup window and overlay incorrect.
+      // This will override the set values.
+      $(document, context)
+        .on('dialogopen', function(event, ui) {
+          $(event.target)
+            .closest('.ui-dialog')
+            .css({'z-index': 102})
+            .next('.ui-widget-overlay')
+            .css({'z-index': 101});
+        });
 
       ///
 }}}(jQuery, Drupal, drupalSettings));

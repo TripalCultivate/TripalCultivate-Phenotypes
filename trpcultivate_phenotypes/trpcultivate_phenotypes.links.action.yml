@@ -11,8 +11,7 @@ trpcultivate_phenotypes.add_trait:
     - trpcultivate_phenotypes.experiment_configuration
   options:
     attributes:
-      id: 'tcp-add-trait-to-experiment'
       class:
         - 'use-ajax'
       data-dialog-type: 'modal'
-      data-dialog-options: '{"width": 800, "height": 550}'
+      data-dialog-options: '{"width": 750}'
