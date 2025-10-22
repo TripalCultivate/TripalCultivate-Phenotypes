@@ -188,7 +188,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       return $form;
     }
 
-    $experiment_genus = $this->service_PhenoGenusProject->getGenusOfProject($experiment_id);
+    $experiment_genus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
     if ($this->filter_genus && !in_array($this->filter_genus, $experiment_genus)) {
       // Filter genus does not exist.
       throw new NotFoundHttpException();
