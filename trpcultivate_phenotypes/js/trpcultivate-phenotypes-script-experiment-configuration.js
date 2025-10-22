@@ -50,10 +50,11 @@
       // Drupal got the stacking order of the popup window and overlay incorrect.
       // This will override the set values.
       $(document, context)
-        .on('dialogopen', function(event, ui) {
-          $(event.target)
-            .closest('.ui-dialog')
-            .css({'z-index': 102})
+        .on('dialogopen', function(event) {
+          var element = $(event.target).closest('.ui-dialog');
+
+          element.css({'z-index': 102});
+          element
             .next('.ui-widget-overlay')
             .css({'z-index': 101});
         });
