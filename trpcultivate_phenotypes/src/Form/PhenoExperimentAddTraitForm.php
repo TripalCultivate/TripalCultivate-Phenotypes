@@ -158,6 +158,8 @@ class PhenoExperimentAddTraitForm extends FormBase {
       ],
     ];
 
+    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
+
     // Save the slug values entity id so it is available in multiple subsequent
     // AJAX process requests.
     $tripal_entity_id = $form_state->get('tripal_entity_id');
@@ -192,13 +194,13 @@ class PhenoExperimentAddTraitForm extends FormBase {
     // IMPLEMENT: If only one genus, let that be the only option, otherwise all
     // project genus will be unique option. Add select a genus if summary page
     // is set to view all genus.
-    $form['genus'] = [
+    $form['form_wrapper']['genus'] = [
       '#type' => 'select',
       '#title' => 'Genus',
       '#options' => array_combine($experiment_genus, $experiment_genus),
     ];
 
-    $form['match_trait'] = [
+    $form['form_wrapper']['match_trait'] = [
       '#type' => 'textfield',
       '#title' => 'Trait' . $active_genus,
       '#attributes' => [
@@ -212,7 +214,7 @@ class PhenoExperimentAddTraitForm extends FormBase {
       ],
     ];
 
-    $form['match_trait_result'] = [
+    $form['form_wrapper']['match_trait_result'] = [
       '#markup' => '<div id="tcp-match-trait-result" style="border: 5px solid black">Type a keyword to search for specific traits, or Show all Traits Available to view all available traits.</div>',
     ];
 
@@ -237,34 +239,50 @@ class PhenoExperimentAddTraitForm extends FormBase {
       ->execute();
 
     $this->service_PhenoTraits->setTraitGenus($genus);
-    $items = [];
-    foreach ($query as $i => $trait) {
-      $items[] = [
-        'data' => [
-          '#type' => 'component',
-          '#component' => 'trpcultivate_phenotypes:trait_combo',
-          '#props' => [
-            'name' => $trait->name,
-            'definition' => $trait->definition,
-            'multiselect_method' => TRUE,
-            'method_unit_combo' => [],
+    $rows = [];
+    foreach ($query as $trait) {
+
+      $methods = [];
+      $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
+      foreach ($trait_methods as $method) {
+        $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
+
+        array_push($methods, [
+          'method_shortname' => $method->name,
+          'unit' => $method_unit->name,
+          'type' => $this->service_PhenoTraits->getMethodUnitDataType($method_unit->cvterm_id),
+          'collection_method' => $method->definition,
+        ]);
+      }
+
+      $rows[] = [
+        [
+          'data' => [
+            '#type' => 'component',
+            '#component' => 'trpcultivate_phenotypes:trait_combo',
+            '#props' => [
+              'name' => $trait->name,
+              'definition' => $trait->definition,
+              'multiselect_method' => count($trait_methods) > 1 ? TRUE : FALSE,
+              'method_unit_combo' => $methods,
+            ],
+            '#slots' => [],
           ],
-          '#slots' => [],
         ],
       ];
     }
 
-    $trait_match_result = [
-      '#theme' => 'item_list',
-      '#items' => $items,
-      '#attributes' => [
-        'id' => 'tcp-experiment-traits-combo-list',
-      ],
+    $traits = [
+      '#type' => 'table',
+      '#header' => [],
+      '#rows' => $rows,
+      '#empty' => 'No traits found',
+      '#sticky' => FALSE,
+      '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'select'],
     ];
+    $matches = $this->service_Renderer->renderRoot($traits);
 
-    $values = $this->service_Renderer->renderRoot($trait_match_result);
-
-    $response->addCommand(new HtmlCommand('#tcp-match-trait-result', $values));
+    $response->addCommand(new HtmlCommand('#tcp-match-trait-result', $matches));
 
     return $response;
   }
