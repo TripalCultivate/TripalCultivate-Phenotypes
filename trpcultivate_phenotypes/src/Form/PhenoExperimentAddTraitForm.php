@@ -141,25 +141,6 @@ class PhenoExperimentAddTraitForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $form['form_wrapper'] = [
-      '#type' => 'container',
-      '#id' => 'tcp-add-trait-form',
-    ];
-
-    $form['form_wrapper']['reminder'] = [
-      '#theme' => 'status_messages',
-      '#message_list' => [
-        'warning' => [
-          'Read trait details carefully to ensure you are selecting the correct trait, as some traits may appear similar or have subtle differences.',
-        ],
-      ],
-      '#status_headings' => [
-        'warning' => 'Warning message',
-      ],
-    ];
-
-    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
-
     // Save the slug values entity id so it is available in multiple subsequent
     // AJAX process requests.
     $tripal_entity_id = $form_state->get('tripal_entity_id');
@@ -187,24 +168,50 @@ class PhenoExperimentAddTraitForm extends FormBase {
       throw new NotFoundHttpException();
     }
 
+    $form['#attached']['library'] = [
+      'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration',
+      'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-field',
+    ];
+
+    $form['reminder'] = [
+      '#theme' => 'status_messages',
+      '#message_list' => [
+        'warning' => [
+          'Read trait details carefully to ensure you are selecting the correct trait, as some traits may appear similar or have subtle differences.',
+        ],
+      ],
+      '#status_headings' => [
+        'warning' => 'Warning message',
+      ],
+    ];
+
+    $form['fieldset'] = [
+      '#type' => 'details',
+      '#title' => 'Search Trait',
+      '#open' => TRUE,
+      '#id' => 'tcp-serch-controls-fieldset',
+    ];
+
     $active_genus = $this->service_RouteMatch->getParameter('genus');
     $experiment_genus = $this->service_PhenoGenusProject
       ->getGenusOfProject((int) $experiment[0]['record_id']);
 
-    // IMPLEMENT: If only one genus, let that be the only option, otherwise all
-    // project genus will be unique option. Add select a genus if summary page
-    // is set to view all genus.
-    $form['form_wrapper']['genus'] = [
+    $genus_config = $this->service_PhenoGenusOntology
+      ->getGenusOntologyConfigValues($active_genus)['trait'];
+
+    $form['fieldset']['genus'] = [
       '#type' => 'select',
-      '#title' => 'Genus',
       '#options' => array_combine($experiment_genus, $experiment_genus),
+      '#default_value' => $active_genus,
     ];
 
-    $form['form_wrapper']['match_trait'] = [
+    $form['fieldset']['match_trait'] = [
       '#type' => 'textfield',
-      '#title' => 'Trait' . $active_genus,
+      '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
+      '#autocomplete_route_parameters' => ['count' => 10, 'cv_id' => $genus_config],
       '#attributes' => [
-        'placeholder' => 'Trait' . $active_genus,
+        'placeholder' => 'Trait',
+        'class' => ['tcp-autocomplete'],
       ],
       '#ajax' => [
         'callback' => '::matchTrait',
@@ -212,17 +219,21 @@ class PhenoExperimentAddTraitForm extends FormBase {
         'method' => 'replace',
         'wrapper' => 'tcp-match-trait-result',
       ],
+      '#id' => 'tcp-search-trait-field',
     ];
 
-    $form['form_wrapper']['match_trait_result'] = [
-      '#markup' => '<div id="tcp-match-trait-result" style="border: 5px solid black">Type a keyword to search for specific traits, or Show all Traits Available to view all available traits.</div>',
+    $form['match_trait_result'] = [
+      '#prefix' => '<div id="tcp-match-trait-result">',
+      '#markup' => '<p>Type a keyword to search for specific traits, or Show all
+        Traits Available to view all available traits.</p>',
+      '#suffix' => '</div>',
     ];
 
     return $form;
   }
 
   /**
-   *
+   * Function callback - list traits that matched.
    */
   public function matchTrait(array &$form, FormStateInterface $form_state) {
 
