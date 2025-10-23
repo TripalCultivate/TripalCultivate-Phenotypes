@@ -28,7 +28,7 @@ props:
       title: Trait status
       description: The status (is required, was shared, was collected and is archived) of a trait in an experiment.
 slots:
-  field_label:
-    title: A label field.
-  add:
-    title: Add trait using the custom label provided.
+  controls:
+    type: array
+    title: Field controls.
+    description: Field elements to control a trait method.

@@ -38,14 +38,14 @@
 	<em>{{ definition }}</em>
 
     {{ multiselect_method ? '<div>' : '' }}
-		  {% for method in method_unit_combo %}
+		  {% for i, method in method_unit_combo %}
 			  <def>{{ method['method_shortname'] }}: ({{ method['unit'] }})
-				  <small>{{ method  ['type'] }}</small>
+				  <small>{{ method['type'] }}</small>
 			  </def>
 			  {{ method['collection_method'] }}
 
 				{% if multiselect_method %}
-           {{ field_label }} {{ add }}
+           {{ controls[i]['field_label'] }} {{ controls[i]['field_add'] }}
 				{% endif %}
 
 		  {% endfor %}

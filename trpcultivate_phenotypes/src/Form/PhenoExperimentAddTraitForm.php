@@ -230,20 +230,27 @@ class PhenoExperimentAddTraitForm extends FormBase {
 
     $genus = $form_state->getValue('genus');
     $genus_config = $this->service_PhenoGenusOntology
-      ->getGenusOntologyConfigValues($genus);
+      ->getGenusOntologyConfigValues($genus)['trait'];
 
     $query = $this->chado_connection->select('1:cvterm', 'tc')
       ->fields('tc', ['cvterm_id', 'name', 'definition'])
-      ->condition('tc.cv_id', $genus_config['trait'], '=')
+      ->condition('tc.cv_id', $genus_config, '=')
       ->orderBy('tc.name', 'ASC')
       ->execute();
 
     $this->service_PhenoTraits->setTraitGenus($genus);
+
     $rows = [];
     foreach ($query as $trait) {
+      $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
+      if (!$trait_methods) {
+        // Skip trait that does not have method.
+        continue;
+      }
 
       $methods = [];
-      $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
+      $controls = [];
+
       foreach ($trait_methods as $method) {
         $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
 
@@ -252,6 +259,24 @@ class PhenoExperimentAddTraitForm extends FormBase {
           'unit' => $method_unit->name,
           'type' => $this->service_PhenoTraits->getMethodUnitDataType($method_unit->cvterm_id),
           'collection_method' => $method->definition,
+        ]);
+
+        array_push($controls, [
+          'field_label' => [
+            '#type' => 'textfield',
+            '#theme_wrappers' => [],
+            '#attributes' => [
+              'placeholder' => 'Use this trait with the label: ' . $trait->name . ' ' . $method->name,
+              'class' => ['tcp-add-textfield'],
+            ],
+          ],
+          'field_add' => [
+            '#type' => 'button',
+            '#value' => 'Add',
+            '#attributes' => [
+              'class' => ['button--primary'],
+            ],
+          ],
         ]);
       }
 
@@ -263,10 +288,12 @@ class PhenoExperimentAddTraitForm extends FormBase {
             '#props' => [
               'name' => $trait->name,
               'definition' => $trait->definition,
-              'multiselect_method' => count($trait_methods) > 1 ? TRUE : FALSE,
+              'multiselect_method' => TRUE,
               'method_unit_combo' => $methods,
             ],
-            '#slots' => [],
+            '#slots' => [
+              'controls' => $controls,
+            ],
           ],
         ],
       ];
@@ -280,9 +307,9 @@ class PhenoExperimentAddTraitForm extends FormBase {
       '#sticky' => FALSE,
       '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'select'],
     ];
-    $matches = $this->service_Renderer->renderRoot($traits);
 
-    $response->addCommand(new HtmlCommand('#tcp-match-trait-result', $matches));
+    $html = new HtmlCommand('#tcp-match-trait-result', $this->service_Renderer->renderRoot($traits));
+    $response->addCommand($html);
 
     return $response;
   }
