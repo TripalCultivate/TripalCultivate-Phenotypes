@@ -57,6 +57,18 @@
           }
       });
 
+      // Add event listener to click event where user selects an option in
+      // the suggestions.
+      var class_suggestions = '.ui-autocomplete';
+      if ($(class_suggestions)) {
+        $(document).on('click', class_suggestions, function() {
+
+          $('#tcp-search-trait-field')
+            .val($(this).text())
+            .trigger('change');
+        });
+      }
+
       // Drupal got the stacking order of the popup window and overlay incorrect.
       // This will override the set values and other styling.
       $(document, context)
