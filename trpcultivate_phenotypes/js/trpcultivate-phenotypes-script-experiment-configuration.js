@@ -47,10 +47,21 @@
           event.preventDefault();
       });
 
+      // Add event listener to input fields and stop the form from submitting
+      // after providing value then hitting the enter key.
+      $('#drupal-modal input')
+        .on('keydown', function (event) {
+
+          if (event.keyCode == 13) {
+            event.preventDefault();
+          }
+      });
+
       // Drupal got the stacking order of the popup window and overlay incorrect.
       // This will override the set values and other styling.
       $(document, context)
         .on('dialogopen', function(event) {
+
           var element = $(event.target).closest('.ui-dialog');
 
           element
@@ -63,7 +74,7 @@
           element
             .next('.ui-widget-overlay')
             .css({'z-index': 101});
-        });
+      });
 
       ///
 }}}(jQuery, Drupal, drupalSettings));
