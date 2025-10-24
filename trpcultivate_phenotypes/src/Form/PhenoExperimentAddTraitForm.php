@@ -195,6 +195,7 @@ class PhenoExperimentAddTraitForm extends FormBase {
     $active_genus = $this->service_RouteMatch->getParameter('genus');
     $experiment_genus = $this->service_PhenoGenusProject
       ->getGenusOfProject((int) $experiment[0]['record_id']);
+    $form_state->set('project_id', $experiment[0]['record_id']);
 
     $genus_config = $this->service_PhenoGenusOntology
       ->getGenusOntologyConfigValues($active_genus)['trait'];
@@ -255,6 +256,14 @@ class PhenoExperimentAddTraitForm extends FormBase {
 
     $this->service_PhenoTraits->setTraitGenus($genus);
 
+    $query_combo = $this->chado_connection->select('trpcultivate_phenocombo', 'tc');
+    $query_combo
+      ->addExpression('CONCAT(tc.attr_id, \':\', tc.observable_id, \':\', tc.unit_id)', 'combo');
+    $combos = $query_combo
+      ->condition('tc.project_id', $form_state->get('project_id'), '=')
+      ->execute()
+      ->fetchCol();
+
     $rows = [];
     foreach ($query as $trait) {
       $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
@@ -268,6 +277,11 @@ class PhenoExperimentAddTraitForm extends FormBase {
 
       foreach ($trait_methods as $method) {
         $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
+
+        // Do not suggest trait-method-unit combo already in the experiment.
+        if (in_array($trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id, $combos)) {
+          continue;
+        }
 
         array_push($methods, [
           'method_shortname' => $method->name,
@@ -293,6 +307,10 @@ class PhenoExperimentAddTraitForm extends FormBase {
             ],
           ],
         ]);
+      }
+
+      if (count($methods) < 1) {
+        continue;
       }
 
       $rows[] = [
