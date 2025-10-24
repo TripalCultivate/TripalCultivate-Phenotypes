@@ -37,7 +37,7 @@
           }
 
           window.location.href = newLocation;
-      });
+        });
 
       // Add event listener to Add Trait button.
       $('#tcp-add-trait-to-experiment', context)
@@ -45,7 +45,7 @@
 
           // Stop the form from submitting.
           event.preventDefault();
-      });
+        });
 
       // Add event listener to input fields and stop the form from submitting
       // after providing value then hitting the enter key.
@@ -55,25 +55,27 @@
           if (event.keyCode == 13) {
             event.preventDefault();
           }
-      });
-
-      // Add event listener to click event where user selects an option in
-      // the suggestions.
-      var class_suggestions = '.ui-autocomplete';
-      if ($(class_suggestions)) {
-        $(document).on('click', class_suggestions, function() {
-
-          $('#tcp-search-trait-field')
-            .val($(this).text())
-            .trigger('change');
         });
-      }
 
-      // Drupal got the stacking order of the popup window and overlay incorrect.
-      // This will override the set values and other styling.
-      $(document, context)
+      var search_field = $('#tcp-search-trait-field');
+
+      // Add even listener to anchor tag to view all available traits.
+      $('#tcp-match-trait-result a')
+        .on('click', function(event) {
+
+          event.preventDefault();
+          search_field.trigger('change');
+        })
+
+      $(document)
+        .ready(function() {
+
+          // Cursor on the search field on page load.
+          search_field.focus();
+        })
         .on('dialogopen', function(event) {
 
+          // Adjust the stacking order or the window and overlay.
           var element = $(event.target).closest('.ui-dialog');
 
           element
@@ -86,7 +88,14 @@
           element
             .next('.ui-widget-overlay')
             .css({'z-index': 101});
-      });
+        })
+        .on('click', '.ui-autocomplete li', function () {
+
+          // Add event listener to load result when clicking a suggestion.
+          search_field
+            .val($(this).text())
+            .trigger('change');
+        });
 
       ///
 }}}(jQuery, Drupal, drupalSettings));

@@ -224,8 +224,8 @@ class PhenoExperimentAddTraitForm extends FormBase {
 
     $form['match_trait_result'] = [
       '#prefix' => '<div id="tcp-match-trait-result">',
-      '#markup' => '<p>Type a keyword to search for specific traits, or Show all
-        Traits Available to view all available traits.</p>',
+      '#markup' => '<p>Start typing part of the trait name to search for specific traits, or click
+       <a href="">Show all Traits</a> to view all available traits.</p>',
       '#suffix' => '</div>',
     ];
 
@@ -243,9 +243,13 @@ class PhenoExperimentAddTraitForm extends FormBase {
     $genus_config = $this->service_PhenoGenusOntology
       ->getGenusOntologyConfigValues($genus)['trait'];
 
+    $key = $form_state->getValue('match_trait');
+    $search_trait = preg_replace('/\s*\(.*?\)/', '', $key);
+
     $query = $this->chado_connection->select('1:cvterm', 'tc')
       ->fields('tc', ['cvterm_id', 'name', 'definition'])
       ->condition('tc.cv_id', $genus_config, '=')
+      ->condition('tc.name', trim($search_trait) . '%', 'LIKE')
       ->orderBy('tc.name', 'ASC')
       ->execute();
 
