@@ -5,7 +5,7 @@ entity.phenodata_backup.add_form:
     - entity.phenodata_backup.collection
 
 trpcultivate_phenotypes.add_trait:
-  route_name: trpcultivate_phenotypes.add_trait_to_experiment
+  route_name: trpcultivate_phenotypes.experiment_trait_picker
   title: 'Add Trait'
   appears_on:
     - trpcultivate_phenotypes.experiment_configuration

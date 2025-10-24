@@ -45,7 +45,10 @@
 			  {{ method['collection_method'] }}
 
 				{% if multiselect_method %}
-           {{ controls[i]['field_label'] }} {{ controls[i]['field_add'] }}
+           <br />
+					 {{ controls[i]['field_label'] }}
+					 {{ controls[i]['field_add'] }}
+           {{ controls[i]['field_hidden'] }}
 				{% endif %}
 
 		  {% endfor %}

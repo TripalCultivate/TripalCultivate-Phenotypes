@@ -40,7 +40,7 @@ trpcultivate_phenotypes.experiment_configuration:
   path: '/bio_data/{tripal_entity}/configure/{genus}'
   defaults:
     _title: 'Phenotypes:'
-    _form: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
     genus: ''
   requirements:
     _permission: 'administer tripal content'
@@ -53,11 +53,11 @@ trpcultivate_phenotypes.experiment_configuration:
         bundle:
           - research_experiment
 
-trpcultivate_phenotypes.add_trait_to_experiment:
+trpcultivate_phenotypes.experiment_trait_picker:
   path: '/bio_data/{tripal_entity}/add/{genus}'
   defaults:
     _title: 'Add Trait:'
-    _form: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentAddTraitForm'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentAddTraitForm'
     genus: ''
   requirements:
     _permission: 'administer tripal content'
@@ -69,6 +69,13 @@ trpcultivate_phenotypes.add_trait_to_experiment:
         type: 'entity:tripal_entity'
         bundle:
           - research_experiment
+
+trpcultivate_phenotypes.experiment_handle_trait:
+  path: '/bio_data/experiment/handle_trait'
+  defaults:
+    _controller: '\Drupal\trpcultivate_phenotypes\Controller\PhenoExperimentTrait::addTrait'
+  requirements:
+    _permission: 'administer tripal content'
 
 # Phenodata Backup Config Entity Routes:
 entity.phenodata_backup.collection:

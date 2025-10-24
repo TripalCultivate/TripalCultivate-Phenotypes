@@ -194,8 +194,8 @@ class PhenoExperimentAddTraitForm extends FormBase {
 
     $active_genus = $this->service_RouteMatch->getParameter('genus');
     $experiment_genus = $this->service_PhenoGenusProject
-      ->getGenusOfProject((int) $experiment[0]['record_id']);
-    $form_state->set('project_id', $experiment[0]['record_id']);
+      ->getGenusOfProject($project_id = (int) $experiment[0]['record_id']);
+    $form_state->set('project_id', $project_id);
 
     $genus_config = $this->service_PhenoGenusOntology
       ->getGenusOntologyConfigValues($active_genus)['trait'];
@@ -204,6 +204,7 @@ class PhenoExperimentAddTraitForm extends FormBase {
       '#type' => 'select',
       '#options' => array_combine($experiment_genus, $experiment_genus),
       '#default_value' => $active_genus,
+      '#id' => 'tcp-search-genus-field',
     ];
 
     $form['fieldset']['match_trait'] = [
@@ -228,6 +229,12 @@ class PhenoExperimentAddTraitForm extends FormBase {
       '#markup' => '<p>Start typing part of the trait name to search for specific traits, or click
        <a href="">Show all Traits</a> to view all available traits.</p>',
       '#suffix' => '</div>',
+    ];
+
+    $form['#attached']['drupalSettings'] = [
+      'uid' => $this->currentUser()->id(),
+      'genus' => $active_genus,
+      'project_id' => $project_id,
     ];
 
     return $form;
@@ -279,7 +286,8 @@ class PhenoExperimentAddTraitForm extends FormBase {
         $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
 
         // Do not suggest trait-method-unit combo already in the experiment.
-        if (in_array($trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id, $combos)) {
+        $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
+        if (in_array($combo_ids, $combos)) {
           continue;
         }
 
@@ -294,17 +302,21 @@ class PhenoExperimentAddTraitForm extends FormBase {
           'field_label' => [
             '#type' => 'textfield',
             '#theme_wrappers' => [],
+            '#maxlength' => 150,
             '#attributes' => [
               'placeholder' => 'Use this trait with the label: ' . $trait->name . ' ' . $method->name,
-              'class' => ['tcp-add-textfield'],
             ],
           ],
           'field_add' => [
             '#type' => 'button',
             '#value' => 'Add',
             '#attributes' => [
-              'class' => ['button--primary'],
+              'class' => ['button--primary', 'tcp-add-button'],
             ],
+          ],
+          'field_hidden' => [
+            '#type' => 'hidden',
+            '#value' => $combo_ids,
           ],
         ]);
       }
@@ -345,6 +357,36 @@ class PhenoExperimentAddTraitForm extends FormBase {
     $response->addCommand($html);
 
     return $response;
+  }
+
+  /**
+   * Function callback: assign trait to experiment.
+   */
+  public function assignTrait(array &$form, FormStateInterface $form_state) {
+
+    $add_trait = json_decode($form_state->get('trait_to_add'), TRUE);
+
+    [$attr_id, $observable_id, $unit_id] = explode(':', $add_trait['ids']);
+
+    $label = $add_trait['label'];
+    if (!$label) {
+      $trait = $this->service_PhenoTraits->getTraitMethodUnitCombo($attr_id, $observable_id, $unit_id);
+      $label = $trait['trait']->name . ' ' . $trait['method']->name;
+    }
+
+    $this->chado_connection->insert('trpcultiavte_phenocombo', 'tc')
+      ->fields([
+        'project_id' => $form_state->get('project_id'),
+        'attr_id' => $attr_id,
+        'observable_id' => $observable_id,
+        'unit_id' => $unit_id,
+        'label' => $label,
+        'is_archived' => 0,
+        'is_required' => 0,
+        'was_shared' => 0,
+        'was_collected' => 0,
+      ])
+      ->execute();
   }
 
   /**

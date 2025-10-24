@@ -59,12 +59,37 @@
 
       var search_field = $('#tcp-search-trait-field');
 
-      // Add even listener to anchor tag to view all available traits.
+      // Add event listener to anchor tag to view all available traits.
       $('#tcp-match-trait-result a')
         .on('click', function(event) {
 
           event.preventDefault();
           search_field.trigger('change');
+        })
+
+      // Add event listener to Add trait button.
+      $('.tcp-add-button')
+        .on('click', function(event) {
+          event.preventDefault();
+          var btn = $(this);
+
+          if(btn.length) {
+            $.ajax({
+              url: Drupal.url('bio_data/experiment/handle_trait'),
+              method: 'POST',
+              data: {combo: JSON.stringify({
+                ids: btn.next('input[type="hidden"]').val(),
+                label: btn.prev('input[type="text"]').val() ?? 0,
+                genus: drupalSettings['genus'],
+                project_id: drupalSettings['project_id'],
+                uid: drupalSettings['uid'],
+              })},
+              success: function(response) {
+                // Remove the item from the list.
+                btn.closest('tr').remove();
+              }
+            });
+          }
         })
 
       $(document)
