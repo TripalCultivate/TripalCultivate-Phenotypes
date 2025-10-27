@@ -39,17 +39,20 @@
 
     {{ multiselect_method ? '<div>' : '' }}
 		  {% for i, method in method_unit_combo %}
-			  <def>{{ method['method_shortname'] }}: ({{ method['unit'] }})
-				  <small>{{ method['type'] }}</small>
-			  </def>
-			  {{ method['collection_method'] }}
 
-				{% if multiselect_method %}
-           <br />
-					 {{ controls[i]['field_label'] }}
-					 {{ controls[i]['field_add'] }}
-           {{ controls[i]['field_hidden'] }}
-				{% endif %}
+				<section>
+					<def>{{ method['method_shortname'] }}: ({{ method['unit'] }})
+						<small>{{ method['type'] }}</small>
+					</def>
+					{{ method['collection_method'] }}
+
+					{% if multiselect_method %}
+						<br />
+						{{ controls[i]['field_label'] }}
+						{{ controls[i]['field_add'] }}
+						{{ controls[i]['field_hidden'] }}
+					{% endif %}
+				</section>
 
 		  {% endfor %}
     {{ multiselect_method ? '</div>' : '' }}

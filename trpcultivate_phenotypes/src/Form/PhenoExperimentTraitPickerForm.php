@@ -18,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Class definition of Experiment Add Trait.
  */
-class PhenoExperimentAddTraitForm extends FormBase {
+class PhenoExperimentTraitPickerForm extends FormBase {
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -185,29 +185,32 @@ class PhenoExperimentAddTraitForm extends FormBase {
       ],
     ];
 
-    $form['fieldset'] = [
+    $form['search_fieldset'] = [
       '#type' => 'details',
       '#title' => 'Search Trait',
       '#open' => TRUE,
-      '#id' => 'tcp-serch-controls-fieldset',
+      '#id' => 'tcp-search-fieldset',
     ];
 
+    $form_state->set('project_id', $project_id = (int) $experiment[0]['record_id']);
     $active_genus = $this->service_RouteMatch->getParameter('genus');
     $experiment_genus = $this->service_PhenoGenusProject
-      ->getGenusOfProject($project_id = (int) $experiment[0]['record_id']);
-    $form_state->set('project_id', $project_id);
+      ->getGenusOfProject($project_id);
 
     $genus_config = $this->service_PhenoGenusOntology
       ->getGenusOntologyConfigValues($active_genus)['trait'];
 
-    $form['fieldset']['genus'] = [
+    $form['search_fieldset']['genus'] = [
       '#type' => 'select',
       '#options' => array_combine($experiment_genus, $experiment_genus),
       '#default_value' => $active_genus,
-      '#id' => 'tcp-search-genus-field',
+      '#id' => 'tcp-genus',
     ];
 
-    $form['fieldset']['match_trait'] = [
+    $result_wrapper = 'tcp-result-wrapper';
+    $form_state->set('result_wrapper', $result_wrapper);
+
+    $form['search_fieldset']['trait'] = [
       '#type' => 'textfield',
       '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
       '#autocomplete_route_parameters' => ['count' => 10, 'cv_id' => $genus_config],
@@ -219,22 +222,25 @@ class PhenoExperimentAddTraitForm extends FormBase {
         'callback' => '::matchTrait',
         'event' => 'change',
         'method' => 'replace',
-        'wrapper' => 'tcp-match-trait-result',
+        'wrapper' => $result_wrapper,
       ],
-      '#id' => 'tcp-search-trait-field',
+      '#id' => 'tcp-trait',
     ];
 
-    $form['match_trait_result'] = [
-      '#prefix' => '<div id="tcp-match-trait-result">',
+    $form['result_wrapper'] = [
+      '#type' => 'container',
       '#markup' => '<p>Start typing part of the trait name to search for specific traits, or click
-       <a href="">Show all Traits</a> to view all available traits.</p>',
-      '#suffix' => '</div>',
+       <a href="javascript:void(0)">Show all Traits</a> to view all available traits.</p>',
+      '#attributes' => [
+        'id' => $result_wrapper,
+      ],
     ];
 
-    $form['#attached']['drupalSettings'] = [
-      'uid' => $this->currentUser()->id(),
+    $form['#attached']['drupalSettings']['tcpSettings'] = [
+      'route' => 'bio_data/experiment/handle_trait',
+      'project' => $project_id,
       'genus' => $active_genus,
-      'project_id' => $project_id,
+      'user' => $this->currentUser()->id(),
     ];
 
     return $form;
@@ -304,19 +310,18 @@ class PhenoExperimentAddTraitForm extends FormBase {
             '#theme_wrappers' => [],
             '#maxlength' => 150,
             '#attributes' => [
-              'placeholder' => 'Use this trait with the label: ' . $trait->name . ' ' . $method->name,
+              'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
+              'placeholder' => 'Use this trait with the label: ' . $label = $trait->name . ' ' . $method->name,
+              'data-default' => $label,
+              'data-combo' => $combo_ids,
             ],
           ],
           'field_add' => [
             '#type' => 'button',
             '#value' => 'Add',
             '#attributes' => [
-              'class' => ['button--primary', 'tcp-add-button'],
+              'class' => ['button--primary', 'tcp-add'],
             ],
-          ],
-          'field_hidden' => [
-            '#type' => 'hidden',
-            '#value' => $combo_ids,
           ],
         ]);
       }
@@ -344,7 +349,7 @@ class PhenoExperimentAddTraitForm extends FormBase {
       ];
     }
 
-    $traits = [
+    $form['result'] = [
       '#type' => 'table',
       '#header' => [],
       '#rows' => $rows,
@@ -353,47 +358,16 @@ class PhenoExperimentAddTraitForm extends FormBase {
       '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'select'],
     ];
 
-    $html = new HtmlCommand('#tcp-match-trait-result', $this->service_Renderer->renderRoot($traits));
+    $html = new HtmlCommand('#' . $form_state->get('result_wrapper'), $form['result']);
     $response->addCommand($html);
 
     return $response;
   }
 
   /**
-   * Function callback: assign trait to experiment.
-   */
-  public function assignTrait(array &$form, FormStateInterface $form_state) {
-
-    $add_trait = json_decode($form_state->get('trait_to_add'), TRUE);
-
-    [$attr_id, $observable_id, $unit_id] = explode(':', $add_trait['ids']);
-
-    $label = $add_trait['label'];
-    if (!$label) {
-      $trait = $this->service_PhenoTraits->getTraitMethodUnitCombo($attr_id, $observable_id, $unit_id);
-      $label = $trait['trait']->name . ' ' . $trait['method']->name;
-    }
-
-    $this->chado_connection->insert('trpcultiavte_phenocombo', 'tc')
-      ->fields([
-        'project_id' => $form_state->get('project_id'),
-        'attr_id' => $attr_id,
-        'observable_id' => $observable_id,
-        'unit_id' => $unit_id,
-        'label' => $label,
-        'is_archived' => 0,
-        'is_required' => 0,
-        'was_shared' => 0,
-        'was_collected' => 0,
-      ])
-      ->execute();
-  }
-
-  /**
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-
   }
 
 }

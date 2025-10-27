@@ -3,8 +3,6 @@
  * Style experiment configuration summary table.
  */
 
-@import url('../components/trait_combo/trait_combo.css');
-
 #tcp-experiment-traits-summary-table {
   cursor: pointer;
 }
@@ -30,21 +28,22 @@
 }
 
 /* Add trait popup window */
-#tcp-serch-controls-fieldset .details-wrapper {
+#tcp-search-fieldset .details-wrapper {
   align-items: center;
   display: flex;
   gap: 10px;
   justify-content: space-between;
 }
 
-#tcp-serch-controls-fieldset .details-wrapper .form-item {
+#tcp-search-fieldset .details-wrapper .form-item {
   display: flex;
   flex-direction: column;
   padding-top: 0;
   padding-bottom: 5px;
+  padding-left: 10px;
 }
 
-#tcp-search-trait-field {
+#tcp-trait {
   width: 100%;
 }
 

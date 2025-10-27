@@ -57,7 +57,7 @@ trpcultivate_phenotypes.experiment_trait_picker:
   path: '/bio_data/{tripal_entity}/add/{genus}'
   defaults:
     _title: 'Add Trait:'
-    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentAddTraitForm'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitPickerForm'
     genus: ''
   requirements:
     _permission: 'administer tripal content'
@@ -73,7 +73,7 @@ trpcultivate_phenotypes.experiment_trait_picker:
 trpcultivate_phenotypes.experiment_handle_trait:
   path: '/bio_data/experiment/handle_trait'
   defaults:
-    _controller: '\Drupal\trpcultivate_phenotypes\Controller\PhenoExperimentTrait::addTrait'
+    _controller: '\Drupal\trpcultivate_phenotypes\Controller\PhenoExperimentTraitHandler::assignTrait'
   requirements:
     _permission: 'administer tripal content'
 
