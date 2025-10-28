@@ -47,11 +47,17 @@
           event.preventDefault();
         });
 
-      var search_field = $('#tcp-trait');
+      var trait_field = $('#tcp-trait');
+      var genus_field = $('#tcp-genus');
+
+      // Add event listener to genus field - reload window with selected genus.
+      genus_field.on('click', function() {
+
+      });
 
       // Add event listener to input fields and stop the form from submitting
       // after providing value then hitting the enter key.
-      search_field
+      trait_field
         .on('keydown', function (event) {
 
           if (event.keyCode == 13) {
@@ -64,14 +70,19 @@
         .on('click', function(event) {
 
           event.preventDefault();
-          search_field.trigger('change');
+          trait_field.trigger('change');
         })
 
       $(document)
         .ready(function() {
 
-          // Cursor on the search field on page load.
-          search_field.focus();
+          // Cursor on the trait/genus field on page load.
+          if (genus_field.val() == 0) {
+            genus_field.focus();
+          }
+          else {
+            trait_field.focus();
+          }
         })
         .on('dialogopen', function(event) {
 
@@ -92,7 +103,7 @@
         .on('click', '.ui-autocomplete li', function () {
 
           // Add event listener to load result when clicking a suggestion.
-          search_field
+          trait_field
             .val($(this).text())
             .trigger('change');
         });

@@ -33,6 +33,8 @@
   display: flex;
   gap: 10px;
   justify-content: space-between;
+  margin-bottom: 0;
+  margin-top: 0;
 }
 
 #tcp-search-fieldset .details-wrapper .form-item {
