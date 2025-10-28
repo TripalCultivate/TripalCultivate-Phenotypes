@@ -47,11 +47,17 @@
           event.preventDefault();
         });
 
+      var search_field = $('#tcp-trait');
+
       // Add event listener to input fields and stop the form from submitting
       // after providing value then hitting the enter key.
+      search_field
+        .on('keydown', function (event) {
 
-
-      var search_field = $('#tcp-trait');
+          if (event.keyCode == 13) {
+            event.preventDefault();
+          }
+        });
 
       // Add event listener to anchor tag to view all available traits.
       $('#tcp-result-wrapper a')

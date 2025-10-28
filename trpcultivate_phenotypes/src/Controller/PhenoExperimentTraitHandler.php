@@ -62,22 +62,22 @@ class PhenoExperimentTraitHandler extends ControllerBase {
 
     $transaction = $this->db->startTransaction();
     try {
-      // $this->db
-      //   ->insert('trpcultivate_phenocombo')
-      //   ->fields([
-      //     'project_id' => $data['project'],
-      //     'attr_id' => $attr_id,
-      //     'observable_id' => $observable_id,
-      //     'unit_id' => $unit_id,
-      //     'label' => $data['label'],
-      //     'is_archived' => 0,
-      //     'is_required' => 0,
-      //     'was_shared' => 0,
-      //     'was_collected' => 0,
-      //     'uid' => $data['user'],
-      //     'timestamp' => time(),
-      //   ])
-      //   ->execute();
+      $this->db
+        ->insert('trpcultivate_phenocombo')
+        ->fields([
+          'project_id' => $data['project'],
+          'attr_id' => $attr_id,
+          'observable_id' => $observable_id,
+          'unit_id' => $unit_id,
+          'label' => $data['label'],
+          'is_archived' => 0,
+          'is_required' => 0,
+          'was_shared' => 0,
+          'was_collected' => 0,
+          'uid' => $data['user'],
+          'timestamp' => time(),
+        ])
+        ->execute();
     }
     catch (Exception $e) {
       $transaction->rollback();

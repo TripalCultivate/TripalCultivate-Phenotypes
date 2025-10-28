@@ -39,7 +39,8 @@
                 user: drupalSettings.tcpSettings['user'],
               },
               complete: function () {
-
+                var el = ($(btn).closest('tr').find('section').length > 1) ? 'section' : 'tr';
+                $(btn).closest(el).remove();
               }
             });
           });
