@@ -39,72 +39,74 @@
           window.location.href = newLocation;
         });
 
-      // Add event listener to Add Trait button.
-      $('#tcp-add-trait-to-experiment', context)
-        .on('click', function(event) {
+      // Trait Picker:
+      var genusField = $('#tcp-genus');
+      var traitField = $('#tcp-trait');
+      var resultWrapper = $('#tcp-result-wrapper');
+      var clearClass = 'tcp-autocomplete-clear';
 
-          // Stop the form from submitting.
-          event.preventDefault();
-        });
-
-      var trait_field = $('#tcp-trait');
-      var genus_field = $('#tcp-genus');
-
-      // Add event listener to genus field - reload window with selected genus.
-      genus_field.on('click', function() {
-
-      });
-
-      // Add event listener to input fields and stop the form from submitting
-      // after providing value then hitting the enter key.
-      trait_field
-        .on('keydown', function (event) {
+      traitField
+        .on('keydown', function(event) {
 
           if (event.keyCode == 13) {
             event.preventDefault();
+            $(this)
+              .addClass(clearClass)
+              .trigger('change');
+          }
+        })
+        .on('click', function(event) {
+
+          if ($(this).hasClass(clearClass)) {
+            $(this)
+              .val('')
+              .removeClass(clearClass);
+
+            resultWrapper.empty();
           }
         });
 
-      // Add event listener to anchor tag to view all available traits.
-      $('#tcp-result-wrapper a')
+      resultWrapper
+        .find('a')
         .on('click', function(event) {
 
           event.preventDefault();
-          trait_field.trigger('change');
-        })
+
+          traitField
+            .val('All')
+            .addClass(clearClass)
+            .trigger('change');
+        });
 
       $(document)
-        .ready(function() {
+        .ready(function () {
 
           // Cursor on the trait/genus field on page load.
-          if (genus_field.val() == 0) {
-            genus_field.focus();
-          }
-          else {
-            trait_field.focus();
-          }
+          var el = genusField.val() == 0 ? genusField : traitField;
+          el.focus();
         })
-        .on('dialogopen', function(event) {
+        .on('dialogopen', function (event, ui) {
 
           // Adjust the stacking order or the window and overlay.
-          var element = $(event.target).closest('.ui-dialog');
+          var dialog = $(event.target).closest('.ui-dialog');
 
-          element
-            .css({'z-index': 102});
+          dialog
+            .css({ 'z-index': 102 });
 
-          element
+          dialog
             .find('.ui-dialog-content')
-            .css({'padding-top': '20px'});
+            .css({ 'padding-top': '20px' });
 
-          element
+          dialog
             .next('.ui-widget-overlay')
-            .css({'z-index': 101});
+            .css({ 'z-index': 101 });
         })
         .on('click', '.ui-autocomplete li', function () {
 
           // Add event listener to load result when clicking a suggestion.
-          trait_field
+          traitField
             .val($(this).text())
+            .addClass(clearClass)
             .trigger('change');
         });
 

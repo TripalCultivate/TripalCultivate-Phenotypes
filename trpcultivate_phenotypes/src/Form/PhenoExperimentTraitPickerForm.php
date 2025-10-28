@@ -252,7 +252,9 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       ],
       '#attributes' => [
         'placeholder' => 'Trait',
-        'class' => ['tcp-autocomplete'],
+        'class' => [
+          'tcp-autocomplete',
+        ],
       ],
       '#ajax' => [
         'callback' => '::matchTrait',
@@ -299,9 +301,9 @@ class PhenoExperimentTraitPickerForm extends FormBase {
   public function matchTrait(array &$form, FormStateInterface $form_state) {
 
     $response = new AjaxResponse();
-    $key = $form_state->getValue('trait');
+    $key = trim($form_state->getValue('trait'));
 
-    if (!$key) {
+    if (empty($key)) {
       return $response;
     }
 
