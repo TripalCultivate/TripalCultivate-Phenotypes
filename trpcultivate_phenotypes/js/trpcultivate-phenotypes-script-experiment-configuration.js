@@ -60,7 +60,7 @@
                   },
                   success: function (response) {
 
-                    $(this).closest('tr').remove();
+                    $(lnk).closest('tr').remove();
                   }
                 });
               } catch (e) { }
