@@ -536,7 +536,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       }
 
       $this->assertStringContainsString(
-        $remove = ($trait_row->is_archived || $trait_row->was_collected || $trait_row->was_shared) ? '-' : 'x',
+        $remove = ($trait_row->is_archived || $trait_row->was_collected || $trait_row->was_shared) ? '-' : 'tcp-remove',
         $current_row,
         'The trait combo is expected to have the character ' . $remove . ' as the remove trait option in table row #' . $i
       );
