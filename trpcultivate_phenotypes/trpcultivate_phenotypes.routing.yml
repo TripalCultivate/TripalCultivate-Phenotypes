@@ -71,11 +71,13 @@ trpcultivate_phenotypes.experiment_trait_picker:
           - research_experiment
 
 trpcultivate_phenotypes.experiment_handle_trait:
-  path: '/bio_data/experiment/handle_trait'
+  path: '/bio_data/experiment/handle_trait/{action}'
   defaults:
-    _controller: '\Drupal\trpcultivate_phenotypes\Controller\PhenoExperimentTraitHandler::assignTrait'
+    _controller: '\Drupal\trpcultivate_phenotypes\Controller\PhenoExperimentTraitHandler::handleAction'
+    action: 'assign'
   requirements:
     _permission: 'administer tripal content'
+    action: 'assign|remove'
 
 # Phenodata Backup Config Entity Routes:
 entity.phenodata_backup.collection:

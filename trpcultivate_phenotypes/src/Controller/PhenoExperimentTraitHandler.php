@@ -22,6 +22,20 @@ class PhenoExperimentTraitHandler extends ControllerBase {
   protected Connection $db;
 
   /**
+   * Request array.
+   *
+   * @var array
+   */
+  private array $request;
+
+  /**
+   * The table name.
+   *
+   * @var string
+   */
+  private const TABLE_NAME = 'trpcultivate_phenocombo';
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Database\Connection $db
@@ -41,27 +55,51 @@ class PhenoExperimentTraitHandler extends ControllerBase {
   }
 
   /**
-   * Handle AJAX request to assign trait to experiment.
+   * Handle AJAX request to assign/remove trait to/from experiment.
    *
    * @param Symfony\Component\HttpFoundation\Request $request
    *   Request.
+   * @param string $action
+   *   The requested action - assign or remove a trait.
    *
    * @return Symfony\Component\HttpFoundation\JsonResponse
-   *   Message Ok.
+   *   JSON response array message and status code.
    */
-  public function assignTrait(Request $request) {
+  public function handleAction(Request $request, string $action) {
 
-    $data = $request->request->all();
-    foreach ($data as $value) {
+    // Only actions assign and remove are valid request type.
+    if (!in_array($action, ['assign', 'remove'])) {
+      throw new AccessDeniedHttpException('Invalid request.');
+    }
+
+    // Make sure all request parameters have value.
+    $this->request = $request->request->all();
+    foreach ($this->request as $value) {
       if (trim($value) == '') {
         throw new AccessDeniedHttpException('Invalid data provided.');
       }
     }
 
-    $table = 'trpcultivate_phenocombo';
+    $method = $action . 'Trait';
+    $response = $this->$method();
+
+    return new JsonResponse($response['message'], $response['status_code']);
+  }
+
+  /**
+   * Handle trait callback: assign a trait.
+   *
+   * @return array
+   *   An array with the following key:
+   *   - 'message': the relevant status message.
+   *   - 'status_code': the response status code ie. 200 for Ok.
+   */
+  public function assignTrait() {
+
+    $data = $this->request;
 
     // No same labels in an experiment.
-    $label_exists = $this->db->select($table, 'tc')
+    $label_exists = $this->db->select(self::TABLE_NAME, 'tc')
       ->fields('tc', ['combo_id'])
       ->condition('tc.label', $data['label'], '=')
       ->condition('tc.project_id', $data['project'], '=')
@@ -69,7 +107,10 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       ->fetchField();
 
     if ($label_exists) {
-      return new JsonResponse(['error' => 'Label already exists'], 400);
+      return [
+        'message' => ['error' => 'Label is already used in the experiment'],
+        'status_code' => 400,
+      ];
     }
 
     [$attr_id, $observable_id, $unit_id] = explode(':', $data['combo']);
@@ -77,7 +118,7 @@ class PhenoExperimentTraitHandler extends ControllerBase {
     $transaction = $this->db->startTransaction();
     try {
       $this->db
-        ->insert($table)
+        ->insert(self::TABLE_NAME)
         ->fields([
           'project_id' => $data['project'],
           'attr_id' => $attr_id,
@@ -97,7 +138,39 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       $transaction->rollback();
     }
 
-    return new JsonResponse(['success' => 'Ok', 200]);
+    return [
+      'message' => ['message' => 'Ok'],
+      'status_code' => 200,
+    ];
+  }
+
+  /**
+   * Handle trait callback: remove a trait.
+   *
+   * @return array
+   *   An array with the following key:
+   *   - 'message': the relevant status message.
+   *   - 'status_code': the response status code ie. 200 for Ok.
+   */
+  public function removeTrait() {
+
+    $data = $this->request;
+
+    $transaction = $this->db->startTransaction();
+    try {
+      $this->db
+        ->delete(self::TABLE_NAME)
+        ->condition('combo_id', (int) $data['combo_id'])
+        ->execute();
+    }
+    catch (Exception $e) {
+      $transaction->rollback();
+    }
+
+    return [
+      'message' => ['message' => 'Ok'],
+      'status_code' => 200,
+    ];
   }
 
 }

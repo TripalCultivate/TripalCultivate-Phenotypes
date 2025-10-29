@@ -5,6 +5,7 @@ namespace Drupal\trpcultivate_phenotypes\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
@@ -218,6 +219,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $this->filter_genus = $single_genus;
     }
 
+    $form['#attached']['drupalSettings']['tcpSettings']['route'] = 'bio_data/experiment/handle_trait/remove';
+
     $rows = [];
 
     // Query the list of traits in an experiment. Sort the result first by the
@@ -280,7 +283,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
       }
 
       // Use the trait status to disable the remove option.
-      $remove = '<i class="fa-solid fa-trash"></i>';
+      $remove = [
+        '#type' => 'link',
+        '#title' => '',
+        '#url' => Url::fromUri('internal:#'),
+        '#attributes' => [
+          'class' => [
+            'fa-solid',
+            'fa-trash',
+            'tcp-remove',
+          ],
+          'data-combo-id' => $trait_row->combo_id,
+        ],
+      ];
       if ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) {
         $remove = '-';
       }
@@ -319,9 +334,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ],
           ],
           [
-            'data' => [
-
-            ]
+            'data' => $remove,
           ],
         ],
         'class' => implode(' ', $group_class),

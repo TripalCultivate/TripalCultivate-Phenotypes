@@ -10,7 +10,7 @@
       var pathname = window.location.pathname;
       var tcpSettings = drupalSettings.tcpSettings;
 
-      if (tcpSettings && !pathname.includes('/' + tcpSettings.genus)) {
+      if (tcpSettings.genus && !pathname.includes('/' + tcpSettings.genus)) {
         // Update url to include the default single genus.
         window.history.pushState({}, '', pathname + '/' + tcpSettings.genus);
       }
@@ -37,6 +37,35 @@
           }
 
           window.location.href = newLocation;
+        });
+
+      // Add event listener to Add trait button.
+      once('traitRemoveCombo', '.tcp-remove', context)
+        .forEach(function (lnk) {
+          lnk.addEventListener('click', function (event) {
+
+            event.preventDefault();
+
+            if (confirm('Are you sure you want to delete this trait?')) {
+              try {
+                $.ajax({
+                  url: Drupal.url(tcpSettings.route),
+                  method: 'POST',
+                  data: {
+                    combo_id: $(this).data('combo-id'),
+                  },
+                  error: function (xhr, status, error) {
+
+                    alert(xhr.responseText);
+                  },
+                  success: function (response) {
+
+                    $(this).closest('tr').remove();
+                  }
+                });
+              } catch (e) { }
+            }
+          });
         });
 
       // Trait Picker:

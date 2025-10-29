@@ -40,11 +40,13 @@
                   genus: drupalSettings.tcpCombo['genus'],
                   user: drupalSettings.tcpCombo['user'],
                 },
-                error: function(response) {
-                  alert('Label is already used.');
+                error: function(xhr, status, error) {
+
+                  alert(xhr.responseText);
                   textField.select();
                 },
                 success: function (response) {
+
                   var el = ($(btn).closest('tr').find('section').length > 1) ? 'section' : 'tr';
                   $(btn).closest(el).remove();
                 }

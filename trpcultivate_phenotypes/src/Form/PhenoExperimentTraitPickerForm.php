@@ -287,7 +287,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
 
     // This settings array is used to construct AJAX request parameters.
     $form['#attached']['drupalSettings']['tcpCombo'] = [
-      'route' => 'bio_data/experiment/handle_trait',
+      'route' => 'bio_data/experiment/handle_trait/assign',
       'project' => $project_id,
       'genus' => $genus,
       'user' => $this->currentUser()->id(),
