@@ -25,24 +25,31 @@
           btn.addEventListener('click', function (event) {
 
             event.preventDefault();
+
             var textField = $(this).prev('input[type="text"]');
             var label = textField.val() || textField.data('default');
 
-            $.ajax({
-              url: Drupal.url(drupalSettings.tcpSettings['route']),
-              method: 'POST',
-              data: {
-                label: label,
-                combo: textField.data('combo'),
-                project: drupalSettings.tcpSettings['project'],
-                genus: drupalSettings.tcpSettings['genus'],
-                user: drupalSettings.tcpSettings['user'],
-              },
-              complete: function () {
-                var el = ($(btn).closest('tr').find('section').length > 1) ? 'section' : 'tr';
-                $(btn).closest(el).remove();
-              }
-            });
+            try {
+              $.ajax({
+                url: Drupal.url(drupalSettings.tcpCombo['route']),
+                method: 'POST',
+                data: {
+                  label: label,
+                  combo: textField.data('combo'),
+                  project: drupalSettings.tcpCombo['project'],
+                  genus: drupalSettings.tcpCombo['genus'],
+                  user: drupalSettings.tcpCombo['user'],
+                },
+                error: function(response) {
+                  alert('Label is already used.');
+                  textField.select();
+                },
+                success: function (response) {
+                  var el = ($(btn).closest('tr').find('section').length > 1) ? 'section' : 'tr';
+                  $(btn).closest(el).remove();
+                }
+              });
+            } catch(e) {}
           });
         });
 

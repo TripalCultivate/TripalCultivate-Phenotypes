@@ -58,12 +58,26 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       }
     }
 
+    $table = 'trpcultivate_phenocombo';
+
+    // No same labels in an experiment.
+    $label_exists = $this->db->select($table, 'tc')
+      ->fields('tc', ['combo_id'])
+      ->condition('tc.label', $data['label'], '=')
+      ->condition('tc.project_id', $data['project'], '=')
+      ->execute()
+      ->fetchField();
+
+    if ($label_exists) {
+      return new JsonResponse(['error' => 'Label already exists'], 400);
+    }
+
     [$attr_id, $observable_id, $unit_id] = explode(':', $data['combo']);
 
     $transaction = $this->db->startTransaction();
     try {
       $this->db
-        ->insert('trpcultivate_phenocombo')
+        ->insert($table)
         ->fields([
           'project_id' => $data['project'],
           'attr_id' => $attr_id,
@@ -83,7 +97,7 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       $transaction->rollback();
     }
 
-    return new JsonResponse(['message' => 'Ok']);
+    return new JsonResponse(['success' => 'Ok', 200]);
   }
 
 }

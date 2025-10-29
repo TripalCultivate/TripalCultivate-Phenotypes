@@ -280,7 +280,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       }
 
       // Use the trait status to disable the remove option.
-      $remove = 'x';
+      $remove = '<i class="fa-solid fa-trash"></i>';
       if ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) {
         $remove = '-';
       }
@@ -318,7 +318,11 @@ class PhenoExperimentConfigurationForm extends FormBase {
               ],
             ],
           ],
-          $remove,
+          [
+            'data' => [
+
+            ]
+          ],
         ],
         'class' => implode(' ', $group_class),
       ];

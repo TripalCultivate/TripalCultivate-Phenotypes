@@ -192,10 +192,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       $form_state->set('genus_config', $genus_config);
     }
 
-    $form['#attached']['library'] = [
-      'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration',
-      'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-field',
-    ];
+    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
 
     $form['reminder'] = [
       '#theme' => 'status_messages',
@@ -225,6 +222,13 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       '#id' => 'tcp-search-fieldset',
     ];
 
+    $form[$form_dialog_wrapper]['search_fieldset']['controls'] = [
+      '#markup' => '<div id="tcp-search-controls">
+        <a href="#">Suggest A Trait</a> |
+        <a href="#">Show All Traits</a>
+      </div>',
+    ];
+
     $experiment_genus = $this->service_PhenoGenusProject
       ->getGenusOfProject($project_id);
 
@@ -251,10 +255,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         'cv_id' => $genus_config,
       ],
       '#attributes' => [
-        'placeholder' => 'Trait',
-        'class' => [
-          'tcp-autocomplete',
-        ],
+        'placeholder' => 'Trait name (e.g., Plant height or Days to flower)',
       ],
       '#ajax' => [
         'callback' => '::matchTrait',
@@ -273,7 +274,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     $form[$form_dialog_wrapper]['result_wrapper'] = [
       '#type' => 'container',
       '#markup' => '<p>Start typing part of the trait name to search for specific traits, or click
-       <a href="javascript:void(0)">Show all Traits</a> to view all available traits for the selected genus.</p>',
+       <a href="#">Show All Traits</a> to view all available traits for the selected genus.</p>',
       '#attributes' => [
         'id' => $result_wrapper,
       ],
@@ -282,6 +283,14 @@ class PhenoExperimentTraitPickerForm extends FormBase {
           ':input[name="genus"]' => ['value' => 0],
         ],
       ],
+    ];
+
+    // This settings array is used to construct AJAX request parameters.
+    $form['#attached']['drupalSettings']['tcpCombo'] = [
+      'route' => 'bio_data/experiment/handle_trait',
+      'project' => $project_id,
+      'genus' => $genus,
+      'user' => $this->currentUser()->id(),
     ];
 
     return $form;

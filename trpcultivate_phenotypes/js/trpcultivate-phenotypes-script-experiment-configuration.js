@@ -45,14 +45,40 @@
       var resultWrapper = $('#tcp-result-wrapper');
       var clearClass = 'tcp-autocomplete-clear';
 
+      $('#tcp-search-controls a')
+        .on('click', function(event) {
+
+          event.preventDefault();
+
+          if ($(this).index()) {
+            // Show All Traits.
+            if (genusField.val() != 0) {
+              traitField
+                .val('All')
+                .addClass(clearClass)
+                .trigger('change');
+            }
+            else {
+              genusField.focus();
+            }
+          }
+          else {
+            // Suggest a trait.
+            window.location.href = 'mailto:info@knowpulse.ca?subject=Suggest A Trait';
+          }
+        });
+
       traitField
         .on('keydown', function(event) {
 
           if (event.keyCode == 13) {
             event.preventDefault();
-            $(this)
-              .addClass(clearClass)
-              .trigger('change');
+
+            if ($(this).val() != '') {
+              $(this)
+                .addClass(clearClass)
+                .trigger('change');
+            }
           }
         })
         .on('click', function(event) {
@@ -100,6 +126,10 @@
           dialog
             .next('.ui-widget-overlay')
             .css({ 'z-index': 101 });
+        })
+        .on('dialogclose', function() {
+
+          location.reload();
         })
         .on('click', '.ui-autocomplete li', function () {
 
