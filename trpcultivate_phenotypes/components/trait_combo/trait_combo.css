@@ -9,7 +9,8 @@
 }
 
 .tcp-trait-combo input[type="text"] {
-  width: 85%;
+  width: 80%;
+  margin: 0 2% 0 0;
 }
 
 .tcp-trait-combo def:last-child,
