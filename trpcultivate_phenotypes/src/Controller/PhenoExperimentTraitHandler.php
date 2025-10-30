@@ -165,7 +165,7 @@ class PhenoExperimentTraitHandler extends ControllerBase {
     try {
       $this->db
         ->delete(self::TABLE_NAME)
-        ->condition('combo_id', (int) $data['combo_id'])
+        ->condition('combo_id', (int) $data['combo_id'], '=')
         ->execute();
     }
     catch (Exception $e) {

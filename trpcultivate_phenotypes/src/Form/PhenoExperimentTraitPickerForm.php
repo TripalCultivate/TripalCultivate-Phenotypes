@@ -170,7 +170,9 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     $project_id = (int) $experiment[0]['record_id'];
     $form_state->set('project_id', $project_id);
 
-    if ($form_state->getTriggeringElement()['#name'] == 'genus') {
+    if (isset($form_state->getTriggeringElement()['#name'])
+      && $form_state->getTriggeringElement()['#name'] == 'genus') {
+
       $form_state->set('genus', $form_state->getValue('genus'));
       $form_state->set('project_id', $form_state->get('project_id'));
     }
