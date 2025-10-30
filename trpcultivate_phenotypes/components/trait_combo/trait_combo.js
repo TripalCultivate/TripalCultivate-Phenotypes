@@ -26,8 +26,10 @@
 
             event.preventDefault();
 
-            var textField = $(this).prev('input[type="text"]');
+            var textField = $(this).prevAll('input[type="text"]').first();
             var label = textField.val() || textField.data('default');
+            var required = $(this).prevAll('input[type="checkbox"]:checked')
+              .first().val() ?? 0;
 
             try {
               $.ajax({
@@ -35,6 +37,7 @@
                 method: 'POST',
                 data: {
                   label: label,
+                  required: required,
                   combo: textField.data('combo'),
                   project: drupalSettings.tcpCombo['project'],
                   genus: drupalSettings.tcpCombo['genus'],

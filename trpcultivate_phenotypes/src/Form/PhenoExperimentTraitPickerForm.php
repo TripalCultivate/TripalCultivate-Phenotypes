@@ -316,14 +316,14 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       return $response;
     }
 
-    $search_key = preg_replace('/\s*\(.*?\)/', '', $key);
     $genus_config = $form_state->get('genus_config');
-
-    $query_trait = $this->chado_connection->select('1:cvterm', 'tc')
+    $query_trait = $this->chado_connection
+      ->select('1:cvterm', 'tc')
       ->fields('tc', ['cvterm_id', 'name', 'definition'])
       ->condition('tc.cv_id', $genus_config, '=');
 
     if (strtolower($key) != 'all') {
+      $search_key = preg_replace('/\s*\(.*?\)/', '', $key);
       $query_trait
         ->condition('tc.name', trim($search_key) . '%', 'LIKE');
     }
@@ -377,10 +377,17 @@ class PhenoExperimentTraitPickerForm extends FormBase {
             '#maxlength' => 150,
             '#attributes' => [
               'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
-              'placeholder' => 'Use this trait with the label: ' . $label = $trait->name . ' ' . $method->name,
+              'placeholder' => 'Use trait with label: ' . $label = $trait->name . ' ' . $method->name,
               'data-default' => $label,
               'data-combo' => $combo_ids,
             ],
+          ],
+          'field_required' => [
+            '#type' => 'checkbox',
+            '#theme_wrappers' => [],
+            '#return_value' => 1,
+            '#default_value' => 0,
+            '#suffix' => '<i class="fa-solid fa-star" title="Required Trait"></i>',
           ],
           'field_add' => [
             '#type' => 'button',
@@ -421,7 +428,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       '#rows' => $rows,
       '#empty' => 'No traits found or traits may have already been included in the experiment.',
       '#sticky' => FALSE,
-      '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'select'],
+      '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'section'],
     ];
 
     $html = new HtmlCommand('#' . $form_state->get('result_wrapper'), $form['result']);

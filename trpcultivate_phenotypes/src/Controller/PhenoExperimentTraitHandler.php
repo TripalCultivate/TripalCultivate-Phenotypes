@@ -108,7 +108,7 @@ class PhenoExperimentTraitHandler extends ControllerBase {
 
     if ($label_exists) {
       return [
-        'message' => ['error' => 'Label is already used in the experiment'],
+        'message' => ['error' => 'Label is already used in the experiment.'],
         'status_code' => 400,
       ];
     }
@@ -126,7 +126,7 @@ class PhenoExperimentTraitHandler extends ControllerBase {
           'unit_id' => $unit_id,
           'label' => $data['label'],
           'is_archived' => 0,
-          'is_required' => 0,
+          'is_required' => $data['required'],
           'was_shared' => 0,
           'was_collected' => 0,
           'uid' => $data['user'],
@@ -136,6 +136,11 @@ class PhenoExperimentTraitHandler extends ControllerBase {
     }
     catch (Exception $e) {
       $transaction->rollback();
+
+      return [
+        'message' => ['error' => 'Failed to assign trait to experiment.'],
+        'status_code' => 400,
+      ];
     }
 
     return [
@@ -165,6 +170,11 @@ class PhenoExperimentTraitHandler extends ControllerBase {
     }
     catch (Exception $e) {
       $transaction->rollback();
+
+      return [
+        'message' => ['error' => 'Failed to remove trait from experiment.'],
+        'status_code' => 400,
+      ];
     }
 
     return [
