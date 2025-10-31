@@ -36,6 +36,25 @@ class PhenoExperimentTraitHandler extends ControllerBase {
   private const TABLE_NAME = 'trpcultivate_phenocombo';
 
   /**
+   * Expected parameter per action.
+   *
+   * @var array
+   */
+  private const ACTION_PARAMS = [
+    'assign' => [
+      'label',
+      'required',
+      'combo',
+      'project',
+      'genus',
+      'user',
+    ],
+    'remove' => [
+      'combo_id',
+    ],
+  ];
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Database\Connection $db
@@ -67,16 +86,30 @@ class PhenoExperimentTraitHandler extends ControllerBase {
    */
   public function handleAction(Request $request, string $action) {
 
-    // Only actions assign and remove are valid request type.
-    if (!in_array($action, ['assign', 'remove'])) {
-      throw new AccessDeniedHttpException('Invalid request.');
+    if (!in_array($action, array_keys(self::ACTION_PARAMS))) {
+      throw new AccessDeniedHttpException('Invalid request: Unsupported handler action.');
     }
 
-    // Make sure all request parameters have value.
+    if ($request->getMethod() != 'POST') {
+      throw new AccessDeniedHttpException('Invalid request: Unsupported request method.');
+    }
+
     $this->request = $request->request->all();
+    $request_params_keys = is_null($this->request) ? [] : array_keys($this->request);
+
+    if (count($request_params_keys) != count(self::ACTION_PARAMS[$action])) {
+      throw new AccessDeniedHttpException('Invalid request: Incorrect parameter count.');
+    }
+
+    foreach ($request_params_keys as $param) {
+      if (!in_array($param, self::ACTION_PARAMS[$action])) {
+        throw new AccessDeniedHttpException('Invalid request: Missing parameters.');
+      }
+    }
+
     foreach ($this->request as $value) {
       if (trim($value) == '') {
-        throw new AccessDeniedHttpException('Invalid data provided.');
+        throw new AccessDeniedHttpException('Invalid request: Invalid data provided.');
       }
     }
 
