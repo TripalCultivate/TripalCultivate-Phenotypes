@@ -443,7 +443,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
           'attr_id' => $attr_id,
           'observable_id' => $observable_id,
           'unit_id' => $unit_id,
-          'label' => this->getRandomGenerator()->word(10),
+          'label' => $this->getRandomGenerator()->word(10),
           'is_archived' => $is_set,
           'is_required' => $is_set,
           'was_shared' => $is_set,
