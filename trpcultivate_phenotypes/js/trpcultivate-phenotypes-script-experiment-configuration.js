@@ -46,7 +46,7 @@
 
             event.preventDefault();
 
-            if (confirm('Are you sure you want to delete this trait?')) {
+            if (confirm('Are you sure you want to remove this trait?')) {
               try {
                 $.ajax({
                   url: Drupal.url(tcpSettings.route),
