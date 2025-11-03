@@ -194,6 +194,19 @@ class PhenoExperimentTraitHandler extends ControllerBase {
 
     $data = $this->request;
 
+    $combo = $this->db->select(self::TABLE_NAME, 'tc')
+      ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
+      ->condition('tc.combo_id', $data['combo_id'], '=')
+      ->execute()
+      ->fetchObject();
+
+    if ($combo->id && ($combo->is_archived || $combo->was_shared || $combo->was_collected)) {
+      return [
+        'message' => ['message' => 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.'],
+        'status_code' => 400,
+      ];
+    }
+
     $transaction = $this->db->startTransaction();
     try {
       $this->db

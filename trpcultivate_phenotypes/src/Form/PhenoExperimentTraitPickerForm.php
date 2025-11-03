@@ -276,7 +276,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     $form[$form_dialog_wrapper]['result_wrapper'] = [
       '#type' => 'container',
       '#markup' => '<p>Start typing part of the trait name to search for specific traits, or click
-       <a href="#">Show All Traits</a> to view all available traits for the selected genus.</p>',
+       <a href="#">Show All Traits</a> to explore all available traits for the selected genus.</p>',
       '#attributes' => [
         'id' => $result_wrapper,
       ],

@@ -290,7 +290,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
         '#attributes' => [
           'class' => [
             'fa-solid',
-            'fa-trash',
+            'fa-xmark',
             'tcp-remove',
           ],
           'data-combo-id' => $trait_row->combo_id,

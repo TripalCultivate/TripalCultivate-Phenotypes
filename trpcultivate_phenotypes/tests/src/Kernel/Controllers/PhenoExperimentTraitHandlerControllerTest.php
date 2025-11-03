@@ -62,6 +62,13 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
   const ROUTE_NAME = 'trpcultivate_phenotypes.experiment_handle_trait';
 
   /**
+   * The table name.
+   *
+   * @var string
+   */
+  private const TABLE_NAME = self::TABLE_NAME;
+
+  /**
    * Test genus with a set of test traits.
    *
    * @var array
@@ -97,7 +104,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
       'trpcultivate_phenotypes',
       'trpcultivate',
     ]);
-    $this->installSchema('trpcultivate_phenotypes', ['trpcultivate_phenocombo']);
+    $this->installSchema('trpcultivate_phenotypes', [self::TABLE_NAME]);
     $this->installEntitySchema('user');
 
     \trpcultivate_install_terms();
@@ -201,7 +208,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
       );
 
       [$attr_id, $observable_id, $unit_id] = explode(':', $combo['combo']);
-      $experiment_combo = $this->chado_connection->select('trpcultivate_phenocombo', 'tc')
+      $experiment_combo = $this->chado_connection->select(self::TABLE_NAME, 'tc')
         ->fields('tc', ['combo_id', 'project_id', 'attr_id', 'observable_id', 'unit_id'])
         ->condition('tc.project_id', $combo['project'], '=')
         ->condition('tc.attr_id', $attr_id, '=')
@@ -236,7 +243,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
    */
   public function testRemoveTraitHandler() {
 
-    $combo_ids = $this->chado_connection->select('trpcultivate_phenocombo', 'tc')
+    $combo_ids = $this->chado_connection->select(self::TABLE_NAME, 'tc')
       ->fields('tc', ['combo_id'])
       ->execute()
       ->fetchCol();
@@ -271,7 +278,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
         'The remove trait handler failed to return the expected status code message: ' . $status_message
       );
 
-      $is_in = $this->chado_connection->select('trpcultivate_phenocombo', 'tc')
+      $is_in = $this->chado_connection->select(self::TABLE_NAME, 'tc')
         ->fields('tc', ['combo_id'])
         ->condition('tc.combo_id', $combo_id, '=')
         ->execute()
@@ -378,6 +385,19 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
           'exception_message' => 'Invalid request: Invalid data provided.',
         ],
       ],
+
+      // #6: Remove trait with trait status set to 1 (TRUE).
+      [
+        'remove with empty parameters',
+        'remove',
+        'POST',
+        [
+          'combo_id' => 10,
+        ],
+        [
+          'exception_message' => 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.',
+        ],
+      ],
     ];
   }
 
@@ -408,6 +428,31 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
     $this->setCurrentUser(
       $this->createUser([$route->getRequirements()['_permission']])
     );
+
+    if ($data['combo_id'] > 1) {
+      $genus = array_keys($this->test_trait)[0];
+      $rec = $this->test_trait[$genus][0];
+
+      [$attr_id, $observable_id, $unit_id] = explode(':', $rec['combo']);
+      $is_set = 1;
+
+      $this->chado_connection->insert(self::TABLE_NAME)
+        ->fields([
+          'combo_id' => 10,
+          'project_id' => $rec['project'],
+          'attr_id' => $attr_id,
+          'observable_id' => $observable_id,
+          'unit_id' => $unit_id,
+          'label' => this->getRandomGenerator()->word(10),
+          'is_archived' => $is_set,
+          'is_required' => $is_set,
+          'was_shared' => $is_set,
+          'was_collected' => $is_set,
+          'uid' => $this->container->get('current_user')->id(),
+          'timestamp' => time(),
+        ])
+        ->execute();
+    }
 
     $request = Request::create(
       'bio_data/experiment/handle_trait/' . $action,
