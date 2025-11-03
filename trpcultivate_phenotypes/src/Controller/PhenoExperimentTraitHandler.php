@@ -55,6 +55,20 @@ class PhenoExperimentTraitHandler extends ControllerBase {
   ];
 
   /**
+   * Good response code.
+   *
+   * @var int
+   */
+  private const GOOD_REQUEST = 200;
+
+  /**
+   * Bad response code.
+   *
+   * @var int
+   */
+  private const BAD_REQUEST = 400;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Database\Connection $db
@@ -116,6 +130,10 @@ class PhenoExperimentTraitHandler extends ControllerBase {
     $method = $action . 'Trait';
     $response = $this->$method();
 
+    $response['message'] = [
+      ($response['status_code'] == self::GOOD_REQUEST) ? 'message' : 'error' => $response['message'],
+    ];
+
     return new JsonResponse($response['message'], $response['status_code']);
   }
 
@@ -141,8 +159,8 @@ class PhenoExperimentTraitHandler extends ControllerBase {
 
     if ($label_exists) {
       return [
-        'message' => ['error' => 'Label is already used in the experiment.'],
-        'status_code' => 400,
+        'message' => 'Label is already used in the experiment.',
+        'status_code' => self::BAD_REQUEST,
       ];
     }
 
@@ -171,14 +189,14 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       $transaction->rollback();
 
       return [
-        'message' => ['error' => 'Failed to assign trait to experiment.'],
-        'status_code' => 400,
+        'message' => 'Failed to assign trait to experiment.',
+        'status_code' => self::BAD_REQUEST,
       ];
     }
 
     return [
-      'message' => ['message' => 'Ok'],
-      'status_code' => 200,
+      'message' => 'Ok',
+      'status_code' => self::GOOD_REQUEST,
     ];
   }
 
@@ -200,10 +218,17 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       ->execute()
       ->fetchObject();
 
-    if ($combo->id && ($combo->is_archived || $combo->was_shared || $combo->was_collected)) {
+    if (!$combo) {
       return [
-        'message' => ['message' => 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.'],
-        'status_code' => 400,
+        'message' => 'Could not find combo record.',
+        'status_code' => self::BAD_REQUEST,
+      ];
+    }
+
+    if ($combo->is_archived == 1 || $combo->was_shared == 1 || $combo->was_collected == 1) {
+      return [
+        'message' => 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.',
+        'status_code' => self::BAD_REQUEST,
       ];
     }
 
@@ -218,14 +243,14 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       $transaction->rollback();
 
       return [
-        'message' => ['error' => 'Failed to remove trait from experiment.'],
-        'status_code' => 400,
+        'message' => 'Failed to remove trait from experiment.',
+        'status_code' => self::BAD_REQUEST,
       ];
     }
 
     return [
-      'message' => ['message' => 'Ok'],
-      'status_code' => 200,
+      'message' => 'Ok',
+      'status_code' => self::GOOD_REQUEST,
     ];
   }
 

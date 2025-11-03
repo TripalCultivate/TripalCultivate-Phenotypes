@@ -69,6 +69,17 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
   const TABLE_NAME = 'trpcultivate_phenocombo';
 
   /**
+   * Response code message key.
+   *
+   * @var array
+   */
+  const MESSAGE_KEY = [
+    200 => 'message',
+    400 => 'error',
+  ];
+
+
+  /**
    * Test genus with a set of test traits.
    *
    * @var array
@@ -172,12 +183,13 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
   public function testAssignTraitHandler() {
 
     $genus = array_keys($this->trait_set)[0];
+    $labels = [];
 
     foreach ($this->trait_set[$genus] as $combo) {
       $request = Request::create(
         'bio_data/experiment/handle_trait/assign',
         'POST', [
-          'label' => $this->getRandomGenerator()->word(10),
+          'label' => $labels[] = $this->getRandomGenerator()->word(10),
           'required' => 1,
           'combo' => $combo['combo'],
           'project' => $combo['project'],
@@ -203,7 +215,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
 
       $this->assertEquals(
         $status_message = 'Ok',
-        json_decode($response->getContent(), TRUE)['message'],
+        json_decode($response->getContent(), TRUE)[self::MESSAGE_KEY[$status_code]],
         'The assign trait handler failed to return the expected status code message: ' . $status_message
       );
 
@@ -236,6 +248,35 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
         );
       }
     }
+
+    // Assign a combo with a label that is already in used.
+    unset($request, $response);
+    $request = Request::create(
+      'bio_data/experiment/handle_trait/assign',
+      'POST', [
+        'label' => $labels[0],
+        'required' => 1,
+        'combo' => '1:1:1',
+        'project' => 1,
+        'genus' => 'genus',
+        'user' => $this->container->get('current_user')->id(),
+      ]
+    );
+
+    $response = $this->container->get('http_kernel')
+      ->handle($request);
+
+    $this->assertEquals(
+      $status_code = 400,
+      $response->getStatusCode(),
+      'The assign trait handler failed to return the expected status code: ' . $status_code
+    );
+
+    $this->assertEquals(
+      $status_message = 'Label is already used in the experiment.',
+      json_decode($response->getContent(), TRUE)[self::MESSAGE_KEY[$status_code]],
+      'The assign trait handler failed to return the expected status code message: ' . $status_message . ' if label is already used.'
+    );
   }
 
   /**
@@ -243,6 +284,37 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
    */
   public function testRemoveTraitHandler() {
 
+    // Removing a combo id does not exist.
+    $request = Request::create(
+      'bio_data/experiment/handle_trait/remove',
+      'POST',
+      [
+        'combo_id' => 9999,
+      ]
+    );
+
+    $response = $this->container->get('http_kernel')
+      ->handle($request);
+
+    $this->assertInstanceOf(
+      JsonResponse::class,
+      $response,
+      'The remove trait handler failed to return a response of type JsonResponse object.'
+    );
+
+    $this->assertEquals(
+      $status_code = 400,
+      $response->getStatusCode(),
+      'The remove trait handler failed to return the expected status code: ' . $status_code . ' if combo id does not exist'
+    );
+
+    $this->assertEquals(
+      $status_message = 'Could not find combo record.',
+      json_decode($response->getContent(), TRUE)[self::MESSAGE_KEY[$status_code]],
+      'The remove trait handler failed to return the expected status code message: ' . $status_message . ' if combo id does not exist'
+    );
+
+    // Test valid request.
     $combo_ids = $this->chado_connection->select(self::TABLE_NAME, 'tc')
       ->fields('tc', ['combo_id'])
       ->execute()
@@ -274,7 +346,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
 
       $this->assertEquals(
         $status_message = 'Ok',
-        json_decode($response->getContent(), TRUE)['message'],
+        json_decode($response->getContent(), TRUE)[self::MESSAGE_KEY[$status_code]],
         'The remove trait handler failed to return the expected status code message: ' . $status_message
       );
 
@@ -289,6 +361,62 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
         'The remove trait handler failed to remove the trait combo from the experiment.'
       );
     }
+
+    // Combo is marked is_archived.
+    $combo_id = 10;
+    $genus = array_keys($this->trait_set)[0];
+    $rec = $this->trait_set[$genus][0];
+
+    [$attr_id, $observable_id, $unit_id] = explode(':', $rec['combo']);
+    $is_set = 1;
+
+    $this->container->get('database')
+      ->insert(self::TABLE_NAME)
+      ->fields([
+        'combo_id' => $combo_id,
+        'project_id' => $rec['project'],
+        'attr_id' => $attr_id,
+        'observable_id' => $observable_id,
+        'unit_id' => $unit_id,
+        'label' => $this->getRandomGenerator()->word(10),
+        'is_archived' => $is_set,
+        'is_required' => $is_set,
+        'was_shared' => $is_set,
+        'was_collected' => $is_set,
+        'uid' => $this->container->get('current_user')->id(),
+        'timestamp' => time(),
+      ])
+      ->execute();
+
+    $request = Request::create(
+      'bio_data/experiment/handle_trait/remove',
+      'POST',
+      [
+        'combo_id' => $combo_id,
+      ]
+    );
+
+    $response = $this->container->get('http_kernel')
+      ->handle($request);
+
+    $this->assertInstanceOf(
+      JsonResponse::class,
+      $response,
+      'The remove trait handler failed to return a response of type JsonResponse object.'
+    );
+
+    $this->assertEquals(
+      $status_code = 400,
+      $response->getStatusCode(),
+      'The remove trait handler failed to return the expected status code: ' . $status_code . ' if combo is marked is_archived, was_shared, or was collected.'
+    );
+
+    $this->assertEquals(
+      $status_message = 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.',
+      json_decode($response->getContent(), TRUE)[self::MESSAGE_KEY[$status_code]],
+      'The remove trait handler failed to return the expected status code message: ' . $status_message . ' if combo is marked is_archived, was_shared, or was collected.'
+    );
+
   }
 
   /**
@@ -385,19 +513,6 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
           'exception_message' => 'Invalid request: Invalid data provided.',
         ],
       ],
-
-      // #6: Remove trait with trait status set to 1 (TRUE).
-      [
-        'remove with trait status 1',
-        'remove',
-        'POST',
-        [
-          'combo_id' => 10,
-        ],
-        [
-          'exception_message' => 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.',
-        ],
-      ],
     ];
   }
 
@@ -428,31 +543,6 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
     $this->setCurrentUser(
       $this->createUser([$route->getRequirements()['_permission']])
     );
-
-    if ($data['combo_id'] > 1) {
-      $genus = array_keys($this->trait_set)[0];
-      $rec = $this->trait_set[$genus][0];
-
-      [$attr_id, $observable_id, $unit_id] = explode(':', $rec['combo']);
-      $is_set = 1;
-
-      $this->chado_connection->insert(self::TABLE_NAME)
-        ->fields([
-          'combo_id' => 10,
-          'project_id' => $rec['project'],
-          'attr_id' => $attr_id,
-          'observable_id' => $observable_id,
-          'unit_id' => $unit_id,
-          'label' => $this->getRandomGenerator()->word(10),
-          'is_archived' => $is_set,
-          'is_required' => $is_set,
-          'was_shared' => $is_set,
-          'was_collected' => $is_set,
-          'uid' => $this->container->get('current_user')->id(),
-          'timestamp' => time(),
-        ])
-        ->execute();
-    }
 
     $request = Request::create(
       'bio_data/experiment/handle_trait/' . $action,

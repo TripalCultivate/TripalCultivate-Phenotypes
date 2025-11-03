@@ -45,7 +45,8 @@
                 },
                 error: function(xhr, status, error) {
 
-                  alert(xhr.responseText);
+                  var error = JSON.parse(xhr.responseText).error;
+                  alert((error) ? error : 'Unknown error');
                   textField.select();
                 },
                 success: function (response) {

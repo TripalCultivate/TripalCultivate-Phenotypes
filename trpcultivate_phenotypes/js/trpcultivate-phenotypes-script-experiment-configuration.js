@@ -39,7 +39,7 @@
           window.location.href = newLocation;
         });
 
-      // Add event listener to Add trait button.
+      // Add event listener to remove trait button.
       once('traitRemoveCombo', '.tcp-remove', context)
         .forEach(function (lnk) {
           lnk.addEventListener('click', function (event) {
@@ -56,7 +56,8 @@
                   },
                   error: function (xhr, status, error) {
 
-                    alert(xhr.responseText);
+                    var error = JSON.parse(xhr.responseText).error;
+                    alert((error) ? error : 'Unknown error');
                   },
                   success: function (response) {
 
