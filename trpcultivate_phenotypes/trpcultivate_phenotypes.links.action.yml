@@ -11,6 +11,7 @@ trpcultivate_phenotypes.add_trait:
     - trpcultivate_phenotypes.experiment_configuration
   options:
     attributes:
+      id: 'tcp-trait-picker-window'
       class:
         - 'use-ajax'
       data-dialog-type: 'modal'

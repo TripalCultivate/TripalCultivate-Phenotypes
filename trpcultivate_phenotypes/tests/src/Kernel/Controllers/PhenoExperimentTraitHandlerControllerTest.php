@@ -66,7 +66,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  private const TABLE_NAME = self::TABLE_NAME;
+  const TABLE_NAME = 'trpcultivate_phenocombo';
 
   /**
    * Test genus with a set of test traits.
