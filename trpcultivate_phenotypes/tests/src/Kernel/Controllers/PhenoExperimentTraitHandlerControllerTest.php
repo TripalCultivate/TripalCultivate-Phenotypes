@@ -388,7 +388,7 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
 
       // #6: Remove trait with trait status set to 1 (TRUE).
       [
-        'remove with empty parameters',
+        'remove with trait status 1',
         'remove',
         'POST',
         [
@@ -430,8 +430,8 @@ class PhenoExperimentTraitHandlerControllerTest extends ChadoTestKernelBase {
     );
 
     if ($data['combo_id'] > 1) {
-      $genus = array_keys($this->test_trait)[0];
-      $rec = $this->test_trait[$genus][0];
+      $genus = array_keys($this->trait_set)[0];
+      $rec = $this->trait_set[$genus][0];
 
       [$attr_id, $observable_id, $unit_id] = explode(':', $rec['combo']);
       $is_set = 1;
