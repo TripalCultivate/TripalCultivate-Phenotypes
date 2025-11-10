@@ -39,11 +39,17 @@
 }
 
 #tcp-search-fieldset .details-wrapper .form-item {
-  display: flex;
-  flex-direction: column;
   padding-top: 0;
   padding-bottom: 5px;
   padding-left: 10px;
+}
+
+#tcp-search-fieldset .details-wrapper .form-item:first-child {
+  width: 30%;
+}
+
+#tcp-search-fieldset .details-wrapper .form-item:last-child {
+  width: 100%;
 }
 
 #tcp-search-fieldset summary {
@@ -56,7 +62,7 @@
   right: 0;
 }
 
-#tcp-trait {
+#tcp-trait, #tcp-genus {
   cursor: default;
   width: 100%;
 }

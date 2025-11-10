@@ -75,27 +75,28 @@
       var resultWrapper = $('#tcp-result-wrapper');
       var clearClass = 'tcp-autocomplete-clear';
 
-      $('#tcp-search-controls a')
-        .on('click', function(event) {
+      once('searchControls', '#tcp-search-controls a', context)
+        .forEach(function (lnk) {
+          lnk.addEventListener('click', function (event) {
+            event.preventDefault();
 
-          event.preventDefault();
-
-          if ($(this).index()) {
-            // Show All Traits.
-            if (genusField.val() != 0) {
-              traitField
-                .val('All')
-                .addClass(clearClass)
-                .trigger('change');
+            if ($(this).index()) {
+              // Show All Traits.
+              if (genusField.val() != 0) {
+                traitField
+                  .val('All')
+                  .addClass(clearClass)
+                  .trigger('change');
+              }
+              else {
+                genusField.focus();
+              }
             }
             else {
-              genusField.focus();
+              // Suggest a trait.
+              window.location.href = 'mailto:info@knowpulse.ca?subject=Suggest A Trait';
             }
-          }
-          else {
-            // Suggest a trait.
-            window.location.href = 'mailto:info@knowpulse.ca?subject=Suggest A Trait';
-          }
+          });
         });
 
       traitField

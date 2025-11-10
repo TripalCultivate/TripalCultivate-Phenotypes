@@ -15,4 +15,4 @@ trpcultivate_phenotypes.add_trait:
       class:
         - 'use-ajax'
       data-dialog-type: 'modal'
-      data-dialog-options: '{"width": 750}'
+      data-dialog-options: '{"width": 1125}'
