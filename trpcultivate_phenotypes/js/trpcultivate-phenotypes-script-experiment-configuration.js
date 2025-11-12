@@ -93,8 +93,8 @@
               }
             }
             else {
-              // Suggest a trait.
-              window.location.href = 'mailto:info@knowpulse.ca?subject=Suggest A Trait';
+              // Import a trait.
+              window.location.href = window.location.origin + '/admin/tripal/loaders/trpcultivate-phenotypes-traits-importer';
             }
           });
         });

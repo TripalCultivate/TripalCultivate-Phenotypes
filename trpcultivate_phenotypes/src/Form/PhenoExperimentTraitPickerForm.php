@@ -178,9 +178,16 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     }
 
     $genus = $form_state->get('genus');
+    $experiment_genus = $this->service_PhenoGenusProject
+      ->getGenusOfProject($project_id);
+
     if (!$genus) {
       $genus = $this->service_RouteMatch->getParameter('genus');
       $genus = (empty($genus)) ? 0 : $genus;
+
+      if ($genus == 0 && count($experiment_genus) == 1) {
+        $genus = $experiment_genus[0];
+      }
 
       $form_state->set('genus', $genus);
     }
@@ -230,9 +237,6 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         <a href="#">Show All Traits</a>
       </div>',
     ];
-
-    $experiment_genus = $this->service_PhenoGenusProject
-      ->getGenusOfProject($project_id);
 
     $form[$form_dialog_wrapper]['search_fieldset']['genus'] = [
       '#type' => 'select',
