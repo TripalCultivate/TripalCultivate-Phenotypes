@@ -39,35 +39,16 @@
           window.location.href = newLocation;
         });
 
-      // Add event listener to remove trait button.
-      once('traitRemoveCombo', '.tcp-remove', context)
-        .forEach(function (lnk) {
-          lnk.addEventListener('click', function (event) {
+      $('.ui-dialog:has(.tcp-confirm-remove)', context)
+        .once('confirmDialog')
+        .each(function() {
 
-            event.preventDefault();
-
-            if (confirm('Are you sure you want to remove this trait?')) {
-              try {
-                $.ajax({
-                  url: Drupal.url(tcpSettings.route),
-                  method: 'POST',
-                  data: {
-                    combo_id: $(this).data('combo-id'),
-                  },
-                  error: function (xhr, status, error) {
-
-                    var error = JSON.parse(xhr.responseText).error;
-                    alert((error) ? error : 'Unknown error');
-                  },
-                  success: function (response) {
-
-                    $(lnk).closest('tr').remove();
-                  }
-                });
-              } catch (e) { }
-            }
+          $(this).find('.tcp-remove-cance').on('click', function() {
+            $($this).find('.ui-dailog-content').dialog('close');
           });
+
         });
+
 
       // Trait Picker:
       var genusField = $('#tcp-genus');
