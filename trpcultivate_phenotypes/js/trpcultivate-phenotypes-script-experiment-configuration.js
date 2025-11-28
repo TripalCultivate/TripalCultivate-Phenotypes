@@ -39,17 +39,6 @@
           window.location.href = newLocation;
         });
 
-      $('.ui-dialog:has(.tcp-confirm-remove)', context)
-        .once('confirmDialog')
-        .each(function() {
-
-          $(this).find('.tcp-remove-cance').on('click', function() {
-            $($this).find('.ui-dailog-content').dialog('close');
-          });
-
-        });
-
-
       // Trait Picker:
       var genusField = $('#tcp-genus');
       var traitField = $('#tcp-trait');
@@ -141,7 +130,7 @@
         })
         .on('dialogclose', function() {
 
-          location.reload();
+          //location.reload();
         })
         .on('click', '.ui-autocomplete li', function () {
 

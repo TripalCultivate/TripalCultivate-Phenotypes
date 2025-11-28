@@ -4,7 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
-use Drupal\Core\Ajax\OpenDialogCommand;
+use Drupal\Core\Ajax\OpenModalDialogCommand;
 use Drupal\Core\Ajax\RemoveCommand;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -330,37 +330,16 @@ class PhenoExperimentConfigurationForm extends FormBase {
         ],
       ];
 
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['remove'] = [
-        '#type' => 'submit',
+      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['confirm_remove' . $trait_row->combo_id] = [
+        '#type' => 'button',
         '#value' => 'Remove',
         '#name' => 'combo' . $trait_row->combo_id,
         '#disabled' => ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) ? TRUE : FALSE,
         '#attributes' => [
           'class' => [
-            'tcp-remove',
+            'use-ajax',
             'button--primary',
-            'visually-hidden',
-          ],
-        ],
-        '#ajax' => [
-          'callback' => '::removeTrait',
-          'event' => 'click',
-          'progress' => [
-            'type' => 'throbber',
-            'message' => '',
-          ],
-        ],
-      ];
-
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['confirm_remove'] = [
-        '#type' => 'submit',
-        '#value' => 'Remove',
-        '#name' => 'combo' . $trait_row->combo_id,
-        '#disabled' => ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) ? TRUE : FALSE,
-        '#attributes' => [
-          'class' => [
-            'tcp-remove',
-            'button--primary',
+            'data-combo' => $trait_row->combo_id,
           ],
         ],
         '#ajax' => [
@@ -371,6 +350,27 @@ class PhenoExperimentConfigurationForm extends FormBase {
             'message' => '',
           ],
         ],
+      ];
+
+      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['remove' . $trait_row->combo_id] = [
+        '#type' => 'button',
+        '#value' => 'Remove Trait',
+        '#name' => 'combo' . $trait_row->combo_id,
+        '#disabled' => ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) ? TRUE : FALSE,
+        '#attributes' => [
+          'class' => [
+            'visually-hidden',
+          ],
+        ],
+        '#ajax' => [
+          'callback' => '::removeTrait',
+          'event' => 'click',
+          'progress' => [
+            'type' => 'none',
+            'message' => '',
+          ],
+        ],
+        '#id' => 'remove-combo-' . $trait_row->combo_id,
       ];
 
       // To aid grouping of traits by genus, darken the top border of the first
@@ -390,12 +390,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $form['#attached']['library'][] = 'core/drupal.dialog';
     $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
-    $form['confirm_dialog'] = [
-      '#type' => 'container',
-      '#attributes' => [
-        'id' => 'tcp-confirm-dialog',
-      ],
-    ];
 
     return $form;
   }
@@ -405,7 +399,15 @@ class PhenoExperimentConfigurationForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    // Remove a row from db table.
+  }
+
+  /**
+   * AJAX callback: remove trait from DB and DOM.
+   */
+  public function removeTrait(array &$form, FormStateInterface $form_state) {
+
+    $response = new AjaxResponse();
+
     $triggering_element = $form_state->getTriggeringElement();
 
     if (isset($triggering_element)) {
@@ -417,33 +419,21 @@ class PhenoExperimentConfigurationForm extends FormBase {
         ->execute()
         ->fetchObject();
 
-      $transaction = $this->chado_connection->startTransaction();
-      try {
-        $this->chado_connection
-          ->delete(self::PHENO_COMBO_TABLE)
-          ->condition('combo_id', $combo_id, '=')
-          ->execute();
+      if ($combo->is_archived == 0 || $combo->was_shared == 0 || $combo->was_collected == 0) {
+        $transaction = $this->chado_connection->startTransaction();
+        try {
+          $this->chado_connection
+            ->delete(self::PHENO_COMBO_TABLE)
+            ->condition('combo_id', $combo_id, '=')
+            ->execute();
+        }
+        catch (Exception $e) {
+          $transaction->rollback();
+
+          $this->addError('Failed to remove trait from experiment.');
+        }
       }
-      catch (Exception $e) {
-        $transaction->rollback();
 
-        $this->addError('Failed to remove trait from experiment.');
-      }
-    }
-  }
-
-  /**
-   * AJAX callback: remove trait from DOM.
-   */
-  public function removeTrait(array &$form, FormStateInterface $form_state) {
-
-    // Remove a row from DOM.
-    $triggering_element = $form_state->getTriggeringElement();
-
-    if (isset($triggering_element)) {
-      $combo_id = str_replace('combo', '', $triggering_element['#name']);
-
-      $response = new AjaxResponse();
       $response->addCommand(new RemoveCommand('.combo-' . $combo_id));
     }
 
@@ -451,7 +441,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   }
 
   /**
-   * AJAX callback: confirm removal of trait.
+   * AJAX callback: dialog confirm removal of a trait.
    */
   public function confirmRemove(array &$form, FormStateInterface $form_state) {
 
@@ -459,37 +449,47 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $triggering_element = $form_state->getTriggeringElement();
 
     if (isset($triggering_element)) {
-      $combo_id = str_replace('combo', '', $triggering_element['#name']);
+      $combo_id = (int) str_replace('combo', '', $triggering_element['#name']);
 
       if ($combo_id > 0) {
         $response = new AjaxResponse();
 
-        $response->addCommand(new OpenDialogCommand(
-          '#tcp-confirm-dialog',
-          'Confirm Trait',
+        $response->addCommand(new OpenModalDialogCommand(
+          'Confirm Remove',
           [
-            '#type' => 'markup',
-            '#markup' => 'Are you sure you want to remove this trait?',
-          ]
-        ));
-
-        $response->addCommand(new InvokeCommand(
-          '#tcp-confirm-dialog',
-          'dialog',
-          [
-            'option',
-            'buttons',
-            [
-              [
-                'text' => 'Cancel',
-                'class' => 'tcp-remove-cancel',
+            'content' => [
+              '#markup' => '<p>Are you sure you want to remove this trait?</p>',
+            ],
+            'remove' => [
+              '#type' => 'button',
+              '#name' => 'remove',
+              '#value' => 'Remove',
+              '#attributes' => [
+                'class' => [
+                  'button--primary',
+                  'button--danger',
+                ],
+                'onclick' => "
+                  Drupal.dialog(this.closest('.ui-dialog-content')).close();
+                  jQuery('#remove-combo-$combo_id').trigger('click');
+                ",
               ],
-              [
-                'text' => 'Remove',
-                'class' => 'tcp-remove-confirm',
-              ]
+            ],
+            'cancel' => [
+              '#name' => 'cancel',
+              '#type' => 'button',
+              '#value' => 'Cancel',
+              '#attributes' => [
+                'onclick' => "
+                  Drupal.dialog(this.closest('.ui-dialog-content')).close();
+                  event.preventDefault();
+                ",
+              ],
             ],
           ],
+          [
+            'width' => 300,
+          ]
         ));
       }
     }
