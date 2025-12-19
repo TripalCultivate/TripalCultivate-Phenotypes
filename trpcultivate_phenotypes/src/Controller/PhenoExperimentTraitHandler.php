@@ -2,11 +2,13 @@
 
 namespace Drupal\trpcultivate_phenotypes\Controller;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CloseModalDialogCommand;
+use Drupal\Core\Ajax\RemoveCommand;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -26,7 +28,7 @@ class PhenoExperimentTraitHandler extends ControllerBase {
    *
    * @var array
    */
-  private array $request;
+  protected array $request;
 
   /**
    * The table name.
@@ -42,17 +44,24 @@ class PhenoExperimentTraitHandler extends ControllerBase {
    */
   private const ACTION_PARAMS = [
     'assign' => [
-      'label',
-      'required',
       'combo',
-      'project',
       'genus',
+      'label',
+      'project',
+      'required',
       'user',
     ],
     'remove' => [
       'combo_id',
     ],
   ];
+
+  /**
+   * Table row class name.
+   *
+   * @var string
+   */
+  private const TABLE_ROW_CLASS = 'trait-combbo';
 
   /**
    * Good response code.
@@ -108,33 +117,23 @@ class PhenoExperimentTraitHandler extends ControllerBase {
       throw new AccessDeniedHttpException('Invalid request: Unsupported request method.');
     }
 
-    $this->request = $request->request->all();
-    $request_params_keys = is_null($this->request) ? [] : array_keys($this->request);
+    // Check that a request has the expected query payload and each key is not
+    // empty value.
+    $this->request = $request->query->all();
+    $request_params_keys = array_keys($this->request);
 
-    if (count($request_params_keys) != count(self::ACTION_PARAMS[$action])) {
-      throw new AccessDeniedHttpException('Invalid request: Incorrect parameter count.');
-    }
-
-    foreach ($request_params_keys as $param) {
-      if (!in_array($param, self::ACTION_PARAMS[$action])) {
-        throw new AccessDeniedHttpException('Invalid request: Missing parameters.');
+    foreach (self::ACTION_PARAMS[$action] as $key) {
+      if (!in_array($key, $request_params_keys)) {
+        throw new \InvalidArgumentException('Invalid request: Missing parameter - ' . $key);
       }
-    }
 
-    foreach ($this->request as $value) {
-      if (trim($value) == '') {
-        throw new AccessDeniedHttpException('Invalid request: Invalid data provided.');
+      if (empty(trim($this->request[$key]))) {
+        throw new \InvalidArgumentException('Invalid request: Parameter with empty value - ' . $key);
       }
     }
 
     $method = $action . 'Trait';
-    $response = $this->$method();
-
-    $response['message'] = [
-      ($response['status_code'] == self::GOOD_REQUEST) ? 'message' : 'error' => $response['message'],
-    ];
-
-    return new JsonResponse($response['message'], $response['status_code']);
+    return $this->$method();
   }
 
   /**
@@ -210,48 +209,41 @@ class PhenoExperimentTraitHandler extends ControllerBase {
    */
   public function removeTrait() {
 
-    $data = $this->request;
+    $combo_id = (int) $this->request['combo_id'];
 
     $combo = $this->db->select(self::TABLE_NAME, 'tc')
       ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
-      ->condition('tc.combo_id', $data['combo_id'], '=')
+      ->condition('tc.combo_id', $combo_id, '=')
       ->execute()
       ->fetchObject();
 
     if (!$combo) {
-      return [
-        'message' => 'Could not find combo record.',
-        'status_code' => self::BAD_REQUEST,
-      ];
+      throw new AccessDeniedHttpException('Invalid request: Could not find trait combo.');
     }
 
     if ($combo->is_archived == 1 || $combo->was_shared == 1 || $combo->was_collected == 1) {
-      return [
-        'message' => 'Not allowed to delete trait marked is_archived, was_shared, or was_collected.',
-        'status_code' => self::BAD_REQUEST,
-      ];
+      throw new AccessDeniedHttpException('Invalid request: Not allowed to delete trait marked is_archived, was_shared, or was_collected.');
     }
 
     $transaction = $this->db->startTransaction();
     try {
       $this->db
         ->delete(self::TABLE_NAME)
-        ->condition('combo_id', (int) $data['combo_id'], '=')
+        ->condition('combo_id', $combo_id, '=')
         ->execute();
     }
     catch (Exception $e) {
       $transaction->rollback();
 
-      return [
-        'message' => 'Failed to remove trait from experiment.',
-        'status_code' => self::BAD_REQUEST,
-      ];
+      throw new AccessDeniedHttpException('Invalid request: Failed to remove trait from experiment.');
     }
 
-    return [
-      'message' => 'Ok',
-      'status_code' => self::GOOD_REQUEST,
-    ];
+    $response = new AjaxResponse();
+    $response
+      ->addCommand(new RemoveCommand('.' . self::TABLE_ROW_CLASS . $combo_id))
+      ->addCommand(new CloseModalDialogCommand());
+
+    return $response;
   }
 
 }

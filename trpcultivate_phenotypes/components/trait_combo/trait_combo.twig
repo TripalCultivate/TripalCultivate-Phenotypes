@@ -53,9 +53,7 @@
 
 					{% if multiselect_method %}
 						<br />
-						{{ controls[i]['field_label']|set_attribute('title', 'A short label that will be used as the column header for this Trait-Method-Unit combination in the data collection file for this experiment. This must be unique within this experiment.') }}
-						{{ controls[i]['field_required']|set_attribute('title', 'Make this trait ' ~ global_attributes['required']['title']) }}
-						{{ controls[i]['field_add'] }}
+					  {{ content['combo_' ~ trait_id ~ '_' ~ method['method_id']] }}
 					{% endif %}
 				</section>
 

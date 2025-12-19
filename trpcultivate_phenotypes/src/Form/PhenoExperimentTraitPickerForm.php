@@ -2,8 +2,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Form;
 
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\HtmlCommand;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -19,6 +18,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Class definition of Experiment Add Trait.
  */
 class PhenoExperimentTraitPickerForm extends FormBase {
+
+  /**
+   * Drupal database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected Connection $db_connection;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -70,15 +76,24 @@ class PhenoExperimentTraitPickerForm extends FormBase {
   protected RouteMatchInterface $service_RouteMatch;
 
   /**
-   * The genus used to filter the traits table and show only related traits.
+   * The form element name attribute that wraps all fields.
    *
    * @var string
    */
-  private string $filter_genus;
+  private const FORM_WRAPPER = 'dialog_wrapper';
+
+  /**
+   * The table name.
+   *
+   * @var string
+   */
+  private const PHENO_COMBO = 'trpcultivate_phenocombo';
 
   /**
    * Constructor.
    *
+   * @param \Drupal\Core\Database\Connection $db_connection
+   *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
@@ -95,6 +110,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
+    Connection $db_connection,
     ChadoConnection $chado_connection,
     EntityTypeManagerInterface $entity_type_manager,
     Renderer $renderer,
@@ -104,6 +120,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
   ) {
 
+    $this->db_connection = $db_connection;
     $this->chado_connection = $chado_connection;
     $this->service_EntityTypeManager = $entity_type_manager;
     $this->service_Renderer = $renderer;
@@ -119,6 +136,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
   public static function create(ContainerInterface $container) {
 
     return new static(
+      $container->get('database'),
       $container->get('tripal_chado.database'),
       $container->get('entity_type.manager'),
       $container->get('renderer'),
@@ -163,7 +181,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
 
     $experiment = $research_experiment->get('exp_name')->getValue();
     if (!$experiment) {
-      // Research experiment entity does not exist contain exp_name field.
+      // Research experiment entity does not contain exp_name field.
       throw new NotFoundHttpException();
     }
 
@@ -197,12 +215,9 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     if ($genus) {
       $genus_config = $this->service_PhenoGenusOntology
         ->getGenusOntologyConfigValues($genus)['trait'];
-
-      $form_state->set('genus_config', $genus_config);
     }
 
-    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
-
+    $this->messenger()->deleteAll();
     $form['reminder'] = [
       '#theme' => 'status_messages',
       '#message_list' => [
@@ -215,8 +230,10 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       ],
     ];
 
+    // Reference this wrapper class name in AJAX wrapper render property.
     $dialog_wrapper = 'tcp-dialog-wrapper';
-    $form_dialog_wrapper = 'dialog_wrapper';
+
+    $form_dialog_wrapper = self::FORM_WRAPPER;
     $form[$form_dialog_wrapper] = [
       '#type' => 'container',
       '#attributes' => [
@@ -226,48 +243,58 @@ class PhenoExperimentTraitPickerForm extends FormBase {
 
     $form[$form_dialog_wrapper]['search_fieldset'] = [
       '#type' => 'details',
-      '#title' => 'Search Trait',
+      '#title' => [
+        '#markup' => '
+          Search Trait
+          <small><a href="#">Suggest a Trait</a> | <a href="#">Show all Traits</a></small>
+        ',
+      ],
+      '#attributes' => [
+        'class' => ['container-inline'],
+      ],
       '#open' => TRUE,
       '#id' => 'tcp-search-fieldset',
     ];
 
-    $form[$form_dialog_wrapper]['search_fieldset']['controls'] = [
-      '#markup' => '<div id="tcp-search-controls">
-        <a href="#">Suggest A Trait</a> |
-        <a href="#">Show All Traits</a>
-      </div>',
-    ];
-
     $form[$form_dialog_wrapper]['search_fieldset']['genus'] = [
       '#type' => 'select',
-      '#options' => [0 => 'Select Genus'] + array_combine($experiment_genus, $experiment_genus),
+      '#options' => array_combine($experiment_genus, $experiment_genus),
+      '#empty_option' => 'Select Genus',
+      '#empty_value' => 0,
       '#default_value' => $genus,
-      '#disabled' => ($genus) ? TRUE : FALSE,
       '#ajax' => [
         'callback' => '::setGenus',
         'event' => 'change',
         'wrapper' => $dialog_wrapper,
+        'throbber' => [
+          'progress' => 'none',
+        ],
+      ],
+      '#states' => [
+        'disabled' => [
+          ':input[name="genus"]' => ['!value' => 0],
+        ],
       ],
       '#id' => 'tcp-genus',
     ];
 
-    $result_wrapper = 'tcp-result-wrapper';
-    $form_state->set('result_wrapper', $result_wrapper);
     $form[$form_dialog_wrapper]['search_fieldset']['trait'] = [
       '#type' => 'textfield',
       '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
+      '#size' => 48,
       '#autocomplete_route_parameters' => [
         'count' => 10,
         'cv_id' => $genus_config,
       ],
       '#attributes' => [
         'placeholder' => 'Trait name (e.g., Plant height or Days to flower)',
+        'style' => 'margin: 0 0 0 5px; width: 100%',
+        'class' => ['trigger-element'],
       ],
       '#ajax' => [
         'callback' => '::matchTrait',
         'event' => 'change',
-        'method' => 'replace',
-        'wrapper' => $result_wrapper,
+        'wrapper' => $dialog_wrapper,
       ],
       '#states' => [
         'disabled' => [
@@ -277,13 +304,10 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       '#id' => 'tcp-trait',
     ];
 
-    $form[$form_dialog_wrapper]['result_wrapper'] = [
+    $form[$form_dialog_wrapper]['a_note'] = [
       '#type' => 'container',
       '#markup' => '<p>Start typing part of the trait name into the search field to search for specific traits, or click
        <a href="#">Show All Traits</a> to explore all available traits for the selected genus.</p>',
-      '#attributes' => [
-        'id' => $result_wrapper,
-      ],
       '#states' => [
         'invisible' => [
           ':input[name="genus"]' => ['value' => 0],
@@ -291,15 +315,219 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       ],
     ];
 
-    // This settings array is used to construct AJAX request parameters.
-    $form['#attached']['drupalSettings']['tcpCombo'] = [
-      'route' => 'bio_data/experiment/handle_trait/assign',
-      'project' => $project_id,
-      'genus' => $genus,
-      'user' => $this->currentUser()->id(),
-    ];
+    // Prepare traits that matched the search.
+    $triggering_element = $form_state->getTriggeringElement() ?? 0;
+
+    if ($triggering_element && isset($triggering_element['#attributes']['class'])
+      && in_array('trigger-element', $triggering_element['#attributes']['class'])) {
+
+      if ($triggering_element && $triggering_element['#value'] == 'Add') {
+        $item_key = $triggering_element['#id'];
+        $values = $form_state->getValues();
+
+        $label = $values[$item_key . '_label'];
+        $label = (empty($label)) ? $values[$item_key . '_default_label'] : $label;
+
+        // No same labels in an experiment.
+        $label_exists = $this->db_connection->select(self::PHENO_COMBO, 'tc')
+          ->fields('tc', ['combo_id'])
+          ->condition('tc.label', $label, '=')
+          ->condition('tc.project_id', $project_id, '=')
+          ->execute()
+          ->fetchField();
+
+        if ($label_exists) {
+          $form[$form_dialog_wrapper]['reminder'] = [
+            '#theme' => 'status_messages',
+            '#message_list' => [
+              'warning' => [
+                'The label is already used in the experiment.',
+              ],
+            ],
+            '#status_headings' => [
+              'error' => 'Label already exists',
+            ],
+          ];
+        }
+
+        [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
+
+        $transaction = $this->db_connection->startTransaction();
+        try {
+          $this->db_connection
+            ->insert(self::PHENO_COMBO)
+            ->fields([
+              'project_id' => $project_id,
+              'attr_id' => $attr_id,
+              'observable_id' => $observable_id,
+              'unit_id' => $unit_id,
+              'label' => $label,
+              'is_archived' => 0,
+              'is_required' => $values[$item_key . '_required'],
+              'was_shared' => 0,
+              'was_collected' => 0,
+              'uid' => $this->currentUser()->id(),
+              'timestamp' => time(),
+            ])
+            ->execute();
+        }
+        catch (Exception $e) {
+          $transaction->rollback();
+        }
+      }
+
+      $query_combo = $this->db_connection->select(self::PHENO_COMBO, 'tc');
+      $query_combo
+        ->addExpression('CONCAT(tc.attr_id, \':\', tc.observable_id, \':\', tc.unit_id)', 'combo');
+      $exp_combos = $query_combo
+        ->condition('tc.project_id', $form_state->get('project_id'), '=')
+        ->execute()
+        ->fetchCol();
+
+      $trait_name = $form_state->getValue('trait');
+
+      // Exclude trait term properties construct (in parenthesis) returned by
+      // the trait autocomplete field.
+      $search_key = preg_replace('/\s*\(.*?\)/', '', $trait_name);
+
+      $query_trait = $this->chado_connection
+        ->select('1:cvterm', 'tc')
+        ->fields('tc', ['cvterm_id', 'name', 'definition'])
+        ->condition('tc.cv_id', $genus_config, '=');
+
+      if (strtolower($trait_name) != 'all') {
+        $query_trait
+          ->condition('tc.name', trim($search_key) . '%', 'LIKE');
+      }
+
+      $trait_query_result = $query_trait
+        ->orderBy('tc.name', 'ASC')
+        ->execute();
+
+      $this->service_PhenoTraits->setTraitGenus($genus);
+
+      $form[$form_dialog_wrapper]['table'] = [
+        '#type' => 'table',
+        '#header' => [],
+        '#rows' => [],
+        '#sticky' => FALSE,
+        '#empty' => 'No traits found or traits may have already been included in the experiment.',
+        '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'section'],
+      ];
+
+      foreach ($trait_query_result as $trait) {
+        $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
+        if (!$trait_methods) {
+          // Skip trait that does not have a method.
+          continue;
+        }
+
+        $methods = [];
+
+        foreach ($trait_methods as $method) {
+          $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
+
+          // Exclude from list, trait-method-unit combo already in experiment.
+          $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
+          if (in_array($combo_ids, $exp_combos)) {
+            continue;
+          }
+
+          array_push($methods, [
+            'method_id' => $method->cvterm_id,
+            'method_shortname' => $method->name,
+            'unit' => $method_unit->name,
+            'type' => $this->service_PhenoTraits->getMethodUnitDataType($method_unit->cvterm_id),
+            'collection_method' => $method->definition,
+          ]);
+
+          $item_key = 'combo_' . $trait->cvterm_id . '_' . $method->cvterm_id;
+
+          $build['actions'][$item_key] = [
+            '#type' => 'container',
+            '#tree' => FALSE,
+            '#attributes' => [
+              'class' => ['container-inline'],
+            ],
+          ];
+
+          $build['actions'][$item_key][$item_key . '_label'] = [
+            '#type' => 'textfield',
+            '#name' => $item_key . '_label',
+            '#maxlength' => 150,
+            '#size' => 40,
+            '#attributes' => [
+              'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
+              'placeholder' => 'Use trait with label: ' . $default_label = $trait->name . ' ' . $method->name,
+              'style' => 'margin: 0 15px 0 0; width: 100%',
+            ],
+          ];
+
+          $build['actions'][$item_key][$item_key . '_default_label'] = [
+            '#type' => 'hidden',
+            '#name' => $item_key . '_default_label',
+            '#value' => $default_label,
+          ];
+
+          $build['actions'][$item_key][$item_key . '_required'] = [
+            '#type' => 'checkbox',
+            '#name' => $item_key . '_required',
+            '#return_value' => 1,
+            '#default_value' => 0,
+            '#suffix' => '<i class="fa-solid fa-star" title="Required Trait"></i>',
+          ];
+
+          $build['actions'][$item_key][$item_key . '_combo'] = [
+            '#type' => 'hidden',
+            '#name' => $item_key . '_combo',
+            '#value' => $combo_ids,
+          ];
+
+          $build['actions'][$item_key][$item_key . '_add'] = [
+            '#type' => 'button',
+            '#name' => $item_key . '_add',
+            '#value' => 'Add',
+            '#id' => $item_key,
+            '#attributes' => [
+              'class' => ['trigger-element'],
+            ],
+            '#ajax' => [
+              'callback' => '::addTrait',
+              'event' => 'click',
+              'wrapper' => $dialog_wrapper,
+            ],
+          ];
+        }
+
+        if (count($methods) < 1) {
+          continue;
+        }
+
+        $form[$form_dialog_wrapper]['table'][$trait_index]['combo'] = [
+          '#type' => 'component',
+          '#component' => 'trpcultivate_phenotypes:trait_combo',
+          '#props' => [
+            'name' => $trait->name,
+            'definition' => $trait->definition,
+            'multiselect_method' => TRUE,
+            'method_unit_combo' => $methods,
+            'trait_id' => (int) $trait->cvterm_id,
+          ],
+          'content' => $build['actions'],
+        ];
+
+        // Form elements in the component and not in the page.
+        unset($build['actions']);
+      }
+    }
 
     return $form;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
   }
 
   /**
@@ -307,146 +535,23 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    */
   public function setGenus(array &$form, FormStateInterface $form_state) {
 
-    return $form['dialog_wrapper'];
+    return $form[self::FORM_WRAPPER];
   }
 
   /**
-   * Function callback - list traits that matched.
+   * Function callback - list trait combo that matched.
    */
   public function matchTrait(array &$form, FormStateInterface $form_state) {
 
-    $response = new AjaxResponse();
-    $key = trim($form_state->getValue('trait'));
-
-    if (empty($key)) {
-      return $response;
-    }
-
-    $genus_config = $form_state->get('genus_config');
-    $query_trait = $this->chado_connection
-      ->select('1:cvterm', 'tc')
-      ->fields('tc', ['cvterm_id', 'name', 'definition'])
-      ->condition('tc.cv_id', $genus_config, '=');
-
-    if (strtolower($key) != 'all') {
-      $search_key = preg_replace('/\s*\(.*?\)/', '', $key);
-      $query_trait
-        ->condition('tc.name', trim($search_key) . '%', 'LIKE');
-    }
-
-    $trait_query_result = $query_trait
-      ->orderBy('tc.name', 'ASC')
-      ->execute();
-
-    // List of trait id, method id and unit id combo already assigned.
-    $query_combo = $this->chado_connection->select('trpcultivate_phenocombo', 'tc');
-    $query_combo
-      ->addExpression('CONCAT(tc.attr_id, \':\', tc.observable_id, \':\', tc.unit_id)', 'combo');
-    $exp_combos = $query_combo
-      ->condition('tc.project_id', $form_state->get('project_id'), '=')
-      ->execute()
-      ->fetchCol();
-
-    $genus = $form_state->get('genus');
-    $this->service_PhenoTraits->setTraitGenus($genus);
-
-    $rows = [];
-    foreach ($trait_query_result as $trait) {
-      $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
-      if (!$trait_methods) {
-        // Skip trait that does not have method.
-        continue;
-      }
-
-      $methods = [];
-      $controls = [];
-      foreach ($trait_methods as $method) {
-        $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
-
-        // Do not suggest trait-method-unit combo already in the experiment.
-        $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
-        if (in_array($combo_ids, $exp_combos)) {
-          continue;
-        }
-
-        array_push($methods, [
-          'method_shortname' => $method->name,
-          'unit' => $method_unit->name,
-          'type' => $this->service_PhenoTraits->getMethodUnitDataType($method_unit->cvterm_id),
-          'collection_method' => $method->definition,
-        ]);
-
-        array_push($controls, [
-          'field_label' => [
-            '#type' => 'textfield',
-            '#theme_wrappers' => [],
-            '#maxlength' => 150,
-            '#attributes' => [
-              'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
-              'placeholder' => 'Use trait with label: ' . $label = $trait->name . ' ' . $method->name,
-              'data-default' => $label,
-              'data-combo' => $combo_ids,
-            ],
-          ],
-          'field_required' => [
-            '#type' => 'checkbox',
-            '#theme_wrappers' => [],
-            '#return_value' => 1,
-            '#default_value' => 0,
-            '#suffix' => '<i class="fa-solid fa-star" title="Required Trait"></i>',
-          ],
-          'field_add' => [
-            '#type' => 'button',
-            '#value' => 'Add',
-            '#attributes' => [
-              'class' => ['button--primary', 'tcp-add'],
-            ],
-          ],
-        ]);
-      }
-
-      if (count($methods) < 1) {
-        continue;
-      }
-
-      $rows[] = [
-        [
-          'data' => [
-            '#type' => 'component',
-            '#component' => 'trpcultivate_phenotypes:trait_combo',
-            '#slots' => [
-              'controls' => $controls,
-            ],
-            '#props' => [
-              'name' => $trait->name,
-              'definition' => $trait->definition,
-              'multiselect_method' => TRUE,
-              'method_unit_combo' => $methods,
-            ],
-          ],
-        ],
-      ];
-    }
-
-    $form['result'] = [
-      '#type' => 'table',
-      '#header' => [],
-      '#rows' => $rows,
-      '#empty' => 'No traits found or traits may have already been included in the experiment.',
-      '#sticky' => FALSE,
-      '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'section'],
-    ];
-
-    $html = new HtmlCommand('#' . $form_state->get('result_wrapper'), $form['result']);
-    $response->addCommand($html);
-
-    return $response;
+    return $form[self::FORM_WRAPPER];
   }
 
   /**
-   * {@inheritDoc}
+   * Function callback - add trait combo.
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function addTrait(array &$form, FormStateInterface $form_state) {
+
+    return $form[self::FORM_WRAPPER];
   }
 
 }

@@ -27,8 +27,7 @@ props:
       type: array
       title: Trait status
       description: The status (is required, was shared, was collected and is archived) of a trait in an experiment.
-slots:
-  controls:
-    type: array
-    title: Field controls.
-    description: Field elements to control a trait method.
+    trait_id:
+      type: integer
+      title: Trait id number.
+      description: The trait id number (Trait).

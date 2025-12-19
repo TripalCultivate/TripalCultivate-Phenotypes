@@ -3,14 +3,11 @@
 namespace Drupal\trpcultivate_phenotypes\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
-use Drupal\Core\Ajax\RemoveCommand;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Url;
-use Drupal\tripal\Entity\TripalEntity;
+use Drupal\core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
@@ -59,25 +56,18 @@ class PhenoExperimentConfigurationForm extends FormBase {
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
-   * Research experiment entity.
-   *
-   * @var \Drupal\tripal\Entity\TripalEntity
-   */
-  private TripalEntity $research_experiment;
-
-  /**
-   * The genus used to filter the traits table and show only related traits.
-   *
-   * @var string
-   */
-  private $filter_genus;
-
-  /**
    * The table name.
    *
    * @var string
    */
   private const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
+
+  /**
+   * Table row class name.
+   *
+   * @var string
+   */
+  private const TABLE_ROW_CLASS = 'trait-combbo';
 
   /**
    * Constructor.
@@ -133,27 +123,31 @@ class PhenoExperimentConfigurationForm extends FormBase {
    * {@inheritDoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $this->research_experiment = $this->route_match->getParameter('tripal_entity');
 
-    // If the /genus slug is not provided, show all trait.
-    $filter_genus = $this->route_match->getParameter('genus');
-    $this->filter_genus = ($filter_genus == '') ? 0 : $filter_genus;
+    $research_experiment = $this->route_match->getParameter('tripal_entity');
 
-    $experiment = $this->research_experiment->get('exp_name')->getValue();
+    $experiment = $research_experiment->get('exp_name')->getValue();
     if (!$experiment) {
       // Research experiment entity does not exist.
       throw new NotFoundHttpException();
     }
-
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
+
+    // If the /genus slug is not provided, show all trait.
+    $filter_genus = $this->route_match->getParameter('genus') ?? 0;
 
     // Update the title to show which reseach experiment is being setup.
     $form['#title'] = 'Configure Phenotypes for ' . $experiment_name;
 
+    // Form buttons used by the remove confirm dialog window.
+    $form['#attached']['library'][] = 'core/drupal.dialog';
+    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+
     // Prepare traits summary table render array.
-    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
     $summary_table_name = 'experiment_traits_summary_table';
 
+    // The second item of the header row has a select field element to filter
+    // trait table by a genus.
     $headers = [];
     $headers = [
       'label' => [
@@ -165,7 +159,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
         'data' => [
           '#type' => 'select',
           '#options' => [0 => 'All Genus'],
-          '#value' => $this->filter_genus,
+          '#value' => $filter_genus,
           '#theme_wrappers' => [],
           '#prefix' => '<span>Trait Method Unit: </span><span>',
           '#suffix' => '</span>',
@@ -177,14 +171,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       'remove' => 'Remove',
     ];
 
-    $form['table_wrapper'] = [
-      '#type' => 'container',
-      '#attributes' => [
-        'id' => 'abc',
-      ],
-    ];
-
-    $form['table_wrapper'][$summary_table_name] = [
+    $form[$summary_table_name] = [
       '#type' => 'table',
       '#header' => $headers,
       '#rows' => [],
@@ -198,7 +185,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     // Ensure research experiment has at least one configured genus.
     $configured_genus = 0;
-    $exp_genus = $this->research_experiment->get('exp_germgenus')->getValue();
+    $exp_genus = $research_experiment->get('exp_germgenus')->getValue();
 
     foreach ($exp_genus as $germgenus) {
       $is_configured = $this->service_PhenoGenusOntology
@@ -215,13 +202,13 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     $experiment_genus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
-    if ($this->filter_genus && !in_array($this->filter_genus, $experiment_genus)) {
+    if ($filter_genus && !in_array($filter_genus, $experiment_genus)) {
       // Filter genus does not exist.
       throw new NotFoundHttpException();
     }
 
-    // $this->messenger()
-    //   ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
+    $this->messenger()
+      ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
 
     // Create a mapping array to map cv name to a genus and populate the genus
     // filter select field with available genus options.
@@ -230,23 +217,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $cv_id = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus)['trait'];
 
       $genus_map[$cv_id] = $genus;
-      $form['table_wrapper'][$summary_table_name]['#header']['trait_combo']['data']['#options'][$genus] = $genus;
+      $form[$summary_table_name]['#header']['trait_combo']['data']['#options'][$genus] = $genus;
     }
 
     // Determine if the page will default to a genus or all genus.
     if (count($experiment_genus) == 1) {
       $single_genus = $experiment_genus[0];
 
-      $form['table_wrapper'][$summary_table_name]['#header']['trait_combo']['data']['#value'] = $single_genus;
+      $form[$summary_table_name]['#header']['trait_combo']['data']['#value'] = $single_genus;
       // From the Phenotypes tab, the url is /configure, update to include the
       // the default genus - /configure/genus.
       $form['#attached']['drupalSettings']['tcpSettings']['genus'] = $single_genus;
-      $this->filter_genus = $single_genus;
+      $filter_genus = $single_genus;
     }
-
-    $form['#attached']['drupalSettings']['tcpSettings']['route'] = 'bio_data/experiment/handle_trait/remove';
-
-    $rows = [];
 
     // Query the list of traits in an experiment. Sort the result first by the
     // genus, cv name (based on the cv_id) and then by trait is_required status
@@ -273,8 +256,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ->orderBy('t.name', 'ASC')
       ->orderBy('label', 'ASC');
 
-    if ($this->filter_genus) {
-      $query->condition('t.cv_id', array_search($this->filter_genus, $genus_map), '=');
+    if ($filter_genus) {
+      $query->condition('t.cv_id', array_search($filter_genus, $genus_map), '=');
     }
 
     $query_result = $query->execute();
@@ -300,12 +283,15 @@ class PhenoExperimentConfigurationForm extends FormBase {
         $trait_row->unit_id,
       );
 
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['label'] = [
+      // Table column values:
+      // Column label.
+      $form[$summary_table_name]['combo' . $trait_row->combo_id]['label'] = [
         '#type' => '#markup',
-        '#markup' => ($this->filter_genus) ? $trait_row->label : $trait_row->label . '<br /><small>' . $genus . '</small>',
+        '#markup' => ($filter_genus) ? $trait_row->label : $trait_row->label . '<br /><small>' . $genus . '</small>',
       ];
 
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['combo'] = [
+      // The trait combo.
+      $form[$summary_table_name]['combo' . $trait_row->combo_id]['trait_combo'] = [
         '#type' => 'component',
         '#component' => 'trpcultivate_phenotypes:trait_combo',
         '#slots' => [],
@@ -330,17 +316,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
         ],
       ];
 
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['confirm_remove' . $trait_row->combo_id] = [
+      // A remove button.
+      $form[$summary_table_name]['combo' . $trait_row->combo_id]['remove'] = [
         '#type' => 'button',
         '#value' => 'Remove',
-        '#name' => 'combo' . $trait_row->combo_id,
+        '#name' => self::TABLE_ROW_CLASS . $trait_row->combo_id,
         '#disabled' => ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) ? TRUE : FALSE,
         '#attributes' => [
           'class' => [
-            'use-ajax',
             'button--primary',
-            'data-combo' => $trait_row->combo_id,
           ],
+          'data-trait-combo' => $trait_row->combo_id,
         ],
         '#ajax' => [
           'callback' => '::confirmRemove',
@@ -352,44 +338,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
         ],
       ];
 
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['remove' . $trait_row->combo_id] = [
-        '#type' => 'button',
-        '#value' => 'Remove Trait',
-        '#name' => 'combo' . $trait_row->combo_id,
-        '#disabled' => ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) ? TRUE : FALSE,
-        '#attributes' => [
-          'class' => [
-            'visually-hidden',
-          ],
-        ],
-        '#ajax' => [
-          'callback' => '::removeTrait',
-          'event' => 'click',
-          'progress' => [
-            'type' => 'none',
-            'message' => '',
-          ],
-        ],
-        '#id' => 'remove-combo-' . $trait_row->combo_id,
-      ];
-
       // To aid grouping of traits by genus, darken the top border of the first
       // row (trait) in the same genus. The initial class is to reference a row
       // for remove trait AJAX callback.
-      $group_class = [
-        'combo-' . $trait_row->combo_id
-      ];
+      $group_class = [self::TABLE_ROW_CLASS . $trait_row->combo_id];
+
       if ($first_row && $i > 0) {
         array_push($group_class, 'tcp-group-border');
       }
 
-      $form['table_wrapper'][$summary_table_name]['combo' . $trait_row->combo_id]['#attributes'] = [
-        'class' => implode(' ', $group_class)
+      $form[$summary_table_name]['combo' . $trait_row->combo_id]['#attributes'] = [
+        'class' => implode(' ', $group_class),
       ];
     }
-
-    $form['#attached']['library'][] = 'core/drupal.dialog';
-    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
 
     return $form;
   }
@@ -402,45 +363,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
   }
 
   /**
-   * AJAX callback: remove trait from DB and DOM.
-   */
-  public function removeTrait(array &$form, FormStateInterface $form_state) {
-
-    $response = new AjaxResponse();
-
-    $triggering_element = $form_state->getTriggeringElement();
-
-    if (isset($triggering_element)) {
-      $combo_id = (int) str_replace('combo', '', $triggering_element['#name']);
-
-      $combo = $this->chado_connection->select(self::PHENO_COMBO_TABLE, 'tc')
-        ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
-        ->condition('tc.combo_id', $combo_id, '=')
-        ->execute()
-        ->fetchObject();
-
-      if ($combo->is_archived == 0 || $combo->was_shared == 0 || $combo->was_collected == 0) {
-        $transaction = $this->chado_connection->startTransaction();
-        try {
-          $this->chado_connection
-            ->delete(self::PHENO_COMBO_TABLE)
-            ->condition('combo_id', $combo_id, '=')
-            ->execute();
-        }
-        catch (Exception $e) {
-          $transaction->rollback();
-
-          $this->addError('Failed to remove trait from experiment.');
-        }
-      }
-
-      $response->addCommand(new RemoveCommand('.combo-' . $combo_id));
-    }
-
-    return $response;
-  }
-
-  /**
    * AJAX callback: dialog confirm removal of a trait.
    */
   public function confirmRemove(array &$form, FormStateInterface $form_state) {
@@ -449,44 +371,59 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $triggering_element = $form_state->getTriggeringElement();
 
     if (isset($triggering_element)) {
-      $combo_id = (int) str_replace('combo', '', $triggering_element['#name']);
+      $combo_id = (int) trim($triggering_element['#attributes']['data-trait-combo']);
 
       if ($combo_id > 0) {
         $response = new AjaxResponse();
 
-        $response->addCommand(new OpenModalDialogCommand(
-          'Confirm Remove',
+        $build['actions']['confirm'] = [
+          '#markup' => '<p>Are you sure you want to remove this trait?</p>',
+        ];
+
+        $url = Url::fromRoute(
+          'trpcultivate_phenotypes.experiment_handle_trait',
           [
-            'content' => [
-              '#markup' => '<p>Are you sure you want to remove this trait?</p>',
-            ],
-            'remove' => [
-              '#type' => 'button',
-              '#name' => 'remove',
-              '#value' => 'Remove',
-              '#attributes' => [
-                'class' => [
-                  'button--primary',
-                  'button--danger',
-                ],
-                'onclick' => "
-                  Drupal.dialog(this.closest('.ui-dialog-content')).close();
-                  jQuery('#remove-combo-$combo_id').trigger('click');
-                ",
-              ],
-            ],
-            'cancel' => [
-              '#name' => 'cancel',
-              '#type' => 'button',
-              '#value' => 'Cancel',
-              '#attributes' => [
-                'onclick' => "
-                  Drupal.dialog(this.closest('.ui-dialog-content')).close();
-                  event.preventDefault();
-                ",
-              ],
+            'action' => 'remove',
+          ],
+          [
+            'query' => [
+              'combo_id' => $combo_id,
             ],
           ],
+        );
+
+        $url->setOption(
+          'attributes',
+          [
+            'class' => [
+              'use-ajax',
+              'button',
+              'button--primary',
+              'button--danger',
+            ],
+          ],
+        );
+
+        $build['actions']['remove'] = [
+          '#type' => 'link',
+          '#url' => $url,
+          '#title' => 'Remove',
+        ];
+
+        $build['actions']['cancel'] = [
+          '#type' => 'button',
+          '#value' => 'Cancel',
+          '#attributes' => [
+            'onclick' => "
+              Drupal.dialog(jQuery('#drupal-modal')).close();
+              event.preventDefault();
+            ",
+          ],
+        ];
+
+        $response->addCommand(new OpenModalDialogCommand(
+          'Confirm Remove',
+          $build['actions'],
           [
             'width' => 300,
           ]
