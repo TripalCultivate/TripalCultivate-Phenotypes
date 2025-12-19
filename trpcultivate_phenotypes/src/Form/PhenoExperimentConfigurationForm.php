@@ -3,16 +3,20 @@
 namespace Drupal\trpcultivate_phenotypes\Form;
 
 use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CloseModalDialogCommand;
 use Drupal\Core\Ajax\OpenModalDialogCommand;
+use Drupal\Core\Ajax\RemoveCommand;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\core\Url;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -33,6 +37,20 @@ class PhenoExperimentConfigurationForm extends FormBase {
    * @var \Drupal\Core\Routing\RouteMatchInterface
    */
   protected RouteMatchInterface $route_match;
+
+  /**
+   * Request parameters.
+   *
+   * @var \Symfony\Component\HttpFoundation\RequestStack
+   */
+  protected RequestStack $request_params;
+
+  /**
+   * Tripal logger service.
+   *
+   * @var \Drupal\tripal\Services\TripalLogger
+   */
+  protected $tripal_logger;
 
   /**
    * Genus-Ontotology service.
@@ -70,12 +88,21 @@ class PhenoExperimentConfigurationForm extends FormBase {
   private const TABLE_ROW_CLASS = 'trait-combbo';
 
   /**
+   * The form element name attribute that wraps all fields.
+   *
+   * @var string
+   */
+  private const TABLE_WRAPPER = 'table_wrapper';
+
+  /**
    * Constructor.
    *
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   Route match service.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_params
+   *   Request parameters.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultiavtePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   TripalCultivate Phenotypes Genus-Ontology service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
@@ -86,6 +113,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
   public function __construct(
     ChadoConnection $chado_connection,
     RouteMatchInterface $route_match,
+    RequestStack $request_params,
+    TripalLogger $tripal_logger,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
@@ -93,6 +122,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $this->chado_connection = $chado_connection;
     $this->route_match = $route_match;
+    $this->request_params = $request_params;
+    $this->tripal_logger = $tripal_logger;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
     $this->service_PhenoTraits = $service_PhenoTraits;
@@ -106,6 +137,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
     return new static(
       $container->get('tripal_chado.database'),
       $container->get('current_route_match'),
+      $container->get('request_stack'),
+      $container->get('tripal.logger'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('trpcultivate_phenotypes.traits'),
@@ -116,13 +149,229 @@ class PhenoExperimentConfigurationForm extends FormBase {
    * {@inheritDoc}
    */
   public function getFormId() {
-    return 'content_bio_data_research_experiment_configure_form';
+
+    return 'research_experiment_configure_form';
   }
 
   /**
    * {@inheritDoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+
+    $research_experiment = $this->route_match->getParameter('tripal_entity');
+
+    $experiment = $research_experiment->get('exp_name')->getValue();
+    if (!$experiment) {
+      // Research experiment entity does not exist.
+      $this->tripal_logger->error('Research experiment Tripal entity does not exist.');
+      throw new NotFoundHttpException();
+    }
+
+    ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
+    // Update the title to show which reseach experiment is being setup.
+    $form['#title'] = 'Configure Phenotypes for ' . $experiment_name;
+
+    $form['research_experiment_entity_id'] = [
+      '#type' => 'hidden',
+      '#value' => $experiment_id,
+    ];
+
+    // If the /genus slug is not provided, show all trait for all genus.
+    $filter_genus = $this->route_match->getParameter('genus') ?? 0;
+
+    $form['filter_fieldset'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => ['container-inline'],
+        'style' => 'float: right',
+      ],
+    ];
+
+    $form['filter_fieldset']['filter_icon'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'i',
+      '#attributes' => [
+        'class' => [
+          'fa-solid',
+          'fa-filter',
+        ],
+        'title' => 'Filter the trait summary by a genus',
+      ],
+    ];
+
+    $form['filter_fieldset']['filter_genus'] = [
+      '#type' => 'select',
+      '#options' => [],
+      '#empty_option' => 'Select a Genus',
+      '#value' => $filter_genus,
+      '#theme_wrappers' => [],
+      '#ajax' => [
+        'callback' => '::removeCombo',
+        'event' => 'click',
+        'progress' => [
+          'type' => 'none',
+          'message' => '',
+        ],
+      ],
+    ];
+
+    // Reference this wrapper class name in AJAX wrapper render property.
+    $table_wrapper = 'tcp-table-wrapper';
+
+    $form_table_wrapper = self::TABLE_WRAPPER;
+    $form[$form_table_wrapper] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => $table_wrapper,
+      ],
+    ];
+
+    // Prepare traits summary table render array.
+    $summary_table_name = 'experiment_traits_summary_table';
+
+    $headers = [
+      'label' => [
+        'data' => '',
+        'style' => 'width: 24%'
+      ],
+      'combo' => [
+        'data' => 'Trait Method Unit',
+        'style' => 'width: 75%'
+      ],
+      'remove' => [
+        'data' => 'Remove',
+        'style' => 'width: 1%'
+      ],
+    ];
+
+    $headers['label']['data'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'i',
+      '#prefix' => 'Label',
+      '#attributes' => [
+        'class' => [
+          'fa-solid',
+          'fa-circle-question',
+        ],
+        'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment',
+      ],
+    ];
+
+    $form[$form_table_wrapper][$summary_table_name] = [
+      '#type' => 'table',
+      '#header' => $headers,
+      '#rows' => [],
+      '#empty' => 'No traits found',
+      '#sticky' => FALSE,
+      '#allowed_tags' => ['br', 'em', 'def', 'small', 'span', 'select'],
+    ];
+
+    return $form;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+
+  }
+
+  /**
+   * AJAX callback: dialog confirm removal of a trait.
+   *
+   * @param array $form
+   *   Drupal form render array.
+   * @param FormStateInterface $form_state
+   *   Drupal form state object.
+   * @param integer $id
+   *   The id number corresponding to the combo_id field referenced for removal
+   *   from an experiment trait set. Default to 0.
+   */
+  public function removeCombo(array &$form, FormStateInterface $form_state, int $id = 0) {
+
+    // Remove a row from DOM.
+    $triggering_element = $form_state->getTriggeringElement();
+
+    // Confirm trait combo remove action.
+    if (isset($triggering_element)) {
+      $combo_id = (int) trim($triggering_element['#attributes']['data-trait-combo']);
+
+      if ($combo_id > 0) {
+        $response = new AjaxResponse();
+
+        $build['actions']['confirm'] = [
+          '#markup' => '<p>Are you sure you want to remove this trait?</p>',
+        ];
+
+        $params = $this->route_match->getParameters()->all();
+
+        $url = Url::fromRoute(
+          'trpcultivate_phenotypes.experiment_configuration',
+          [
+            'tripal_entity' => $params['tripal_entity']->id(),
+            'genus' => $params['genus'],
+          ],
+          [
+            'query' => [
+              'action' => 'del',
+              'id' => $combo_id,
+            ],
+          ],
+        );
+
+        $url->setOption(
+          'attributes',
+          [
+            'class' => [
+              'use-ajax',
+              'button',
+              'button--primary',
+              'button--danger',
+            ],
+          ],
+        );
+
+        $build['actions']['remove'] = [
+          '#type' => 'link',
+          '#url' => $url,
+          '#title' => 'Remove',
+        ];
+
+        $build['actions']['cancel'] = [
+          '#type' => 'button',
+          '#value' => 'Cancel',
+          '#attributes' => [
+            'onclick' => "
+              Drupal.dialog(jQuery('#drupal-modal')).close();
+              event.preventDefault();
+            ",
+          ],
+        ];
+
+        $response->addCommand(new OpenModalDialogCommand(
+          'Confirm Remove',
+          $build['actions'],
+          [
+            'width' => 300,
+          ]
+        ));
+      }
+    }
+
+
+
+        if ($combo_id) {
+      $response = new AjaxResponse();
+      $response
+        ->addCommand(new RemoveCommand('.' . self::TABLE_ROW_CLASS . $combo_id))
+        ->addCommand(new CloseModalDialogCommand());
+    }
+
+
+    return $response;
+  }
+
+  public function x(array $form, FormStateInterface $form_state) {
 
     $research_experiment = $this->route_match->getParameter('tripal_entity');
 
@@ -209,6 +458,13 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $this->messenger()
       ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
+
+    // A request to remove a trait combo.
+    $request = $this->request_params->getCurrentRequest();
+    if ($request->get('action') == 'del' && (int) $request->get('id') > 0) {
+      $id = $request->get('id');
+      return $this->removeCombo($form, $form_state, (int) $id);
+    }
 
     // Create a mapping array to map cv name to a genus and populate the genus
     // filter select field with available genus options.
@@ -329,7 +585,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
           'data-trait-combo' => $trait_row->combo_id,
         ],
         '#ajax' => [
-          'callback' => '::confirmRemove',
+          'callback' => '::removeCombo',
           'event' => 'click',
           'progress' => [
             'type' => 'throbber',
@@ -354,84 +610,4 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     return $form;
   }
-
-  /**
-   * {@inheritDoc}
-   */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-
-  }
-
-  /**
-   * AJAX callback: dialog confirm removal of a trait.
-   */
-  public function confirmRemove(array &$form, FormStateInterface $form_state) {
-
-    // Remove a row from DOM.
-    $triggering_element = $form_state->getTriggeringElement();
-
-    if (isset($triggering_element)) {
-      $combo_id = (int) trim($triggering_element['#attributes']['data-trait-combo']);
-
-      if ($combo_id > 0) {
-        $response = new AjaxResponse();
-
-        $build['actions']['confirm'] = [
-          '#markup' => '<p>Are you sure you want to remove this trait?</p>',
-        ];
-
-        $url = Url::fromRoute(
-          'trpcultivate_phenotypes.experiment_handle_trait',
-          [
-            'action' => 'remove',
-          ],
-          [
-            'query' => [
-              'combo_id' => $combo_id,
-            ],
-          ],
-        );
-
-        $url->setOption(
-          'attributes',
-          [
-            'class' => [
-              'use-ajax',
-              'button',
-              'button--primary',
-              'button--danger',
-            ],
-          ],
-        );
-
-        $build['actions']['remove'] = [
-          '#type' => 'link',
-          '#url' => $url,
-          '#title' => 'Remove',
-        ];
-
-        $build['actions']['cancel'] = [
-          '#type' => 'button',
-          '#value' => 'Cancel',
-          '#attributes' => [
-            'onclick' => "
-              Drupal.dialog(jQuery('#drupal-modal')).close();
-              event.preventDefault();
-            ",
-          ],
-        ];
-
-        $response->addCommand(new OpenModalDialogCommand(
-          'Confirm Remove',
-          $build['actions'],
-          [
-            'width' => 300,
-          ]
-        ));
-      }
-    }
-
-    return $response;
-  }
-
 }
