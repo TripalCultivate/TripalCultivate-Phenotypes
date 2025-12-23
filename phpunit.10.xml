@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  generate for use with
+
+  PHPUnit 10
+
+  -->
+<!-- For how to customize PHPUnit configuration, see core/tests/README.md. -->
+<!-- PHPUnit expects functional tests to be run with either a privileged user
+ or your current system user. See core/tests/README.md and
+ https://www.drupal.org/node/2116263 for details.
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         bootstrap="../../../core/tests/bootstrap.php"
+         colors="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutChangesToGlobalState="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         failOnDeprecation="true"
+         failOnPhpunitWarning="true"
+         displayDetailsOnTestsThatTriggerErrors="true"
+         displayDetailsOnTestsThatTriggerWarnings="true"
+         displayDetailsOnTestsThatTriggerDeprecations="true"
+         displayDetailsOnPhpunitDeprecations="true"
+         displayDetailsOnSkippedTests="true"
+         cacheResult="false"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         cacheDirectory=".phpunit.cache">
+  <php>
+    <!-- Set error reporting to E_ALL. -->
+    <ini name="error_reporting" value="32767"/>
+    <!-- Do not limit the amount of memory tests take to run. -->
+    <ini name="memory_limit" value="-1"/>
+    <!-- Handling of functional tests. See core/phpunit.xml.dist -->
+    <env name="MINK_DRIVER_CLASS" value=""/>
+    <env name="MINK_DRIVER_ARGS" value=""/>
+    <env name="MINK_DRIVER_ARGS_WEBDRIVER" value=""/>
+  </php>
+  <extensions>
+  </extensions>
+  <testsuites>
+    <testsuite name="core">
+      <directory>trpcultivate_phenotypes/tests</directory>
+      <directory>trpcultivate_phenocollect/tests</directory>
+      <directory>trpcultivate_phenoshare/tests</directory>
+    </testsuite>
+  </testsuites>
+  <listeners>
+    <listener class="\Drupal\Tests\Listeners\DrupalListener">
+    </listener>
+  </listeners>
+  <!-- Settings for coverage reports. -->
+  <source
+    ignoreSuppressionOfDeprecations="true"
+    >
+    <include>
+      <directory suffix=".php">trpcultivate_phenocollect/src</directory>
+      <file>trpcultivate_phenocollect/trpcultivate_phenocollect.module</file>
+      <directory suffix=".php">trpcultivate_phenoshare/src</directory>
+      <file>trpcultivate_phenoshare/trpcultivate_phenoshare.module</file>
+      <directory suffix=".php">trpcultivate_phenotypes/src</directory>
+      <file>trpcultivate_phenotypes/trpcultivate_phenotypes.module</file>
+    </include>
+  </source>
+</phpunit>
