@@ -37,7 +37,7 @@ trpcultivate_phenotypes.settings_ontology:
 
 # Experiment Configuration Page.
 trpcultivate_phenotypes.experiment_configuration:
-  path: '/bio_data/{tripal_entity}/configure/{genus}'
+  path: '/bio_data/{tripal_entity}/phenotypes/{genus}'
   defaults:
     _title: 'Phenotypes:'
     _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
@@ -53,11 +53,11 @@ trpcultivate_phenotypes.experiment_configuration:
         bundle:
           - research_experiment
 
-trpcultivate_phenotypes.experiment_trait_picker:
-  path: '/bio_data/{tripal_entity}/add/{genus}'
+trpcultivate_phenotypes.experiment_traitselector:
+  path: '/bio_data/{tripal_entity}/phenotypes/select/{genus}'
   defaults:
     _title: 'Add Trait:'
-    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitPickerForm'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitSelectorForm'
     genus: ''
   requirements:
     _permission: 'administer tripal content'
@@ -69,15 +69,6 @@ trpcultivate_phenotypes.experiment_trait_picker:
         type: 'entity:tripal_entity'
         bundle:
           - research_experiment
-
-trpcultivate_phenotypes.experiment_handle_trait:
-  path: '/bio_data/experiment/handle_trait/{action}'
-  defaults:
-    _controller: '\Drupal\trpcultivate_phenotypes\Controller\PhenoExperimentTraitHandler::handleAction'
-    action: 'assign'
-  requirements:
-    _permission: 'administer tripal content'
-    action: 'assign|remove'
 
 # Phenodata Backup Config Entity Routes:
 entity.phenodata_backup.collection:

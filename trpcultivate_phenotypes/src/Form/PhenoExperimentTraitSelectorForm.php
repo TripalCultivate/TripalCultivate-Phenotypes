@@ -3,11 +3,8 @@
 namespace Drupal\trpcultivate_phenotypes\Form;
 
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Render\Renderer;
-use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
@@ -17,14 +14,14 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Class definition of Experiment Add Trait.
  */
-class PhenoExperimentTraitPickerForm extends FormBase {
+class PhenoExperimentTraitSelectorForm extends FormBase {
 
   /**
    * Drupal database connection.
    *
    * @var \Drupal\Core\Database\Connection
    */
-  protected Connection $db_connection;
+  protected Connection $database_connection;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -32,13 +29,6 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
-
-  /**
-   * Entity type manager service.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected EntityTypeManagerInterface $service_EntityTypeManager;
 
   /**
    * Genus-Ontotology service.
@@ -62,20 +52,6 @@ class PhenoExperimentTraitPickerForm extends FormBase {
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
-   * The Drupal Renderer.
-   *
-   * @var \Drupal\Core\Render\Renderer
-   */
-  protected Renderer $service_Renderer;
-
-  /**
-   * Route match service.
-   *
-   * @var \Drupal\Core\Routing\RouteMatchInterface
-   */
-  protected RouteMatchInterface $service_RouteMatch;
-
-  /**
    * The form element name attribute that wraps all fields.
    *
    * @var string
@@ -87,21 +63,15 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    *
    * @var string
    */
-  private const PHENO_COMBO = 'trpcultivate_phenocombo';
+  private const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Database\Connection $db_connection
+   * @param \Drupal\Core\Database\Connection $database_connection
    *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
-   *   Entity Type manager service.
-   * @param \Drupal\Core\Render\Renderer $renderer
-   *   Render service.
-   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
-   *   Route match service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultiavtePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   TripalCultivate Phenotypes Genus-Ontology.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
@@ -110,21 +80,15 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
-    Connection $db_connection,
+    Connection $database_connection,
     ChadoConnection $chado_connection,
-    EntityTypeManagerInterface $entity_type_manager,
-    Renderer $renderer,
-    RouteMatchInterface $route_match,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
   ) {
 
-    $this->db_connection = $db_connection;
+    $this->database_connection = $database_connection;
     $this->chado_connection = $chado_connection;
-    $this->service_EntityTypeManager = $entity_type_manager;
-    $this->service_Renderer = $renderer;
-    $this->service_RouteMatch = $route_match;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
     $this->service_PhenoTraits = $service_PhenoTraits;
@@ -138,9 +102,6 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     return new static(
       $container->get('database'),
       $container->get('tripal_chado.database'),
-      $container->get('entity_type.manager'),
-      $container->get('renderer'),
-      $container->get('current_route_match'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('trpcultivate_phenotypes.traits'),
@@ -151,7 +112,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    * {@inheritDoc}
    */
   public function getFormId() {
-    return 'content_bio_data_research_experiment_trait_picker_form';
+    return 'pheno_experiment_trait_selector_form';
   }
 
   /**
@@ -159,52 +120,35 @@ class PhenoExperimentTraitPickerForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    // Save route slug values for subsequent AJAX requests.
-    $tripal_entity_id = $form_state->get('tripal_entity_id');
+    $tripal_entity = $this->getRouteMatch()->getParameter('tripal_entity');
 
-    if ($tripal_entity_id) {
-      $research_experiment = $this->service_EntityTypeManager
-        ->getStorage('tripal_entity')
-        ->load($tripal_entity_id);
-    }
-    else {
-      $research_experiment = $this->service_RouteMatch
-        ->getParameter('tripal_entity');
-
-      if (!$research_experiment->id()) {
-        // Research experiment entity does not exist.
-        throw new NotFoundHttpException();
-      }
-
-      $form_state->set('tripal_entity_id', $research_experiment->id());
-    }
-
-    $experiment = $research_experiment->get('exp_name')->getValue();
+    $experiment = $tripal_entity->get('exp_name')->getValue();
     if (!$experiment) {
-      // Research experiment entity does not contain exp_name field.
+      // Research experiment entity does not exist.
+      $this->tripal_logger->error('Research experiment Tripal entity does not exist.');
       throw new NotFoundHttpException();
     }
 
-    $project_id = (int) $experiment[0]['record_id'];
-    $form_state->set('project_id', $project_id);
+    ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
-    if (isset($form_state->getTriggeringElement()['#name'])
-      && $form_state->getTriggeringElement()['#name'] == 'genus') {
+    // Update the title to show which reseach experiment is being configured.
+    $form['#title'] = 'Add traits to ' . $experiment_name;
 
+    // Listen for request to set genus or search trait.
+    $trigger_el = $form_state->getTriggeringElement() ?? 0;
+
+    if (isset($trigger_el['#name']) && $trigger_el['#name'] == 'genus') {
       $form_state->set('genus', $form_state->getValue('genus'));
-      $form_state->set('project_id', $form_state->get('project_id'));
     }
 
     $genus = $form_state->get('genus');
-    $experiment_genus = $this->service_PhenoGenusProject
-      ->getGenusOfProject($project_id);
+    $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
 
     if (!$genus) {
-      $genus = $this->service_RouteMatch->getParameter('genus');
-      $genus = (empty($genus)) ? 0 : $genus;
+      $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-      if ($genus == 0 && count($experiment_genus) == 1) {
-        $genus = $experiment_genus[0];
+      if ($genus == 0 && count($exp_phenogenus) == 1) {
+        $genus = $exp_phenogenus[0];
       }
 
       $form_state->set('genus', $genus);
@@ -217,9 +161,12 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         ->getGenusOntologyConfigValues($genus)['trait'];
     }
 
+    // Exclude other messages in the session that AJAX tends to repost.
     $this->messenger()->deleteAll();
+
     $form['reminder'] = [
       '#theme' => 'status_messages',
+      '#prefix' => '<br />',
       '#message_list' => [
         'warning' => [
           'Read trait details carefully to ensure you are selecting the correct trait, as some traits may appear similar or have subtle differences.',
@@ -233,6 +180,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
     // Reference this wrapper class name in AJAX wrapper render property.
     $dialog_wrapper = 'tcp-dialog-wrapper';
 
+    // The main AJAX response wrapper/container.
     $form_dialog_wrapper = self::FORM_WRAPPER;
     $form[$form_dialog_wrapper] = [
       '#type' => 'container',
@@ -241,24 +189,43 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       ],
     ];
 
+    $flex_container = [
+      '#type' => 'container',
+      '#attributes' => [
+        'style' => 'display: flex;',
+      ],
+    ];
+
+    $build['flex_container'] = $flex_container;
+    $build['flex_container']['#children'] = [
+      'title' => [
+        '#type' => 'html_tag',
+        '#tag' => 'div',
+        '#value' => 'Search Trait',
+
+      ],
+      'links' => [
+        '#type' => 'html_tag',
+        '#tag' => 'div',
+        '#value' => '<a href="">Suggest a Trait</a> / <a href="#">Show all Traits</a>',
+        '#attributes' => [
+          'style' => 'margin-left: auto; font-weight: 300;',
+        ],
+      ],
+    ];
+
     $form[$form_dialog_wrapper]['search_fieldset'] = [
       '#type' => 'details',
       '#title' => [
-        '#markup' => '
-          Search Trait
-          <small><a href="#">Suggest a Trait</a> | <a href="#">Show all Traits</a></small>
-        ',
-      ],
-      '#attributes' => [
-        'class' => ['container-inline'],
+        'title' => $build['flex_container'],
       ],
       '#open' => TRUE,
-      '#id' => 'tcp-search-fieldset',
     ];
 
-    $form[$form_dialog_wrapper]['search_fieldset']['genus'] = [
+    $form[$form_dialog_wrapper]['search_fieldset']['flex_container'] = $flex_container;
+    $form[$form_dialog_wrapper]['search_fieldset']['flex_container']['genus'] = [
       '#type' => 'select',
-      '#options' => array_combine($experiment_genus, $experiment_genus),
+      '#options' => array_combine($exp_phenogenus, $exp_phenogenus),
       '#empty_option' => 'Select Genus',
       '#empty_value' => 0,
       '#default_value' => $genus,
@@ -266,8 +233,9 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         'callback' => '::setGenus',
         'event' => 'change',
         'wrapper' => $dialog_wrapper,
-        'throbber' => [
-          'progress' => 'none',
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
         ],
       ],
       '#states' => [
@@ -275,69 +243,78 @@ class PhenoExperimentTraitPickerForm extends FormBase {
           ':input[name="genus"]' => ['!value' => 0],
         ],
       ],
-      '#id' => 'tcp-genus',
     ];
 
-    $form[$form_dialog_wrapper]['search_fieldset']['trait'] = [
+    // Prperty class - trigger-element - is used to identify which trait to add.
+    $form[$form_dialog_wrapper]['search_fieldset']['flex_container']['trait'] = [
       '#type' => 'textfield',
+      '#maxlength' => 150,
       '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
-      '#size' => 48,
       '#autocomplete_route_parameters' => [
         'count' => 10,
         'cv_id' => $genus_config,
       ],
       '#attributes' => [
         'placeholder' => 'Trait name (e.g., Plant height or Days to flower)',
-        'style' => 'margin: 0 0 0 5px; width: 100%',
-        'class' => ['trigger-element'],
+        'style' => 'margin: 0 0 0 10px;',
+        'class' => [
+          'trigger-element',
+        ],
       ],
       '#ajax' => [
-        'callback' => '::matchTrait',
+        'callback' => '::loadGenusTrait',
         'event' => 'change',
         'wrapper' => $dialog_wrapper,
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ],
       ],
       '#states' => [
         'disabled' => [
           ':input[name="genus"]' => ['value' => 0],
         ],
       ],
-      '#id' => 'tcp-trait',
     ];
 
     $form[$form_dialog_wrapper]['a_note'] = [
       '#type' => 'container',
-      '#markup' => '<p>Start typing part of the trait name into the search field to search for specific traits, or click
-       <a href="#">Show All Traits</a> to explore all available traits for the selected genus.</p>',
+      '#children' => [
+        'a_note' => [
+          '#type' => 'html_tag',
+          '#tag' => 'p',
+          '#value' => 'Start typing part of the trait name into the search field to search for specific traits,
+            or click - Show all Traits, to explore all available traits for the selected genus.',
+        ],
+      ],
       '#states' => [
         'invisible' => [
-          ':input[name="genus"]' => ['value' => 0],
+          ':input[name="filter_genus"]' => ['value' => 0],
         ],
       ],
     ];
 
-    // Prepare traits that matched the search.
-    $triggering_element = $form_state->getTriggeringElement() ?? 0;
+    // Prepare tratis that matched the search key.
+    if ($trigger_el && isset($trigger_el['#attributes']['class'])
+      && in_array('trigger-element', $trigger_el['#attributes']['class'])) {
 
-    if ($triggering_element && isset($triggering_element['#attributes']['class'])
-      && in_array('trigger-element', $triggering_element['#attributes']['class'])) {
-
-      if ($triggering_element && $triggering_element['#value'] == 'Add') {
-        $item_key = $triggering_element['#id'];
+      // Listen for operation to add trait combo to experiment.
+      if ($trigger_el['#value'] == 'Add') {
         $values = $form_state->getValues();
+        $item_key = $trigger_el['#id'];
 
-        $label = $values[$item_key . '_label'];
-        $label = (empty($label)) ? $values[$item_key . '_default_label'] : $label;
+        $label = $values[$item_key . '_label'] ?: $values[$item_key . '_default_label'];
 
         // No same labels in an experiment.
-        $label_exists = $this->db_connection->select(self::PHENO_COMBO, 'tc')
+        $label_exists = $this->database_connection->select(self::PHENO_COMBO_TABLE, 'tc')
           ->fields('tc', ['combo_id'])
           ->condition('tc.label', $label, '=')
-          ->condition('tc.project_id', $project_id, '=')
+          ->condition('tc.project_id', $experiment_id, '=')
           ->execute()
           ->fetchField();
 
         if ($label_exists) {
-          $form[$form_dialog_wrapper]['reminder'] = [
+          $form['duplicate_label'] = [
             '#theme' => 'status_messages',
             '#message_list' => [
               'warning' => [
@@ -352,12 +329,12 @@ class PhenoExperimentTraitPickerForm extends FormBase {
 
         [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
 
-        $transaction = $this->db_connection->startTransaction();
+        $transaction = $this->database_connection->startTransaction();
         try {
-          $this->db_connection
-            ->insert(self::PHENO_COMBO)
+          $this->database_connection
+            ->insert(self::PHENO_COMBO_TABLE)
             ->fields([
-              'project_id' => $project_id,
+              'project_id' => $experiment_id,
               'attr_id' => $attr_id,
               'observable_id' => $observable_id,
               'unit_id' => $unit_id,
@@ -376,11 +353,12 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         }
       }
 
-      $query_combo = $this->db_connection->select(self::PHENO_COMBO, 'tc');
-      $query_combo
+      // List genus traits.
+      $query = $this->database_connection->select(self::PHENO_COMBO_TABLE, 'tc');
+      $query
         ->addExpression('CONCAT(tc.attr_id, \':\', tc.observable_id, \':\', tc.unit_id)', 'combo');
-      $exp_combos = $query_combo
-        ->condition('tc.project_id', $form_state->get('project_id'), '=')
+      $exp_traits = $query
+        ->condition('tc.project_id', $experiment_id, '=')
         ->execute()
         ->fetchCol();
 
@@ -390,21 +368,19 @@ class PhenoExperimentTraitPickerForm extends FormBase {
       // the trait autocomplete field.
       $search_key = preg_replace('/\s*\(.*?\)/', '', $trait_name);
 
-      $query_trait = $this->chado_connection
+      $query = $this->chado_connection
         ->select('1:cvterm', 'tc')
         ->fields('tc', ['cvterm_id', 'name', 'definition'])
         ->condition('tc.cv_id', $genus_config, '=');
 
       if (strtolower($trait_name) != 'all') {
-        $query_trait
+        $query
           ->condition('tc.name', trim($search_key) . '%', 'LIKE');
       }
 
-      $trait_query_result = $query_trait
+      $query_result = $query
         ->orderBy('tc.name', 'ASC')
         ->execute();
-
-      $this->service_PhenoTraits->setTraitGenus($genus);
 
       $form[$form_dialog_wrapper]['table'] = [
         '#type' => 'table',
@@ -415,8 +391,11 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         '#allowed_tags' => ['br', 'em', 'div', 'def', 'small', 'span', 'section'],
       ];
 
-      foreach ($trait_query_result as $trait) {
+      $this->service_PhenoTraits->setTraitGenus($genus);
+
+      foreach ($query_result as $trait_index => $trait) {
         $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
+
         if (!$trait_methods) {
           // Skip trait that does not have a method.
           continue;
@@ -427,9 +406,9 @@ class PhenoExperimentTraitPickerForm extends FormBase {
         foreach ($trait_methods as $method) {
           $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
 
-          // Exclude from list, trait-method-unit combo already in experiment.
+          // Exclude from list - trait-method-unit combo already in experiment.
           $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
-          if (in_array($combo_ids, $exp_combos)) {
+          if (in_array($combo_ids, $exp_traits)) {
             continue;
           }
 
@@ -441,60 +420,85 @@ class PhenoExperimentTraitPickerForm extends FormBase {
             'collection_method' => $method->definition,
           ]);
 
+          // The main container/wrapper for each fieldset containing - label,
+          // required, add button attached to each trait-method.
           $item_key = 'combo_' . $trait->cvterm_id . '_' . $method->cvterm_id;
 
-          $build['actions'][$item_key] = [
+          $build['fieldset'][$item_key] = [
             '#type' => 'container',
             '#tree' => FALSE,
             '#attributes' => [
-              'class' => ['container-inline'],
+              'class' => [
+                'container-inline',
+              ],
             ],
           ];
 
-          $build['actions'][$item_key][$item_key . '_label'] = [
+          // Fieldset element: label and default label.
+          $default_label = $trait->name . ' ' . $method->name;
+
+          $build['fieldset'][$item_key][$item_key . '_label'] = [
             '#type' => 'textfield',
             '#name' => $item_key . '_label',
             '#maxlength' => 150,
-            '#size' => 40,
+            '#theme_wrappers' => [],
             '#attributes' => [
+              'placeholder' => 'Use trait with label: ' . $default_label,
               'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
-              'placeholder' => 'Use trait with label: ' . $default_label = $trait->name . ' ' . $method->name,
-              'style' => 'margin: 0 15px 0 0; width: 100%',
             ],
           ];
 
-          $build['actions'][$item_key][$item_key . '_default_label'] = [
+          $build['fieldset'][$item_key][$item_key . '_default_label'] = [
             '#type' => 'hidden',
             '#name' => $item_key . '_default_label',
             '#value' => $default_label,
           ];
 
-          $build['actions'][$item_key][$item_key . '_required'] = [
+          // Fieldset element: required trait.
+          $build['fieldset'][$item_key][$item_key . '_required'] = [
             '#type' => 'checkbox',
             '#name' => $item_key . '_required',
             '#return_value' => 1,
             '#default_value' => 0,
-            '#suffix' => '<i class="fa-solid fa-star" title="Required Trait"></i>',
           ];
 
-          $build['actions'][$item_key][$item_key . '_combo'] = [
+          $build['fieldset'][$item_key]['star'] = [
+            '#type' => 'html_tag',
+            '#tag' => 'i',
+            '#attributes' => [
+              'class' => [
+                'fa-solid',
+                'fa-star',
+              ],
+              'title' => 'Make this trait required',
+            ],
+          ];
+
+          // Fieldset element: trait-method-unit combo reference ids and add.
+          $build['fieldset'][$item_key][$item_key . '_combo'] = [
             '#type' => 'hidden',
             '#name' => $item_key . '_combo',
             '#value' => $combo_ids,
           ];
 
-          $build['actions'][$item_key][$item_key . '_add'] = [
+          $build['fieldset'][$item_key][$item_key . '_add'] = [
             '#type' => 'button',
             '#name' => $item_key . '_add',
             '#value' => 'Add',
             '#id' => $item_key,
             '#attributes' => [
-              'class' => ['trigger-element'],
+              'class' => [
+                'trigger-element',
+              ],
             ],
             '#ajax' => [
-              'callback' => '::addTrait',
+              'callback' => '::addTraitCombo',
               'event' => 'click',
               'wrapper' => $dialog_wrapper,
+              'progress' => [
+                'type' => 'fullscreen',
+                'message' => '',
+              ],
             ],
           ];
         }
@@ -513,11 +517,10 @@ class PhenoExperimentTraitPickerForm extends FormBase {
             'method_unit_combo' => $methods,
             'trait_id' => (int) $trait->cvterm_id,
           ],
-          'content' => $build['actions'],
+          'content' => $build['fieldset'],
         ];
 
-        // Form elements in the component and not in the page.
-        unset($build['actions']);
+        $build = [];
       }
     }
 
@@ -541,7 +544,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
   /**
    * Function callback - list trait combo that matched.
    */
-  public function matchTrait(array &$form, FormStateInterface $form_state) {
+  public function loadGenusTrait(array &$form, FormStateInterface $form_state) {
 
     return $form[self::FORM_WRAPPER];
   }
@@ -549,7 +552,7 @@ class PhenoExperimentTraitPickerForm extends FormBase {
   /**
    * Function callback - add trait combo.
    */
-  public function addTrait(array &$form, FormStateInterface $form_state) {
+  public function addTraitCombo(array &$form, FormStateInterface $form_state) {
 
     return $form[self::FORM_WRAPPER];
   }

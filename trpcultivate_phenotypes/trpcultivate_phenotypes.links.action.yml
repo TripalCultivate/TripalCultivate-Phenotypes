@@ -4,14 +4,13 @@ entity.phenodata_backup.add_form:
   appears_on:
     - entity.phenodata_backup.collection
 
-trpcultivate_phenotypes.add_trait:
-  route_name: trpcultivate_phenotypes.experiment_trait_picker
+trpcultivate_phenotypes.trait_selector:
+  route_name: trpcultivate_phenotypes.experiment_traitselector
   title: 'Add Trait'
   appears_on:
     - trpcultivate_phenotypes.experiment_configuration
   options:
     attributes:
-      id: 'tcp-trait-picker-window'
       class:
         - 'use-ajax'
       data-dialog-type: 'modal'
