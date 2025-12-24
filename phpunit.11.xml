@@ -52,10 +52,6 @@
       <directory>trpcultivate_phenoshare/tests</directory>
     </testsuite>
   </testsuites>
-  <listeners>
-    <listener class="\Drupal\Tests\Listeners\DrupalListener">
-    </listener>
-  </listeners>
   <!-- Settings for coverage reports. -->
   <source
     ignoreSuppressionOfDeprecations="true"
