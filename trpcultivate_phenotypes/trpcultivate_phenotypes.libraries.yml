@@ -33,15 +33,3 @@ trpcultivate-phenotypes-style-stage-accordion:
   css:
     theme:
       css/trpcultivate-phenotypes-style-stage-accordion.css: {}
-
-# Experiment configuration library.
-trpcultivate-phenotypes-experiment-configuration:
- version: v1.x
- css:
-   theme:
-     css/trpcultivate-phenotypes-style-experiment-configuration.css: {}
- js:
-   js/trpcultivate-phenotypes-script-experiment-configuration.js: {}
- dependencies:
-   - core/jquery
-   - core/once

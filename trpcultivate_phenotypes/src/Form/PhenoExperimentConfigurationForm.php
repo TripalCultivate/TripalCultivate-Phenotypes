@@ -282,8 +282,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
           'fa-solid',
           'fa-circle-question',
         ],
-        'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination.
-          This will be used in the data collection file and must be unique within this experiment',
+        'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment',
       ],
     ];
 
@@ -554,6 +553,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         break;
     }
+
+    $this->messenger()
+      ->addStatus('The operation on trait combo to ' . $action . ' completed successfully.');
   }
 
   /**

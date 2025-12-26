@@ -5,6 +5,7 @@ namespace Drupal\trpcultivate_phenotypes\Form;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
@@ -182,47 +183,84 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     // The main AJAX response wrapper/container.
     $form_dialog_wrapper = self::FORM_WRAPPER;
-    $form[$form_dialog_wrapper] = [
+
+    $form_container = [
       '#type' => 'container',
-      '#attributes' => [
-        'id' => $dialog_wrapper,
-      ],
     ];
 
-    $flex_container = [
-      '#type' => 'container',
-      '#attributes' => [
-        'style' => 'display: flex;',
-      ],
-    ];
-
-    $build['flex_container'] = $flex_container;
-    $build['flex_container']['#children'] = [
-      'title' => [
-        '#type' => 'html_tag',
-        '#tag' => 'div',
-        '#value' => 'Search Trait',
-
-      ],
-      'links' => [
-        '#type' => 'html_tag',
-        '#tag' => 'div',
-        '#value' => '<a href="">Suggest a Trait</a> / <a href="#">Show all Traits</a>',
+    $form[$form_dialog_wrapper] = array_merge(
+      $form_container,
+      [
         '#attributes' => [
-          'style' => 'margin-left: auto; font-weight: 300;',
+          'id' => $dialog_wrapper,
+          'style' => 'position: relative;',
+        ],
+      ],
+    );
+
+    $form[$form_dialog_wrapper]['wrap_buttons'] = array_merge(
+      $form_container,
+      [
+        '#attributes' => [
+          'style' => 'position: absolute; right: 10px; z-index: 1000;',
+        ],
+      ],
+    );
+
+    $form[$form_dialog_wrapper]['wrap_buttons']['suggest'] = [
+      '#type' => 'link',
+      '#title' => 'Suggest a Trait',
+      '#url' => Url::fromUri(
+        'internal:/admin/tripal/loaders/trpcultivate-phenotypes-traits-importer',
+      ),
+      '#attributes' => [
+        'class' => [
+          'button',
+          'button--small',
+        ],
+        'target' => '_blank',
+      ],
+    ];
+
+    $form[$form_dialog_wrapper]['wrap_buttons']['show_all'] = [
+      '#type' => 'button',
+      '#value' => 'Show all Trait',
+      '#attributes' => [
+        'class' => [
+          'trigger-element',
+          'button--small',
+        ],
+      ],
+      '#ajax' => [
+        'callback' => '::loadGenusTrait',
+        'event' => 'click',
+        'wrapper' => $dialog_wrapper,
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ],
+      ],
+      '#states' => [
+        'disabled' => [
+          ':input[name="genus"]' => ['value' => 0],
         ],
       ],
     ];
 
     $form[$form_dialog_wrapper]['search_fieldset'] = [
       '#type' => 'details',
-      '#title' => [
-        'title' => $build['flex_container'],
-      ],
+      '#title' => 'Search Trait',
       '#open' => TRUE,
     ];
 
-    $form[$form_dialog_wrapper]['search_fieldset']['flex_container'] = $flex_container;
+    $form[$form_dialog_wrapper]['search_fieldset']['flex_container'] = array_merge(
+      $form_container,
+      [
+        '#attributes' => [
+          'style' => 'display: flex',
+        ],
+      ],
+    );
     $form[$form_dialog_wrapper]['search_fieldset']['flex_container']['genus'] = [
       '#type' => 'select',
       '#options' => array_combine($exp_phenogenus, $exp_phenogenus),
@@ -373,7 +411,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         ->fields('tc', ['cvterm_id', 'name', 'definition'])
         ->condition('tc.cv_id', $genus_config, '=');
 
-      if (strtolower($trait_name) != 'all') {
+      if ($trigger_el['#value'] != 'Show all Trait') {
         $query
           ->condition('tc.name', trim($search_key) . '%', 'LIKE');
       }
