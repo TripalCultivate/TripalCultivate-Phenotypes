@@ -2,6 +2,9 @@
 
 namespace Drupal\trpcultivate_phenotypes\Form;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CloseDialogCommand;
+use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -135,6 +138,11 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     // Update the title to show which reseach experiment is being configured.
     $form['#title'] = 'Add traits to ' . $experiment_name;
 
+    $form['tripal_entity_id'] = [
+      '#type' => 'hidden',
+      '#value' => $tripal_entity->id(),
+    ];
+
     // Listen for request to set genus or search trait.
     $trigger_el = $form_state->getTriggeringElement() ?? 0;
 
@@ -214,12 +222,12 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'internal:/admin/tripal/loaders/trpcultivate-phenotypes-traits-importer',
       ),
       '#attributes' => [
-        'class' => [
-          'button',
-          'button--small',
-        ],
         'target' => '_blank',
       ],
+    ];
+
+    $form[$form_dialog_wrapper]['wrap_buttons']['slash'] = [
+      '#markup' => '&nbsp;&nbsp; / &nbsp;',
     ];
 
     $form[$form_dialog_wrapper]['wrap_buttons']['show_all'] = [
@@ -243,6 +251,24 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       '#states' => [
         'disabled' => [
           ':input[name="genus"]' => ['value' => 0],
+        ],
+      ],
+    ];
+
+    $form[$form_dialog_wrapper]['wrap_buttons']['close'] = [
+      '#type' => 'button',
+      '#value' => 'Close',
+      '#attributes' => [
+        'class' => [
+          'button--small',
+        ],
+      ],
+      '#ajax' => [
+        'callback' => '::closeTraitSelector',
+        'event' => 'click',
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
         ],
       ],
     ];
@@ -569,6 +595,31 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+  }
+
+  /**
+   * AJAX callback: close trait selector.
+   */
+  public function closeTraitSelector(array &$form, FormStateInterface $form_state) {
+
+    $params = [
+      'tripal_entity' => $form_state->getValue('tripal_entity_id'),
+      'genus' => $form_state->getValue('genus'),
+    ];
+
+    if (!$params['genus']) {
+      unset($params['genus']);
+    }
+
+    $response = new AjaxResponse();
+    $response
+      ->addCommand(new CloseDialogCommand())
+      ->addCommand(new RedirectCommand(
+        Url::fromRoute('trpcultivate_phenotypes.experiment_configuration', $params, ['query' => []])
+          ->toString()
+      ));
+
+    return $response;
   }
 
   /**

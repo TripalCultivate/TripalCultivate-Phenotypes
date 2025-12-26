@@ -2,6 +2,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Form;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Core\Database\Connection;
@@ -215,7 +216,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
           'use-ajax',
         ],
         'data-dialog-type' => 'modal',
-        'data-dialog-options' => '{"width": 850}',
+        'data-dialog-options' => Json::encode([
+          'width' => 850,
+          'dialogClass' => 'tcp-no-close',
+        ]),
       ],
     ];
 
