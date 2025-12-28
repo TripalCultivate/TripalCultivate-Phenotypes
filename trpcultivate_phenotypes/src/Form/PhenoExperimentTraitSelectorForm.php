@@ -378,7 +378,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           ->fetchField();
 
         if ($label_exists) {
-          $form['duplicate_label'] = [
+          $form[$form_dialog_wrapper]['duplicate_label'] = [
             '#theme' => 'status_messages',
             '#message_list' => [
               'warning' => [
@@ -390,30 +390,31 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
             ],
           ];
         }
+        else {
+          [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
 
-        [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
-
-        $transaction = $this->database_connection->startTransaction();
-        try {
-          $this->database_connection
-            ->insert(self::PHENO_COMBO_TABLE)
-            ->fields([
-              'project_id' => $experiment_id,
-              'attr_id' => $attr_id,
-              'observable_id' => $observable_id,
-              'unit_id' => $unit_id,
-              'label' => $label,
-              'is_archived' => 0,
-              'is_required' => $values[$item_key . '_required'],
-              'was_shared' => 0,
-              'was_collected' => 0,
-              'uid' => $this->currentUser()->id(),
-              'timestamp' => time(),
-            ])
-            ->execute();
-        }
-        catch (Exception $e) {
-          $transaction->rollback();
+          $transaction = $this->database_connection->startTransaction();
+          try {
+            $this->database_connection
+              ->insert(self::PHENO_COMBO_TABLE)
+              ->fields([
+                'project_id' => $experiment_id,
+                'attr_id' => $attr_id,
+                'observable_id' => $observable_id,
+                'unit_id' => $unit_id,
+                'label' => $label,
+                'is_archived' => 0,
+                'is_required' => $values[$item_key . '_required'],
+                'was_shared' => 0,
+                'was_collected' => 0,
+                'uid' => $this->currentUser()->id(),
+                'timestamp' => time(),
+              ])
+              ->execute();
+          }
+          catch (Exception $e) {
+            $transaction->rollback();
+          }
         }
       }
 
