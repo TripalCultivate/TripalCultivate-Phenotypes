@@ -321,6 +321,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       '#attributes' => [
         'placeholder' => 'Trait name (e.g., Plant height or Days to flower)',
         'style' => 'margin: 0 0 0 10px;',
+        'onclick' => 'this.select()',
         'class' => [
           'trigger-element',
         ],
@@ -353,7 +354,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
       '#states' => [
         'invisible' => [
-          ':input[name="filter_genus"]' => ['value' => 0],
+          ':input[name="genus"]' => ['value' => 0],
         ],
       ],
     ];
@@ -361,6 +362,14 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     // Prepare tratis that matched the search key.
     if ($trigger_el && isset($trigger_el['#attributes']['class'])
       && in_array('trigger-element', $trigger_el['#attributes']['class'])) {
+
+      unset($form[$form_dialog_wrapper]['a_note']);
+
+      $trait_name = $form_state->getValue('trait');
+
+      if (empty($trait_name) && $trigger_el['#value'] != 'Show all Trait') {
+        return $form;
+      }
 
       // Listen for operation to add trait combo to experiment.
       if ($trigger_el['#value'] == 'Add') {
@@ -426,8 +435,6 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         ->condition('tc.project_id', $experiment_id, '=')
         ->execute()
         ->fetchCol();
-
-      $trait_name = $form_state->getValue('trait');
 
       // Exclude trait term properties construct (in parenthesis) returned by
       // the trait autocomplete field.
