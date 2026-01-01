@@ -238,6 +238,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           'trigger-element',
           'button--small',
         ],
+        'title' => 'Show all available traits for the selected genus',
       ],
       '#ajax' => [
         'callback' => '::loadGenusTrait',
@@ -262,6 +263,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'class' => [
           'button--small',
         ],
+        'title' => 'Close Trait Selector and update trait summary listing table',
       ],
       '#ajax' => [
         'callback' => '::closeTraitSelector',
@@ -349,7 +351,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           '#type' => 'html_tag',
           '#tag' => 'p',
           '#value' => 'Start typing part of the trait name into the search field to search for specific traits,
-            or click - Show all Traits, to explore all available traits for the selected genus.',
+            or click - Show all Trait button, to explore all available traits for the selected genus.',
         ],
       ],
       '#states' => [
