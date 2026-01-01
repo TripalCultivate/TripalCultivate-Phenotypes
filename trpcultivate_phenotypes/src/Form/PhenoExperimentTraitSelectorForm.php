@@ -210,7 +210,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       $form_container,
       [
         '#attributes' => [
-          'style' => 'position: absolute; right: 10px; z-index: 1000;',
+          'style' => 'position: absolute; right: 15px; z-index: 1000;',
         ],
       ],
     );
@@ -320,7 +320,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
       '#attributes' => [
         'placeholder' => 'Trait name (e.g., Plant height or Days to flower)',
-        'style' => 'margin: 0 0 0 10px;',
+        'style' => 'margin: 0 0 0 15px;',
         'onclick' => 'this.select()',
         'class' => [
           'trigger-element',
