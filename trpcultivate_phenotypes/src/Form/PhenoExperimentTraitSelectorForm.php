@@ -367,7 +367,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
       $trait_name = $form_state->getValue('trait');
 
-      if (empty($trait_name) && $trigger_el['#value'] != 'Show all Trait') {
+      if (empty($trait_name) && !in_array($trigger_el['#value'], ['Add', 'Show all Trait'])) {
         return $form;
       }
 
