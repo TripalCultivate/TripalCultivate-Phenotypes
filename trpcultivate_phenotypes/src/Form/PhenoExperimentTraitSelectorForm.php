@@ -257,7 +257,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     $form[$form_dialog_wrapper]['wrap_buttons']['close'] = [
       '#type' => 'button',
-      '#value' => 'Close',
+      '#value' => 'Close & Update Traits',
       '#attributes' => [
         'class' => [
           'button--small',
