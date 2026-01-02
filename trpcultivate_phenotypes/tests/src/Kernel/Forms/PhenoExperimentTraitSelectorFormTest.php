@@ -463,28 +463,47 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $form_state = new FormState();
     $form = [];
 
-    $form_state->setValue('trait', 'Days');
+    foreach ($this->trait_set[$genus] as $trait) {
+      $trait_name = $trait['Trait Name'];
+      $form_state->setValue('trait', $search_key = substr($trait_name, 0, 5));
 
-    $form_state->setTriggeringElement([
-      '#name' => 'trait',
-      '#attributes' => [
-        'class' => [
-          'trigger-element',
+      $form_state->setTriggeringElement([
+        '#name' => 'trait',
+        '#value' => $search_key,
+        '#attributes' => [
+          'class' => [
+            'trigger-element',
+          ],
         ],
-      ],
-    ]);
+      ]);
 
-    $select_form = PhenoExperimentTraitSelectorForm::create($this->container)
-      ->buildForm($form, $form_state);
+      $select_form = PhenoExperimentTraitSelectorForm::create($this->container)
+        ->buildForm($form, $form_state);
 
-    $search_result = $select_form[self::FORM_WRAPPER]['table'];
+      $this->assertEquals(
+        $select_form[self::FORM_WRAPPER]['table'][0]['combo']['#props']['name'],
+        $trait_name,
+        'The trait name in the search result does not match expected trait name.',
+      );
 
-    // Search key Days will return Days to Flower.
-    $this->assertEquals(
-      $search_result[0]['combo']['#props']['name'],
-      'Days to Flower',
-      'The trait search result does not match expected search result.'
-    );
+      $trait_group = array_filter($this->trait_set[$genus], function ($t) use ($trait_name) {
+        return $t['Trait Name'] == $trait_name;
+      });
+
+      $combo_items = $select_form[self::FORM_WRAPPER]['table'][0]['combo']['#props']['method_unit_combo'];
+
+      $this->assertEquals(
+        count($combo_items),
+        count($trait_group),
+        'The trait method count of the search result does not match expected method count of the trait.',
+      );
+
+      $this->assertEquals(
+        array_column($combo_items, 'method_shortname'),
+        array_column($trait_group, 'Method Short Name'),
+        'The trait method combo items of the search result does not match expected method combo items.'
+      );
+    }
   }
 
 }
