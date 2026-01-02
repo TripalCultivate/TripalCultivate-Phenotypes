@@ -494,7 +494,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
       ->condition('tc.combo_id', $combo_id, '=')
       ->condition('tc.project_id', $project_id, '=')
-      ->condition('tc.uid', $this->currentUser()->id(), '=')
       ->execute()
       ->fetchObject();
 
