@@ -3,15 +3,12 @@
 	<def>
 		{{ name }}
 
-    {% set global_attributes = {
+    {% if status %}
+		  {% set status_attributes = {
 				'required': {
 					'class': 'fa-star',
 					'title': 'Required: this measurement is required to answer the questions in this experiment and must be included when uploading phenotypic data for this experiment.'
-				}
-		} %}
-
-    {% if status %}
-		  {% set status_attributes = {
+				},
 				'archived': {
 					'class': 'fa-box-archive',
 					'title': 'Archived: this describes measurements previously collected for this experiment but which are no longer recommended or have been updated.'
@@ -25,8 +22,6 @@
 					'title': 'Collected: data has been imported using the "Tripal Cultivate: Collected Phenotypic Data" importer.'
 				}
 			} %}
-
-			{% set status_attributes = status_attributes|merge(global_attributes) %}
 
       {% for status_item, status_value in status %}
         {% if status_value == 1 %}
@@ -53,6 +48,7 @@
 
 					{% if multiselect_method %}
 						<br />
+
 					  {{ content['combo_' ~ trait_id ~ '_' ~ method['method_id']] }}
 					{% endif %}
 				</section>

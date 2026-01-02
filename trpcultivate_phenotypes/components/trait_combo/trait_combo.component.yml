@@ -30,4 +30,4 @@ props:
     trait_id:
       type: integer
       title: Trait id number.
-      description: The trait id number (Trait).
+      description: The trait id number (Trait) used to reference associated field element keyed with the trait id .

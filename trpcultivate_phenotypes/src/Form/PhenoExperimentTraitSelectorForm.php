@@ -236,6 +236,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ),
       '#attributes' => [
         'target' => '_blank',
+        'title' => 'Could not find a trait? Launch Trait Importer in a new window.',
       ],
     ];
 
@@ -553,7 +554,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
                 'fa-solid',
                 'fa-star',
               ],
-              'title' => 'Make this trait required',
+              'title' => 'Make this trait Required: this measurement is required to answer the questions in this experiment and must be included when uploading phenotypic data for this experiment.',
             ],
           ];
 
