@@ -68,7 +68,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *
    * @var string
    */
-  private const FORM_WRAPPER = 'dialog_wrapper';
+  private const FORM_WRAPPER = 'form_wrapper';
 
   /**
    * The table name.
@@ -200,7 +200,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     ];
 
     // Reference this wrapper class name in AJAX wrapper render property.
-    $dialog_wrapper = 'tcp-dialog-wrapper';
+    $dialog_wrapper = 'tcp-form-wrapper';
 
     // The main AJAX response wrapper/container.
     $form_dialog_wrapper = self::FORM_WRAPPER;
@@ -219,7 +219,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     );
 
-    $form[$form_dialog_wrapper]['wrap_buttons'] = array_merge(
+    $form[$form_dialog_wrapper]['search_toolbar'] = array_merge(
       $form_container,
       [
         '#attributes' => [
@@ -228,7 +228,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     );
 
-    $form[$form_dialog_wrapper]['wrap_buttons']['suggest'] = [
+    $form[$form_dialog_wrapper]['search_toolbar']['suggest'] = [
       '#type' => 'link',
       '#title' => 'Suggest a Trait',
       '#url' => Url::fromUri(
@@ -240,11 +240,11 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     ];
 
-    $form[$form_dialog_wrapper]['wrap_buttons']['slash'] = [
+    $form[$form_dialog_wrapper]['search_toolbar']['slash'] = [
       '#markup' => '&nbsp;&nbsp; / &nbsp;',
     ];
 
-    $form[$form_dialog_wrapper]['wrap_buttons']['show_all'] = [
+    $form[$form_dialog_wrapper]['search_toolbar']['show_all'] = [
       '#type' => 'button',
       '#value' => 'Show all Traits',
       '#attributes' => [
@@ -270,7 +270,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     ];
 
-    $form[$form_dialog_wrapper]['wrap_buttons']['close'] = [
+    $form[$form_dialog_wrapper]['search_toolbar']['close'] = [
       '#type' => 'button',
       '#value' => 'Close & Update Traits',
       '#attributes' => [
@@ -303,6 +303,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         ],
       ],
     );
+
     $form[$form_dialog_wrapper]['search_fieldset']['flex_container']['genus'] = [
       '#type' => 'select',
       '#options' => array_combine($exp_phenogenus, $exp_phenogenus),
@@ -343,7 +344,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         ],
       ],
       '#ajax' => [
-        'callback' => '::loadGenusTrait',
+        'callback' => '::loadGenusTraits',
         'event' => 'autocompleteclose',
         'wrapper' => $dialog_wrapper,
         'progress' => [
@@ -358,14 +359,13 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     ];
 
-    $form[$form_dialog_wrapper]['a_note'] = [
+    $form[$form_dialog_wrapper]['search_tooltips'] = [
       '#type' => 'container',
       '#children' => [
-        'a_note' => [
+        'a_tip' => [
           '#type' => 'html_tag',
           '#tag' => 'p',
-          '#value' => 'Start typing part of the trait name into the search field to search for specific traits,
-            or click - Show all Traits button, to explore all available traits for the selected genus.',
+          '#value' => 'Start typing part of the trait name into the search field to search for specific traits, or click - Show all Traits button, to explore all available traits for the selected genus.',
         ],
       ],
       '#states' => [
@@ -379,7 +379,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     if ($trigger_el && isset($trigger_el['#attributes']['class'])
       && in_array('trigger-element', $trigger_el['#attributes']['class'])) {
 
-      unset($form[$form_dialog_wrapper]['a_note']);
+      unset($form[$form_dialog_wrapper]['search_tooltips']);
 
       $trait_name = $form_state->getValue('trait');
 
@@ -653,7 +653,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   /**
    * Function callback - list trait combo that matched.
    */
-  public function loadGenusTrait(array &$form, FormStateInterface $form_state) {
+  public function loadGenusTraits(array &$form, FormStateInterface $form_state) {
 
     return $form[self::FORM_WRAPPER];
   }
