@@ -9,6 +9,7 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
@@ -33,6 +34,13 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
+
+  /**
+   * Tripal logger service.
+   *
+   * @var \Drupal\tripal\Services\TripalLogger
+   */
+  protected $tripal_logger;
 
   /**
    * Genus-Ontotology service.
@@ -76,6 +84,8 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
+   * @param \Drupal\tripal\Services\TripalLogger $tripal_logger
+   *   Tripal logger service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultiavtePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   TripalCultivate Phenotypes Genus-Ontology.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
@@ -86,6 +96,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   public function __construct(
     Connection $database_connection,
     ChadoConnection $chado_connection,
+    TripalLogger $tripal_logger,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
@@ -93,6 +104,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     $this->database_connection = $database_connection;
     $this->chado_connection = $chado_connection;
+    $this->tripal_logger = $tripal_logger;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
     $this->service_PhenoTraits = $service_PhenoTraits;
@@ -106,6 +118,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     return new static(
       $container->get('database'),
       $container->get('tripal_chado.database'),
+      $container->get('tripal.logger'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('trpcultivate_phenotypes.traits'),
@@ -232,7 +245,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     $form[$form_dialog_wrapper]['wrap_buttons']['show_all'] = [
       '#type' => 'button',
-      '#value' => 'Show all Trait',
+      '#value' => 'Show all Traits',
       '#attributes' => [
         'class' => [
           'trigger-element',
@@ -330,7 +343,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
       '#ajax' => [
         'callback' => '::loadGenusTrait',
-        'event' => 'change',
+        'event' => 'autocompleteclose',
         'wrapper' => $dialog_wrapper,
         'progress' => [
           'type' => 'fullscreen',
@@ -351,7 +364,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           '#type' => 'html_tag',
           '#tag' => 'p',
           '#value' => 'Start typing part of the trait name into the search field to search for specific traits,
-            or click - Show all Trait button, to explore all available traits for the selected genus.',
+            or click - Show all Traits button, to explore all available traits for the selected genus.',
         ],
       ],
       '#states' => [
@@ -368,10 +381,6 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       unset($form[$form_dialog_wrapper]['a_note']);
 
       $trait_name = $form_state->getValue('trait');
-
-      if (empty($trait_name) && !in_array($trigger_el['#value'], ['Add', 'Show all Trait'])) {
-        return $form;
-      }
 
       // Listen for operation to add trait combo to experiment.
       if ($trigger_el['#value'] == 'Add') {
