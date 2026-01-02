@@ -207,28 +207,10 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
     $trait_service->setTraitGenus($genus);
 
-    $db_service = $this->container->get('database');
-    $insert_combo = $db_service->insert('trpcultivate_phenocombo')
-      ->fields([
-        'project_id',
-        'attr_id',
-        'observable_id',
-        'unit_id',
-        'label',
-        'is_archived',
-        'is_required',
-        'was_collected',
-        'was_shared',
-        'uid',
-        'timestamp',
-      ]);
-
     // Only Lens genus gets a set of traits.
     foreach ($this->trait_set[$genus] as $combo) {
       $trait_service->insertTrait($combo);
     }
-
-    $insert_combo->execute();
   }
 
   /**
@@ -502,6 +484,97 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         array_column($combo_items, 'method_shortname'),
         array_column($trait_group, 'Method Short Name'),
         'The trait method combo items of the search result does not match expected method combo items.'
+      );
+    }
+  }
+
+  /**
+   * Test addTraitCombo().
+   */
+  public function testAddTraitCombo() {
+
+    $route = $this->container->get('router.route_provider')
+      ->getRouteByName(self::ROUTE_NAME);
+
+    $request = new Request();
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
+    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $request->attributes->set('genus', $genus = array_keys($this->trait_set)[0]);
+    $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
+
+    $database = $this->container->get('database');
+    $form_state = new FormState();
+    $form = [];
+
+    $experiment_id = $this->research_experiment_entity->get('exp_name')
+      ->getValue()[0]['record_id'];
+
+    foreach ($this->trait_set[$genus] as $trait) {
+      $trait_name = $trait['Trait Name'];
+      $form_state->setValue('trait', $search_key = substr($trait_name, 0, 5));
+
+      $form_state->setTriggeringElement([
+        '#name' => 'trait',
+        '#value' => $search_key,
+        '#attributes' => [
+          'class' => [
+            'trigger-element',
+          ],
+        ],
+      ]);
+
+      $select_form = PhenoExperimentTraitSelectorForm::create($this->container)
+        ->buildForm($form, $form_state);
+
+      $traits_table = $select_form[self::FORM_WRAPPER]['table'];
+      $combo_key = array_keys($traits_table[0]['combo']['content'])[0];
+      $combo = $traits_table[0]['combo']['content'][$combo_key][$combo_key . '_combo']['#value'];
+
+      $form_state->setValue($combo_key . '_label', $label = $this->randomString(10));
+      $form_state->setValue($combo_key . '_required', $is_required = mt_rand(0, 1));
+      $form_state->setValue($combo_key . '_combo', $combo);
+
+      $form_state->setTriggeringElement([
+        '#name' => 'Add',
+        '#value' => 'Add',
+        '#id' => $combo_key,
+        '#attributes' => [
+          'class' => [
+            'trigger-element',
+          ],
+        ],
+      ]);
+
+      PhenoExperimentTraitSelectorForm::create($this->container)
+        ->buildForm($form, $form_state);
+
+      [$attr_id, $observable_id, $unit_id] = explode(':', $combo);
+
+      $combo = $database->select('trpcultivate_phenocombo', 'tc')
+        ->fields('tc', ['label', 'is_required'])
+        ->condition('project_id', $experiment_id, '=')
+        ->condition('attr_id', $attr_id, '=')
+        ->condition('observable_id', $observable_id, '=')
+        ->condition('unit_id', $unit_id, '=')
+        ->execute()
+        ->fetchAssoc();
+
+      $this->assertNotNull(
+        $combo,
+        'The insert trait combo failed to add trait to experiment.'
+      );
+
+      $this->assertEquals(
+        $combo['label'],
+        $label,
+        'The inserted trait combo label does not match the label entered.'
+      );
+
+      $this->assertEquals(
+        $combo['is_required'],
+        $is_required,
+        'The inserted trait combo is_required status does not match the required status entered.'
       );
     }
   }
