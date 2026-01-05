@@ -5,10 +5,13 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Forms;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\Url;
 use Drupal\Tests\tripal\Traits\TripalTestTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Entity\TripalEntity;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitSelectorForm;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,6 +27,7 @@ use Symfony\Component\HttpFoundation\Request;
 class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
+  use UserCreationTrait;
   use TripalTestTrait;
 
   /**
@@ -56,11 +60,11 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Research experiment entity.
+   * Research experiment entities.
    *
-   * @var \Drupal\tripal\Entity\TripalEntity
+   * @var array
    */
-  private TripalEntity $research_experiment_entity;
+  private array $exp_entities = [];
 
   /**
    * Test genus with a set of test traits.
@@ -107,6 +111,11 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     ],
     'Triticum' => [],
   ];
+
+  /**
+   *
+   */
+  private string $log_message = '';
 
   /**
    * Trait selector route machine name.
@@ -195,7 +204,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $entity->save();
 
     // Set this class property to reference the experiment entity created.
-    $this->research_experiment_entity = $entity;
+    $this->exp_entities[1] = $entity;
 
     // Install trait combos.
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
@@ -218,7 +227,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
     $this->assertEquals(
@@ -240,7 +249,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
     $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -372,7 +381,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
     // No particular genus provided - the genus field is open for selection.
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -419,7 +428,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
     $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -520,7 +529,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->research_experiment_entity);
+    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
     $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -528,7 +537,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $form_state = new FormState();
     $form = [];
 
-    $experiment_id = $this->research_experiment_entity->get('exp_name')
+    $experiment_id = $this->exp_entities[1]->get('exp_name')
       ->getValue()[0]['record_id'];
 
     foreach ($this->trait_set[$genus] as $trait) {
@@ -624,6 +633,212 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         'The add trait functionality is expected to show warning message if a label is reused in the same experiment.',
       );
     }
+  }
+
+  /**
+   * Provide user with various access permission to test page access.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array of values that describes the test user account setup. The
+   *     following keys are used.
+   *     - 'uid': the Drupal user id number.
+   *     - 'name': user account name.
+   *     - 'permissions': an array of permission requirements.
+   *     - 'is_admin': indicates if the account is administrator account.
+   *   - An array of expected values, with the following keys:
+   *     - 'access_code': access status code returned when accessing a route.
+   */
+  public static function provideTestUser() {
+
+    return [
+      // #0: Anonymous user.
+      [
+        'anonymous user',
+        [
+          'uid' => 0,
+          'name' => 'Anonymous',
+          'permissions' => [],
+          'is_admin' => FALSE,
+        ],
+        [
+          'access_code' => 403,
+        ],
+      ],
+
+      // #1: Drupal administrator.
+      [
+        'Drupal admin',
+        [
+          'uid' => 1,
+          'name' => 'Administrator',
+          'permissions' => [],
+          'is_admin' => TRUE,
+        ],
+        [
+          'access_code' => 200,
+        ],
+      ],
+
+      // #2: Authenticated user.
+      [
+        'authenticated user',
+        [
+          'uid' => 2,
+          'name' => 'Authenticated User',
+          'permissions' => ['access content'],
+          'is_admin' => FALSE,
+        ],
+        [
+          'access_code' => 403,
+        ],
+      ],
+
+      // #3: Tripal content administrator.
+      [
+        'Tripal content administrator',
+        [
+          'uid' => 3,
+          'name' => 'Tripal Content Administrator',
+          'permissions' => ['administer tripal content'],
+          'is_admin' => FALSE,
+        ],
+        [
+          'access_code' => 200,
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test access permission requirements.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $user
+   *   An array of values that describes the test user account setup. The
+   *   following keys are used.
+   *     - 'uid': the Drupal user id number.
+   *     - 'name': user account name.
+   *     - 'permissions': an array of permission requirements.
+   *     - 'is_admin': indicates if the account is administrator account.
+   * @param array $expected
+   *   An array of expected values, with the following keys:
+   *     - 'access_code': access status code returned when accessing a route.
+   *
+   * @dataProvider provideTestUser
+   */
+  #[DataProvider('provideTestUser')]
+  public function testPageAccess(string $scenario, array $user, array $expected) {
+
+    user_logout();
+
+    $new_user = $this->createUser(
+      $user['permissions'],
+      $user['name'],
+      $user['is_admin'],
+      ['uid' => $user['uid']]
+    );
+
+    if (!$user['is_admin']) {
+      // Ensure non-administrator account was not assigned 1 as user id.
+      $this->assertNotEquals($new_user->id(), 1, 'Non-admin test user must not have the magic user id of 1.');
+    }
+
+    $this->setCurrentUser($new_user);
+
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $this->exp_entities[1]->id(),
+      'genus' => 0,
+    ])
+      ->toString();
+
+    $request = Request::create($page_url);
+
+    $this->assertEquals(
+      $expected['access_code'],
+      $this->container->get('http_kernel')->handle($request)->getStatusCode(),
+      'User access permission does not match expected access permission in scenario ' . $scenario
+    );
+  }
+
+  /**
+   * Provide test values to route parameters.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array of values that will plug into the parameter requirements
+   *     of the route. The following keys are used.
+   *     - 'tripal_entity_id': the research experiment Tripal entity id.
+   *     - 'genus': the genus to be used a filter value.
+   *   - An array of expected values, with the following key:
+   *     - 'message': the expected message for a every set of parameter values.
+   */
+  public static function provideInvalidValues() {
+
+    return [
+      // #0: Experiment does not exist.
+      [
+        'research experiment does not exists',
+        [
+          'tripal_entity_id' => 1,
+          'genus' => 'asdSA',
+        ],
+        [
+          'message' => 'Page not found',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test page exceptions.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $slug_values
+   *   An array of values that will plug into the parameter requirements
+   *   of the route. The following keys are used.
+   *     - 'tripal_entity': the research experiment Tripal entity id.
+   *     - 'genus': the genus to be used a filter value.
+   * @param array $expected
+   *   An array of expected values, with the following key:
+   *     - 'message': the expected message for a every set of parameter values.
+   *
+   * @dataProvider provideInvalidValues
+   */
+  #[DataProvider('provideInvalidValues')]
+  public function testPageExceptions(string $scenario, array $slug_values, array $expected) {
+
+    $route = $this->container->get('router.route_provider')
+      ->getRouteByName(self::ROUTE_NAME);
+
+    $request = new Request();
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
+    $request->attributes->set('tripal_entity', $this->exp_entities[$slug_values['tripal_entity_id']]);
+    $request->attributes->set('genus', $slug_values['genus']);
+    $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
+
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
+    $this->container->set('tripal.logger', $mock_logger);
+
+    PhenoExperimentTraitSelectorForm::create($this->container)
+      ->buildForm([], new FormState());
+
+    print_r($this->log_message);
   }
 
 }

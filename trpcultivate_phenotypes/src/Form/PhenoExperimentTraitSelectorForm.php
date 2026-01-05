@@ -15,6 +15,7 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class definition of Experiment Add Trait.
@@ -156,31 +157,22 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       '#value' => $tripal_entity->id(),
     ];
 
-    // Listen for request to set genus or search trait.
-    $trigger_el = $form_state->getTriggeringElement() ?? 0;
+    $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-    if (isset($trigger_el['#name']) && $trigger_el['#name'] == 'genus') {
-      $form_state->set('genus', $form_state->getValue('genus'));
+    $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
+    if ($genus && !in_array($genus, $exp_phenogenus)) {
+      // The genus does not exist in the list of genus of the experiment.
+      $this->tripal_logger->error('The genus is not supported by the experiment.');
+      throw new NotFoundHttpException();
     }
 
-    $genus = $form_state->get('genus');
-    $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
-
     if (!$genus) {
-      $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
+      $genus = $form_state->getValue('genus', 0);
 
+      // Select the unique genus when none is supplied for the entity.
       if ($genus == 0 && count($exp_phenogenus) == 1) {
         $genus = $exp_phenogenus[0];
       }
-
-      $form_state->set('genus', $genus);
-    }
-
-    // Default to null cv (cv id 1) instead of 0. This field will be disabled.
-    $genus_config = 1;
-    if ($genus) {
-      $genus_config = $this->service_PhenoGenusOntology
-        ->getGenusOntologyConfigValues($genus)['trait'];
     }
 
     // Exclude other messages in the session that AJAX tends to repost.
@@ -248,6 +240,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       '#type' => 'button',
       '#value' => 'Show all Traits',
       '#attributes' => [
+        'onclick' => 'jQuery("#tcp-trait").val("");',
         'class' => [
           'trigger-element',
           'button--small',
@@ -326,7 +319,15 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     ];
 
-    // Prperty class - trigger-element - is used to identify which trait to add.
+    // Prepare autocomplete route parameter cv_id for the genus.
+    $genus_config = 1;
+    if ($genus) {
+      $genus_config = $this->service_PhenoGenusOntology
+        ->getGenusOntologyConfigValues($genus)['trait'];
+    }
+
+    // The property class - trigger-element is used to tag field with defined
+    // AJAX actions, marking elements that initiate a request.
     $form[$form_dialog_wrapper]['search_fieldset']['flex_container']['trait'] = [
       '#type' => 'textfield',
       '#maxlength' => 150,
@@ -357,6 +358,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           ':input[name="genus"]' => ['value' => 0],
         ],
       ],
+      '#id' => 'tcp-trait',
     ];
 
     $form[$form_dialog_wrapper]['search_tooltips'] = [
@@ -374,6 +376,9 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         ],
       ],
     ];
+
+    // Capture trigger element responsible for staring trait selection request.
+    $trigger_el = $form_state->getTriggeringElement() ?? 0;
 
     // Prepare tratis that matched the search key.
     if ($trigger_el && isset($trigger_el['#attributes']['class'])
@@ -457,7 +462,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         ->fields('tc', ['cvterm_id', 'name', 'definition'])
         ->condition('tc.cv_id', $genus_config, '=');
 
-      if ($trigger_el['#value'] != 'Show all Trait') {
+      if ($trigger_el['#value'] != 'Show all Traits') {
         $query
           ->condition('tc.name', trim($search_key) . '%', 'LIKE');
       }
@@ -527,6 +532,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
             '#maxlength' => 150,
             '#theme_wrappers' => [],
             '#attributes' => [
+              'style' => 'width: 70%;',
               'placeholder' => 'Use trait with label: ' . $default_label,
               'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
             ],
@@ -643,7 +649,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   }
 
   /**
-   * Function callback - set genus.
+   * Function callback - restrict the trait selector to a specific genus.
    */
   public function setGenus(array &$form, FormStateInterface $form_state) {
 
@@ -651,7 +657,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   }
 
   /**
-   * Function callback - list trait combo that matched.
+   * Function callback - related to genus, list trait combo that matched.
    */
   public function loadGenusTraits(array &$form, FormStateInterface $form_state) {
 
@@ -659,7 +665,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   }
 
   /**
-   * Function callback - add trait combo.
+   * Function callback - add trait combo to experiment.
    */
   public function addTraitCombo(array &$form, FormStateInterface $form_state) {
 
