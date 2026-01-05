@@ -255,7 +255,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'title' => 'Show all available traits for the selected genus',
       ],
       '#ajax' => [
-        'callback' => '::loadGenusTrait',
+        'callback' => '::loadGenusTraits',
         'event' => 'click',
         'wrapper' => $dialog_wrapper,
         'progress' => [

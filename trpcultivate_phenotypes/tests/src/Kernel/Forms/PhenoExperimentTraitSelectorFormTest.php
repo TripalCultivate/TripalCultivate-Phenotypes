@@ -8,7 +8,6 @@ use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\Tests\tripal\Traits\TripalTestTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
-use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitSelectorForm;
@@ -25,7 +24,6 @@ use Symfony\Component\HttpFoundation\Request;
 class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
-  use UserCreationTrait;
   use TripalTestTrait;
 
   /**
@@ -67,6 +65,9 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   /**
    * Test genus with a set of test traits.
    *
+   * The genus with empty trait is used to test multiple genus features of the
+   * trait selector form.
+   *
    * @var array
    */
   private $trait_set = [
@@ -104,20 +105,11 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         'Type' => 'Qualitative',
       ],
     ],
-    'Triticum' => [
-      [
-        'Trait Name' => 'Biomass',
-        'Trait Description' => 'Biomass trait description text',
-        'Method Short Name' => 'BIOMASS',
-        'Collection Method' => 'Biomass trait collection method text',
-        'Unit' => 'kg',
-        'Type' => 'Quantitative',
-      ],
-    ],
+    'Triticum' => [],
   ];
 
   /**
-   * Route name.
+   * Trait selector route machine name.
    *
    * @var string
    */
@@ -132,6 +124,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    * {@inheritdoc}
    */
   protected function setUp(): void {
+
     parent::setUp();
 
     // Set test environment.
@@ -174,6 +167,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
     $entity->set('exp_name', ['record_id' => $project_id, 'value' => $experiment]);
 
+    // Pair both test genus to the experiment.
     foreach (array_keys($this->trait_set) as $i => $ins_genus) {
       $this->chado_connection->insert('1:organism')
         ->fields(['genus', 'species', 'type_id'])
@@ -200,10 +194,10 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
     $entity->save();
 
-    // Save the one entity with genus configured properly.
+    // Set this class property to reference the experiment entity created.
     $this->research_experiment_entity = $entity;
 
-    // Install trait combos to good research experiment.
+    // Install trait combos.
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
     $trait_service->setTraitGenus($genus);
 
@@ -239,6 +233,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    */
   public function testBuildForm() {
 
+    $genus = array_keys($this->trait_set)[0];
     $route = $this->container->get('router.route_provider')
       ->getRouteByName(self::ROUTE_NAME);
 
@@ -246,7 +241,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('tripal_entity', $this->research_experiment_entity);
-    $request->attributes->set('genus', $genus = array_keys($this->trait_set)[0]);
+    $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
     $select_form = PhenoExperimentTraitSelectorForm::create($this->container)
@@ -257,32 +252,30 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $this->assertArrayHasKey(
       $reminder,
       $select_form,
-      'The trait selector form is expected to contain a reminder.',
+      'The trait selector form is expected to contain a status message reminder element.',
     );
 
     $this->AssertEquals(
       $select_form[$reminder]['#message_list']['warning'][0],
       'Read trait details carefully to ensure you are selecting the correct trait, as some traits may appear similar or have subtle differences.',
-      'The warning message in the trait selector form reminder does not match expected message.',
+      'The reminder status message in the trait selector form does not match expected message.',
     );
 
-    // Has a container element used as the AJAX wrapper element.
-    $form_wrapper = self::FORM_WRAPPER;
-
+    // Has a container element used as the main AJAX form wrapper element.
     $this->assertArrayHasKey(
-      $form_wrapper,
+      self::FORM_WRAPPER,
       $select_form,
       'The trait selector form is expected to contain a container element.',
     );
 
     $this->assertEquals(
       'tcp-form-wrapper',
-      $select_form[$form_wrapper]['#attributes']['id'],
+      $select_form[self::FORM_WRAPPER]['#attributes']['id'],
       'The container element is expected to contain an element attribute id.',
     );
 
     // Elements in the search toolbar.
-    $search_toolbar = $select_form[$form_wrapper]['search_toolbar'];
+    $search_toolbar = $select_form[self::FORM_WRAPPER]['search_toolbar'];
 
     $this->assertEquals(
       'link',
@@ -321,57 +314,46 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     );
 
     // Elements in the search fieldset.
-    $search_fieldset = $select_form[$form_wrapper]['search_fieldset']['flex_container'];
+    $search_fieldset = $select_form[self::FORM_WRAPPER]['search_fieldset']['flex_container'];
 
     $genus_field = 'genus';
-    $this->assertArrayHasKey(
-      $genus_field,
-      $search_fieldset,
-      'The trait selector form is expected to contain a genus field.',
-    );
-
     $this->assertEquals(
-      $search_fieldset[$genus_field]['#type'],
       'select',
-      'The trait selector form is expected to contain a genus field of type option select.'
+      $search_fieldset[$genus_field]['#type'],
+      'The trait selector form is expected to contain a genus field of type option select.',
     );
 
     $this->assertEquals(
-      $search_fieldset[$genus_field]['#default_value'],
       $genus,
-      'The trait selector form is expected to contain a genus field of type option select default to ' . $genus
+      $search_fieldset[$genus_field]['#default_value'],
+      'The trait selector form is expected to contain a genus field of type option select default to ' . $genus,
     );
 
     $trait_field = 'trait';
-    $this->assertArrayHasKey(
-      $trait_field,
-      $search_fieldset,
-      'The trait selector form is expected to contain a search trait field.'
-    );
-
     $this->assertEquals(
-      $search_fieldset[$trait_field]['#type'],
       'textfield',
-      'The trait selector form is expected to contain a search trait field of type text.'
+      $search_fieldset[$trait_field]['#type'],
+      'The trait selector form is expected to contain a search trait field of type textfield.',
     );
 
     $this->assertEquals(
-      $search_fieldset[$trait_field]['#autocomplete_route_name'],
       'tripal_chado.cvterm_autocomplete',
-      'The trait selector form is expected to contain a trait search field configured as autocomplete element.'
+      $search_fieldset[$trait_field]['#autocomplete_route_name'],
+      'The trait selector form is expected to contain a trait search field configured as autocomplete element.',
     );
 
     $this->assertEquals(
-      $search_fieldset[$trait_field]['#autocomplete_route_parameters']['cv_id'],
       $this->container->get('trpcultivate_phenotypes.genus_ontology')
         ->getGenusOntologyConfigValues($genus)['trait'],
-      'The trait autocomplete search field is expected to be set to the default genus cv configuration.'
+      $search_fieldset[$trait_field]['#autocomplete_route_parameters']['cv_id'],
+      'The trait autocomplete search field is expected to be set to the default genus cv configuration.',
     );
 
-    // Trait selector form has a note on a selected genus.
+    // The trait selector form includes a helpful note to guide user in
+    // getting started with search.
     $this->assertStringContainsString(
       'Start typing part of the trait name into the search field to search for specific traits, or click - Show all Traits button, to explore all available traits for the selected genus.',
-      $select_form[$form_wrapper]['search_tooltips']['#children']['a_tip']['#value'],
+      $select_form[self::FORM_WRAPPER]['search_tooltips']['#children']['a_tip']['#value'],
       'The trait selector form is expected to contain a search tip.',
     );
   }
@@ -411,18 +393,16 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       $search_fieldset = $select_form[self::FORM_WRAPPER]['search_fieldset']['flex_container'];
 
       $this->assertEquals(
-        $search_fieldset['genus']['#default_value'],
         $genus,
+        $search_fieldset['genus']['#default_value'],
         'The default genus does not match expected genus - ' . $genus,
       );
 
-      $genus_config = $this->container->get('trpcultivate_phenotypes.genus_ontology')
-        ->getGenusOntologyConfigValues($genus)['trait'];
-
       $this->assertEquals(
+        $this->container->get('trpcultivate_phenotypes.genus_ontology')
+          ->getGenusOntologyConfigValues($genus)['trait'],
         $search_fieldset['trait']['#autocomplete_route_parameters']['cv_id'],
-        $genus_config,
-        'The trait autocomplete search field route parameter cv_id does not match expected value.'
+        'The trait autocomplete search field route parameter cv_id does not match expected value.',
       );
     }
   }
@@ -432,6 +412,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    */
   public function testLoadGenusTraits() {
 
+    $genus = array_keys($this->trait_set)[0];
     $route = $this->container->get('router.route_provider')
       ->getRouteByName(self::ROUTE_NAME);
 
@@ -439,7 +420,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('tripal_entity', $this->research_experiment_entity);
-    $request->attributes->set('genus', $genus = array_keys($this->trait_set)[0]);
+    $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
     $form_state = new FormState();
@@ -462,12 +443,21 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       $select_form = PhenoExperimentTraitSelectorForm::create($this->container)
         ->buildForm($form, $form_state);
 
+      // Verify raw render array.
       $this->assertEquals(
-        $select_form[self::FORM_WRAPPER]['table'][0]['combo']['#props']['name'],
         $trait_name,
-        'The trait name in the search result does not match expected trait name.',
+        $select_form[self::FORM_WRAPPER]['table'][0]['combo']['#props']['name'],
+        'The raw render array of the search result does not contain the item trait name.',
       );
 
+      $this->assertEquals(
+        $trait['Trait Description'],
+        $select_form[self::FORM_WRAPPER]['table'][0]['combo']['#props']['definition'],
+        'The raw render array of the search result does not contain the item trait definition.',
+      );
+
+      // Group trait that have identical names to organize methods under same
+      // trait name.
       $trait_group = array_filter($this->trait_set[$genus], function ($t) use ($trait_name) {
         return $t['Trait Name'] == $trait_name;
       });
@@ -475,16 +465,46 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       $combo_items = $select_form[self::FORM_WRAPPER]['table'][0]['combo']['#props']['method_unit_combo'];
 
       $this->assertEquals(
-        count($combo_items),
         count($trait_group),
-        'The trait method count of the search result does not match expected method count of the trait.',
+        count($combo_items),
+        'The raw render array of the search result does not contain the exact number of method-unit combo items.',
       );
 
+      $trait_group_methods = array_column($trait_group, 'Method Short Name');
       $this->assertEquals(
+        $trait_group_methods,
         array_column($combo_items, 'method_shortname'),
-        array_column($trait_group, 'Method Short Name'),
-        'The trait method combo items of the search result does not match expected method combo items.'
+        'The raw render array of the search result does not contain the exact method-unit combo items.',
       );
+
+      // Verify the rendered markup.
+      $rendered_form = $this->container->get('renderer')->renderRoot($select_form);
+      $this->setRawContent($rendered_form);
+
+      $trait_name = $this->cssSelect('tbody tr td div def')[0];
+      $this->assertStringContainsString(
+        $trait['Trait Name'],
+        (string) $trait_name,
+        'The rendered markup of the search result does not contain the item trait name.',
+      );
+
+      $trait_definition = $this->cssSelect('tbody tr td div em')[0];
+      $this->assertStringContainsString(
+        $trait['Trait Description'],
+        (string) $trait_definition,
+        'The rendered markup of the search result does not contain the item trait definition.',
+      );
+
+      $trait_methods = $this->cssSelect('tbody tr td div div section def');
+      foreach ($trait_methods as $render_method) {
+        $method_name = explode(':', strip_tags($render_method->asXML()))[0];
+
+        $this->assertContains(
+          $method_name,
+          $trait_group_methods,
+          'The rendered markup of the search result does not contain the exact method-unit combo items.',
+        );
+      }
     }
   }
 
@@ -493,6 +513,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    */
   public function testAddTraitCombo() {
 
+    $genus = array_keys($this->trait_set)[0];
     $route = $this->container->get('router.route_provider')
       ->getRouteByName(self::ROUTE_NAME);
 
@@ -500,7 +521,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
     $request->attributes->set('tripal_entity', $this->research_experiment_entity);
-    $request->attributes->set('genus', $genus = array_keys($this->trait_set)[0]);
+    $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
     $database = $this->container->get('database');
@@ -528,15 +549,19 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         ->buildForm($form, $form_state);
 
       $traits_table = $select_form[self::FORM_WRAPPER]['table'];
+
       $combo_key = array_keys($traits_table[0]['combo']['content'])[0];
       $combo = $traits_table[0]['combo']['content'][$combo_key][$combo_key . '_combo']['#value'];
-
-      $form_state->setValue($combo_key . '_label', $label = $this->randomString(10));
-      $form_state->setValue($combo_key . '_required', $is_required = mt_rand(0, 1));
       $form_state->setValue($combo_key . '_combo', $combo);
 
+      $input_label = $this->getRandomGenerator()->word(10);
+      $form_state->setValue($combo_key . '_label', $input_label);
+
+      $input_required = mt_rand(0, 1);
+      $form_state->setValue($combo_key . '_required', $input_required);
+
       $form_state->setTriggeringElement([
-        '#name' => 'Add',
+        '#name' => $combo_key . '_add',
         '#value' => 'Add',
         '#id' => $combo_key,
         '#attributes' => [
@@ -560,21 +585,43 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         ->execute()
         ->fetchAssoc();
 
-      $this->assertNotNull(
-        $combo,
-        'The insert trait combo failed to add trait to experiment.'
-      );
+      $this->assertNotNull($combo, 'Failed to add a trait to the experiment.');
 
       $this->assertEquals(
+        $input_label,
         $combo['label'],
-        $label,
-        'The inserted trait combo label does not match the label entered.'
+        'The trait label of the trait added does not match label provided.',
       );
 
       $this->assertEquals(
+        $input_required,
         $combo['is_required'],
-        $is_required,
-        'The inserted trait combo is_required status does not match the required status entered.'
+        'The trait status is_required of the trait added does not match the status is_required provided.',
+      );
+
+      // Test error - case if label already in use.
+      $form_state->setValue($combo_key . '_label', $input_label);
+      $form_state->setValue($combo_key . '_required', 1);
+
+      $form_state->setTriggeringElement([
+        '#name' => $combo_key . '_add',
+        '#value' => 'Add',
+        '#id' => $combo_key,
+        '#attributes' => [
+          'class' => [
+            'trigger-element',
+          ],
+        ],
+      ]);
+
+      $select_form = PhenoExperimentTraitSelectorForm::create($this->container)
+        ->buildForm($form, $form_state);
+
+      $rendered_form = $this->container->get('renderer')->renderRoot($select_form);
+      $this->assertStringContainsString(
+        'The label is already used in the experiment.',
+        (string) $rendered_form,
+        'The add trait functionality is expected to show warning message if a label is reused in the same experiment.',
       );
     }
   }
