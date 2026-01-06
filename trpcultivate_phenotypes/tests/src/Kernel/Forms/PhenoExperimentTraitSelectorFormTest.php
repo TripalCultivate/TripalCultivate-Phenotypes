@@ -60,11 +60,18 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Research experiment entities.
+   * Research experiment entity.
    *
-   * @var array
+   * @var \Drupal\tripal\Entity\TripalEntity
    */
-  private array $exp_entities = [];
+  private TripalEntity $exp_entity;
+
+  /**
+   * Tripal Logger log message.
+   *
+   * @var string
+   */
+  private string $log_message = '';
 
   /**
    * Test genus with a set of test traits.
@@ -111,11 +118,6 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     ],
     'Triticum' => [],
   ];
-
-  /**
-   *
-   */
-  private string $log_message = '';
 
   /**
    * Trait selector route machine name.
@@ -204,7 +206,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $entity->save();
 
     // Set this class property to reference the experiment entity created.
-    $this->exp_entities[1] = $entity;
+    $this->exp_entity = $entity;
 
     // Install trait combos.
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
@@ -214,6 +216,20 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     foreach ($this->trait_set[$genus] as $combo) {
       $trait_service->insertTrait($combo);
     }
+
+    // Mock Tripal Logger.
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
+    $this->container->set('tripal.logger', $mock_logger);
   }
 
   /**
@@ -227,7 +243,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
+    $request->attributes->set('tripal_entity', $this->exp_entity);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
     $this->assertEquals(
@@ -249,7 +265,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
+    $request->attributes->set('tripal_entity', $this->exp_entity);
     $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -381,7 +397,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
+    $request->attributes->set('tripal_entity', $this->exp_entity);
     // No particular genus provided - the genus field is open for selection.
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -428,7 +444,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
+    $request->attributes->set('tripal_entity', $this->exp_entity);
     $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -522,6 +538,10 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    */
   public function testAddTraitCombo() {
 
+    // Load and execute test sequence:
+    // - Each test trait is searched (partial keyword) and added to experiment.
+    // - Successful assignement to experiment is verified (input label etc.).
+    // - The same trait is re-added to validate handling of duplicate label.
     $genus = array_keys($this->trait_set)[0];
     $route = $this->container->get('router.route_provider')
       ->getRouteByName(self::ROUTE_NAME);
@@ -529,7 +549,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entities[1]);
+    $request->attributes->set('tripal_entity', $this->exp_entity);
     $request->attributes->set('genus', $genus);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
@@ -537,7 +557,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $form_state = new FormState();
     $form = [];
 
-    $experiment_id = $this->exp_entities[1]->get('exp_name')
+    $experiment_id = $this->exp_entity->get('exp_name')
       ->getValue()[0]['record_id'];
 
     foreach ($this->trait_set[$genus] as $trait) {
@@ -749,7 +769,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     $this->setCurrentUser($new_user);
 
     $page_url = Url::fromRoute(self::ROUTE_NAME, [
-      'tripal_entity' => $this->exp_entities[1]->id(),
+      'tripal_entity' => $this->exp_entity->id(),
       'genus' => 0,
     ])
       ->toString();
@@ -771,7 +791,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    *   - A string, human-readable short description of the test scenario.
    *   - An array of values that will plug into the parameter requirements
    *     of the route. The following keys are used.
-   *     - 'tripal_entity_id': the research experiment Tripal entity id.
+   *     - 'tripal_entity': the research experiment Tripal entity.
    *     - 'genus': the genus to be used a filter value.
    *   - An array of expected values, with the following key:
    *     - 'message': the expected message for a every set of parameter values.
@@ -779,22 +799,46 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   public static function provideInvalidValues() {
 
     return [
-      // #0: Experiment does not exist.
+      // #0: Genus is not configured for use by the experiment.
       [
-        'research experiment does not exists',
+        'unsupported genus',
         [
-          'tripal_entity_id' => 1,
-          'genus' => 'asdSA',
+          'tripal_entity' => 1,
+          'genus' => 'Spurious Genus',
         ],
         [
-          'message' => 'Page not found',
+          'message' => 'The genus is not supported by the experiment.',
+        ],
+      ],
+
+      // #1: Entity does not exist.
+      [
+        'entity not found',
+        [
+          'tripal_entity' => 999,
+          'genus' => 'Lens',
+        ],
+        [
+          'message' => 'The requested page could not be found.',
+        ],
+      ],
+
+      // #2: Valid parameters.
+      [
+        'valid request',
+        [
+          'tripal_entity' => 1,
+          'genus' => 'Lens',
+        ],
+        [
+          'message' => '',
         ],
       ],
     ];
   }
 
   /**
-   * Test page exceptions.
+   * Test valid reoute parameter and page exceptions.
    *
    * @param string $scenario
    *   A string, human-readable short description of the test scenario.
@@ -812,33 +856,39 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   #[DataProvider('provideInvalidValues')]
   public function testPageExceptions(string $scenario, array $slug_values, array $expected) {
 
-    $route = $this->container->get('router.route_provider')
-      ->getRouteByName(self::ROUTE_NAME);
+    if (!$this->container->get('current_user')->id()) {
+      $route = $this->container->get('router.route_provider')
+        ->getRouteByName(self::ROUTE_NAME);
 
-    $request = new Request();
-    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
-    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entities[$slug_values['tripal_entity_id']]);
-    $request->attributes->set('genus', $slug_values['genus']);
-    $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
+      $this->setCurrentUser(
+        $this->createUser([$route->getRequirements()['_permission']])
+      );
+    }
 
-    $mock_logger = $this->getMockBuilder(TripalLogger::class)
-      ->onlyMethods(['error'])
-      ->getMock();
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $slug_values['tripal_entity'],
+      'genus' => $slug_values['genus'],
+    ])
+      ->toString();
 
-    $mock_logger->method('error')
-      ->willReturnCallback(function ($message) {
-        $this->log_message = $message;
-        return NULL;
-      }
-    );
+    $request = Request::create($page_url);
+    $page = $this->container->get('http_kernel')->handle($request)
+      ->getContent();
 
-    $this->container->set('tripal.logger', $mock_logger);
-
-    PhenoExperimentTraitSelectorForm::create($this->container)
-      ->buildForm([], new FormState());
-
-    print_r($this->log_message);
+    if ($this->log_message) {
+      $this->assertEquals(
+        $expected['message'],
+        $this->log_message,
+        'The exception message does not match expected message in scenario: ' . $scenario
+      );
+    }
+    else {
+      $this->assertStringContainsString(
+        $expected['message'],
+        (string) $page,
+        'The page does not contain expected error message in scenario ' . $scenario
+      );
+    }
   }
 
 }

@@ -140,13 +140,8 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     $tripal_entity = $this->getRouteMatch()->getParameter('tripal_entity');
 
+    // Route validates instance of tripal_entity and presence of exp_name field.
     $experiment = $tripal_entity->get('exp_name')->getValue();
-    if (!$experiment) {
-      // Research experiment entity does not exist.
-      $this->tripal_logger->error('Research experiment Tripal entity does not exist.');
-      throw new NotFoundHttpException();
-    }
-
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
     // Update the title to show which reseach experiment is being configured.
