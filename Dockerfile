@@ -6,6 +6,9 @@ FROM knowpulse/tripalcultivate-base:drupal${drupalversion}-php${phpversion}-pgsq
 COPY . /var/www/drupal/web/modules/contrib/TripalCultivate-Phenotypes
 WORKDIR /var/www/drupal/web/modules/contrib/TripalCultivate-Phenotypes
 
+RUN rm ./phpunit.xml
+RUN bash /var/www/drupal/web/modules/contrib/tripal/set_phpunit_config.sh
+
 RUN service postgresql restart \
   && drush en trpcultivate_phenotypes trpcultivate_phenocollect trpcultivate_phenoshare --yes \
   && drush tripal:trp-run-jobs --username=drupaladmin \
