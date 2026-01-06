@@ -33,7 +33,7 @@ jobs:
           - "8.5"
         pgsql-version:
           - "13"
-          - "17"
+          - "18"
         drupal-version:
           - "10.5.x-dev"
           - "10.6.x-dev"
