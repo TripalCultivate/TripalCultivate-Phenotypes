@@ -168,7 +168,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
     if ($genus && !in_array($genus, $exp_phenogenus)) {
       // Genus does not exist.
-      $this->tripal_logger->error('Research experiment genus does not exist.');
+      $this->tripal_logger->error('The genus is not supported by the experiment.');
       throw new NotFoundHttpException();
     }
 
@@ -200,6 +200,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $form[$config_toolbar]['add_trait'] = [
       '#type' => 'link',
       '#title' => 'Add Trait',
+      '#suffix' => ' &nbsp;&nbsp; ',
       '#url' => Url::fromRoute(
         'trpcultivate_phenotypes.experiment_traitselector',
         [
@@ -212,12 +213,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
         'dialog' => [
           'width' => 850,
           'dialogClass' => 'tcp-no-close',
+          'closeText' => 'Close Trait Selector window',
         ],
         'progress' => [
           'type' => 'fullscreen',
           'message' => '',
         ],
       ],
+    ];
+
+    $form[$config_toolbar]['refresh'] = [
+      '#type' => 'link',
+      '#title' => 'Refresh Table',
+      '#url' => Url::fromRoute('<current>'),
     ];
 
     $form[$config_toolbar]['slash'] = [
@@ -495,7 +503,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ->fetchObject();
 
     if (!$combo) {
-      throw new AccessDeniedHttpException('Invalid request: Could not find trait combo.');
+      $this->messenger()
+        ->addError($message = 'Invalid request: Could not find trait combo.');
+      throw new AccessDeniedHttpException($message);
     }
 
     switch ($action) {
@@ -503,7 +513,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
       case 'remove':
 
         if ($combo->is_archived == 1 || $combo->was_shared == 1 || $combo->was_collected == 1) {
-          throw new AccessDeniedHttpException('Invalid request: Not allowed to remove trait marked is_archived, was_shared, or was_collected.');
+          $this->messenger()
+            ->addError($message = 'Invalid request: Not allowed to remove trait marked archived, shared, or collected.');
+          throw new AccessDeniedHttpException($message);
         }
 
         $transaction = $this->database_connection->startTransaction();
@@ -555,7 +567,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     $this->messenger()
-      ->addStatus('The operation on trait combo to ' . $action . ' completed successfully.');
+      ->addStatus('The operation on trait combo to set to ' . ucfirst($action) . ' completed successfully.');
   }
 
   /**

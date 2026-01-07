@@ -27,9 +27,3 @@
   color: #CCCCCC;
   font-style: italic;
 }
-
-/* Preference on the close button render array in the dialog window. */
-.tcp-no-close .ui-dialog-titlebar-close {
-  display: none;
-  pointer-events: none;
-}

@@ -11,6 +11,7 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Entity\TripalEntity;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
 use Symfony\Component\HttpFoundation\Request;
@@ -66,6 +67,13 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   private TripalEntity $exp_entity;
 
   /**
+   * Tripal Logger log message.
+   *
+   * @var string
+   */
+  private string $log_message = '';
+
+  /**
    * Route name.
    *
    * @var string
@@ -78,18 +86,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    * @var string
    */
   const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
-
-  /**
-   * Expected research experiment entity id to describe a setup.
-   *
-   * @var array.
-   */
-  const ENTITY_ID = [
-    'good' => 1,
-    'incomplete' => 2,
-    'no_trait' => 3,
-    'is_not' => 4,
-  ];
 
   /**
    * Test genus with a set of test traits.
@@ -167,29 +163,10 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $good_research = 'A Good Research Experiment';
     $experiments = [
       $good_research => [
-        'id' => self::ENTITY_ID['good'],
+        'id' => 1,
         'genus' => ['Lens', 'Triticum'],
         'configure_genus' => TRUE,
         'content_type' => 'research_experiment',
-      ],
-      'Incomplete Research Experiment' => [
-        'id' => self::ENTITY_ID['incomplete'],
-        'genus' => ['NOT_CONFIGURED_GENUS'],
-        'configure_genus' => FALSE,
-        'content_type' => 'research_experiment',
-      ],
-      'Research Experiment without a Trait' => [
-        'id' => self::ENTITY_ID['no_trait'],
-        'genus' => ['Rosa'],
-        'configure_genus' => TRUE,
-        'content_type' => 'research_experiment',
-      ],
-      'Not a Research Experiment' => [
-        'id' => self::ENTITY_ID['is_not'],
-        'genus' => [],
-        'configure_genus' => FALSE,
-        'has_traits' => FALSE,
-        'content_type' => 'research_study',
       ],
     ];
 
@@ -290,6 +267,20 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
       $insert_combo->execute();
     }
+
+    // Mock Tripal Logger.
+    $mock_logger = $this->getMockBuilder(TripalLogger::class)
+      ->onlyMethods(['error'])
+      ->getMock();
+
+    $mock_logger->method('error')
+      ->willReturnCallback(function ($message) {
+        $this->log_message = $message;
+        return NULL;
+      }
+    );
+
+    $this->container->set('tripal.logger', $mock_logger);
   }
 
   /**
@@ -358,6 +349,18 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $title = 'Add Trait',
       $config_toolbar['add_trait']['#title'],
+      'The trait summary configuration form is expected to contain a link titled ' . $title,
+    );
+
+    $this->assertEquals(
+      'link',
+      $config_toolbar['refresh']['#type'],
+      'The trait summary configuration form is expected to contain a link element',
+    );
+
+    $this->assertEquals(
+      $title = 'Refresh Table',
+      $config_toolbar['refresh']['#title'],
       'The trait summary configuration form is expected to contain a link titled ' . $title,
     );
 
@@ -541,6 +544,86 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
           );
         }
       }
+
+      // Operations options available to the item depend on trait status values.
+      $this->assertStringContainsString(
+        'Remove',
+        $current_row,
+        'The trait item is expected to contain a remove operation option.',
+      );
+
+      $this->assertStringContainsString(
+        $set_to = 'Set ' . (($trait_row->is_required) ? 'Optional' : 'Require'),
+        $current_row,
+        'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+      );
+
+      $this->assertStringContainsString(
+        $set_to = 'Set ' . (($trait_row->is_archived) ? 'Active' : 'Archive'),
+        $current_row,
+        'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+      );
+    }
+  }
+
+  /**
+   * Test genus filter.
+   */
+  public function testGenusFilter() {
+
+    $route = $this->container->get('router.route_provider')
+      ->getRouteByName(self::ROUTE_NAME);
+
+    $this->setCurrentUser(
+      $this->createUser([$route->getRequirements()['_permission']])
+    );
+
+    $summary_table_name = 'experiment_traits_summary_table';
+    $all_trait = [];
+
+    // Switch between the genus.
+    $request = new Request();
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
+    $request->attributes->set('tripal_entity', $this->exp_entity);
+
+    foreach ($this->trait_set as $organism => $traits) {
+      $genus = $organism;
+
+      $request->attributes->set('genus', $genus);
+      $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
+
+      $config_form = PhenoExperimentConfigurationForm::create($this->container)
+        ->buildForm([], new FormState());
+
+      $this->assertEquals(
+        $config_form['config_toolbar']['filter_genus']['#default_value'],
+        $genus,
+        'The default selected option of the filter genus field does not match expected value.'
+      );
+
+      // All the trait names in a genus.
+      $all_trait[$genus] = array_map(function ($t) {
+        return $t['Trait Name'];
+      }, $traits);
+
+      $table_items = array_filter(array_keys($config_form[$summary_table_name]), function ($i) {
+        return is_int($i);
+      });
+
+      $this->assertEquals(
+        $count = count($all_trait[$genus]),
+        count($table_items),
+        'The number of traits in genus ' . $genus . ' does not match expected count - ' . $count
+      );
+
+      foreach ($table_items as $delta) {
+        $this->assertContains(
+          $trait_name = $config_form[$summary_table_name][$delta]['trait_combo']['#props']['name'],
+          $all_trait[$genus],
+          'The trait name ' . $trait_name . ' is expected in genus ' . $genus . ' filter result.'
+        );
+      }
     }
   }
 
@@ -549,14 +632,121 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    */
   public function testHandleOperation() {
 
-    $route = $this->container->get('router.route_provider')
-      ->getRouteByName(self::ROUTE_NAME);
+    if (!$this->container->get('current_user')->id()) {
+      $route = $this->container->get('router.route_provider')
+        ->getRouteByName(self::ROUTE_NAME);
 
-    $request = new Request();
-    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, self::ROUTE_NAME);
-    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $route);
-    $request->attributes->set('tripal_entity', $this->exp_entity);
-    $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
+      $this->setCurrentUser(
+        $this->createUser([$route->getRequirements()['_permission']])
+      );
+    }
+
+    // Load and execute test sequence:
+    // - Set is_required, was_collected etc. trait status to 0 for combo #1.
+    // - Perform Set Required then revert value, repeat for other two status.
+    // - Remove trait from experiment.
+    // - Remove a restricted trait - (archived, collected or shared).
+    $combo_one = 1;
+    $db = $this->container->get('database');
+
+    $db
+      ->update(self::PHENO_COMBO_TABLE)
+      ->fields([
+        'is_required' => 0,
+        'was_collected' => 0,
+        'was_shared' => 0,
+        'is_archived' => 0,
+      ])
+      ->condition('combo_id', $combo_one, '=')
+      ->execute();
+
+    foreach(['require', 'optional', 'archive', 'active'] as $operation) {
+      $request = Request::create(
+        Url::fromRoute(
+          self::ROUTE_NAME,
+          [
+            'tripal_entity' => $this->exp_entity->id(),
+          ],
+          [
+            'query' => [
+              $operation => $combo_one,
+            ],
+          ]
+        )->toString()
+      );
+
+      $this->assertStringContainsString(
+        'The operation on trait combo to set to ' . $operation . ' completed successfully',
+        $this->container->get('http_kernel')->handle($request)->getContent(),
+        'The requested operation failed to set a status value',
+      );
+    }
+
+    // Remove the combo.
+    $request = Request::create(
+      Url::fromRoute(
+        self::ROUTE_NAME,
+        [
+          'tripal_entity' => $this->exp_entity->id(),
+        ],
+        [
+          'query' => [
+            'remove' => $combo_one,
+          ],
+        ]
+      )->toString()
+    );
+
+    $this->assertStringContainsString(
+      'The operation on trait combo to set to remove completed successfully',
+      $this->container->get('http_kernel')->handle($request)->getContent(),
+      'The requested operation failed to remove a trait combo from the experiment.',
+    );
+
+    // Test removal of restricted trait.
+    $db
+      ->update(self::PHENO_COMBO_TABLE)
+      ->fields([
+        'was_collected' => 1,
+        'was_shared' => 1,
+        'is_archived' => 1,
+      ])
+      ->execute();
+
+    $restricted_traits = $db
+      ->select(self::PHENO_COMBO_TABLE, 't')
+      ->fields('t', ['combo_id'])
+      ->execute()
+      ->fetchCol();
+
+    // At this point, combo one has vanished.
+    $this->assertNotContains(
+      1,
+      $restricted_traits,
+      'The operation to remove combo 1 was not successful.',
+    );
+
+    foreach ($restricted_traits as $combo_id) {
+      $request = Request::create(
+        Url::fromRoute(
+          self::ROUTE_NAME,
+          [
+            'tripal_entity' => $this->exp_entity->id(),
+          ],
+          [
+            'query' => [
+              'remove' => $combo_id,
+            ],
+          ]
+        )->toString()
+      );
+
+      $this->assertStringContainsString(
+        'Invalid request: Not allowed to remove trait marked archived, shared, or collected.',
+        (string) $this->container->get('http_kernel')->handle($request)->getContent(),
+        'The requested operation failed to display an error if removing a restricted trait.',
+      );
+    }
   }
 
   /**
@@ -685,6 +875,114 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       $this->container->get('http_kernel')->handle($request)->getStatusCode(),
       'User access permission does not match expected access permission in scenario ' . $scenario
     );
+  }
+
+  /**
+   * Provide test values to route parameters.
+   *
+   * @return array
+   *   Each test scenario is an array with the following values:
+   *   - A string, human-readable short description of the test scenario.
+   *   - An array of values that will plug into the parameter requirements
+   *     of the route. The following keys are used.
+   *     - 'tripal_entity': the research experiment Tripal entity.
+   *     - 'genus': the genus to be used a filter value.
+   *   - An array of expected values, with the following key:
+   *     - 'message': the expected message for a every set of parameter values.
+   */
+  public static function provideInvalidValues() {
+
+    return [
+      // #0: Genus is not configured for use by the experiment.
+      [
+        'unsupported genus',
+        [
+          'tripal_entity' => 1,
+          'genus' => 'Spurious Genus',
+        ],
+        [
+          'message' => 'The genus is not supported by the experiment.',
+        ],
+      ],
+
+      // #1: Entity does not exist.
+      [
+        'entity not found',
+        [
+          'tripal_entity' => 999,
+          'genus' => 'Lens',
+        ],
+        [
+          'message' => 'The requested page could not be found.',
+        ],
+      ],
+
+      // #2: Valid parameters.
+      [
+        'valid request',
+        [
+          'tripal_entity' => 1,
+          'genus' => 'Lens',
+        ],
+        [
+          'message' => '',
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Test valid reoute parameter and page exceptions.
+   *
+   * @param string $scenario
+   *   A string, human-readable short description of the test scenario.
+   * @param array $slug_values
+   *   An array of values that will plug into the parameter requirements
+   *   of the route. The following keys are used.
+   *     - 'tripal_entity': the research experiment Tripal entity id.
+   *     - 'genus': the genus to be used a filter value.
+   * @param array $expected
+   *   An array of expected values, with the following key:
+   *     - 'message': the expected message for a every set of parameter values.
+   *
+   * @dataProvider provideInvalidValues
+   */
+  #[DataProvider('provideInvalidValues')]
+  public function testPageExceptions(string $scenario, array $slug_values, array $expected) {
+
+    if (!$this->container->get('current_user')->id()) {
+      $route = $this->container->get('router.route_provider')
+        ->getRouteByName(self::ROUTE_NAME);
+
+      $this->setCurrentUser(
+        $this->createUser([$route->getRequirements()['_permission']])
+      );
+    }
+
+    $page_url = Url::fromRoute(self::ROUTE_NAME, [
+      'tripal_entity' => $slug_values['tripal_entity'],
+      'genus' => $slug_values['genus'],
+    ])
+      ->toString();
+
+    $request = Request::create($page_url);
+    $page = $this->container->get('http_kernel')->handle($request)
+      ->getContent();
+
+    if ($this->log_message) {
+      $this->assertEquals(
+        $expected['message'],
+        $this->log_message,
+        'The exception message does not match expected message in scenario: ' . $scenario
+      );
+    }
+    else {
+      $this->assertStringContainsString(
+        $expected['message'],
+        (string) $page,
+        'The page does not contain expected error message in scenario ' . $scenario
+      );
+    }
   }
 
 }
