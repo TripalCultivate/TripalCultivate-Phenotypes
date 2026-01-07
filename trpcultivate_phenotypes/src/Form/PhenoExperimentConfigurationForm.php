@@ -448,7 +448,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
                 strtolower($status) => $trait_row->combo_id,
               ],
               'attributes' => [
-                'onclick' => 'return confirm("Are you sure you want to set status to ' . $status . '?")',
+                'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
               ],
             ]),
           ],
@@ -459,7 +459,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
                 strtolower($status) => $trait_row->combo_id,
               ],
               'attributes' => [
-                'onclick' => 'return confirm("Are you sure you want to set status to ' . $status . '?")',
+                'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
               ],
             ]),
           ],
