@@ -436,7 +436,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
                 'remove' => $trait_row->combo_id,
               ],
               'attributes' => [
-                'onclick' => 'return ' . ($is_removable ? 'confirm("Are you sure you want to remove trait?")' : 'false'),
+                'onclick' => 'return ' . ($is_removable ? 'confirm("Are you sure you want to Remove trait?")' : 'false'),
                 'style' => 'pointer-events: ' . ($is_removable ? 'auto' : 'none') . '; opacity: ' . ($is_removable ? 1 : 0.3),
               ],
             ]),
@@ -567,7 +567,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     $this->messenger()
-      ->addStatus('The operation on trait combo to set to ' . ucfirst($action) . ' completed successfully.');
+      ->addStatus('The trait combo operation ' . ucfirst($action) . ' completed successfully.');
   }
 
   /**
