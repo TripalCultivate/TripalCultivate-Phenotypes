@@ -135,13 +135,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $tripal_entity = $this->getRouteMatch()->getParameter('tripal_entity');
 
+    // Route validates instance of tripal_entity and presence of exp_name field.
     $experiment = $tripal_entity->get('exp_name')->getValue();
-    if (!$experiment) {
-      // Research experiment entity does not exist.
-      $this->tripal_logger->error('Research experiment Tripal entity does not exist.');
-      throw new NotFoundHttpException();
-    }
-
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
     // Update the title to show which reseach experiment is being configured.
@@ -191,7 +186,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     // Contain page links and select field displayed inline - in a single row.
-    $form['control_fieldset'] = [
+    $config_toolbar = 'config_toolbar';
+    $form[$config_toolbar] = [
       '#type' => 'container',
       '#attributes' => [
         'class' => [
@@ -201,7 +197,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ],
     ];
 
-    $form['control_fieldset']['add_trait'] = [
+    $form[$config_toolbar]['add_trait'] = [
       '#type' => 'link',
       '#title' => 'Add Trait',
       '#url' => Url::fromRoute(
@@ -211,23 +207,24 @@ class PhenoExperimentConfigurationForm extends FormBase {
           'genus' => $genus,
         ],
       ),
-      '#attributes' => [
-        'class' => [
-          'use-ajax',
-        ],
-        'data-dialog-type' => 'modal',
-        'data-dialog-options' => Json::encode([
+      '#ajax' => [
+        'dialogType' => 'modal',
+        'dialog' => [
           'width' => 850,
           'dialogClass' => 'tcp-no-close',
-        ]),
+        ],
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ],
       ],
     ];
 
-    $form['control_fieldset']['slash'] = [
+    $form[$config_toolbar]['slash'] = [
       '#markup' => '&nbsp;&nbsp; / &nbsp;',
     ];
 
-    $form['control_fieldset']['filter_icon'] = [
+    $form[$config_toolbar]['filter_icon'] = [
       '#type' => 'html_tag',
       '#tag' => 'i',
       '#value' => '',
@@ -240,7 +237,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ],
     ];
 
-    $form['control_fieldset']['filter_genus'] = [
+    $form[$config_toolbar]['filter_genus'] = [
       '#type' => 'select',
       '#options' => array_combine($genus_option = array_values($genus_map), $genus_option),
       '#empty_option' => 'All Genus',
@@ -299,7 +296,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       '#sticky' => FALSE,
       '#allowed_tags' => ['a', 'br', 'em', 'def', 'small', 'span', 'section'],
       '#empty' => array_merge(
-        $form['control_fieldset']['add_trait'],
+        $form['config_toolbar']['add_trait'],
         [
           '#attributes' => [
             'style' => 'color: blue; font-weight: 200; text-decoration: underline;',
@@ -562,7 +559,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   }
 
   /**
-   * Function callback - load traits in a genus.
+   * Function callback - load traits specific to a genus.
    */
   public function loadGenusTraits(array &$form, FormStateInterface $form_state) {
 

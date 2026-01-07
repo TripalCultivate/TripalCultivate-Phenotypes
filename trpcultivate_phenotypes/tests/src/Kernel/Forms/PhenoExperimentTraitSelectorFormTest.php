@@ -280,7 +280,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       'The trait selector form is expected to contain a status message reminder element.',
     );
 
-    $this->AssertEquals(
+    $this->assertEquals(
       $select_form[$reminder]['#message_list']['warning'][0],
       'Read trait details carefully to ensure you are selecting the correct trait, as some traits may appear similar or have subtle differences.',
       'The reminder status message in the trait selector form does not match expected message.',
