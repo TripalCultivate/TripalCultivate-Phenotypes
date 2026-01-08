@@ -2,7 +2,6 @@
 
 namespace Drupal\trpcultivate_phenotypes\Form;
 
-use Drupal\Component\Serialization\Json;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\Core\Database\Connection;
@@ -555,6 +554,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
               $field_map[$action] => $status,
             ])
             ->condition('combo_id', $combo->combo_id, '=')
+            ->condition($field_map[$action], $status, '<>')
             ->execute();
         }
         catch (Exception $e) {
