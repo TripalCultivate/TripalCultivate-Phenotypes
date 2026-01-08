@@ -529,7 +529,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
             '#attributes' => [
               'style' => 'width: 70%;',
               'placeholder' => 'Use trait with label: ' . $default_label,
-              'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment.',
+              'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment. If no value is given, Label defaults to: ' . $default_label,
             ],
           ];
 
