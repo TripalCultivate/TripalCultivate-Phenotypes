@@ -660,7 +660,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->condition('combo_id', $combo_one, '=')
       ->execute();
 
-    foreach(['require', 'optional', 'archive', 'active'] as $operation) {
+    foreach (['require', 'optional', 'archive', 'active'] as $operation) {
       $request = Request::create(
         Url::fromRoute(
           self::ROUTE_NAME,
