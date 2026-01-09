@@ -14,6 +14,7 @@ use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
+use Drupal\tripal\Services\TripalEntityLookup;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -44,6 +45,13 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
   protected AccountInterface $user;
 
   /**
+   * Tripal Entity lookup.
+   *
+   * @var Drupal\tripal\Services\TripalEntityLookup
+   */
+  protected TripalEntityLookup $service_TripalEntityLookup;
+
+  /**
    * Configuration entity fields per permission.
    *
    * @var array
@@ -70,6 +78,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
    *   The entity type manager.
    * @param \Drupal\Core\Session\AccountInterface $user
    *   Drupal users.
+   * @param \Drupal\tripal\Services\TripalEntityLookup $tripalentity_lookup
+   *   Tripal entity lookup service.
    */
   public function __construct(
     EntityTypeInterface $entity_type,
@@ -77,6 +87,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     FormBuilderInterface $form_builder,
     EntityTypeManagerInterface $entity_type_manager,
     AccountInterface $user,
+    TripalEntityLookup $tripalentity_lookup,
   ) {
     parent::__construct($entity_type, $storage);
 
@@ -114,6 +125,8 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     $entity_ids = $query->execute();
     $this->user_backup = $this->storage->loadMultiple($entity_ids);
+
+    $this->service_TripalEntityLookup = $tripalentity_lookup;
   }
 
   /**
@@ -127,6 +140,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
       $container->get('form_builder'),
       $container->get('entity_type.manager'),
       $container->get('current_user'),
+      $container->get('tripal.tripal_entity.lookup'),
     );
   }
 
@@ -148,7 +162,14 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $key = 'project_id';
     $project_id = (int) $entity->get($key);
     $project_name = ChadoProjectAutocompleteController::getProjectName($project_id);
-    $values[$key]['data'] = $project_name;
+
+    $entity_id = $this->service_TripalEntityLookup
+      ->getEntityId($project_id, 'SIO', '000994', 'project');
+
+    $values[$key]['data'] = $this->service_TripalEntityLookup
+      ->getRenderableItem($project_name, $entity_id) + [
+        '#attributes' => ['target' => '_blank'],
+      ];
 
     $key = 'comments';
     $comments = $entity->get($key);
