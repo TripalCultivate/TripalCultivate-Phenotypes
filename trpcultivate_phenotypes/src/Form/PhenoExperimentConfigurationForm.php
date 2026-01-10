@@ -507,6 +507,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
       throw new AccessDeniedHttpException($message);
     }
 
+    $ok = 0;
+
     switch ($action) {
 
       case 'remove':
@@ -519,15 +521,16 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         $transaction = $this->database_connection->startTransaction();
         try {
-          $this->chado_connection
+          $ok = $this->chado_connection
             ->delete(self::PHENO_COMBO_TABLE)
             ->condition('combo_id', $combo->combo_id, '=')
             ->execute();
         }
-        catch (Exception $e) {
+        catch (\Exception $e) {
           $transaction->rollback();
 
-          throw new AccessDeniedHttpException('Invalid request: Failed to remove trait from experiment.');
+          $this->tripal_logger->error($msg = 'Invalid request: Failed to remove trait from experiment.');
+          $this->messenger()->addStatus($msg);
         }
 
         break;
@@ -548,7 +551,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         $transaction = $this->database_connection->startTransaction();
         try {
-          $this->database_connection
+          $ok = $this->database_connection
             ->update(self::PHENO_COMBO_TABLE)
             ->fields([
               $field_map[$action] => $status,
@@ -557,17 +560,20 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ->condition($field_map[$action], $status, '<>')
             ->execute();
         }
-        catch (Exception $e) {
+        catch (\Exception $e) {
           $transaction->rollback();
 
-          throw new AccessDeniedHttpException('Invalid request: Failed to update trait status.');
+          $this->tripal_logger->error($msg = 'Invalid request: Failed to update trait status.');
+          $this->messenger()->addStatus($msg);
         }
 
         break;
     }
 
-    $this->messenger()
-      ->addStatus('The trait combo operation ' . ucfirst($action) . ' completed successfully.');
+    if ($ok === 1) {
+      $this->messenger()
+        ->addStatus('The trait combo operation ' . ucfirst($action) . ' completed successfully.');
+    }
   }
 
   /**
