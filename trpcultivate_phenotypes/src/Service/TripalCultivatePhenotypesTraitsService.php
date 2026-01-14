@@ -624,16 +624,44 @@ class TripalCultivatePhenotypesTraitsService {
    */
   public function getExperimentTraitMethodUnitCombos(int $experiment_id, ?string $genus = NULL, array $options = []) {
 
-
     foreach (array_keys($options) as $option_key) {
       if (!in_array($option_key, ['format'])) {
         // Exception.
       }
     }
 
+    $query = $this->chado_connection->select('public.trpcultivate_phenocombo', 'tp');
+
+    $query->join('1:cvterm', 'c', 'tc.attr_id = c.cvterm_id');
+    $query->join('1:project', 'p', 'tc.project_id = p.project_id');
+
+    $query->fields('tp');
+    $query->addField('tp', 'label', 'label');
+    $query->addField('tp', 'label', 'name');
+
+    $query->fields('c', ['definition']);
+    $query->addField('c', 'definition', 'description');
+
+    $query->fields('p', ['name']);
+    $query->addField('p', 'name', 'experiment');
+
+    $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
+
+    if ($genus) {
+      // Filter result to a specific genus, load all combo if none is supplied.
+      $query->condition('tp.genus', $genus, '=');
+    }
+
+    $exp_phenocombo = $query->condition('tp.project_id', $experiment_id, '=')
+      ->execute()
+      ->fetchAllAssoc('label');
+
+    if (!$exp_phenocombo) {
+      // Experiment does not have trait combo.
+    }
+
     $combo_format = [
       'header' => [
-
         'combo_id',
         'name',
         'description',
@@ -664,55 +692,47 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     $format = $options['format'];
-
-    $exp_phenocombo = $this->chado_connection->query(
-      "SELECT
-        tp.*,
-        tp.label AS \"label\",
-        tp.label AS \"name\",
-        p.name AS \"experiment\",
-        ct.definition AS \"description\",
-        CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END AS \"type\"
-      FROM public.trpcultivate_phenocombo AS tp
-        LEFT JOIN {1:cvterm} AS ct ON tp.attr_id = ct.cvterm_id
-        LEFT JOIN {1:project} AS p ON tp.project_id = p.project_id
-      "
-    )
-      ->fetchAllAssoc('label');
-
     $combos = [];
 
     foreach ($exp_phenocombo as $combo) {
-      $combo_arr = (array) $combo;
-
       // Append field values.
       $base_values = [];
 
       foreach ($combo_format[$format] as $key) {
-        $base_values[$key] = $combo_arr[$key];
+        $base_values[$key] = (array) $combo[$key];
       }
 
       // Apply format-specific values.
       $extra_values = [];
 
+      if ($format != 'header') {
+        $trait_combo = $this->getTraitMethodUnitCombo(
+          $combo->attr_id,
+          $combo->observable_id,
+          $combo->unit_id
+        );
+      }
+
       switch ($format) {
         case 'full':
+
           $extra_values = [
-            'trait' => [],
-            'method' => [],
-            'unit' => [],
+            'trait' => $trait_combo['trait'],
+            'method' => $trait_combo['method'],
+            'unit' => $trait_combo['unit'],
           ];
 
           break;
 
         case 'component':
+
           $extra_values = [
             'multiselect_method' => FALSE,
             'method_unit_combo' => [
-              'method_shortname' => '',
-              'unit' => '',
-              'type' => '',
-              'collection_method' => '',
+              'method_shortname' => $trait_combo['method']->name,
+              'unit' => $trait_combo['unit']->name,
+              'type' => $trait_combo['unit']->data_type,
+              'collection_method' => $trait_combo['method']->definition,
             ],
             'status' => [
               'archived' => $combo_arr['is_archived'],
