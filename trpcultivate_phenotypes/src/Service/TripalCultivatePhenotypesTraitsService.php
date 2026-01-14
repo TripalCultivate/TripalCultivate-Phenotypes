@@ -603,6 +603,135 @@ class TripalCultivatePhenotypesTraitsService {
   }
 
   /**
+   * Get trait method unit combinations for a given experiment.
+   *
+   * @param int $experiment_id
+   *   The experiment id, a unique identifier used to filter traits and return
+   *   only traits associated with the specified experiment id.
+   * @param null|string $genus
+   *   (Optional) The genus to further filter the traits.
+   * @param array $options
+   *   (Optional and default to format = full) Contains key-value pairs that
+   *   define options that allow customization to each trait returned.
+   *   Valid keys supported:
+   *     - format: full (values in base table and all ids resolved), component
+   *       (for passing as render array value to a component), importer (values
+   *       in array structure as header property of importers).
+   *
+   * @return array
+   *   All traits associated to an experiment in an array keyed by the combo
+   *   label text.
+   */
+  public function getExperimentTraitMethodUnitCombos(int $experiment_id, ?string $genus = NULL, array $options = []) {
+
+
+    foreach (array_keys($options) as $option_key) {
+      if (!in_array($option_key, ['format'])) {
+        // Exception.
+      }
+    }
+
+    $combo_format = [
+      'header' => [
+
+        'combo_id',
+        'name',
+        'description',
+        'type',
+      ],
+      'component' => [
+        'combo_id',
+        'name',
+        'description',
+      ],
+      'full' => [
+        'combo_id',
+        'label',
+        'project_id',
+        'experiment',
+        'attr_id',
+        'observable_id',
+        'unit_id',
+        'is_required',
+        'is_archived',
+        'was_collected',
+        'was_shared',
+      ],
+    ];
+
+    if ($options['format'] && !in_array($options['format'], array_keys($combo_format))) {
+      // Exception.
+    }
+
+    $format = $options['format'];
+
+    $exp_phenocombo = $this->chado_connection->query(
+      "SELECT
+        tp.*,
+        tp.label AS \"label\",
+        tp.label AS \"name\",
+        p.name AS \"experiment\",
+        ct.definition AS \"description\",
+        CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END AS \"type\"
+      FROM public.trpcultivate_phenocombo AS tp
+        LEFT JOIN {1:cvterm} AS ct ON tp.attr_id = ct.cvterm_id
+        LEFT JOIN {1:project} AS p ON tp.project_id = p.project_id
+      "
+    )
+      ->fetchAllAssoc('label');
+
+    $combos = [];
+
+    foreach ($exp_phenocombo as $combo) {
+      $combo_arr = (array) $combo;
+
+      // Append field values.
+      $base_values = [];
+
+      foreach ($combo_format[$format] as $key) {
+        $base_values[$key] = $combo_arr[$key];
+      }
+
+      // Apply format-specific values.
+      $extra_values = [];
+
+      switch ($format) {
+        case 'full':
+          $extra_values = [
+            'trait' => [],
+            'method' => [],
+            'unit' => [],
+          ];
+
+          break;
+
+        case 'component':
+          $extra_values = [
+            'multiselect_method' => FALSE,
+            'method_unit_combo' => [
+              'method_shortname' => '',
+              'unit' => '',
+              'type' => '',
+              'collection_method' => '',
+            ],
+            'status' => [
+              'archived' => $combo_arr['is_archived'],
+              'required' => $combo_arr['is_required'],
+              'collected' => $combo_arr['was_collected'],
+              'shared' => $combo_arr['was_shared'],
+            ],
+          ];
+
+          break;
+      }
+
+      $combos[$combo->label] = array_merge($base_values, $extra_values);
+    }
+
+    return $combos;
+  }
+
+  /**
    * Get cvterm record for a trait, method or unit.
    *
    * @param string|int $key
