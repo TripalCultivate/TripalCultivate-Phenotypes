@@ -890,7 +890,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       ->fields(['name' => 'Test Project 1'])
       ->execute();
 
-    $k = $this->container->get('database')
+    $this->container->get('database')
       ->insert('trpcultivate_phenocombo')
       ->fields([
         'project_id' => $experiment_id,
@@ -907,43 +907,46 @@ class ValidTraitTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
-      $combo_format = [
-        'header' => [
-          'combo_id',
-          'name',
-          'description',
-          'type',
-        ],
-        'component' => [
-          'combo_id',
-          'name',
-          'description',
-        ],
-        'full' => [
-          'combo_id',
-          'label',
-          'project_id',
-          'experiment',
-          'attr_id',
-          'observable_id',
-          'unit_id',
-          'is_required',
-          'is_archived',
-          'was_collected',
-          'was_shared',
-          'uid',
-        ],
-      ];
+    $combo_format = [
+      'header' => [
+        'combo_id',
+        'name',
+        'description',
+        'type',
+      ],
+      'component' => [
+        'combo_id',
+        'name',
+        'description',
+      ],
+      'full' => [
+        'combo_id',
+        'label',
+        'project_id',
+        'experiment',
+        'attr_id',
+        'observable_id',
+        'unit_id',
+        'is_required',
+        'is_archived',
+        'was_collected',
+        'was_shared',
+        'uid',
+      ],
+    ];
 
-    // Full format option.
-    $combos = $this->service_traits->getExperimentTraitMethodUnitCombos($experiment_id);
-    $label = array_keys($combos)[0];
+    foreach (array_keys($combo_format) as $format) {
+      $combos = $this->service_traits
+        ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
 
-    foreach ($combo_format['full'] as $key) {
-      $this->assertNotNull(
-        $combos[$label][$key],
-        'Experiment trait combo is expected to contain key: ' . $key
-      );
+      $label = array_keys($combos)[0];
+
+      foreach ($combo_format[$format] as $key) {
+        $this->assertNotNull(
+          $combos[$label][$key],
+          'Experiment trait combo is expected to contain key: ' . $key
+        );
+      }
     }
   }
 
