@@ -670,7 +670,7 @@ class TripalCultivatePhenotypesTraitsService {
       throw new \Exception('Not a valid options format value. Use one of [' . implode(',', $combo_format_keys) . ']');
     }
 
-    $query = $this->chado_connection->select('public.trpcultivate_phenocombo', 'tp');
+    $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
     $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
     $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
 

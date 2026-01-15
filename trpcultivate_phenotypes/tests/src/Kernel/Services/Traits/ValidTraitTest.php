@@ -97,6 +97,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Install module configuration/settings.
     $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installSchema('trpcultivate_phenotypes', ['trpcultivate_phenocombo']);
 
     // Configure the module.
     $this->genus = 'Tripalus';
@@ -854,6 +855,96 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     $this->assertMatchesRegularExpression('/CV value does not match the CV the genus was configured/',
       $exception_message, 'Combo getter failed parameter (all parameter a unit id) does not match the expected exception error message.');
+  }
+
+  /**
+   * Test getExperimentTraitMethodUnitCombos().
+   */
+  public function testGetExperimentTraitMethodUnitCombos() {
+    // Generate some fake/unique names.
+    $trait_name  = 'TraitABC' . uniqid();
+    $method_name = 'MethodABC' . uniqid();
+    $unit_name   = 'UnitABC' . uniqid();
+
+    // Now bring these together into the array of values
+    // requested by the insertTrait() method.
+    $trait = [
+      'Trait Name' => $trait_name,
+      'Trait Description' => $trait_name . ' Description',
+      'Method Short Name' => $method_name . '-SName',
+      'Collection Method' => $method_name . ' - Pull from ground',
+      'Unit' => $unit_name,
+      'Type' => 'Quantitative',
+    ];
+
+    // Set genus to use by the traits service.
+    $this->service_traits->setTraitGenus($this->genus);
+
+    // Get schema name.
+    $schema = $this->chado_connection->getSchemaName();
+
+    // Save the trait.
+    $trait_assets = $this->service_traits->insertTrait($trait, $schema);
+
+    $experiment_id = $this->chado_connection->insert('1:project')
+      ->fields(['name' => 'Test Project 1'])
+      ->execute();
+
+    $k = $this->container->get('database')
+      ->insert('trpcultivate_phenocombo')
+      ->fields([
+        'project_id' => $experiment_id,
+        'attr_id' => $trait_assets['trait'],
+        'observable_id' => $trait_assets['method'],
+        'unit_id' => $trait_assets['unit'],
+        'label' => 'Label' . uniqid(),
+        'is_archived' => mt_rand(0, 1),
+        'is_required' => mt_rand(0, 1),
+        'was_shared' => mt_rand(0, 1),
+        'was_collected' => mt_rand(0, 1),
+        'uid' => $this->container->get('current_user')->id(),
+        'timestamp' => time(),
+      ])
+      ->execute();
+
+      $combo_format = [
+        'header' => [
+          'combo_id',
+          'name',
+          'description',
+          'type',
+        ],
+        'component' => [
+          'combo_id',
+          'name',
+          'description',
+        ],
+        'full' => [
+          'combo_id',
+          'label',
+          'project_id',
+          'experiment',
+          'attr_id',
+          'observable_id',
+          'unit_id',
+          'is_required',
+          'is_archived',
+          'was_collected',
+          'was_shared',
+          'uid',
+        ],
+      ];
+
+    // Full format option.
+    $combos = $this->service_traits->getExperimentTraitMethodUnitCombos($experiment_id);
+    $label = array_keys($combos)[0];
+
+    foreach ($combo_format['full'] as $key) {
+      $this->assertNotNull(
+        $combos[$label][$key],
+        'Experiment trait combo is expected to contain key: ' . $key
+      );
+    }
   }
 
 }
