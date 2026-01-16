@@ -634,6 +634,14 @@ class TripalCultivatePhenotypesTraitsService {
       }
     }
 
+    if ($genus) {
+      $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
+
+      if (!$genus_config) {
+        throw new \Exception('The genus is not configured to hold phenotypic traits.');
+      }
+    }
+
     // Valid format values.
     $option_format = $options['format'] ?? 'full';
 
@@ -672,6 +680,7 @@ class TripalCultivatePhenotypesTraitsService {
 
     $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
     $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
+    $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
     $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
 
     $query->fields('tp');
@@ -689,7 +698,7 @@ class TripalCultivatePhenotypesTraitsService {
     $query->condition('tp.project_id', $experiment_id, '=');
     if ($genus) {
       // Filter result to a specific genus, load all combo if none is supplied.
-      $query->condition('tp.genus', $genus, '=');
+      $query->condition('c.cv_id', $genus_config['trait'], '=');
     }
 
     // Results keyed by label field.
@@ -697,6 +706,10 @@ class TripalCultivatePhenotypesTraitsService {
       ->orderBy('c.name', 'ASC')
       ->execute()
       ->fetchAllAssoc('label');
+
+    if (!$exp_phenocombo) {
+      throw new \Exception('No traits fround for the genus of the experiment.');
+    }
 
     $combos = [];
     foreach ($exp_phenocombo as $label => $combo) {
