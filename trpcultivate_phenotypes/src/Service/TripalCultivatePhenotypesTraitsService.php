@@ -619,10 +619,22 @@ class TripalCultivatePhenotypesTraitsService {
    *       importer (values in array structure as header property of importers).
    *
    * @return array
-   *   All traits associated to an experiment in an array keyed by the combo
-   *   label text.
+   *   All traits associated to an experiment (plus genus) in an array keyed by
+   *   the combo label text. An empty array if no traits found.
+   *
+   * @throw \Exception
+   *   - A genus not configured to be used in phenotypes module.
+   *   - Not a valid trait format or value requested in the $options parameter.
    */
   public function getExperimentTraitMethodUnitCombos(int $experiment_id, ?string $genus = NULL, array $options = []) {
+
+    if ($genus) {
+      $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
+
+      if (!$genus_config) {
+        throw new \Exception('The genus is not configured to hold phenotypic traits.');
+      }
+    }
 
     $valid_option_keys = [
       'format',
@@ -634,15 +646,7 @@ class TripalCultivatePhenotypesTraitsService {
       }
     }
 
-    if ($genus) {
-      $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
-
-      if (!$genus_config) {
-        throw new \Exception('The genus is not configured to hold phenotypic traits.');
-      }
-    }
-
-    // Valid format values.
+    // Valid format values. Default to full if not specified.
     $option_format = $options['format'] ?? 'full';
 
     $combo_format = [
@@ -679,9 +683,9 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
+    $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
     $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
     $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
-    $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
 
     $query->fields('tp');
     $query->addField('tp', 'label', 'label');
@@ -707,11 +711,12 @@ class TripalCultivatePhenotypesTraitsService {
       ->execute()
       ->fetchAllAssoc('label');
 
+    $combos = [];
+
     if (!$exp_phenocombo) {
-      throw new \Exception('No traits fround for the genus of the experiment.');
+      return $combos;
     }
 
-    $combos = [];
     foreach ($exp_phenocombo as $label => $combo) {
       // Append table values defined by the format array structure.
       $field_values = [];

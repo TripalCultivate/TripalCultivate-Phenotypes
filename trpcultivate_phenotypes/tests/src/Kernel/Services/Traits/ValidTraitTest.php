@@ -861,51 +861,90 @@ class ValidTraitTest extends ChadoTestKernelBase {
    * Test getExperimentTraitMethodUnitCombos().
    */
   public function testGetExperimentTraitMethodUnitCombos() {
-    // Generate some fake/unique names.
-    $trait_name  = 'TraitABC' . uniqid();
-    $method_name = 'MethodABC' . uniqid();
-    $unit_name   = 'UnitABC' . uniqid();
-
-    // Now bring these together into the array of values
-    // requested by the insertTrait() method.
-    $trait = [
-      'Trait Name' => $trait_name,
-      'Trait Description' => $trait_name . ' Description',
-      'Method Short Name' => $method_name . '-SName',
-      'Collection Method' => $method_name . ' - Pull from ground',
-      'Unit' => $unit_name,
-      'Type' => 'Quantitative',
-    ];
-
-    // Set genus to use by the traits service.
-    $this->service_traits->setTraitGenus($this->genus);
-
-    // Get schema name.
-    $schema = $this->chado_connection->getSchemaName();
-
-    // Save the trait.
-    $trait_assets = $this->service_traits->insertTrait($trait, $schema);
 
     $experiment_id = $this->chado_connection->insert('1:project')
       ->fields(['name' => 'Test Project 1'])
       ->execute();
 
-    $this->container->get('database')
-      ->insert('trpcultivate_phenocombo')
+    $a_genus = 'Another Genus';
+    $this->chado_connection->insert('1:organism')
       ->fields([
-        'project_id' => $experiment_id,
-        'attr_id' => $trait_assets['trait'],
-        'observable_id' => $trait_assets['method'],
-        'unit_id' => $trait_assets['unit'],
-        'label' => 'Label' . uniqid(),
-        'is_archived' => mt_rand(0, 1),
-        'is_required' => mt_rand(0, 1),
-        'was_shared' => mt_rand(0, 1),
-        'was_collected' => mt_rand(0, 1),
-        'uid' => $this->container->get('current_user')->id(),
-        'timestamp' => time(),
+        'genus' => $a_genus,
+        'species' => 'species',
       ])
       ->execute();
+
+    try {
+      $this->service_traits
+        ->getExperimentTraitMethodUnitCombos($experiment_id, $a_genus);
+    }
+    catch (\Exception $e) {
+      $this->assertEquals(
+        'The genus is not configured to hold phenotypic traits.',
+        $e->getMessage(),
+        'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-configured genus provided',
+      );
+    }
+
+    $this->setOntologyConfig($a_genus);
+
+    $ins = $this->chado_connection->insert('1:projectprop')
+      ->fields(['project_id', 'type_id', 'value', 'rank']);
+
+    $ins->values([
+      'project_id' => $experiment_id,
+      'type_id' => $this->terms['genus'],
+      'value' => $this->genus,
+      'rank' => 1,
+    ]);
+
+    $ins->values([
+      'project_id' => $experiment_id,
+      'type_id' => $this->terms['genus'],
+      'value' => $a_genus,
+      'rank' => 2,
+    ]);
+
+    $ins->execute();
+
+    $schema = $this->chado_connection->getSchemaName();
+    $tmp_trait = [];
+
+    foreach ([$this->genus, $a_genus] as $i => $genus) {
+      $this->service_traits->setTraitGenus($genus);
+
+      $trait_name = 'Trait' . $i;
+      $method_name = 'Method' . $i;
+      $unit_name = 'Unit' . $i;
+
+      $trait = $this->service_traits->insertTrait([
+        'Trait Name' => $trait_name,
+        'Trait Description' => $trait_name . ' Description',
+        'Method Short Name' => $method_name . '-SName',
+        'Collection Method' => $method_name . ' - Collection Method',
+        'Unit' => $unit_name,
+        'Type' => 'Quantitative',
+      ], $schema);
+
+      $tmp_trait[$i] = $trait;
+
+      $this->container->get('database')
+        ->insert('trpcultivate_phenocombo')
+        ->fields([
+          'project_id' => $experiment_id,
+          'attr_id' => $trait['trait'],
+          'observable_id' => $trait['method'],
+          'unit_id' => $trait['unit'],
+          'label' => 'Label' . uniqid(),
+          'is_archived' => mt_rand(0, 1),
+          'is_required' => mt_rand(0, 1),
+          'was_shared' => mt_rand(0, 1),
+          'was_collected' => mt_rand(0, 1),
+          'uid' => $this->container->get('current_user')->id(),
+          'timestamp' => time(),
+        ])
+        ->execute();
+    }
 
     $combo_format = [
       'header' => [
@@ -935,16 +974,76 @@ class ValidTraitTest extends ChadoTestKernelBase {
       ],
     ];
 
+    // Test all formats and all genus.
     foreach (array_keys($combo_format) as $format) {
       $combos = $this->service_traits
         ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
 
-      $label = array_keys($combos)[0];
-
       foreach ($combo_format[$format] as $key) {
-        $this->assertNotNull(
-          $combos[$label][$key],
-          'Experiment trait combo is expected to contain key: ' . $key
+        foreach ($combos as $label => $combo) {
+          $label_key = isset($combo['label']) ? 'label' : 'name';
+
+          $this->assertEquals(
+            $label,
+            $combo[$label_key],
+            'The label key of the combo does not match label/name value in the array',
+          );
+
+          $this->assertNotNull(
+            $combo[$key],
+            'Experiment trait combo is expected to contain key: ' . $key,
+          );
+        }
+      }
+    }
+
+    // Test full dataset.
+    $combos = $this->service_traits->getExperimentTraitMethodUnitCombos($experiment_id);
+
+    $i = 0;
+    foreach ($combos as $combo) {
+      $this->assertEquals(
+        $tmp_trait[$i]['trait'],
+        $combo['attr_id'],
+        'The attr_id value of the combo returned does not match expected value',
+      );
+
+      $this->assertEquals(
+        $tmp_trait[$i]['method'],
+        $combo['observable_id'],
+        'The observable_id value of the combo returned does not match expected value',
+      );
+
+      $this->assertEquals(
+        $tmp_trait[$i]['unit'],
+        $combo['unit_id'],
+        'The unit_id value of the combo returned does not match expected value',
+      );
+
+      $i++;
+    }
+
+    // Pull specific genus.
+    foreach ([$this->genus, $a_genus] as $i => $genus) {
+      $combos = $this->service_traits->getExperimentTraitMethodUnitCombos($experiment_id, $genus);
+
+      foreach ($combos as $combo) {
+        $this->assertEquals(
+          $tmp_trait[$i]['trait'],
+          $combo['attr_id'],
+          'The attr_id value of the combo returned does not match expected value',
+        );
+
+        $this->assertEquals(
+          $tmp_trait[$i]['method'],
+          $combo['observable_id'],
+          'The observable_id value of the combo returned does not match expected value',
+        );
+
+        $this->assertEquals(
+          $tmp_trait[$i]['unit'],
+          $combo['unit_id'],
+          'The unit_id value of the combo returned does not match expected value',
         );
       }
     }
