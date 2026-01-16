@@ -688,7 +688,6 @@ class TripalCultivatePhenotypesTraitsService {
     $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
 
     $query->fields('tp');
-    $query->addField('tp', 'label', 'label');
     $query->addField('tp', 'label', 'name');
 
     $query->fields('c', ['definition']);
@@ -697,6 +696,7 @@ class TripalCultivatePhenotypesTraitsService {
     $query->fields('p', ['name']);
     $query->addField('p', 'name', 'experiment');
 
+    $query->addExpression('TRIM(tp.label)', 'label');
     $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
 
     $query->condition('tp.project_id', $experiment_id, '=');
@@ -782,7 +782,7 @@ class TripalCultivatePhenotypesTraitsService {
           break;
       }
 
-      $combos[$label] = array_merge($field_values, $extra_values);
+      $combos[trim($label)] = array_merge($field_values, $extra_values);
     }
 
     return $combos;
