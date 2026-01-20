@@ -647,7 +647,7 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     // Valid format values. Default to full if not specified.
-    $option_format = $options['format'] ?? 'full';
+    $option_format = strtolower($options['format'] ?? 'full');
 
     $combo_format = [
       'header' => [
@@ -717,6 +717,12 @@ class TripalCultivatePhenotypesTraitsService {
       return $combos;
     }
 
+    $field_map = [
+      'trait' => 'attr_id',
+      'method' => 'observable_id',
+      'unit' => 'unit_id',
+    ];
+
     foreach ($exp_phenocombo as $label => $combo) {
       // Append table values defined by the format array structure.
       $field_values = [];
@@ -729,29 +735,20 @@ class TripalCultivatePhenotypesTraitsService {
       $extra_values = [];
 
       if ($option_format != 'header') {
-        $id_field = 'cvterm.cvterm_id';
-
-        $trait_combo['trait'] = $this->cvterm_buddy
-          ->getCvterm([$id_field => $combo->attr_id])[0]
-          ->getValues();
-
-        $trait_combo['method'] = $this->cvterm_buddy
-          ->getCvterm([$id_field => $combo->observable_id])[0]
-          ->getValues();
-
-        $trait_combo['unit'] = $this->cvterm_buddy
-          ->getCvterm([$id_field => $combo->unit_id])[0]
-          ->getValues();
+        foreach ($field_map as $field_alias => $field_name) {
+          $trait_combo[$field_alias] = $this->cvterm_buddy
+            ->getCvterm(['cvterm.cvterm_id' => $combo->$field_name])[0]
+            ->getValues();
+        }
       }
 
       switch ($option_format) {
 
         case 'full':
-          $extra_values = [
-            'trait' => $trait_combo['trait'],
-            'method' => $trait_combo['method'],
-            'unit' => $trait_combo['unit'],
-          ];
+          // Resolve attr_id, observable_id, and unit_id into full table record.
+          foreach (array_keys($field_map) as $field_alias) {
+            array_push($extra_values, [$field_alias => $trait_combo[$field_alias]]);
+          }
 
           break;
 
