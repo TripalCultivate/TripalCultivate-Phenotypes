@@ -862,6 +862,18 @@ class ValidTraitTest extends ChadoTestKernelBase {
    */
   public function testGetExperimentTraitMethodUnitCombos() {
 
+    try {
+      $this->service_traits
+        ->getExperimentTraitMethodUnitCombos(999);
+    }
+    catch (\Exception $e) {
+      $this->assertEquals(
+        'Experiment id does not exist.',
+        $e->getMessage(),
+        'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-existent project provided.',
+      );
+    }
+
     $experiment_id = $this->chado_connection->insert('1:project')
       ->fields(['name' => 'Test Project 1'])
       ->execute();
@@ -880,9 +892,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
     }
     catch (\Exception $e) {
       $this->assertEquals(
-        'The genus is not configured to hold phenotypic traits.',
+        'The genus is not configured to contain phenotypic traits.',
         $e->getMessage(),
-        'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-configured genus provided',
+        'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-configured genus provided.',
       );
     }
 
@@ -986,7 +998,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
           $this->assertEquals(
             $label,
             $combo[$label_key],
-            'The label key of the combo does not match label/name value in the array',
+            'The label key of the combo does not match label/name value in the array.',
           );
 
           $this->assertNotNull(
@@ -1005,19 +1017,19 @@ class ValidTraitTest extends ChadoTestKernelBase {
       $this->assertEquals(
         $tmp_trait[$i]['trait'],
         $combo['attr_id'],
-        'The attr_id value of the combo returned does not match expected value',
+        'The attr_id value of the combo returned does not match expected value.',
       );
 
       $this->assertEquals(
         $tmp_trait[$i]['method'],
         $combo['observable_id'],
-        'The observable_id value of the combo returned does not match expected value',
+        'The observable_id value of the combo returned does not match expected value.',
       );
 
       $this->assertEquals(
         $tmp_trait[$i]['unit'],
         $combo['unit_id'],
-        'The unit_id value of the combo returned does not match expected value',
+        'The unit_id value of the combo returned does not match expected value.',
       );
 
       $i++;
@@ -1031,19 +1043,19 @@ class ValidTraitTest extends ChadoTestKernelBase {
         $this->assertEquals(
           $tmp_trait[$i]['trait'],
           $combo['attr_id'],
-          'The attr_id value of the combo returned does not match expected value',
+          'The attr_id value of the combo returned does not match expected value.',
         );
 
         $this->assertEquals(
           $tmp_trait[$i]['method'],
           $combo['observable_id'],
-          'The observable_id value of the combo returned does not match expected value',
+          'The observable_id value of the combo returned does not match expected value.',
         );
 
         $this->assertEquals(
           $tmp_trait[$i]['unit'],
           $combo['unit_id'],
-          'The unit_id value of the combo returned does not match expected value',
+          'The unit_id value of the combo returned does not match expected value.',
         );
       }
     }

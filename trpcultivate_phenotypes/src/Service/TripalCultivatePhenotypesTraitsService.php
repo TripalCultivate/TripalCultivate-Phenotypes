@@ -609,7 +609,7 @@ class TripalCultivatePhenotypesTraitsService {
    *   The experiment id, a unique identifier used to filter traits and return
    *   only traits associated with the specified experiment id.
    * @param null|string $genus
-   *   (Optional) The genus to further filter the traits.
+   *   (Optional) The genus to further filter the traits combo results.
    * @param array $options
    *   (Optional and default to format = full) Contains key-value pairs that
    *   define options that allow customization to each trait returned.
@@ -620,19 +620,36 @@ class TripalCultivatePhenotypesTraitsService {
    *
    * @return array
    *   All traits associated to an experiment (plus genus) in an array keyed by
-   *   the combo label text. An empty array if no traits found.
+   *   the combo label text. An empty array if no trait combos are found.
    *
-   * @throw \Exception
+   * @see /component/trait_combo
+   *   The component format is suitable of use with trait_combo component as
+   *   value to the key #props.
+   *
+   * @throws \Exception
    *   - A genus not configured to be used in phenotypes module.
    *   - Not a valid trait format or value requested in the $options parameter.
    */
   public function getExperimentTraitMethodUnitCombos(int $experiment_id, ?string $genus = NULL, array $options = []) {
 
+    if (!$experiment_id) {
+      throw new \Exception('Experiment id is required to get trait method unit combos of an experiment.');
+    }
+
+    $query = $this->chado_connection->query(
+      "SELECT project_id FROM {1:project} WHERE project_id = :id", [':id' => $experiment_id]
+    );
+
+    if (!$query->fetchField()) {
+      throw new \Exception('Experiment id does not exist.');
+    }
+
     if ($genus) {
-      $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
+      $genus_config = $this->service_PhenoGenusOntology
+        ->getGenusOntologyConfigValues($genus);
 
       if (!$genus_config) {
-        throw new \Exception('The genus is not configured to hold phenotypic traits.');
+        throw new \Exception('The genus is not configured to contain phenotypic traits.');
       }
     }
 
@@ -640,15 +657,11 @@ class TripalCultivatePhenotypesTraitsService {
       'format',
     ];
 
-    foreach (array_keys($options) as $option_key) {
-      if (!in_array($option_key, $valid_option_keys)) {
-        throw new \Exception('Not a valid options key. Use one of [' . implode(',', $valid_option_keys) . ']');
-      }
+    if (array_diff(array_keys($options), $valid_option_keys)) {
+      throw new \Exception('Not a valid options key provided. Use one of [' . implode(', ', $valid_option_keys) . ']');
     }
 
-    // Valid format values. Default to full if not specified.
-    $option_format = strtolower($options['format'] ?? 'full');
-
+    // Valid format values. Default to - full key, if not specified.
     $combo_format = [
       'header' => [
         'combo_id',
@@ -677,25 +690,29 @@ class TripalCultivatePhenotypesTraitsService {
       ],
     ];
 
+    $option_format = strtolower($options['format'] ?? 'full');
     $combo_format_keys = array_keys($combo_format);
+
     if (!in_array($option_format, $combo_format_keys)) {
-      throw new \Exception('Not a valid options format value. Use one of [' . implode(',', $combo_format_keys) . ']');
+      throw new \Exception('Not a valid options format value. Use one of [' . implode(', ', $combo_format_keys) . ']');
     }
 
+    // Retrieve the trait method unit combos of the experiment using the
+    // project_id field of the base table. If genus is provided, apply
+    // additional filter based on project-genus-cv ontology configuration.
     $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
     $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
     $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
     $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
 
-    $query->fields('tp');
-    $query->addField('tp', 'label', 'name');
+    $query
+      ->fields('tp')
+      ->addField('tp', 'label', 'name');
 
-    $query->fields('c', ['definition']);
     $query->addField('c', 'definition', 'description');
-
-    $query->fields('p', ['name']);
     $query->addField('p', 'name', 'experiment');
 
+    // This field - label is used as key of each combo returned.
     $query->addExpression('TRIM(tp.label)', 'label');
     $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
 
@@ -706,9 +723,7 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     // Results keyed by label field.
-    $exp_phenocombo = $query
-      ->orderBy('c.name', 'ASC')
-      ->execute()
+    $exp_phenocombo = $query->orderBy('c.name', 'ASC')->execute()
       ->fetchAllAssoc('label');
 
     $combos = [];
@@ -731,13 +746,13 @@ class TripalCultivatePhenotypesTraitsService {
         $field_values[$format_keys] = $combo->{$format_keys};
       }
 
-      // Add format-specific values.
-      $extra_values = [];
+      // Add other format-specific values - id resolutions and computed values.
+      $format_values = [];
 
       if ($option_format != 'header') {
         foreach ($field_map as $field_alias => $field_name) {
           $trait_combo[$field_alias] = $this->cvterm_buddy
-            ->getCvterm(['cvterm.cvterm_id' => $combo->$field_name])[0]
+            ->getCvterm(['cvterm.cvterm_id' => $combo->{$field_name}])[0]
             ->getValues();
         }
       }
@@ -747,20 +762,20 @@ class TripalCultivatePhenotypesTraitsService {
         case 'full':
           // Resolve attr_id, observable_id, and unit_id into full table record.
           foreach (array_keys($field_map) as $field_alias) {
-            array_push($extra_values, [$field_alias => $trait_combo[$field_alias]]);
+            $format_values[$field_alias] = $trait_combo[$field_alias];
           }
 
           break;
 
         case 'component':
-          $data_type = $this->chado_connection->select('1:cvtermprop', 'cp')
-            ->fields('cp', ['value'])
-            ->condition('cp.cvterm_id', $combo->unit_id, '=')
-            ->condition('cp.type_id', $this->terms['unit_type'], '=')
-            ->execute()
+          // Setup required key-value pairs of the component.
+          $data_type = $this->chado_connection->query(
+            "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :id AND type_id = :type_id",
+            [':id' => $combo->unit_id, ':type_id' => $this->terms['unit_type']]
+          )
             ->fetchField();
 
-          $extra_values = [
+          $format_values = [
             'multiselect_method' => FALSE,
             'method_unit_combo' => [
               'method_shortname' => $trait_combo['method']['cvterm.name'],
@@ -779,7 +794,7 @@ class TripalCultivatePhenotypesTraitsService {
           break;
       }
 
-      $combos[trim($label)] = array_merge($field_values, $extra_values);
+      $combos[$label] = array_merge($field_values, $format_values);
     }
 
     return $combos;
