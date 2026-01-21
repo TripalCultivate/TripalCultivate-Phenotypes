@@ -672,7 +672,7 @@ class TripalCultivatePhenotypesTraitsService {
       'component' => [
         'combo_id',
         'name',
-        'description',
+        'definition',
       ],
       'full' => [
         'combo_id',
@@ -705,16 +705,22 @@ class TripalCultivatePhenotypesTraitsService {
     $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
     $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
 
-    $query
-      ->fields('tp')
-      ->addField('tp', 'label', 'name');
-
+    $query->fields('tp');
+    $query->addField('c', 'definition', 'definition');
     $query->addField('c', 'definition', 'description');
     $query->addField('p', 'name', 'experiment');
 
     // This field - label is used as key of each combo returned.
     $query->addExpression('TRIM(tp.label)', 'label');
+
     $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
+    // For header format request, the name is the trait name (appears in file),
+    // whereas for non-header request, name is the combination of trait name
+    // and the label text.
+    $query->addExpression(
+      ($option_format == 'header') ? "c.name" : "c.name || ' (' || tp.label || ')'",
+      'name'
+    );
 
     $query->condition('tp.project_id', $experiment_id, '=');
     if ($genus) {
@@ -778,10 +784,12 @@ class TripalCultivatePhenotypesTraitsService {
           $format_values = [
             'multiselect_method' => FALSE,
             'method_unit_combo' => [
-              'method_shortname' => $trait_combo['method']['cvterm.name'],
-              'unit' => $trait_combo['unit']['cvterm.name'],
-              'type' => $data_type,
-              'collection_method' => $trait_combo['method']['cvterm.definition'],
+              [
+                'method_shortname' => $trait_combo['method']['cvterm.name'],
+                'unit' => $trait_combo['unit']['cvterm.name'],
+                'type' => $data_type,
+                'collection_method' => $trait_combo['method']['cvterm.definition'],
+              ],
             ],
             'status' => [
               'archived' => $combo->is_archived,
