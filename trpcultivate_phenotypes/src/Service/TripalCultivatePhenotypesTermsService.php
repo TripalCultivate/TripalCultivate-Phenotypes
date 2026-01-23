@@ -146,13 +146,8 @@ class TripalCultivatePhenotypesTermsService {
 
     if ($terms) {
       if ($schema) {
-        // @todo We should be able to set the schema for a buddy! Either through
-        // something like $this->cvterm_buddy->setChadoSchema($schema_name) or
-        // when creating the buddy via the plugin manager? However, the buddies
-        // do not support this right now but instead only work on
-        // the main schema.
-        $this->cvterm_buddy->chado_connection->setSchemaName($schema);
-        $this->dbxref_buddy->chado_connection->setSchemaName($schema);
+        $this->cvterm_buddy->setChadoSchema($schema);
+        $this->dbxref_buddy->setChadoSchema($schema);
       }
 
       // Install terms.
