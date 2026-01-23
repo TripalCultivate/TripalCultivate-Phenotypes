@@ -217,8 +217,8 @@ class TripalCultivatePhenotypesTraitsService {
     $genus_config = $this->config;
 
     if ($schema) {
-      $this->cvterm_buddy->setChadoSchema($schema);
-      $this->dbxref_buddy->setChadoSchema($schema);
+      $this->cvterm_buddy->setSchemaName($schema);
+      $this->dbxref_buddy->setSchemaName($schema);
     }
 
     if (!$genus_config) {

@@ -146,8 +146,8 @@ class TripalCultivatePhenotypesTermsService {
 
     if ($terms) {
       if ($schema) {
-        $this->cvterm_buddy->setChadoSchema($schema);
-        $this->dbxref_buddy->setChadoSchema($schema);
+        $this->cvterm_buddy->setSchemaName($schema);
+        $this->dbxref_buddy->setSchemaName($schema);
       }
 
       // Install terms.
