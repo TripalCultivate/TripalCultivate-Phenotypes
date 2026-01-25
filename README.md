@@ -57,8 +57,8 @@ PHPUnit for testing and QLTY Cloud to ensure good test coverage and maintainabil
 There are more details on [our QLTY Cloud project page] describing our specific
 maintainability issues and test coverage.
 
-[![Maintainability](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate/maintainability.svg)](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes)
-[![Code Coverage](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate/coverage.svg)](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes)
+[![Maintainability](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes/maintainability.svg)](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes)
+[![Code Coverage](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes/coverage.svg)](https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes)
 
 The following compatibility is proven via automated testing workflows.
 
@@ -71,14 +71,14 @@ The following compatibility is proven via automated testing workflows.
 
 [our QLTY Cloud project page]: https://qlty.sh/gh/TripalCultivate/projects/TripalCultivate-Phenotypes
 
-[Grid82-105-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.2_D10_5x.yml/badge.svg
-[Grid82-106-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.2_D10_6x.yml/badge.svg
-[Grid83-105-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.3_D10_5x.yml/badge.svg
-[Grid83-106-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.3_D10_6x.yml/badge.svg
-[Grid83-112-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.3_D11_2x.yml/badge.svg
-[Grid83-113-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.3_D11_3x.yml/badge.svg
-[Grid84-105-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.4_D10_5x.yml/badge.svg
-[Grid84-106-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.4_D10_6x.yml/badge.svg
-[Grid84-112-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.4_D11_2x.yml/badge.svg
-[Grid84-113-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.4_D11_3x.yml/badge.svg
-[Grid85-113-Badge]: https://github.com/trpcultivate_phenotypes/trpcultivate_phenotypes/actions/workflows/MAIN-phpunit-php8.5_D11_3x.yml/badge.svg
+[Grid82-105-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.2_D10_5x.yml/badge.svg
+[Grid82-106-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.2_D10_6x.yml/badge.svg
+[Grid83-105-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.3_D10_5x.yml/badge.svg
+[Grid83-106-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.3_D10_6x.yml/badge.svg
+[Grid83-112-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.3_D11_2x.yml/badge.svg
+[Grid83-113-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.3_D11_3x.yml/badge.svg
+[Grid84-105-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.4_D10_5x.yml/badge.svg
+[Grid84-106-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.4_D10_6x.yml/badge.svg
+[Grid84-112-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.4_D11_2x.yml/badge.svg
+[Grid84-113-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.4_D11_3x.yml/badge.svg
+[Grid85-113-Badge]: https://github.com/TripalCultivate/TripalCultivate-Phenotypes/actions/workflows/MAIN-phpunit-php8.5_D11_3x.yml/badge.svg
