@@ -1,41 +1,45 @@
 <div {{ attributes.addClass('tcp-trait-combo') }}>
 
-	<def>
-		{{ name }}
+	{% if (name is defined) %}
+		<def>
+			{{ name }}
 
-    {% if status %}
-		  {% set status_attributes = {
-				'required': {
-					'class': 'fa-star',
-					'title': 'Required: this measurement is required to answer the questions in this experiment and must be included when uploading phenotypic data for this experiment.'
-				},
-				'archived': {
-					'class': 'fa-box-archive',
-					'title': 'Archived: this describes measurements previously collected for this experiment but which are no longer recommended or have been updated.'
-				},
-				'shared': {
-					'class': 'fa-hand-holding-heart',
-					'title': 'Shared: final datasets including this measurement have been imported using the "Tripal Cultivate: Open-Science Phenotypic Data" importer.'
-				},
-				'collected': {
-					'class': 'fa-ruler',
-					'title': 'Collected: data has been imported using the "Tripal Cultivate: Collected Phenotypic Data" importer.'
-				}
-			} %}
+			{% if status %}
+				{% set status_attributes = {
+					'required': {
+						'class': 'fa-star',
+						'title': 'Required: this measurement is required to answer the questions in this experiment and must be included when uploading phenotypic data for this experiment.'
+					},
+					'archived': {
+						'class': 'fa-box-archive',
+						'title': 'Archived: this describes measurements previously collected for this experiment but which are no longer recommended or have been updated.'
+					},
+					'shared': {
+						'class': 'fa-hand-holding-heart',
+						'title': 'Shared: final datasets including this measurement have been imported using the "Tripal Cultivate: Open-Science Phenotypic Data" importer.'
+					},
+					'collected': {
+						'class': 'fa-ruler',
+						'title': 'Collected: data has been imported using the "Tripal Cultivate: Collected Phenotypic Data" importer.'
+					}
+				} %}
 
-      {% for status_item, status_value in status %}
-        {% if status_value == 1 %}
-				  {%
-					  set attributes = create_attribute(status_attributes[status_item])
-	            .addClass(['fa-solid', 'tcp-pheno-' ~ status_item])
-					%}
-					<i {{ attributes }}></i>
-        {% endif %}
-   		{% endfor %}
-    {% endif %}
-	</def>
+				{% for status_item, status_value in status %}
+					{% if status_value == 1 %}
+						{%
+							set attributes = create_attribute(status_attributes[status_item])
+								.addClass(['fa-solid', 'tcp-pheno-' ~ status_item])
+						%}
+						<i {{ attributes }}></i>
+					{% endif %}
+				{% endfor %}
+			{% endif %}
+		</def>
+	{% endif %}
 
-	<em>{{ definition }}</em>
+	{% if (definition is defined) %}
+	  <em>{{ definition }}</em>
+	{% endif %}
 
     {{ multiselect_method ? '<div>' : '' }}
 		  {% for i, method in method_unit_combo %}
