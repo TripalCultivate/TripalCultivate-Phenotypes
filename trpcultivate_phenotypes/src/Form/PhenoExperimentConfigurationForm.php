@@ -313,6 +313,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ),
     ];
 
+    // With trait combos being added to this table, ensure that form will render
+    // the most up-to-date listings rather than a cached snapshot.
+    $form[$summary_table_name]['#cache'] = ['max-age' => 0];
+
     // AJAX library dependencies.
     $form['#attached']['library'][] = 'core/drupal.dialog';
     $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
