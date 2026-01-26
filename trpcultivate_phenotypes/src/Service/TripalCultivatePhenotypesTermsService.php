@@ -146,13 +146,8 @@ class TripalCultivatePhenotypesTermsService {
 
     if ($terms) {
       if ($schema) {
-<<<<<<< Updated upstream
         $this->cvterm_buddy->setSchemaName($schema);
         $this->dbxref_buddy->setSchemaName($schema);
-=======
-        // $this->cvterm_buddy->connection->setSchemaName($schema);
-        // $this->dbxref_buddy->connection->setSchemaName($schema);
->>>>>>> Stashed changes
       }
 
       // Install terms.
