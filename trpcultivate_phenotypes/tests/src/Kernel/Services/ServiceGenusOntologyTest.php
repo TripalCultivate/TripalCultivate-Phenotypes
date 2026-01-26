@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;

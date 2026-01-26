@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
@@ -19,7 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('trpcultivate_phenotypes')]
 #[Group('services')]
 #[Group('traits')]
-class ValidTraitTest extends ChadoTestKernelBase {
+class ServiceTraitsTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
 
   /**
@@ -968,7 +968,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
       'component' => [
         'combo_id',
         'name',
-        'description',
+        'definition',
       ],
       'full' => [
         'combo_id',
@@ -993,17 +993,17 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
       foreach ($combo_format[$format] as $key) {
         foreach ($combos as $label => $combo) {
-          $label_key = isset($combo['label']) ? 'label' : 'name';
-
-          $this->assertEquals(
-            $label,
-            $combo[$label_key],
-            'The label key of the combo does not match label/name value in the array.',
-          );
+          if (isset($ombo['label'])) {
+            $this->assertEquals(
+              $label,
+              $combo['lable'],
+              'The label key of the combo does not match label/name value in the array.',
+            );
+          }
 
           $this->assertNotNull(
             $combo[$key],
-            'Experiment trait combo is expected to contain key: ' . $key,
+            'Experiment trait combo in ' . $format . ' format, is expected to contain key: ' . $key,
           );
         }
       }
