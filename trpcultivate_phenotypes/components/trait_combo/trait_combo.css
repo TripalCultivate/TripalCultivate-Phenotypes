@@ -27,3 +27,11 @@
   color: #CCCCCC;
   font-style: italic;
 }
+
+#tcp-phenocombo-summary-table tbody tr:hover {
+  background: none !important;
+}
+
+.tcp-exp-phenocombo tr {
+  border-bottom: none;
+}

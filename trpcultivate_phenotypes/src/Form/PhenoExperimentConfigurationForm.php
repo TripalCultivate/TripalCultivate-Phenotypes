@@ -192,7 +192,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
         'class' => [
           'container-inline',
         ],
-        'style' => 'text-align: right; margin: 0 0 10px 0',
+        'style' => 'text-align: right;',
       ],
     ];
 
@@ -267,19 +267,24 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $summary_table_name = 'experiment_traits_summary_table';
 
+    // This is the parent table - a trait.
     $form[$summary_table_name] = [
       '#type' => 'table',
+      '#prefix' => 'Trait Method Unit<hr />',
       '#header' => [],
       '#rows' => [],
       '#sticky' => FALSE,
       '#allowed_tags' => ['a', 'br', 'em', 'def', 'small', 'span', 'section'],
+      '#attributes' => [
+        'id' => 'tcp-phenocombo-summary-table',
+      ],
       '#empty' => array_merge(
         $form['config_toolbar']['add_trait'],
         [
+          '#prefix' => 'No traits found for this research experiment: ',
           '#attributes' => [
             'style' => 'color: blue; font-weight: 200; text-decoration: underline;',
           ],
-          '#prefix' => 'No traits found for this research experiment: ',
         ]
       ),
     ];
@@ -344,9 +349,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     $query_result = $query->execute();
 
+    $trait_combo = 'trait_combo';
     $set_genus = [];
     $a_group = FALSE;
-    $trait_combo = 'trait_combo';
 
     foreach ($query_result as $i => $trait_row) {
       $first_row = FALSE;
@@ -360,15 +365,27 @@ class PhenoExperimentConfigurationForm extends FormBase {
         $first_row = TRUE;
       }
 
+      // This is a child table - trait methods.
       $form[$summary_table_name][$i][$trait_combo] = [
         '#type' => 'table',
-        '#headers' => [
-          'label' => '',
-          'combo' => '',
-          'operations' => '',
+        '#prefix' => '<p class="tcp-trait-combo">' . $trait_row->name . '<br />
+           <em>' . $trait_row->definition . '</em></p>',
+        '#header' => [
+          'label' => [
+            'style' => 'width: 15%;',
+          ],
+          'combo' => [
+            'style' => 'width: 85%;',
+          ],
+          'operations' => [],
         ],
         '#rows' => [],
-        '#prefix' => $trait_row->name . '<br /><i>' . $trait_row->definition . '</i>',
+        '#attributes' => [
+          'valign' => 'top',
+          'class' => [
+            'tcp-exp-phenocombo',
+          ],
+        ],
       ];
 
       if (!$trait_row->combos) {
@@ -376,18 +393,14 @@ class PhenoExperimentConfigurationForm extends FormBase {
       }
 
       foreach (json_decode($trait_row->combos, TRUE) as $j => $combo) {
-        $form[$summary_table_name][$i][$trait_combo][$j] = [
-          '#attributes' => [
-            'style' => 'border-bottom: none',
-          ],
-        ];
-
+        // Table column: combo label.
         $form[$summary_table_name][$i][$trait_combo][$j]['label'] = [
           '#type' => 'html_tag',
           '#tag' => 'span',
-          '#value' => ($genus) ? $combo['label'] : $combo['label'] . '<br /><span class="marker" title="Genus">' . $trait_genus . '</span>',
+          '#value' => ($genus) ? $combo['label'] : $combo['label'] . '<br />
+            <span class="marker" title="Genus">' . $trait_genus . '</span>',
           '#attributes' => [
-            'style' => 'width: 15%;',
+            'title' => 'Trait Label - A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment',
             'class' => [
               'views-field',
             ],
@@ -400,6 +413,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
           $combo['unit_id'],
         );
 
+        // Table column: trait combo.
         $form[$summary_table_name][$i][$trait_combo][$j]['combo'] = [
           '#type' => 'component',
           '#component' => 'trpcultivate_phenotypes:trait_combo',
@@ -422,7 +436,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ],
           ],
           '#attributes' => [
-            'style' => 'width: 84%;',
+            'title' => $trait->name,
           ],
         ];
 
@@ -432,7 +446,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         $form[$summary_table_name][$i][$trait_combo][$j]['operations'] = [
           '#type' => 'dropbutton',
-          '#dropbutton_type' => 'small',
+          '#dropbutton_type' => 'extrasmall',
           '#links' => [
             'remove' => [
               'title' => 'Remove',
@@ -470,7 +484,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ],
           ],
         ];
+
+        // Helps group methods by trait name - a vertical border that stretches
+        // from first to the last method element.
+        $form[$summary_table_name][$i][$trait_combo][$j]['#attributes'] = [
+          'style' => 'border-left: 2px solid #DADADA',
+        ];
       }
+
+      // Helps group traits by genus - the first row of each genus has thicker
+      // top border style rule.
+      $form[$summary_table_name][$i]['#attributes'] = [
+        'style' => 'border-top: ' . (($first_row && $i > 0) ? '8px solid #DADADA;' : 'inherit;'),
+      ];
     }
 
     return $form;
@@ -600,156 +626,3 @@ class PhenoExperimentConfigurationForm extends FormBase {
   }
 
 }
-
-
-
-
-/*
-
-
-
-
-$first_row = FALSE;
-
-      $trait_genus = $genus_map[$trait_row->cv_id];
-      if (!in_array($trait_genus, $set_genus)) {
-        $this->service_PhenoTraits->setTraitGenus($trait_genus);
-        array_push($set_genus, $trait_genus);
-
-        $a_group = !$a_group;
-        $first_row = TRUE;
-      }
-
-      ['trait' => $trait, 'method' => $method, 'unit' => $unit] = $this->service_PhenoTraits->getTraitMethodUnitCombo(
-        $trait_row->attr_id,
-        $trait_row->observable_id,
-        $trait_row->unit_id,
-      );
-
-      // Table column: combo label.
-      $form[$summary_table_name][$i]['label'] = [
-        '#type' => 'html_tag',
-        '#tag' => 'span',
-        '#value' => ($genus) ? $trait_row->label : $trait_row->label . '<br /><span class="marker" title="Genus">' . $trait_genus . '</span>',
-        '#attributes' => [
-          'class' => [
-            'views-field',
-          ],
-        ],
-      ];
-
-      // Table column: trait combo.
-      $form[$summary_table_name][$i]['trait_combo'] = [
-        '#type' => 'component',
-        '#component' => 'trpcultivate_phenotypes:trait_combo',
-        '#slots' => [],
-        '#props' => [
-          'name' => $trait->name,
-          'definition' => $trait->definition,
-          'multiselect_method' => FALSE,
-          'method_unit_combo' => [
-            [
-              'method_shortname' => $method->name,
-              'unit' => $unit->name,
-              'type' => $this->service_PhenoTraits->getMethodUnitDataType($trait_row->unit_id),
-              'collection_method' => $method->definition,
-            ],
-          ],
-          'status' => [
-            'archived' => $trait_row->is_archived,
-            'required' => $trait_row->is_required,
-            'shared' => $trait_row->was_shared,
-            'collected' => $trait_row->was_collected,
-          ],
-        ],
-      ];
-
-      // Table column: trait combo operations.
-      $is_removable = ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected)
-        ? FALSE : TRUE;
-
-      $form[$summary_table_name][$i]['operations'] = [
-        '#type' => 'dropbutton',
-        '#dropbutton_type' => 'small',
-        '#links' => [
-          'remove' => [
-            'title' => 'Remove',
-            'url' => Url::fromRoute('<current>', [], [
-              'query' => [
-                'remove' => $trait_row->combo_id,
-              ],
-              'attributes' => [
-                'onclick' => 'return ' . ($is_removable ? 'confirm("Are you sure you want to Remove trait?")' : 'false'),
-                'style' => 'pointer-events: ' . ($is_removable ? 'auto' : 'none') . '; opacity: ' . ($is_removable ? 1 : 0.3),
-              ],
-            ]),
-          ],
-          'require' => [
-            'title' => 'Set ' . $status = ($trait_row->is_required ? 'Optional' : 'Require'),
-            'url' => Url::fromRoute('<current>', [], [
-              'query' => [
-                strtolower($status) => $trait_row->combo_id,
-              ],
-              'attributes' => [
-                'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
-              ],
-            ]),
-          ],
-          'archive' => [
-            'title' => 'Set ' . $status = ($trait_row->is_archived ? 'Active' : 'Archive'),
-            'url' => Url::fromRoute('<current>', [], [
-              'query' => [
-                strtolower($status) => $trait_row->combo_id,
-              ],
-              'attributes' => [
-                'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
-              ],
-            ]),
-          ],
-        ],
-      ];
-
-      // Helps group traits by genus - the first row of each genus has thicker
-      // top border style rule.
-      $form[$summary_table_name][$i]['#attributes'] = [
-        'style' => 'border-top: ' . (($first_row && $i > 0) ? '8px solid #DADADA;' : 'inherit;') ,
-        'valign' => 'top',
-      ];
-
-
-
-
-
-
-
-
-    $table_header = [
-      'label' => [
-        'data' => '',
-        'style' => 'width: 15%',
-      ],
-      'combo' => [
-        'data' => 'Trait Method Unit',
-        'style' => 'width: 84%',
-      ],
-      'operations' => [
-        'data' => 'Operations',
-        'style' => 'width: 1%;',
-      ],
-    ];
-
-    $table_header['label']['data'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'i',
-      '#prefix' => 'Label',
-      '#value' => '',
-      '#attributes' => [
-        'class' => [
-          'fa-solid',
-          'fa-circle-question',
-        ],
-        'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment',
-      ],
-    ];
-
-    */
