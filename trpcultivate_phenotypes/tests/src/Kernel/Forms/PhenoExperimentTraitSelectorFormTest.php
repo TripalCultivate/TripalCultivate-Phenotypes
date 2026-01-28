@@ -377,7 +377,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     // The trait selector form includes a helpful note to guide user in
     // getting started with search.
     $this->assertStringContainsString(
-      'Start typing part of the trait name into the search field to search for specific traits, or click - Show all Traits button, to explore all available traits for the selected genus.',
+      'Start typing part of the trait name into the search field to search for specific traits, or click "Show all Traits" button, to explore all available traits for the selected genus.',
       $select_form[self::FORM_WRAPPER]['search_tooltips']['#children']['a_tip']['#value'],
       'The trait selector form is expected to contain a search tip.',
     );

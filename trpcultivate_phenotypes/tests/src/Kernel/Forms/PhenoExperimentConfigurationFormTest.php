@@ -676,7 +676,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
 
       $this->assertStringContainsString(
-        'The trait combo operation ' . ucfirst($operation) . ' completed successfully.',
+        'The trait combo operation "' . ucfirst($operation) . '" completed successfully.',
         $this->container->get('http_kernel')->handle($request)->getContent(),
         'The requested operation failed to set a status value',
       );

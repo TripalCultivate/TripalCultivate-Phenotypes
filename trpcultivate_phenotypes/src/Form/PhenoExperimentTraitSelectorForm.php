@@ -362,7 +362,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'a_tip' => [
           '#type' => 'html_tag',
           '#tag' => 'p',
-          '#value' => 'Start typing part of the trait name into the search field to search for specific traits, or click - Show all Traits button, to explore all available traits for the selected genus.',
+          '#value' => 'Start typing part of the trait name into the search field to search for specific traits, or click "Show all Traits" button, to explore all available traits for the selected genus.',
         ],
       ],
       '#states' => [
