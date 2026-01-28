@@ -402,7 +402,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $form[$summary_table_name][$i]['trait_combo'] = [
         '#type' => 'component',
         '#component' => 'trpcultivate_phenotypes:trait_combo',
-        '#slots' => [],
         '#props' => [
           'name' => $trait->name,
           'definition' => $trait->definition,
