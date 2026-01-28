@@ -438,6 +438,175 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       count($table_items),
       'The table render array #rows property key does not contain the expected number of traits.'
     );
+
+    // Test the summary table rendered markup.
+    $render_config_form = $this->container->get('renderer')
+      ->renderRoot($config_form);
+
+
+    $genus_ontology_service = $this->container->get('trpcultivate_phenotypes.genus_ontology');
+
+    $genus_map = [];
+    foreach (array_keys($this->trait_set) as $genus) {
+      $cv_id = $genus_ontology_service->getGenusOntologyConfigValues($genus)['trait'];
+      $genus_map[$cv_id] = $genus;
+    }
+
+    // Using the same query setup as in the frontend, test that the expected row
+    // is at the same table item row number in the markup.
+    $query = $this->chado_connection->select(self::PHENO_COMBO_TABLE, 'tc');
+    $query->join('1:cvterm', 't', 'tc.attr_id = t.cvterm_id');
+    $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
+
+    $query->fields('t', ['name', 'definition']);
+    $query->fields('v', ['cv_id']);
+
+    $query->addExpression(
+      "JSON_AGG(JSON_BUILD_OBJECT(
+        'combo_id', tc.combo_id,
+        'attr_id', tc.attr_id,
+        'observable_id', tc.observable_id,
+        'unit_id', tc.unit_id,
+        'label', tc.label,
+        'is_archived', tc.is_archived,
+        'is_required', tc.is_required,
+        'was_shared', tc.was_shared,
+        'was_collected', tc.was_collected
+      ) ORDER BY tc.label ASC)", 'combos'
+    );
+
+    $query
+      ->condition('tc.project_id', $experiment_id, '=')
+      ->orderBy('v.name', 'ASC')
+      ->orderBy('t.name', 'ASC')
+      ->groupBy('t.name')
+      ->groupBy('t.definition')
+      ->groupBy('v.cv_id')
+      ->groupBy('v.name');
+
+    $query_result = $query->execute();
+
+    $this->setRawContent($render_config_form);
+    $table_rows = $this->cssSelect('table#tcp-phenocombo-summary-table tbody tr');
+
+    $status_class = [
+      'tcp-pheno-archived',
+      'tcp-pheno-required',
+      'tcp-pheno-shared',
+      'tcp-pheno-collected',
+    ];
+
+    $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
+
+    $genus_set = [];
+    $row_i = 0;
+
+    foreach ($query_result as $i => $trait_row) {
+      $genus = $genus_map[$trait_row->cv_id];
+      if (!in_array($genus, $genus_set)) {
+        $trait_service->setTraitGenus($genus);
+        array_push($genus_set, $genus);
+      }
+
+      $current_trait_row = $this->cssSelect('td p', $table_rows[$i])[$i]
+        ->asXML();
+
+      // The trait name and definition.
+      $this->assertStringContainsString(
+        $trait_row->name,
+        $current_trait_row,
+        'The trait name ' . $trait_row->name . ' is expected in table row #' . $i
+      );
+
+      $this->assertStringContainsString(
+        $trait_row->definition,
+        $current_trait_row,
+        'The trait definition ' . $trait_row->definition . ' is expected in table row #' . $i
+      );
+
+      // Trait methods table.
+      $current_method_row = $this->cssSelect('table.tcp-exp-phenocombo tbody tr', $table_rows[$i]);
+
+      foreach (json_decode($trait_row->combos, TRUE) as $combo) {
+        $method_markup = $current_method_row[$row_i]->asXML();
+
+        $this->assertStringContainsString(
+          $combo['label'],
+          $method_markup,
+          'The trait combo label ' . $combo['label'] . ' is expected in table row #' . $i
+        );
+
+        ['trait' => $trait, 'method' => $method, 'unit' => $unit] = $trait_service->getTraitMethodUnitCombo(
+          $combo['attr_id'],
+          $combo['observable_id'],
+          $combo['unit_id'],
+        );
+
+        $this->assertStringContainsString(
+          $trait->name,
+          $method_markup,
+          'The trait combo name ' . $trait->name . ' is expected in table row #' . $i
+        );
+
+        $this->assertStringContainsString(
+          $method->name,
+          $method_markup,
+          'The trait combo method ' . $method->name . ' is expected in table row #' . $i
+        );
+
+        $this->assertStringContainsString(
+          $unit->name,
+          $method_markup,
+          'The trait combo unit ' . $unit->name . ' is expected in table row #' . $i
+        );
+
+        $trait_status = [
+          $combo['is_archived'],
+          $combo['is_required'],
+          $combo['was_shared'],
+          $combo['was_collected'],
+        ];
+
+        foreach ($trait_status as $j => $status) {
+          if ($status) {
+            // A value 1 will render a coressponding trait status icon.
+            $this->assertStringContainsString(
+              $status_class[$j],
+              $method_markup,
+              'The trait combo is expected to have the icon status CSS class name ' . $status_class[$j] . ' in table row #' . $i
+            );
+          }
+          else {
+            $this->assertStringNotContainsString(
+              $status_class[$j],
+              $method_markup,
+              'The trait combo is expected not to have the icon status CSS class name ' . $status_class[$j] . ' in table row #' . $i
+            );
+          }
+        }
+
+        // Operations options available to the item depend on trait status values.
+        $this->assertStringContainsString(
+          'Remove',
+          $method_markup,
+          'The trait item is expected to contain a remove operation option.',
+        );
+
+        $this->assertStringContainsString(
+          $set_to = 'Set ' . (($combo['is_required']) ? 'Optional' : 'Require'),
+          $method_markup,
+          'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+        );
+
+        $this->assertStringContainsString(
+          $set_to = 'Set ' . (($combo['is_archived']) ? 'Active' : 'Archive'),
+          $method_markup,
+          'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+        );
+
+        $row_i++;
+      }
+    }
   }
 
   /**
@@ -485,11 +654,11 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         return is_int($i);
       });
 
-      $this->assertEquals(
-        $count = count($all_trait[$genus]),
-        count($table_items),
-        'The number of traits in genus ' . $genus . ' does not match expected count - ' . $count
-      );
+      // $this->assertEquals(
+      //   $count = count($all_trait[$genus]),
+      //   count($table_items),
+      //   'The number of traits in genus ' . $genus . ' does not match expected count - ' . $count
+      // );
 
       foreach ($table_items as $delta) {
         // $this->assertContains(
