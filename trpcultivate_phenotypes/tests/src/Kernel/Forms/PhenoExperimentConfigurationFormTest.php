@@ -932,7 +932,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test valid reoute parameter and page exceptions.
+   * Test valid route parameter and page exceptions.
    *
    * @param string $scenario
    *   A string, human-readable short description of the test scenario.
