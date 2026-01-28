@@ -654,18 +654,20 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         return is_int($i);
       });
 
-      // $this->assertEquals(
-      //   $count = count($all_trait[$genus]),
-      //   count($table_items),
-      //   'The number of traits in genus ' . $genus . ' does not match expected count - ' . $count
-      // );
+      $this->assertEquals(
+        $count = count(array_unique($all_trait[$genus])),
+        count($table_items),
+        'The number of traits in genus ' . $genus . ' does not match expected count - ' . $count
+      );
 
       foreach ($table_items as $delta) {
-        // $this->assertContains(
-        //   $trait_name = $config_form[$summary_table_name][$delta]['trait_combo']['#props']['name'],
-        //   $all_trait[$genus],
-        //   'The trait name ' . $trait_name . ' is expected in genus ' . $genus . ' filter result.'
-        // );
+        preg_match('/<p class="tcp-trait-combo">(.*?)<br \/>/', $config_form[$summary_table_name][$delta]['trait_combo']['#prefix'], $match);
+
+        $this->assertContains(
+          $trait_name = $match[1],
+          array_unique($all_trait[$genus]),
+          'The trait name ' . $trait_name . ' is expected in genus ' . $genus . ' filter result.'
+        );
       }
     }
   }
