@@ -91,7 +91,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *   TripalCultivate Phenotypes Genus-Ontology.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
    *   TripalCultivate Phenotypes Genus-Project service.
-   * @param \Drupal\trpcultivate_phenotypes\Service\ripalCultivatePhenotypesTraitsService $service_PhenoTraits
+   * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
