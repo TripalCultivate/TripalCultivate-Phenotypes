@@ -402,7 +402,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           $form[$form_dialog_wrapper]['duplicate_label'] = [
             '#theme' => 'status_messages',
             '#message_list' => [
-              'warning' => [
+              'error' => [
                 'The label is already used in the experiment.',
               ],
             ],
