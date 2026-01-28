@@ -91,7 +91,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *   TripalCultivate Phenotypes Genus-Ontology.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
    *   TripalCultivate Phenotypes Genus-Project service.
-   * @param \Drupal\trpcultivate_phenotypes\Service\ripalCultivatePhenotypesTraitsService $service_PhenoTraits
+   * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
@@ -144,7 +144,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     $experiment = $tripal_entity->get('exp_name')->getValue();
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
-    // Update the title to show which reseach experiment is being configured.
+    // Update the title to show which research experiment is being configured.
     $form['#title'] = 'Add traits to ' . $experiment_name;
 
     $form['tripal_entity_id'] = [
