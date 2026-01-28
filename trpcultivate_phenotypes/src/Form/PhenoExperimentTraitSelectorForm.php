@@ -375,7 +375,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     // Capture trigger element responsible for staring trait selection request.
     $trigger_el = $form_state->getTriggeringElement() ?? 0;
 
-    // Prepare tratis that matched the search key.
+    // Prepare traits that matched the search key.
     if ($trigger_el && isset($trigger_el['#attributes']['class'])
       && in_array('trigger-element', $trigger_el['#attributes']['class'])) {
 
