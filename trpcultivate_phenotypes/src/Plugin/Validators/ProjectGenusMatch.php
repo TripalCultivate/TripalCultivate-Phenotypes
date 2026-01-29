@@ -218,14 +218,15 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
   /**
    * Process failed validation from ProjectGenusMatch into a render array.
    *
-   * @param array $failure
-   *   An associative array that was returned by the ProjectGenusMatch validator
-   *   in the event of failed validation. It contains the following keys:
-   *   - 'case': a developer-focused string describing the case checked.
-   *   - 'valid': FALSE to indicate that validation failed.
-   *   - 'failedItems': an array of items that failed with the following keys.
-   *     - 'project_provided': The name of the project provided.
-   *     - 'genus_provided': The name of the genus provided.
+   * @param array $validation_status
+   *   An associative array that stores the validation failures by the
+   *   ProjectGenusMatch validator. It is an associative array returned by the
+   *   validator. Here is the overall structure:
+   *     - 'case': a developer-focused string describing the case checked.
+   *     - 'valid': FALSE to indicate that validation failed.
+   *     - 'failedItems': an array of items that failed, where the key is
+   *       a shorthand of the case and the value contains the failed item.
+   *       @see validateMetadata()
    * @param array $tokens
    *   [OPTIONAL] An array of values to use for token replacement.
    *   @see ProjectGenusMatch::$mapping
@@ -256,10 +257,11 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
    *   - If the case string returned by the validator implied validation passed.
    *   - If the case string returned by the validator is not recognized.
    */
-  public static function processItemWithSimpleList(array $failure, array $tokens = []) {
+  public static function processItemWithSimpleList(array $validation_status, array $tokens = []) {
 
     // Check the format of the failure parameter.
-    ImportValidationHelper::checkValidationStatusArray($failure, 'ProjectGenusMatch');
+    ImportValidationHelper::checkValidationStatusArray($validation_status, 'ProjectGenusMatch');
+
     // Grab the default messages for all of our tokens (ones with default-msg).
     $default_tokens = array_column(self::$mapping, 'default-msg', 'token');
     // Combine our provided and our default token arrays. Because array_merge
@@ -269,27 +271,27 @@ class ProjectGenusMatch extends TripalCultivatePhenotypesValidatorBase implement
 
     // Check for one of the expected cases. Use the message stored in the
     // provided tokens array if set, otherwise use our default case message.
-    if ($failure['case'] == 'Project does not exist') {
+    if ($validation_status['case'] == 'Project does not exist') {
       $message = $combined_tokens['case-no-project'];
       $items = [
-        '[project]: ' . $failure['failedItems']['project_provided'],
+        '[project]: ' . $validation_status['failedItems']['project_provided'],
       ];
     }
-    elseif ($failure['case'] == 'Project has no genus set and could not compare with the genus provided') {
+    elseif ($validation_status['case'] == 'Project has no genus set and could not compare with the genus provided') {
       $message = $combined_tokens['case-no-paired-genus'];
       $items = [
-        '[project]: ' . $failure['failedItems']['project_provided'],
-        'Genus: ' . $failure['failedItems']['genus_provided'],
+        '[project]: ' . $validation_status['failedItems']['project_provided'],
+        'Genus: ' . $validation_status['failedItems']['genus_provided'],
       ];
     }
-    elseif ($failure['case'] == 'Genus does not match a genus set to the project') {
+    elseif ($validation_status['case'] == 'Genus does not match a genus set to the project') {
       $message = $combined_tokens['case-project-genus-mismatch'];
       $items = [
-        '[project]: ' . $failure['failedItems']['project_provided'],
-        'Genus: ' . $failure['failedItems']['genus_provided'],
+        '[project]: ' . $validation_status['failedItems']['project_provided'],
+        'Genus: ' . $validation_status['failedItems']['genus_provided'],
       ];
     }
-    elseif ($failure['case'] == 'Project exists and project-genus match the genus provided') {
+    elseif ($validation_status['case'] == 'Project exists and project-genus match the genus provided') {
       throw new \Exception('The case string returned by the ProjectGenusMatch validator implies validation passed, but valid is set to FALSE.');
     }
     else {
