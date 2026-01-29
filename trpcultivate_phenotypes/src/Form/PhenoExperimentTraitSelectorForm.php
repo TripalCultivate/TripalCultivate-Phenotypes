@@ -91,7 +91,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *   TripalCultivate Phenotypes Genus-Ontology.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
    *   TripalCultivate Phenotypes Genus-Project service.
-   * @param \Drupal\trpcultivate_phenotypes\Service\ripalCultivatePhenotypesTraitsService $service_PhenoTraits
+   * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
@@ -144,7 +144,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     $experiment = $tripal_entity->get('exp_name')->getValue();
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
-    // Update the title to show which reseach experiment is being configured.
+    // Update the title to show which research experiment is being configured.
     $form['#title'] = 'Add traits to ' . $experiment_name;
 
     $form['tripal_entity_id'] = [
@@ -362,7 +362,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'a_tip' => [
           '#type' => 'html_tag',
           '#tag' => 'p',
-          '#value' => 'Start typing part of the trait name into the search field to search for specific traits, or click - Show all Traits button, to explore all available traits for the selected genus.',
+          '#value' => 'Start typing part of the trait name into the search field to search for specific traits, or click "Show all Traits" button, to explore all available traits for the selected genus.',
         ],
       ],
       '#states' => [
@@ -375,7 +375,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     // Capture trigger element responsible for staring trait selection request.
     $trigger_el = $form_state->getTriggeringElement() ?? 0;
 
-    // Prepare tratis that matched the search key.
+    // Prepare traits that matched the search key.
     if ($trigger_el && isset($trigger_el['#attributes']['class'])
       && in_array('trigger-element', $trigger_el['#attributes']['class'])) {
 
@@ -402,7 +402,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           $form[$form_dialog_wrapper]['duplicate_label'] = [
             '#theme' => 'status_messages',
             '#message_list' => [
-              'warning' => [
+              'error' => [
                 'The label is already used in the experiment.',
               ],
             ],

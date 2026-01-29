@@ -598,7 +598,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     if ($ok === 1) {
       $this->messenger()
-        ->addStatus('The trait combo operation ' . ucfirst($action) . ' completed successfully.');
+        ->addStatus('The trait combo operation "' . ucfirst($action) . '" completed successfully.');
     }
   }
 
