@@ -53,7 +53,7 @@ trpcultivate_phenotypes.experiment_configuration:
         bundle:
           - research_experiment
 
-# Experiment Configuration Page.
+# Experiment Phenotypes Backup.
 trpcultivate_phenotypes.experiment_phenobackup:
   path: '/bio_data/{tripal_entity}/phenobackup'
   defaults:

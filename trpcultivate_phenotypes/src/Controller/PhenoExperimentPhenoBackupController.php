@@ -51,15 +51,6 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
 
     $build['#title'] = 'Phenotypes Backup for ' . $exp_name;
 
-    $phenobackup_storage = $this->entityTypeManager()
-      ->getStorage('phenodata_backup');
-
-    $backup_ids = $phenobackup_storage
-      ->getQuery()
-      ->condition('project_id', $exp_id, '=')
-      ->sort('backup_date', 'DESC')
-      ->execute();
-
     $build['backup_table'] = [
       '#type' => 'table',
       '#header' => [
@@ -83,8 +74,17 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
       '#empty' => 'No Phenotypes Backup file found for this experiment.',
     ];
 
+    $phenobackup_storage = $this->entityTypeManager()
+      ->getStorage('phenodata_backup');
+
+    $backup_ids = $phenobackup_storage
+      ->getQuery()
+      ->condition('project_id', $exp_id, '=')
+      ->sort('backup_date', 'DESC')
+      ->execute();
+
     foreach ($phenobackup_storage->loadMultiple($backup_ids) as $backup) {
-      $create_by = $this->entityTypeManager()
+      $created_by = $this->entityTypeManager()
         ->getStorage('user')
         ->load($backup->user_id)
         ->getAccountName();
@@ -107,7 +107,7 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
       $build['backup_table']['#rows'][] = [
         $backup->backup_date,
         $backup->comments ?: 'No notes/comments placed on this file',
-        $create_by,
+        $created_by,
         $file_download,
       ];
     }
