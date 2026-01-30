@@ -24,3 +24,9 @@ trpcultivate_phenotypes.tab_phenotypes:
   route_name: trpcultivate_phenotypes.experiment_configuration
   title: 'Phenotypes'
   base_route: entity.tripal_entity.canonical
+
+# Create a tab titled Backup in a Research Experiment content type.
+trpcultivate_phenotypes.tab_backup:
+  route_name: trpcultivate_phenotypes.experiment_phenobackup
+  title: 'Phenotypes Backup'
+  base_route: entity.tripal_entity.canonical
