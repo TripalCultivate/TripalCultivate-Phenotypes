@@ -89,7 +89,7 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
       ->installTerms();
 
     \trpcultivate_import_contenttypes();
-    $config_terms = $this->setTermConfig();
+    $this->setTermConfig();
 
     // Create Research Experiment Tripal content.
     $project_name = 'Test Project';
@@ -165,7 +165,7 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
     // Test headers text and order of placement.
     $headers = $this->cssSelect('thead tr th', $table[0]);
 
-    foreach(['Date Created', 'Notes/Comments', 'Created By', 'Data File'] as $i => $header) {
+    foreach (['Date Created', 'Notes/Comments', 'Created By', 'Data File'] as $i => $header) {
       $this->assertStringContainsString(
         $header,
         (string) $headers[$i]->asXML(),
