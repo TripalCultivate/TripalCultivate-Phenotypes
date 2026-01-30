@@ -199,19 +199,19 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
     $i = 0;
     foreach ($phenobackup_storage->loadMultiple($backup_ids) as $backup) {
       $this->assertStringContainsString(
-        $backup->backup_date,
+        $backup->get('backup_date'),
         (string) $backups[$i]->asXML(),
         'The order of backup item does not match expected order (most recent first).',
       );
 
       $this->assertStringContainsString(
-        $backup->comments ?: 'No notes/comments placed on this file',
+        $backup->get('comments') ?: 'No notes/comments placed on this file',
         (string) $backups[$i]->asXML(),
         'The file backup comments does not match expected comment.',
       );
 
       $created_by = $entity_manager->getStorage('user')
-        ->load($backup->user_id)
+        ->load($backup->get('user_id'))
         ->getAccountName();
 
       $this->assertStringContainsString(
@@ -221,7 +221,7 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
       );
 
       $file_obj = $entity_manager->getStorage('file')
-        ->load($backup->file_id);
+        ->load($backup->get('file_id'));
 
       $this->assertStringContainsString(
         $file_obj->createFileUrl(),

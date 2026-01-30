@@ -86,12 +86,12 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
     foreach ($phenobackup_storage->loadMultiple($backup_ids) as $backup) {
       $created_by = $this->entityTypeManager()
         ->getStorage('user')
-        ->load($backup->user_id)
+        ->load($backup->get('user_id'))
         ->getAccountName();
 
       $file_obj = $this->entityTypeManager()
         ->getStorage('file')
-        ->load($backup->file_id);
+        ->load($backup->get('file_id'));
 
       if ($file_obj) {
         $file_download['data'] = [
@@ -105,8 +105,8 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
       }
 
       $build['backup_table']['#rows'][] = [
-        $backup->backup_date,
-        $backup->comments ?: 'No notes/comments placed on this file',
+        $backup->get('backup_date'),
+        $backup->get('comments') ?: 'No notes/comments placed on this file',
         $created_by,
         $file_download,
       ];
