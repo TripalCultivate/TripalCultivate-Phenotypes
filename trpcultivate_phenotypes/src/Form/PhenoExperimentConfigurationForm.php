@@ -381,7 +381,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
         ],
         '#rows' => [],
         '#attributes' => [
-          'valign' => 'top',
           'class' => [
             'tcp-exp-phenocombo',
           ],
