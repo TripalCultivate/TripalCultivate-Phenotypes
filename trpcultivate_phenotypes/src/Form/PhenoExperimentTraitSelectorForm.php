@@ -215,9 +215,9 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     );
 
-    $form[$form_dialog_wrapper]['search_toolbar']['suggest'] = [
+    $form[$form_dialog_wrapper]['search_toolbar']['import_traits'] = [
       '#type' => 'link',
-      '#title' => 'Suggest a Trait',
+      '#title' => 'Import Traits',
       '#url' => Url::fromUri(
         'internal:/admin/tripal/loaders/trpcultivate-phenotypes-traits-importer',
       ),
