@@ -41,7 +41,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *
    * @var \Drupal\tripal\Services\TripalLogger
    */
-  protected $tripal_logger;
+  protected TripalLogger $tripal_logger;
 
   /**
    * Genus-Ontotology service.
