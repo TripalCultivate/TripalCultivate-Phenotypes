@@ -312,7 +312,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     // Prepare traits that matched the trait search key.
-    // Result is groupped by genus.
+    // Result is grouped by genus.
     $query = $this->chado_connection->select(self::PHENO_COMBO_TABLE, 'tc');
     $query->join('1:cvterm', 't', 'tc.attr_id = t.cvterm_id');
     $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
