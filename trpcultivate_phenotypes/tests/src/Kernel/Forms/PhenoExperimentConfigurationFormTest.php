@@ -407,7 +407,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       'Trait Method Unit',
       (string) $config_form[$summary_table_name]['#prefix'],
-      'The summary table title text does not matche epected title.',
+      'The summary table title text does not match the expected title.',
     );
 
     $db_trait_count = $this->container->get('database')
