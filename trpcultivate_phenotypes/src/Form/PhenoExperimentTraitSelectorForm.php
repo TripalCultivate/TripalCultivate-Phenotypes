@@ -260,7 +260,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     $form[$form_dialog_wrapper]['search_toolbar']['close'] = [
       '#type' => 'button',
-      '#value' => 'Close & Update Traits',
+      '#value' => 'Close & Refresh Table',
       '#attributes' => [
         'class' => [
           'button--small',

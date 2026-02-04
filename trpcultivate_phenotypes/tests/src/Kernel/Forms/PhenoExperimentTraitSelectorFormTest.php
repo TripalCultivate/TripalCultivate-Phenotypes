@@ -333,7 +333,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     );
 
     $this->assertStringContainsString(
-      $title = 'Close & Update Traits',
+      $title = 'Close & Refresh Table',
       $search_toolbar['close']['#value'],
       'The trait selector form is expected to contain a button titled ' . $title,
     );
