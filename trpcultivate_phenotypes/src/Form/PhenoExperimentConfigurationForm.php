@@ -211,7 +211,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
         'dialogType' => 'modal',
         'dialog' => [
           'width' => 850,
-          'dialogClass' => 'tcp-no-close',
           'closeText' => 'Close Trait Selector window',
         ],
         'progress' => [

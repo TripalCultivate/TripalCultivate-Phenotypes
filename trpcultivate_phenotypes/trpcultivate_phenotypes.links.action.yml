@@ -14,4 +14,4 @@ trpcultivate_phenotypes.trait_selector:
       class:
         - 'use-ajax'
       data-dialog-type: 'modal'
-      data-dialog-options: '{"width": 850, "dialogClass": "tcp-no-close"}'
+      data-dialog-options: '{"width": 850}'
