@@ -553,15 +553,15 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
 
       $this->assertStringContainsString(
-        $set_to = 'Set ' . (($trait_row->is_required) ? 'Optional' : 'Require'),
+        $set_to = 'Set as ' . (($trait_row->is_required) ? 'Optional' : 'Required'),
         $current_row,
-        'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+        'The trait item is expected to contain operation option to ' . $set_to,
       );
 
       $this->assertStringContainsString(
-        $set_to = 'Set ' . (($trait_row->is_archived) ? 'Active' : 'Archive'),
+        $set_to = (($trait_row->is_archived) ? 'Restore' : 'Archive') . ' Trait',
         $current_row,
-        'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+        'The trait item is expected to contain operation option to ' . $set_to,
       );
     }
   }

@@ -443,24 +443,24 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ]),
           ],
           'require' => [
-            'title' => 'Set ' . $status = ($trait_row->is_required ? 'Optional' : 'Require'),
+            'title' => 'Set as ' . $status = ($trait_row->is_required ? 'Optional' : 'Required'),
             'url' => Url::fromRoute('<current>', [], [
               'query' => [
-                strtolower($status) => $trait_row->combo_id,
+                ($trait_row->is_required ? 'optional' : 'require') => $trait_row->combo_id,
               ],
               'attributes' => [
-                'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
+                'onclick' => 'return confirm("Are you sure you want to set status to ' . $status . '?")',
               ],
             ]),
           ],
           'archive' => [
-            'title' => 'Set ' . $status = ($trait_row->is_archived ? 'Active' : 'Archive'),
+            'title' => $status = ($trait_row->is_archived ? 'Restore' : 'Archive') . ' Trait',
             'url' => Url::fromRoute('<current>', [], [
               'query' => [
-                strtolower($status) => $trait_row->combo_id,
+                ($trait_row->is_archived ? 'active' : 'archive') => $trait_row->combo_id,
               ],
               'attributes' => [
-                'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
+                'onclick' => 'return confirm("Are you sure you want to ' . $status . '?")',
               ],
             ]),
           ],
