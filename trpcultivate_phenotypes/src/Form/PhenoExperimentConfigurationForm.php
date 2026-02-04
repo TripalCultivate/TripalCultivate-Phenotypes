@@ -27,7 +27,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @var \Drupal\Core\Database\Connection
    */
-  protected Connection $database_connection;
+  protected Connection $drupaldb_connection;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -74,7 +74,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Database\Connection $database_connection
+   * @param \Drupal\Core\Database\Connection $drupaldb_connection
    *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
@@ -88,7 +88,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
-    Connection $database_connection,
+    Connection $drupaldb_connection,
     ChadoConnection $chado_connection,
     TripalLogger $tripal_logger,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
@@ -96,7 +96,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
   ) {
 
-    $this->database_connection = $database_connection;
+    $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
     $this->tripal_logger = $tripal_logger;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
@@ -496,7 +496,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    */
   public function handleOperation(string $action, int $project_id, int $combo_id): void {
 
-    $combo = $this->database_connection->select(self::PHENO_COMBO_TABLE, 'tc')
+    $combo = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc')
       ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
       ->condition('tc.combo_id', $combo_id, '=')
       ->condition('tc.project_id', $project_id, '=')
@@ -521,7 +521,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
           throw new AccessDeniedHttpException($message);
         }
 
-        $transaction = $this->database_connection->startTransaction();
+        $transaction = $this->drupaldb_connection->startTransaction();
         try {
           $ok = $this->chado_connection
             ->delete(self::PHENO_COMBO_TABLE)
@@ -551,9 +551,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         $status = (in_array($action, ['require', 'archive'])) ? 1 : 0;
 
-        $transaction = $this->database_connection->startTransaction();
+        $transaction = $this->drupaldb_connection->startTransaction();
         try {
-          $ok = $this->database_connection
+          $ok = $this->drupaldb_connection
             ->update(self::PHENO_COMBO_TABLE)
             ->fields([
               $field_map[$action] => $status,
