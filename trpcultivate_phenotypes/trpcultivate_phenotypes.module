@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Entity\EntityInterface;
 
 /**
  * Implements hook_help().
@@ -114,6 +115,57 @@ function trpcultivate_phenotypes_menu_local_tasks_alter(&$menu_tasks) {
 
       if ($has_pheno) {
         $menu_tasks['tabs'][0]['entity.tripal_entity.delete_form'] = [];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ *
+ * Enforces genus-phenotypes relationship when providing genus to Research
+ * Experiment entity.
+ */
+function trpcultivate_phenotypes_tripal_entity_presave(EntityInterface $entity) {
+
+  if ($entity->bundle() == 'research_experiment') {
+    $experiment_id = $entity->get('exp_name')->getValue()[0]['record_id'];
+
+    // Genus as provided in the Design/Germplasm/Germplasm Genus field.
+    $exp_germgenus = array_column(
+      $entity->get('exp_germgenus')->getValue(),
+      'value'
+    );
+
+    // All genus configured in Phenotypes.
+    $genus_ontology_service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
+    $pheno_configgenus = $genus_ontology_service->getConfiguredGenusList();
+
+    $chado_connection = \Drupal::service('tripal_chado.database');
+
+    if ($pheno_configgenus) {
+      foreach ($pheno_configgenus as $genus) {
+        $genus_trait_config = $genus_ontology_service
+          ->getGenusOntologyConfigValues($genus)['trait'];
+
+        $query = $chado_connection->select('trpcultivate_phenocombo', 'tp');
+        $query->join('1:cvterm', 't', 'tp.attr_id = t.cvterm_id');
+        $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
+
+        // A phenotype to a genus would suffice enforcement check.
+        $has_pheno = $query
+          ->fields('tp', ['combo_id'])
+          ->condition('tp.project_id', $experiment_id, '=')
+          ->condition('v.cv_id', $genus_trait_config, '=')
+          ->range(0, 1)
+          ->execute()
+          ->fetchField();
+
+        // Genus has phenotypes and is missing from the list of genus of the
+        // research experiment entity.
+        if ($has_pheno > 0 && !in_array($genus, $exp_germgenus)) {
+          throw new \Exception('Genus ' . $genus . ' of this research experiment is linked to Phenotypes module. Please restore the genus and try again.');
+        }
       }
     }
   }
