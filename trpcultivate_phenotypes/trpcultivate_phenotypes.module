@@ -145,8 +145,12 @@ function trpcultivate_phenotypes_tripal_entity_presave(EntityInterface $entity) 
 
     if ($pheno_configgenus) {
       foreach ($pheno_configgenus as $genus) {
-        $genus_trait_config = $genus_ontology_service
-          ->getGenusOntologyConfigValues($genus)['trait'];
+        $genus_config = $genus_ontology_service
+          ->getGenusOntologyConfigValues($genus);
+
+        if (!$genus_config) {
+          continue;
+        }
 
         $query = $chado_connection->select('trpcultivate_phenocombo', 'tp');
         $query->join('1:cvterm', 't', 'tp.attr_id = t.cvterm_id');
@@ -156,7 +160,7 @@ function trpcultivate_phenotypes_tripal_entity_presave(EntityInterface $entity) 
         $has_pheno = $query
           ->fields('tp', ['combo_id'])
           ->condition('tp.project_id', $experiment_id, '=')
-          ->condition('v.cv_id', $genus_trait_config, '=')
+          ->condition('v.cv_id', $genus_config['trait'], '=')
           ->range(0, 1)
           ->execute()
           ->fetchField();
