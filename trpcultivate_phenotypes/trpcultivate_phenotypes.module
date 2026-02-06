@@ -123,27 +123,29 @@ function trpcultivate_phenotypes_menu_local_tasks_alter(&$menu_tasks) {
 /**
  * Implements hook_entity_presave().
  *
- * Enforces genus-phenotypes relationship when providing genus to Research
- * Experiment entity.
+ * Enforces the genus-experiment-phenotype relationship by ensuring uniqueness
+ * and preventing modification or removal of the genus entry once phenotypic
+ * data has been associated.
  */
 function trpcultivate_phenotypes_tripal_entity_presave(EntityInterface $entity) {
 
   if ($entity->bundle() == 'research_experiment') {
-    $experiment_id = $entity->get('exp_name')->getValue()[0]['record_id'];
-
-    // Genus as provided in the Design/Germplasm/Germplasm Genus field.
-    $exp_germgenus = array_column(
-      $entity->get('exp_germgenus')->getValue(),
-      'value'
-    );
-
     // All genus configured in Phenotypes.
     $genus_ontology_service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
     $pheno_configgenus = $genus_ontology_service->getConfiguredGenusList();
 
-    $chado_connection = \Drupal::service('tripal_chado.database');
+    if (count($pheno_configgenus) > 0) {
+      $experiment_id = $entity->get('exp_name')->getValue()[0]['record_id'];
 
-    if ($pheno_configgenus) {
+      // Genus as provided in the Design/Germplasm/Germplasm Genus field.
+      $exp_germgenus = array_column(
+        $entity->get('exp_germgenus')->getValue(),
+        'value'
+      );
+
+      $count_bygenus = array_count_values($exp_germgenus);
+      $chado_connection = \Drupal::service('tripal_chado.database');
+
       foreach ($pheno_configgenus as $genus) {
         $genus_config = $genus_ontology_service
           ->getGenusOntologyConfigValues($genus);
@@ -165,10 +167,12 @@ function trpcultivate_phenotypes_tripal_entity_presave(EntityInterface $entity) 
           ->execute()
           ->fetchField();
 
-        // Genus has phenotypes and is missing from the list of genus of the
-        // research experiment entity.
-        if ($has_pheno > 0 && !in_array($genus, $exp_germgenus)) {
-          throw new \Exception('Genus ' . $genus . ' of this research experiment is linked to Phenotypes module. Please restore the genus and try again.');
+        // Genus has phenotypes and is missing/has duplicates from the list of
+        // germplasm genus of the research experiment entity.
+        $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
+
+        if ($has_pheno > 0 && (!in_array($genus, $exp_germgenus) || $not_unique)) {
+          throw new \Exception('Genus ' . $genus . ' of this research experiment is linked to Phenotypes module and must be unique entry in Germplasm Genus field.');
         }
       }
     }
