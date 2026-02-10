@@ -225,6 +225,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'target' => '_blank',
         'title' => 'Could not find a trait? Launch Trait Importer in a new window.',
       ],
+      '#suffix' => ' <i class="fa-solid fa-arrow-up-right-from-square"></i>',
     ];
 
     $form[$form_dialog_wrapper]['search_toolbar']['slash'] = [
