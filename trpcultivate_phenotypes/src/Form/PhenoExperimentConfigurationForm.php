@@ -458,10 +458,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
               ]),
             ],
             'require' => [
-              'title' => 'Set as ' . $status = ($trait_row->is_required ? 'Optional' : 'Required'),
+              'title' => 'Set as ' . $status = ($combo['is_required'] ? 'Optional' : 'Required'),
               'url' => Url::fromRoute('<current>', [], [
                 'query' => [
-                  ($trait_row->is_required ? 'optional' : 'require') => $combo['combo_id'],
+                  ($combo['is_required'] ? 'optional' : 'require') => $combo['combo_id'],
                 ],
                 'attributes' => [
                   'onclick' => 'return confirm("Are you sure you want to set status to ' . $status . '?")',
@@ -469,10 +469,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
               ]),
             ],
             'archive' => [
-              'title' => $status = ($trait_row->is_archived ? 'Restore' : 'Archive') . ' Trait',
+              'title' => $status = ($combo['is_archived'] ? 'Restore' : 'Archive') . ' Trait',
               'url' => Url::fromRoute('<current>', [], [
                 'query' => [
-                  ($trait_row->is_archived ? 'active' : 'archive') => $combo['combo_id'],
+                  ($combo['is_archived'] ? 'active' : 'archive') => $combo['combo_id'],
                 ],
                 'attributes' => [
                   'onclick' => 'return confirm("Are you sure you want to ' . $status . '?")',

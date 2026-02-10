@@ -443,7 +443,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $render_config_form = $this->container->get('renderer')
       ->renderRoot($config_form);
 
-
     $genus_ontology_service = $this->container->get('trpcultivate_phenotypes.genus_ontology');
 
     $genus_map = [];
@@ -585,7 +584,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
           }
         }
 
-        // Operations options available to the item depend on trait status values.
+        // Operation options available to item depend on trait status values.
         $this->assertStringContainsString(
           'Remove',
           $method_markup,
@@ -593,13 +592,13 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         );
 
         $this->assertStringContainsString(
-          $set_to = 'Set as ' . (($trait_row->is_required) ? 'Optional' : 'Required'),
+          $set_to = 'Set as ' . (($combo['is_required']) ? 'Optional' : 'Required'),
           $method_markup,
           'The trait item is expected to contain operation option to ' . $set_to,
         );
 
         $this->assertStringContainsString(
-          $set_to = (($trait_row->is_archived) ? 'Restore' : 'Archive') . ' Trait',
+          $set_to = (($combo['is_archived']) ? 'Restore' : 'Archive') . ' Trait',
           $method_markup,
           'The trait item is expected to contain operation option to ' . $set_to,
         );
