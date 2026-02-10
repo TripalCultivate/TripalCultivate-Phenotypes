@@ -573,8 +573,15 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     if ($ok === 1) {
-      $this->messenger()
-        ->addStatus('The trait combo operation "' . ucfirst($action) . '" completed successfully.');
+      $this->messenger()->addStatus(sprintf('"%s" completed successfully.',
+        [
+          'remove' => 'Remove Trait',
+          'require' => 'Set as Required',
+          'optional' => 'Set as Optional',
+          'archive' => 'Archive Trait',
+          'active' => 'Restore Trait',
+        ][$action])
+      );
     }
   }
 

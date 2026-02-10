@@ -81,7 +81,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   const ROUTE_NAME = 'trpcultivate_phenotypes.experiment_configuration';
 
   /**
-   * The table name.
+   * The table name that holds the experiment trait combos.
    *
    * @var string
    */
@@ -660,7 +660,14 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->condition('combo_id', $combo_one, '=')
       ->execute();
 
-    foreach (['require', 'optional', 'archive', 'active'] as $operation) {
+    $actions = [
+      'require' => 'Set as Required',
+      'optional' => 'Set as Optional',
+      'archive' => 'Archive Trait',
+      'active' => 'Restore Trait',
+    ];
+
+    foreach (array_keys($actions) as $operation) {
       $request = Request::create(
         Url::fromRoute(
           self::ROUTE_NAME,
@@ -676,7 +683,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
 
       $this->assertStringContainsString(
-        'The trait combo operation ' . htmlentities('"' . ucfirst($operation) . '"') . ' completed successfully.',
+        htmlentities('"' . $actions[$operation] . '"') . ' completed successfully.',
         $this->container->get('http_kernel')->handle($request)->getContent(),
         'The requested operation failed to set a status value',
       );
@@ -698,7 +705,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     );
 
     $this->assertStringContainsString(
-      'The trait combo operation ' . htmlentities('"Remove"') . ' completed successfully.',
+      htmlentities('"Remove Trait"') . ' completed successfully.',
       $this->container->get('http_kernel')->handle($request)->getContent(),
       'The requested operation failed to remove a trait combo from the experiment.',
     );
