@@ -27,7 +27,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @var \Drupal\Core\Database\Connection
    */
-  protected Connection $database_connection;
+  protected Connection $drupaldb_connection;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -41,7 +41,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @var \Drupal\tripal\Services\TripalLogger
    */
-  protected $tripal_logger;
+  protected TripalLogger $tripal_logger;
 
   /**
    * Genus-Ontotology service.
@@ -74,7 +74,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Database\Connection $database_connection
+   * @param \Drupal\Core\Database\Connection $drupaldb_connection
    *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
@@ -88,7 +88,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
-    Connection $database_connection,
+    Connection $drupaldb_connection,
     ChadoConnection $chado_connection,
     TripalLogger $tripal_logger,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
@@ -96,7 +96,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
   ) {
 
-    $this->database_connection = $database_connection;
+    $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
     $this->tripal_logger = $tripal_logger;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
@@ -211,7 +211,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
         'dialogType' => 'modal',
         'dialog' => [
           'width' => 850,
-          'dialogClass' => 'tcp-no-close',
           'closeText' => 'Close Trait Selector window',
         ],
         'progress' => [
@@ -281,7 +280,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       '#empty' => array_merge(
         $form['config_toolbar']['add_trait'],
         [
-          '#prefix' => 'No traits found for this research experiment: ',
+          '#prefix' => 'No traits found ' . ($genus ? 'for genus "<i>' . $genus . '</i>" ' : '') . 'for this research experiment: ',
           '#attributes' => [
             'style' => 'color: blue; font-weight: 200; text-decoration: underline;',
           ],
@@ -416,7 +415,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
         $form[$summary_table_name][$i][$trait_combo][$j]['combo'] = [
           '#type' => 'component',
           '#component' => 'trpcultivate_phenotypes:trait_combo',
-          '#slots' => [],
           '#props' => [
             'multiselect_method' => FALSE,
             'method_unit_combo' => [
@@ -460,24 +458,24 @@ class PhenoExperimentConfigurationForm extends FormBase {
               ]),
             ],
             'require' => [
-              'title' => 'Set ' . $status = ($combo['is_required'] ? 'Optional' : 'Require'),
+              'title' => 'Set as ' . $status = ($trait_row->is_required ? 'Optional' : 'Required'),
               'url' => Url::fromRoute('<current>', [], [
                 'query' => [
-                  strtolower($status) => $combo['combo_id'],
+                  ($trait_row->is_required ? 'optional' : 'require') => $combo['combo_id'],
                 ],
                 'attributes' => [
-                  'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
+                  'onclick' => 'return confirm("Are you sure you want to set status to ' . $status . '?")',
                 ],
               ]),
             ],
             'archive' => [
-              'title' => 'Set ' . $status = ($combo['is_archived'] ? 'Active' : 'Archive'),
+              'title' => $status = ($trait_row->is_archived ? 'Restore' : 'Archive') . ' Trait',
               'url' => Url::fromRoute('<current>', [], [
                 'query' => [
-                  strtolower($status) => $combo['combo_id'],
+                  ($trait_row->is_archived ? 'active' : 'archive') => $combo['combo_id'],
                 ],
                 'attributes' => [
-                  'onclick' => 'return confirm("Are you sure you want to set status to ' . ucfirst($status) . '?")',
+                  'onclick' => 'return confirm("Are you sure you want to ' . $status . '?")',
                 ],
               ]),
             ],
@@ -519,7 +517,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
    */
   public function handleOperation(string $action, int $project_id, int $combo_id): void {
 
-    $combo = $this->database_connection->select(self::PHENO_COMBO_TABLE, 'tc')
+    $combo = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc')
       ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
       ->condition('tc.combo_id', $combo_id, '=')
       ->condition('tc.project_id', $project_id, '=')
@@ -544,7 +542,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
           throw new AccessDeniedHttpException($message);
         }
 
-        $transaction = $this->database_connection->startTransaction();
+        $transaction = $this->drupaldb_connection->startTransaction();
         try {
           $ok = $this->chado_connection
             ->delete(self::PHENO_COMBO_TABLE)
@@ -574,9 +572,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         $status = (in_array($action, ['require', 'archive'])) ? 1 : 0;
 
-        $transaction = $this->database_connection->startTransaction();
+        $transaction = $this->drupaldb_connection->startTransaction();
         try {
-          $ok = $this->database_connection
+          $ok = $this->drupaldb_connection
             ->update(self::PHENO_COMBO_TABLE)
             ->fields([
               $field_map[$action] => $status,
@@ -596,8 +594,15 @@ class PhenoExperimentConfigurationForm extends FormBase {
     }
 
     if ($ok === 1) {
-      $this->messenger()
-        ->addStatus('The trait combo operation "' . ucfirst($action) . '" completed successfully.');
+      $this->messenger()->addStatus(sprintf('"%s" completed successfully.',
+        [
+          'remove' => 'Remove Trait',
+          'require' => 'Set as Required',
+          'optional' => 'Set as Optional',
+          'archive' => 'Archive Trait',
+          'active' => 'Restore Trait',
+        ][$action])
+      );
     }
   }
 

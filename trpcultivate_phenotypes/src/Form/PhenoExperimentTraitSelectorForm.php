@@ -27,7 +27,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *
    * @var \Drupal\Core\Database\Connection
    */
-  protected Connection $database_connection;
+  protected Connection $drupaldb_connection;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -81,7 +81,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   /**
    * Constructor.
    *
-   * @param \Drupal\Core\Database\Connection $database_connection
+   * @param \Drupal\Core\Database\Connection $drupaldb_connection
    *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
@@ -95,7 +95,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
-    Connection $database_connection,
+    Connection $drupaldb_connection,
     ChadoConnection $chado_connection,
     TripalLogger $tripal_logger,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
@@ -103,7 +103,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
   ) {
 
-    $this->database_connection = $database_connection;
+    $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
     $this->tripal_logger = $tripal_logger;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
@@ -215,9 +215,9 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       ],
     );
 
-    $form[$form_dialog_wrapper]['search_toolbar']['suggest'] = [
+    $form[$form_dialog_wrapper]['search_toolbar']['import_traits'] = [
       '#type' => 'link',
-      '#title' => 'Suggest a Trait',
+      '#title' => 'Import Traits',
       '#url' => Url::fromUri(
         'internal:/admin/tripal/loaders/trpcultivate-phenotypes-traits-importer',
       ),
@@ -225,6 +225,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         'target' => '_blank',
         'title' => 'Could not find a trait? Launch Trait Importer in a new window.',
       ],
+      '#suffix' => ' <i class="fa-solid fa-arrow-up-right-from-square"></i>',
     ];
 
     $form[$form_dialog_wrapper]['search_toolbar']['slash'] = [
@@ -260,7 +261,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
     $form[$form_dialog_wrapper]['search_toolbar']['close'] = [
       '#type' => 'button',
-      '#value' => 'Close & Update Traits',
+      '#value' => 'Close & Refresh Table',
       '#attributes' => [
         'class' => [
           'button--small',
@@ -391,7 +392,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         $label = $values[$item_key . '_label'] ?: $values[$item_key . '_default_label'];
 
         // No same labels in an experiment.
-        $label_exists = $this->database_connection->select(self::PHENO_COMBO_TABLE, 'tc')
+        $label_exists = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc')
           ->fields('tc', ['combo_id'])
           ->condition('tc.label', $label, '=')
           ->condition('tc.project_id', $experiment_id, '=')
@@ -414,9 +415,9 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         else {
           [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
 
-          $transaction = $this->database_connection->startTransaction();
+          $transaction = $this->drupaldb_connection->startTransaction();
           try {
-            $this->database_connection
+            $this->drupaldb_connection
               ->insert(self::PHENO_COMBO_TABLE)
               ->fields([
                 'project_id' => $experiment_id,
@@ -440,7 +441,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       }
 
       // List genus traits.
-      $query = $this->database_connection->select(self::PHENO_COMBO_TABLE, 'tc');
+      $query = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc');
       $query
         ->addExpression('CONCAT(tc.attr_id, \':\', tc.observable_id, \':\', tc.unit_id)', 'combo');
       $exp_traits = $query

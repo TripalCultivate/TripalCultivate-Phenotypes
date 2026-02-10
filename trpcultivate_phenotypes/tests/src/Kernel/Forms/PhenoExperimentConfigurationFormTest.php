@@ -81,7 +81,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   const ROUTE_NAME = 'trpcultivate_phenotypes.experiment_configuration';
 
   /**
-   * The table name.
+   * The table name that holds the experiment trait combos.
    *
    * @var string
    */
@@ -593,15 +593,15 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         );
 
         $this->assertStringContainsString(
-          $set_to = 'Set ' . (($combo['is_required']) ? 'Optional' : 'Require'),
+          $set_to = 'Set as ' . (($trait_row->is_required) ? 'Optional' : 'Required'),
           $method_markup,
-          'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+          'The trait item is expected to contain operation option to ' . $set_to,
         );
 
         $this->assertStringContainsString(
-          $set_to = 'Set ' . (($combo['is_archived']) ? 'Active' : 'Archive'),
+          $set_to = (($trait_row->is_archived) ? 'Restore' : 'Archive') . ' Trait',
           $method_markup,
-          'The trait item is expected to contain a set to ' . $set_to . ' operation option.',
+          'The trait item is expected to contain operation option to ' . $set_to,
         );
 
         $row_i++;
@@ -705,7 +705,14 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->condition('combo_id', $combo_one, '=')
       ->execute();
 
-    foreach (['require', 'optional', 'archive', 'active'] as $operation) {
+    $actions = [
+      'require' => 'Set as Required',
+      'optional' => 'Set as Optional',
+      'archive' => 'Archive Trait',
+      'active' => 'Restore Trait',
+    ];
+
+    foreach (array_keys($actions) as $operation) {
       $request = Request::create(
         Url::fromRoute(
           self::ROUTE_NAME,
@@ -721,7 +728,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
 
       $this->assertStringContainsString(
-        'The trait combo operation ' . htmlentities('"' . ucfirst($operation) . '"') . ' completed successfully.',
+        htmlentities('"' . $actions[$operation] . '"') . ' completed successfully.',
         $this->container->get('http_kernel')->handle($request)->getContent(),
         'The requested operation failed to set a status value',
       );
@@ -743,7 +750,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     );
 
     $this->assertStringContainsString(
-      'The trait combo operation ' . htmlentities('"Remove"') . ' completed successfully.',
+      htmlentities('"Remove Trait"') . ' completed successfully.',
       $this->container->get('http_kernel')->handle($request)->getContent(),
       'The requested operation failed to remove a trait combo from the experiment.',
     );

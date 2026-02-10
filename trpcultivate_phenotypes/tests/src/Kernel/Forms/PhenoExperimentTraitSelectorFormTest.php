@@ -304,13 +304,13 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
     $this->assertEquals(
       'link',
-      $search_toolbar['suggest']['#type'],
+      $search_toolbar['import_traits']['#type'],
       'The trait selector form is expected to contain a link element.',
     );
 
     $this->assertStringContainsString(
-      $title = 'Suggest a Trait',
-      $search_toolbar['suggest']['#title'],
+      $title = 'Import Traits',
+      $search_toolbar['import_traits']['#title'],
       'The trait selector form is expected to contain a link titled ' . $title,
     );
 
@@ -333,7 +333,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     );
 
     $this->assertStringContainsString(
-      $title = 'Close & Update Traits',
+      $title = 'Close & Refresh Table',
       $search_toolbar['close']['#value'],
       'The trait selector form is expected to contain a button titled ' . $title,
     );
