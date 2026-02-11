@@ -27,8 +27,7 @@ props:
       type: array
       title: Trait status
       description: The status (is required, was shared, was collected and is archived) of a trait in an experiment.
-slots:
-  field_label:
-    title: A label field.
-  add:
-    title: Add trait using the custom label provided.
+    trait_id:
+      type: integer
+      title: Trait id number.
+      description: The trait id number (Trait) used to reference associated field element keyed with the trait id .
