@@ -37,10 +37,27 @@ trpcultivate_phenotypes.settings_ontology:
 
 # Experiment Configuration Page.
 trpcultivate_phenotypes.experiment_configuration:
-  path: '/bio_data/{tripal_entity}/configure/{genus}'
+  path: '/bio_data/{tripal_entity}/phenotypes/{genus}'
   defaults:
     _title: 'Phenotypes:'
-    _form: 'Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm'
+    genus: ''
+  requirements:
+    _permission: 'administer tripal content'
+    _pheno_experiment_configuration_access_check: true
+  options:
+    _admin_route: true
+    parameters:
+      tripal_entity:
+        type: 'entity:tripal_entity'
+        bundle:
+          - research_experiment
+
+trpcultivate_phenotypes.experiment_traitselector:
+  path: '/bio_data/{tripal_entity}/phenotypes/select/{genus}'
+  defaults:
+    _title: 'Add Trait:'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitSelectorForm'
     genus: ''
   requirements:
     _permission: 'administer tripal content'
