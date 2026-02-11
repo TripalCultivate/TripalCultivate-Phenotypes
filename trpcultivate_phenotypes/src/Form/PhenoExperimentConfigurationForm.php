@@ -2,21 +2,32 @@
 
 namespace Drupal\trpcultivate_phenotypes\Form;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\RedirectCommand;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\tripal\Entity\TripalEntity;
+use Drupal\Core\Url;
+use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * Class definition of Experiment Configuration page.
+ * Class definition of Experiment Phenotypes Configuration page.
  */
 class PhenoExperimentConfigurationForm extends FormBase {
+
+  /**
+   * Drupal database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected Connection $drupaldb_connection;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -24,6 +35,13 @@ class PhenoExperimentConfigurationForm extends FormBase {
    * @var \Drupal\tripal_chado\Database\ChadoConnection
    */
   protected ChadoConnection $chado_connection;
+
+  /**
+   * Tripal logger service.
+   *
+   * @var \Drupal\tripal\Services\TripalLogger
+   */
+  protected TripalLogger $tripal_logger;
 
   /**
    * Genus-Ontotology service.
@@ -47,26 +65,21 @@ class PhenoExperimentConfigurationForm extends FormBase {
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
-   * Research experiment entity.
-   *
-   * @var \Drupal\tripal\Entity\TripalEntity
-   */
-  private TripalEntity $research_experiment;
-
-  /**
-   * The genus used to filter the traits table and show only related traits.
+   * The table name.
    *
    * @var string
    */
-  private $filter_genus;
+  private const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
    * Constructor.
    *
+   * @param \Drupal\Core\Database\Connection $drupaldb_connection
+   *   Drupal database connection.
    * @param \Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
-   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
-   *   Route match service.
+   * @param \Drupal\tripal\Services\TripalLogger $tripal_logger
+   *   Tripal logger service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultiavtePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   TripalCultivate Phenotypes Genus-Ontology service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject
@@ -75,23 +88,20 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *   TripalCultivate Phenotypes Traits service.
    */
   public function __construct(
+    Connection $drupaldb_connection,
     ChadoConnection $chado_connection,
-    RouteMatchInterface $route_match,
+    TripalLogger $tripal_logger,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
   ) {
 
+    $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
+    $this->tripal_logger = $tripal_logger;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
     $this->service_PhenoTraits = $service_PhenoTraits;
-
-    $this->research_experiment = $route_match->getParameter('tripal_entity');
-
-    // If the /genus slug is not provided, show all trait.
-    $filter_genus = $route_match->getParameter('genus');
-    $this->filter_genus = ($filter_genus == '') ? 0 : $filter_genus;
   }
 
   /**
@@ -100,8 +110,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
   public static function create(ContainerInterface $container) {
 
     return new static(
+      $container->get('database'),
       $container->get('tripal_chado.database'),
-      $container->get('current_route_match'),
+      $container->get('tripal.logger'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('trpcultivate_phenotypes.traits'),
@@ -112,7 +123,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
    * {@inheritDoc}
    */
   public function getFormId() {
-    return 'content_bio_data_research_experiment_configure_form';
+
+    return 'pheno_experiment_configuration_form';
   }
 
   /**
@@ -120,110 +132,211 @@ class PhenoExperimentConfigurationForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $experiment = $this->research_experiment->get('exp_name')->getValue();
-    if (!$experiment) {
-      // Research experiment entity does not exist.
-      throw new NotFoundHttpException();
-    }
+    $tripal_entity = $this->getRouteMatch()->getParameter('tripal_entity');
 
+    // Route validates instance of tripal_entity and presence of exp_name field.
+    $experiment = $tripal_entity->get('exp_name')->getValue();
     ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
 
-    // Update the title to show which reseach experiment is being setup.
+    // Update the title to show which reseach experiment is being configured.
     $form['#title'] = 'Configure Phenotypes for ' . $experiment_name;
 
-    // Prepare traits summary table render array.
-    $form['#attached']['library'][] = 'trpcultivate_phenotypes/trpcultivate-phenotypes-experiment-configuration';
-    $summary_table_name = 'experiment_traits_summary_table';
-
-    $headers = [];
-    $headers = [
-      'label' => [
-        'data' => [
-          '#markup' => 'Label <i class="fa-solid fa-circle-question" title="A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment."></i>',
-        ],
-      ],
-      'trait_combo' => [
-        'data' => [
-          '#type' => 'select',
-          '#options' => [0 => 'All Genus'],
-          '#value' => $this->filter_genus,
-          '#theme_wrappers' => [],
-          '#prefix' => '<span>Trait Method Unit: </span><span>',
-          '#suffix' => '</span>',
-          '#attributes' => [
-            'id' => 'tcp-filter-trait-table-by-genus',
-          ],
-        ],
-      ],
-      'remove' => 'Remove',
+    $form['tripal_entity_id'] = [
+      '#type' => 'hidden',
+      '#value' => $tripal_entity->id(),
     ];
 
-    $form[$summary_table_name] = [
-      '#type' => 'table',
-      '#header' => $headers,
-      '#rows' => [],
-      '#empty' => 'No traits found',
-      '#sticky' => FALSE,
-      '#allowed_tags' => ['br', 'em', 'def', 'small', 'span', 'select'],
-      '#attributes' => [
-        'id' => 'tcp-experiment-traits-summary-table',
-      ],
-    ];
+    // If the /genus slug is not provided, show all trait for all genus.
+    $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-    // Ensure research experiment has at least one configured genus.
-    $configured_genus = 0;
-    $exp_genus = $this->research_experiment->get('exp_germgenus')->getValue();
+    $invalid_genus = 0;
+    $exp_germgenus = $tripal_entity->get('exp_germgenus')->getValue();
 
-    foreach ($exp_genus as $germgenus) {
-      $is_configured = $this->service_PhenoGenusOntology
-        ->getGenusOntologyConfigValues($germgenus['value']);
-
-      if (!$is_configured) {
-        $configured_genus++;
+    foreach ($exp_germgenus as $germgenus) {
+      if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['value'])) {
+        $invalid_genus++;
       }
     }
 
-    if ($configured_genus == count($exp_genus)) {
+    if ($invalid_genus == count($exp_germgenus)) {
       $this->messenger()->addError('The Research Experiment has no configured genus set.');
+
       return $form;
     }
 
-    $experiment_genus = $this->service_PhenoGenusProject->getGenusOfProject($experiment_id);
-    if ($this->filter_genus && !in_array($this->filter_genus, $experiment_genus)) {
-      // Filter genus does not exist.
+    $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
+    if ($genus && !in_array($genus, $exp_phenogenus)) {
+      // Genus does not exist.
+      $this->tripal_logger->error('The genus is not supported by the experiment.');
       throw new NotFoundHttpException();
     }
 
-    $this->messenger()
-      ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
-
     // Create a mapping array to map cv name to a genus and populate the genus
-    // filter select field with available genus options.
+    // filter select field with phenotypes configured genus options.
     $genus_map = [];
-    foreach ($experiment_genus as $genus) {
-      $cv_id = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus)['trait'];
-
-      $genus_map[$cv_id] = $genus;
-      $form[$summary_table_name]['#header']['trait_combo']['data']['#options'][$genus] = $genus;
+    foreach ($exp_phenogenus as $phenogenus) {
+      $cv_id = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($phenogenus)['trait'];
+      $genus_map[$cv_id] = $phenogenus;
     }
 
     // Determine if the page will default to a genus or all genus.
-    if (count($experiment_genus) == 1) {
-      $single_genus = $experiment_genus[0];
-
-      $form[$summary_table_name]['#header']['trait_combo']['data']['#value'] = $single_genus;
-      // From the Phenotypes tab, the url is /configure, update to include the
-      // the default genus - /configure/genus.
-      $form['#attached']['drupalSettings']['tcpSettings']['genus'] = $single_genus;
-      $this->filter_genus = $single_genus;
+    if (count($exp_phenogenus) == 1) {
+      $genus = $exp_phenogenus[0];
     }
 
-    $rows = [];
+    // Contain page links and select field displayed inline - in a single row.
+    $config_toolbar = 'config_toolbar';
+    $form[$config_toolbar] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => [
+          'container-inline',
+        ],
+        'style' => 'text-align: right; margin: 0 0 10px 0',
+      ],
+    ];
 
-    // Query the list of traits in an experiment. Sort the result first by the
-    // genus, cv name (based on the cv_id) and then by trait is_required status
-    // value (required traits first) and finally, by trait name alphabetically.
-    $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tc');
+    $form[$config_toolbar]['add_trait'] = [
+      '#type' => 'link',
+      '#title' => 'Add Trait',
+      '#suffix' => ' &nbsp;&nbsp; ',
+      '#url' => Url::fromRoute(
+        'trpcultivate_phenotypes.experiment_traitselector',
+        [
+          'tripal_entity' => $tripal_entity->id(),
+          'genus' => $genus,
+        ],
+      ),
+      '#ajax' => [
+        'dialogType' => 'modal',
+        'dialog' => [
+          'width' => 850,
+          'closeText' => 'Close Trait Selector window',
+        ],
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ],
+      ],
+    ];
+
+    $form[$config_toolbar]['refresh'] = [
+      '#type' => 'link',
+      '#title' => 'Refresh Table',
+      '#url' => Url::fromRoute('<current>'),
+    ];
+
+    $form[$config_toolbar]['slash'] = [
+      '#markup' => '&nbsp;&nbsp; / &nbsp;',
+    ];
+
+    $form[$config_toolbar]['filter_icon'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'i',
+      '#value' => '',
+      '#attributes' => [
+        'class' => [
+          'fa-solid',
+          'fa-filter',
+        ],
+        'title' => 'Filter the trait summary table by a genus',
+      ],
+    ];
+
+    $form[$config_toolbar]['filter_genus'] = [
+      '#type' => 'select',
+      '#options' => array_combine($genus_option = array_values($genus_map), $genus_option),
+      '#empty_option' => 'All Genus',
+      '#empty_value' => 0,
+      '#default_value' => $genus,
+      '#theme_wrappers' => [],
+      '#ajax' => [
+        'callback' => '::loadGenusTraits',
+        'event' => 'change',
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ],
+      ],
+    ];
+
+    // Prepare traits summary table render array.
+    $this->messenger()
+      ->addWarning('A Trait cannot be modified or removed from an Experiment once phenotypic data has been associated with it.');
+
+    $table_header = [
+      'label' => [
+        'data' => '',
+        'style' => 'width: 15%',
+      ],
+      'combo' => [
+        'data' => 'Trait Method Unit',
+        'style' => 'width: 84%',
+      ],
+      'operations' => [
+        'data' => 'Operations',
+        'style' => 'width: 1%;',
+      ],
+    ];
+
+    $table_header['label']['data'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'i',
+      '#prefix' => 'Label',
+      '#value' => '',
+      '#attributes' => [
+        'class' => [
+          'fa-solid',
+          'fa-circle-question',
+        ],
+        'title' => 'A short experiment-specific label referring to this Trait-Method-Unit combination. This will be used in the data collection file and must be unique within this experiment',
+      ],
+    ];
+
+    $summary_table_name = 'experiment_traits_summary_table';
+
+    $form[$summary_table_name] = [
+      '#type' => 'table',
+      '#header' => $table_header,
+      '#rows' => [],
+      '#sticky' => FALSE,
+      '#allowed_tags' => ['a', 'br', 'em', 'def', 'small', 'span', 'section'],
+      '#empty' => array_merge(
+        $form['config_toolbar']['add_trait'],
+        [
+          '#attributes' => [
+            'style' => 'color: blue; font-weight: 200; text-decoration: underline;',
+          ],
+          '#prefix' => 'No traits found ' . ($genus ? 'for genus "<i>' . $genus . '</i>" ' : '') . 'for this research experiment: ',
+        ]
+      ),
+    ];
+
+    // With trait combos being added to this table, ensure that form will render
+    // the most up-to-date listings rather than a cached snapshot.
+    $form[$summary_table_name]['#cache'] = ['max-age' => 0];
+
+    // AJAX library dependencies.
+    $form['#attached']['library'][] = 'core/drupal.dialog';
+    $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+
+    // Listen for operation request to remove, require, or archive.
+    $request = $this->getRequest();
+
+    if ($request->getMethod() == 'GET') {
+      foreach (['remove', 'require', 'optional', 'active', 'archive'] as $action) {
+        if ((int) $request->get($action) > 0) {
+          $combo_id = $request->get($action);
+          $this->handleOperation($action, $experiment_id, $combo_id);
+
+          break;
+        }
+      }
+    }
+
+    // Prepare traits that matched the trait search key.
+    // Result is groupped by genus.
+    $query = $this->chado_connection->select(self::PHENO_COMBO_TABLE, 'tc');
     $query->join('1:cvterm', 't', 'tc.attr_id = t.cvterm_id');
     $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
 
@@ -245,8 +358,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
       ->orderBy('t.name', 'ASC')
       ->orderBy('label', 'ASC');
 
-    if ($this->filter_genus) {
-      $query->condition('t.cv_id', array_search($this->filter_genus, $genus_map), '=');
+    if ($genus) {
+      $query->condition('t.cv_id', array_search($genus, $genus_map), '=');
     }
 
     $query_result = $query->execute();
@@ -257,10 +370,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
     foreach ($query_result as $i => $trait_row) {
       $first_row = FALSE;
 
-      $genus = $genus_map[$trait_row->cv_id];
-      if (!in_array($genus, $set_genus)) {
-        $this->service_PhenoTraits->setTraitGenus($genus);
-        array_push($set_genus, $genus);
+      $trait_genus = $genus_map[$trait_row->cv_id];
+      if (!in_array($trait_genus, $set_genus)) {
+        $this->service_PhenoTraits->setTraitGenus($trait_genus);
+        array_push($set_genus, $trait_genus);
 
         $a_group = !$a_group;
         $first_row = TRUE;
@@ -272,60 +385,95 @@ class PhenoExperimentConfigurationForm extends FormBase {
         $trait_row->unit_id,
       );
 
-      // To aid grouping of traits by genus, darken the top border of the first
-      // row (trait) in the same genus.
-      $group_class = [];
-      if ($first_row && $i > 0) {
-        array_push($group_class, 'tcp-group-border');
-      }
-
-      // Use the trait status to disable the remove option.
-      $remove = 'x';
-      if ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected) {
-        $remove = '-';
-      }
-
-      $rows[] = [
-        'data' => [
-          [
-            'data' => [
-              '#markup' => ($this->filter_genus) ? $trait_row->label : $trait_row->label . '<br /><small>' . $genus . '</small>',
-            ],
+      // Table column: combo label.
+      $form[$summary_table_name][$i]['label'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'span',
+        '#value' => ($genus) ? $trait_row->label : $trait_row->label . '<br /><span class="marker" title="Genus">' . $trait_genus . '</span>',
+        '#attributes' => [
+          'class' => [
+            'views-field',
           ],
-          [
-            'data' => [
-              '#type' => 'component',
-              '#component' => 'trpcultivate_phenotypes:trait_combo',
-              '#slots' => [],
-              '#props' => [
-                'name' => $trait->name,
-                'definition' => $trait->definition,
-                'multiselect_method' => FALSE,
-                'method_unit_combo' => [
-                  [
-                    'method_shortname' => $method->name,
-                    'unit' => $unit->name,
-                    'type' => $this->service_PhenoTraits->getMethodUnitDataType($trait_row->unit_id),
-                    'collection_method' => $method->definition,
-                  ],
-                ],
-                'status' => [
-                  'archived' => $trait_row->is_archived,
-                  'required' => $trait_row->is_required,
-                  'shared' => $trait_row->was_shared,
-                  'collected' => $trait_row->was_collected,
-                ],
-              ],
-            ],
-          ],
-          $remove,
         ],
-        'class' => implode(' ', $group_class),
+      ];
+
+      // Table column: trait combo.
+      $form[$summary_table_name][$i]['trait_combo'] = [
+        '#type' => 'component',
+        '#component' => 'trpcultivate_phenotypes:trait_combo',
+        '#props' => [
+          'name' => $trait->name,
+          'definition' => $trait->definition,
+          'multiselect_method' => FALSE,
+          'method_unit_combo' => [
+            [
+              'method_shortname' => $method->name,
+              'unit' => $unit->name,
+              'type' => $this->service_PhenoTraits->getMethodUnitDataType($trait_row->unit_id),
+              'collection_method' => $method->definition,
+            ],
+          ],
+          'status' => [
+            'archived' => $trait_row->is_archived,
+            'required' => $trait_row->is_required,
+            'shared' => $trait_row->was_shared,
+            'collected' => $trait_row->was_collected,
+          ],
+        ],
+      ];
+
+      // Table column: trait combo operations.
+      $is_removable = ($trait_row->is_archived || $trait_row->was_shared || $trait_row->was_collected)
+        ? FALSE : TRUE;
+
+      $form[$summary_table_name][$i]['operations'] = [
+        '#type' => 'dropbutton',
+        '#dropbutton_type' => 'small',
+        '#links' => [
+          'remove' => [
+            'title' => 'Remove',
+            'url' => Url::fromRoute('<current>', [], [
+              'query' => [
+                'remove' => $trait_row->combo_id,
+              ],
+              'attributes' => [
+                'onclick' => 'return ' . ($is_removable ? 'confirm("Are you sure you want to Remove trait?")' : 'false'),
+                'style' => 'pointer-events: ' . ($is_removable ? 'auto' : 'none') . '; opacity: ' . ($is_removable ? 1 : 0.3),
+              ],
+            ]),
+          ],
+          'require' => [
+            'title' => 'Set as ' . $status = ($trait_row->is_required ? 'Optional' : 'Required'),
+            'url' => Url::fromRoute('<current>', [], [
+              'query' => [
+                ($trait_row->is_required ? 'optional' : 'require') => $trait_row->combo_id,
+              ],
+              'attributes' => [
+                'onclick' => 'return confirm("Are you sure you want to set status to ' . $status . '?")',
+              ],
+            ]),
+          ],
+          'archive' => [
+            'title' => $status = ($trait_row->is_archived ? 'Restore' : 'Archive') . ' Trait',
+            'url' => Url::fromRoute('<current>', [], [
+              'query' => [
+                ($trait_row->is_archived ? 'active' : 'archive') => $trait_row->combo_id,
+              ],
+              'attributes' => [
+                'onclick' => 'return confirm("Are you sure you want to ' . $status . '?")',
+              ],
+            ]),
+          ],
+        ],
+      ];
+
+      // Helps group traits by genus - the first row of each genus has thicker
+      // top border style rule.
+      $form[$summary_table_name][$i]['#attributes'] = [
+        'style' => 'border-top: ' . (($first_row && $i > 0) ? '8px solid #DADADA;' : 'inherit;') ,
+        'valign' => 'top',
       ];
     }
-
-    // Populate table rows array.
-    $form[$summary_table_name]['#rows'] = $rows;
 
     return $form;
   }
@@ -334,7 +482,130 @@ class PhenoExperimentConfigurationForm extends FormBase {
    * {@inheritDoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+  }
 
+  /**
+   * Handle operation request.
+   *
+   * @param string $action
+   *   One of - remove, require, optional, active, or archive.
+   * @param int $project_id
+   *   The project id the combo id is specific to.
+   * @param int $combo_id
+   *   The combo id to apply an action to.
+   */
+  public function handleOperation(string $action, int $project_id, int $combo_id): void {
+
+    $combo = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc')
+      ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
+      ->condition('tc.combo_id', $combo_id, '=')
+      ->condition('tc.project_id', $project_id, '=')
+      ->execute()
+      ->fetchObject();
+
+    if (!$combo) {
+      $this->messenger()
+        ->addError($message = 'Invalid request: Could not find trait combo.');
+      throw new AccessDeniedHttpException($message);
+    }
+
+    $ok = 0;
+
+    switch ($action) {
+
+      case 'remove':
+
+        if ($combo->is_archived == 1 || $combo->was_shared == 1 || $combo->was_collected == 1) {
+          $this->messenger()
+            ->addError($message = 'Invalid request: Not allowed to remove trait marked archived, shared, or collected.');
+          throw new AccessDeniedHttpException($message);
+        }
+
+        $transaction = $this->drupaldb_connection->startTransaction();
+        try {
+          $ok = $this->chado_connection
+            ->delete(self::PHENO_COMBO_TABLE)
+            ->condition('combo_id', $combo->combo_id, '=')
+            ->execute();
+        }
+        catch (\Exception $e) {
+          $transaction->rollback();
+
+          $this->tripal_logger->error($msg = 'Invalid request: Failed to remove trait from experiment.');
+          $this->messenger()->addStatus($msg);
+        }
+
+        break;
+
+      case 'require':
+      case 'optional':
+      case 'active':
+      case 'archive':
+
+        $field_map = [
+          'require' => 'is_required',
+          'optional' => 'is_required',
+          'active' => 'is_archived',
+          'archive' => 'is_archived',
+        ];
+
+        $status = (in_array($action, ['require', 'archive'])) ? 1 : 0;
+
+        $transaction = $this->drupaldb_connection->startTransaction();
+        try {
+          $ok = $this->drupaldb_connection
+            ->update(self::PHENO_COMBO_TABLE)
+            ->fields([
+              $field_map[$action] => $status,
+            ])
+            ->condition('combo_id', $combo->combo_id, '=')
+            ->condition($field_map[$action], $status, '<>')
+            ->execute();
+        }
+        catch (\Exception $e) {
+          $transaction->rollback();
+
+          $this->tripal_logger->error($msg = 'Invalid request: Failed to update trait status.');
+          $this->messenger()->addStatus($msg);
+        }
+
+        break;
+    }
+
+    if ($ok === 1) {
+      $this->messenger()->addStatus(sprintf('"%s" completed successfully.',
+        [
+          'remove' => 'Remove Trait',
+          'require' => 'Set as Required',
+          'optional' => 'Set as Optional',
+          'archive' => 'Archive Trait',
+          'active' => 'Restore Trait',
+        ][$action])
+      );
+    }
+  }
+
+  /**
+   * Function callback - load traits specific to a genus.
+   */
+  public function loadGenusTraits(array &$form, FormStateInterface $form_state) {
+
+    $params = [
+      'tripal_entity' => $form_state->getValue('tripal_entity_id'),
+      'genus' => $form_state->getValue('filter_genus'),
+    ];
+
+    if (!$params['genus']) {
+      unset($params['genus']);
+    }
+
+    $response = new AjaxResponse();
+    $response->addCommand(new RedirectCommand(
+      Url::fromRoute('trpcultivate_phenotypes.experiment_configuration', $params, ['query' => []])
+        ->toString()
+    ));
+
+    return $response;
   }
 
 }
