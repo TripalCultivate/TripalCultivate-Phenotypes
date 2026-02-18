@@ -64,7 +64,9 @@ class TripalCultivatePhenotypesSettingsController extends ControllerBase {
     $link = Link::fromTextAndUrl('Manage Modules', $url)
       ->toString();
 
-    $this->messenger()->addStatus($status_message . ' - ' . $link);
+    $this->messenger()->addStatus(
+      $this->t($status_message . ' - @link', ['@link' => $link])
+    );
 
     // Describe R Rules configuration:
     $url = Url::fromRoute('trpcultivate_phenotypes.settings_r');
