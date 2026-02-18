@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\trpcultivate_phenotypes\Form;
 
+use Drupal\Component\Utility\Environment;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\StringTranslation\ByteSizeMarkup;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
@@ -147,7 +149,10 @@ final class PhenodataBackupForm extends EntityForm {
     $form['backup_file'] = [
       '#type' => 'managed_file',
       '#title' => 'Data File',
-      '#description' => $this->t('Select data file to backup. Only [@ext] file extensions are allowed.', ['@ext' => $importer_file_extension]),
+      '#description' => $this->t('Select data file to backup. Only [@ext] file extensions are allowed. The maximum file size allowed is <strong>@size</strong>.', [
+        '@ext' => $importer_file_extension,
+        '@size' => ByteSizeMarkup::create(Environment::getUploadMaxSize()),
+      ]),
       '#upload_location' => $backup_dir,
       '#multiple' => FALSE,
       '#required' => TRUE,
