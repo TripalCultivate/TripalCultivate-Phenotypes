@@ -192,7 +192,7 @@ function trpcultivate_phenotypes_genus_experiment_validate($form, FormState $for
       if ($has_pheno > 0 && (!in_array($genus, $exp_germgenus) || $not_unique)) {
         $form_state->setErrorByName(
           'exp_germgenus',
-          t('Update failed: Genus @genus of this research experiment is linked to Phenotypes module and must be unique entry in Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.', [
+          t('Update failed: Genus "@genus" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.', [
             '@genus' => $genus,
             '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
           ])
