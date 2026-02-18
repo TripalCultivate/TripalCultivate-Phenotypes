@@ -6,7 +6,9 @@
  */
 
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_help().
@@ -188,7 +190,13 @@ function trpcultivate_phenotypes_genus_experiment_validate($form, FormState $for
       $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
 
       if ($has_pheno > 0 && (!in_array($genus, $exp_germgenus) || $not_unique)) {
-        $form_state->setErrorByName('exp_germgenus', 'Update failed: Genus ' . $genus . ' of this research experiment is linked to Phenotypes module and must be unique entry in Germplasm Genus field.');
+        $form_state->setErrorByName(
+          'exp_germgenus',
+          t('Update failed: Genus @genus of this research experiment is linked to Phenotypes module and must be unique entry in Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.', [
+            '@genus' => $genus,
+            '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+          ])
+        );
       }
     }
   }
