@@ -274,8 +274,8 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
   /**
    * Tests the message processor method for the ProjectGenusMatch validator.
    *
-   * @param array $validation_result
-   *   The validation result array that gets passed to the process method. It
+   * @param array $validation_status
+   *   The validation status array that gets passed to the process method. It
    *   contains the following keys:
    *   - 'case': a developer-focused string describing the case checked.
    *   - 'valid': FALSE to indicate that validation failed.
@@ -297,14 +297,14 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    * @dataProvider provideProjectGenusMatchFailedCases
    */
   #[DataProvider('provideProjectGenusMatchFailedCases')]
-  public function testProcessItemWithSimpleList(array $validation_result, array $tokens, array $expectations) {
+  public function testProcessItemWithSimpleList(array $validation_status, array $tokens, array $expectations) {
 
     // Create a plugin instance for this validator.
     $validator_id = 'project_genus_match';
     $instance = $this->plugin_manager->createInstance($validator_id);
 
     // Call the process method on our validation result.
-    $render_array = $instance->processItemWithSimpleList($validation_result, $tokens);
+    $render_array = $instance->processItemWithSimpleList($validation_status, $tokens);
 
     // Render the array we were returned.
     $rendered_markup = $this->renderer->renderRoot($render_array);
@@ -392,8 +392,8 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
   /**
    * Tests for exceptions thrown for passed and unrecognizable case strings.
    *
-   * @param array $validation_result
-   *   The validation result array that gets passed to the process method. It
+   * @param array $validation_status
+   *   The validation status array that gets passed to the process method. It
    *   contains the following keys:
    *   - 'case': a developer-focused string describing the case checked.
    *   - 'valid': FALSE to indicate that validation failed.
@@ -413,7 +413,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
    * @dataProvider provideExceptionCases
    */
   #[DataProvider('provideExceptionCases')]
-  public function testProcessItemWithSimpleListExceptions(array $validation_result, array $tokens, array $expectations) {
+  public function testProcessItemWithSimpleListExceptions(array $validation_status, array $tokens, array $expectations) {
 
     // Create a plugin instance for this validator.
     $validator_id = 'project_genus_match';
@@ -423,7 +423,7 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     $exception_caught = FALSE;
     $exception_message = 'NONE';
     try {
-      $instance->processItemWithSimpleList($validation_result, $tokens);
+      $instance->processItemWithSimpleList($validation_status, $tokens);
     }
     catch (\Exception $e) {
       $exception_caught = TRUE;
@@ -431,12 +431,12 @@ class ValidatorProjectGenusMatchProcessTest extends ChadoTestKernelBase {
     }
     $this->assertTrue(
       $exception_caught,
-      'We expected an exception to be caught for case ' . $validation_result['case'] . 'but one was not thrown.',
+      'We expected an exception to be caught for case ' . $validation_status['case'] . 'but one was not thrown.',
     );
     $this->assertEquals(
       $expectations['expected_message'],
       $exception_message,
-      "We expected the exception message to indicate that case " . $validation_result['case'] . " occurred, but the message does not match what was expected.",
+      "We expected the exception message to indicate that case " . $validation_status['case'] . " occurred, but the message does not match what was expected.",
     );
   }
 
