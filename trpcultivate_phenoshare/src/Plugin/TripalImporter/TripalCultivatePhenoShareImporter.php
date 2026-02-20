@@ -4,7 +4,7 @@ namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManager;
-use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -20,9 +20,12 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntolog
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Drupal\trpcultivate\Service\ImportValidationHelper;
-use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\tripal\Services\TripalFileRetriever;
+use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager;
 use Drupal\tripal\TripalImporter\Attribute\TripalImporter;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Tripal Cultivate Phenotypes - Share Importer.
@@ -211,6 +214,14 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   The plugin implementation definition.
    * @param Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
+   * @param Drupal\Core\Messenger\Messenger $messenger
+   *   The Drupal Messenger service.
+   * @param Drupal\tripal\Services\TripalLogger $logger
+   *   Tripal Logger service.
+   * @param Drupal\tripal\Services\TripalFileRetriever
+   *   Tripal File Retriever service.
+   * @param Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager $publish_manager
+   *   Tripal Backend Publish plugin manager.
    * @param Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Configuration factory service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
@@ -231,15 +242,27 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     string $plugin_id,
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
+    Messenger $messenger,
+    TripalLogger $logger,
+    TripalFileRetriever $fileretriever,
+    TripalBackendPublishManager $publish_manager,
     ConfigFactoryInterface $config_factory,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivateValidatorManager $service_validatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
-    MessengerInterface $messenger,
   ) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
+    parent::__construct(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $chado_connection,
+      $messenger,
+      $logger,
+      $fileretriever,
+      $publish_manager,
+    );
 
     $this->service_ConfigFactory = $config_factory;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
@@ -259,6 +282,10 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $plugin_id,
       $plugin_definition,
       $container->get('tripal_chado.database'),
+      $container->get('messenger'),
+      $container->get('tripal.logger'),
+      $container->get('tripal.fileretriever'),
+      $container->get('tripal.backend_publish'),
       $container->get('config.factory'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('plugin.manager.trpcultivate_validator'),

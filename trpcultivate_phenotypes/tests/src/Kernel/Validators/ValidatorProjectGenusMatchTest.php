@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('validators')]
+#[RunTestsInSeparateProcesses]
 class ValidatorProjectGenusMatchTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

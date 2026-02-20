@@ -3,10 +3,11 @@
 namespace Drupal\trpcultivate_phenotypes\Plugin\TripalImporter;
 
 use Drupal\Core\Entity\EntityTypeManager;
-use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\Renderer;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal_chado\TripalImporter\ChadoImporterBase;
 use Drupal\trpcultivate\Plugin\Validators\ValidDataFile;
@@ -19,9 +20,11 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsServic
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use Drupal\trpcultivate\Service\TripalCultivateFileTemplateService;
 use Drupal\trpcultivate\Service\ImportValidationHelper;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\tripal\Services\TripalFileRetriever;
+use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager;
 use Drupal\tripal\TripalImporter\Attribute\TripalImporter;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Tripal Cultivate Phenotypes - Traits Importer.
@@ -175,7 +178,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
   /**
    * The Drupal Messenger Service.
    *
-   * @var \Drupal\Core\Messenger\MessengerInterface
+   * @var \Drupal\Core\Messenger\Messenger
    */
   protected $service_Messenger;
 
@@ -204,6 +207,14 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The plugin implementation definition.
    * @param Drupal\tripal_chado\Database\ChadoConnection $chado_connection
    *   The connection to the Chado database.
+   * @param Drupal\Core\Messenger\Messenger $messenger
+   *   The Drupal Messenger service.
+   * @param Drupal\tripal\Services\TripalLogger $logger
+   *   Tripal Logger service.
+   * @param Drupal\tripal\Services\TripalFileRetriever
+   *   Tripal File Retriever service.
+   * @param Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager $publish_manager
+   *   Tripal Backend Publish plugin manager.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
@@ -216,23 +227,33 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The entity type manager.
    * @param Drupal\Core\Render\Renderer $renderer
    *   The Drupal renderer service.
-   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
-   *   The Drupal messenger service.
    */
   public function __construct(
     array $configuration,
     string $plugin_id,
     mixed $plugin_definition,
     ChadoConnection $chado_connection,
+    Messenger $messenger,
+    TripalLogger $logger,
+    TripalFileRetriever $fileretriever,
+    TripalBackendPublishManager $publish_manager,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
     TripalCultivateValidatorManager $service_validatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
     Renderer $renderer,
-    MessengerInterface $messenger,
   ) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $chado_connection);
+    parent::__construct(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $chado_connection,
+      $messenger,
+      $logger,
+      $fileretriever,
+      $publish_manager,
+    );
 
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoTraits = $service_PhenoTraits;
@@ -253,13 +274,16 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       $plugin_id,
       $plugin_definition,
       $container->get('tripal_chado.database'),
+      $container->get('messenger'),
+      $container->get('tripal.logger'),
+      $container->get('tripal.fileretriever'),
+      $container->get('tripal.backend_publish'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.traits'),
       $container->get('plugin.manager.trpcultivate_validator'),
       $container->get('trpcultivate.template_generator'),
       $container->get('entity_type.manager'),
       $container->get('renderer'),
-      $container->get('messenger'),
     );
   }
 
@@ -1203,7 +1227,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
       ],
     ];
 
-    return $this->service_Renderer->renderPlain($build);
+    return $this->service_Renderer->renderInIsolation($build);
   }
 
 }

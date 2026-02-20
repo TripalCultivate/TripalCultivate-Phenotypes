@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('validators')]
+#[RunTestsInSeparateProcesses]
 class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**

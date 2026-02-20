@@ -24,6 +24,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('validators')]
 #[Group('row_validators')]
 #[Group('trait_importer_validators')]
+#[RunTestsInSeparateProcesses]
 class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

@@ -11,6 +11,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests processValidationMessages() and related methods in the Traits Importer.
@@ -18,6 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group traitsImporter
  */
 #[Group('traitsImporter')]
+#[RunTestsInSeparateProcesses]
 class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
 
   use AssertContentTrait;

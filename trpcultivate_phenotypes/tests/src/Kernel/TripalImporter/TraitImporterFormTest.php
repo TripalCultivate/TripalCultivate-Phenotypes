@@ -3,14 +3,18 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\TripalImporter;
 
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\tripal\Services\TripalFileRetriever;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\user\Entity\User;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the form + form-related functionality of the Traits Importer.
@@ -18,6 +22,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group traitsImporter
  */
 #[Group('traitsImporter')]
+#[RunTestsInSeparateProcesses]
 class TraitImporterFormTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
@@ -137,6 +142,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
         // print str_replace(array_keys($context), $context, $message);
         return NULL;
       });
+
     $container->set('tripal.logger', $mock_logger);
 
     $this->module_path = $this->container->get('module_handler')

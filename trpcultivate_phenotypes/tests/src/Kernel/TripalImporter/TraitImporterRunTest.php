@@ -10,6 +10,7 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the functionality of the run() method of the Traits Importer.
@@ -17,6 +18,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group traitsImporter
  */
 #[Group('traitsImporter')]
+#[RunTestsInSeparateProcesses]
 class TraitImporterRunTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;

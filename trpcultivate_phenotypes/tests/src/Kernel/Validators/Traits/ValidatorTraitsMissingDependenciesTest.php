@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('validator_traits')]
+#[RunTestsInSeparateProcesses]
 class ValidatorTraitsMissingDependenciesTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
