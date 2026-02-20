@@ -269,7 +269,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // This is the parent table - a trait.
     $form[$summary_table_name] = [
       '#type' => 'table',
-      '#prefix' => 'Trait Method Unit<hr />',
+      '#prefix' => '<hr />',
       '#header' => [],
       '#rows' => [],
       '#sticky' => FALSE,
