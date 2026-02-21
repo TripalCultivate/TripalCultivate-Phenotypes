@@ -568,15 +568,15 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#description' => $this->t('Enter the name of the research experiment your data was generated as part of.'),
       '#description_display' => 'after',
       '#attributes' => ['placeholder' => 'Research Experiment Name', 'class' => ['tcp-autocomplete']],
-      '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
-      '#autocomplete_route_parameters' => [
-        'type_id' => 0,
-        'match_limit' => 5,
-        'base_table' => 'project',
-        'column_name' => 'name',
-        'type_column' => 'x',
-        'property_table' => 'project',
-      ],
+      // '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
+      // '#autocomplete_route_parameters' => [
+      //   'type_id' => 0,
+      //   'match_limit' => 5,
+      //   'base_table' => 'project',
+      //   'column_name' => 'name',
+      //   'type_column' => 'x',
+      //   'property_table' => 'project',
+      // ],
     ];
 
     // Field Genus:
