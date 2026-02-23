@@ -144,13 +144,16 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       'trpcultivate-phenotypes-traits-importer',
       $this->definitions,
       $this->chado_connection,
+      $container->get('messenger'),
+      $container->get('tripal.logger'),
+      $container->get('tripal.fileretriever'),
+      $container->get('tripal.backend_publish'),
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.traits'),
       $this->container->get('plugin.manager.trpcultivate_validator'),
       $this->container->get('trpcultivate.template_generator'),
       $this->container->get('entity_type.manager'),
       $this->renderer,
-      $this->container->get('messenger'),
     );
   }
 
