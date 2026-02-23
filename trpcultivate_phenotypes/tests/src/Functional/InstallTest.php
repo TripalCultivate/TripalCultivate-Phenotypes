@@ -4,9 +4,13 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Url;
+use Drupal\Tests\DrupalTestBrowser;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\LegacyRequirementsHook;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Simple test to ensure that main page loads with module enabled.
@@ -16,7 +20,10 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('TripPheno Phenotypes')]
 #[Group('Installation')]
-class InstallTest extends ChadoTestBrowserBase {
+#[LegacyRequirementsHook]
+#[IgnoreDeprecations]
+#[RunTestsInSeparateProcesses]
+class InstallTest extends DrupalTestBrowser {
 
   /**
    * Default theme.
@@ -75,6 +82,7 @@ class InstallTest extends ChadoTestBrowserBase {
    * Tests that a specific set of pages load with a 200 response.
    */
   public function testLoad() {
+
     $session = $this->getSession();
 
     // Ensure we have an admin user.
@@ -99,6 +107,7 @@ class InstallTest extends ChadoTestBrowserBase {
    * Tests the module overview help.
    */
   public function testHelp() {
+
     $session = $this->getSession();
 
     $some_extected_text = self::$help_text_excerpt;

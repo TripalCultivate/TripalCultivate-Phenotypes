@@ -218,7 +218,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   The Drupal Messenger service.
    * @param Drupal\tripal\Services\TripalLogger $logger
    *   Tripal Logger service.
-   * @param Drupal\tripal\Services\TripalFileRetriever
+   * @param Drupal\tripal\Services\TripalFileRetriever $fileretriever
    *   Tripal File Retriever service.
    * @param Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager $publish_manager
    *   Tripal Backend Publish plugin manager.
@@ -234,8 +234,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   The entity type manager.
    * @param Drupal\Core\Render\Renderer $renderer
    *   The Drupal renderer service.
-   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
-   *   The Drupal messenger service.
    */
   public function __construct(
     array $configuration,
@@ -568,15 +566,15 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#description' => $this->t('Enter the name of the research experiment your data was generated as part of.'),
       '#description_display' => 'after',
       '#attributes' => ['placeholder' => 'Research Experiment Name', 'class' => ['tcp-autocomplete']],
-      // '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
-      // '#autocomplete_route_parameters' => [
-      //   'type_id' => 0,
-      //   'match_limit' => 5,
-      //   'base_table' => 'project',
-      //   'column_name' => 'name',
-      //   'type_column' => 'x',
-      //   'property_table' => 'project',
-      // ],
+      '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
+      '#autocomplete_route_parameters' => [
+        'type_id' => 0,
+        'match_limit' => 5,
+        'base_table' => 'project',
+        'column_name' => 'name',
+        'type_column' => 'x',
+        'property_table' => 'project',
+      ],
     ];
 
     // Field Genus:

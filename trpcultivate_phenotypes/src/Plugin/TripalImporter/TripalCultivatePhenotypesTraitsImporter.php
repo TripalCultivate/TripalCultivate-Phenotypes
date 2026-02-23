@@ -1128,7 +1128,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
       if ($line_no > 0 && !empty(trim($line))) {
         // Line split into individual data point.
-        $data_columns = str_getcsv($line, "\t");
+        $data_columns = str_getcsv($line, "\t", escape: '\\');
         // Sanitize every data in rows and columns.
         $data = array_map(function ($col) {
           return isset($col) ? trim(str_replace(['"', '\''], '', $col)) : '';

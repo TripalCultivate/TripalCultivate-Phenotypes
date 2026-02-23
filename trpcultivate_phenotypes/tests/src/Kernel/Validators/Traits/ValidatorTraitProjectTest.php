@@ -7,6 +7,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\Valida
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal\Services\TripalLogger;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the Project validator trait.

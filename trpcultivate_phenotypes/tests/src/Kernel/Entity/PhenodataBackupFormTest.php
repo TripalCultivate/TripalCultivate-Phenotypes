@@ -12,6 +12,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Entity\PhenodataBackup;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -21,6 +22,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('trpcultivate_phenotypes')]
 #[RunTestsInSeparateProcesses]
+#[IgnoreDeprecations]
 class PhenodataBackupFormTest extends ChadoTestKernelBase {
 
   use TripalCultivateImporterTestTrait;
