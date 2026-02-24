@@ -4,7 +4,6 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Functional;
 
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Url;
-use Drupal\Tests\DrupalTestBrowser;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 use PHPUnit\Framework\Attributes\Group;
@@ -23,7 +22,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[LegacyRequirementsHook]
 #[IgnoreDeprecations]
 #[RunTestsInSeparateProcesses]
-class InstallTest extends DrupalTestBrowser {
+class InstallTest extends ChadoTestBrowserBase {
 
   /**
    * Default theme.

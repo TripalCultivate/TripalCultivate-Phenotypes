@@ -8,6 +8,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Url;
 use Drupal\Core\Database\StatementWrapperIterator;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -20,6 +21,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('trpcultivate_phenotypes')]
 #[Group('services')]
 #[Group('traits')]
+#[IgnoreDeprecations]
 #[RunTestsInSeparateProcesses]
 class ValidTraitTest extends ChadoTestKernelBase {
   use PhenotypeImporterTestTrait;
@@ -667,7 +669,9 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Set accessible for protected method.
     $method = $reflection->getMethod('getPhenoCvTerm');
-    $method->setAccessible(TRUE);
+    if (method_exists($method, 'setAccessible')) {
+      $method->setAccessible(TRUE);
+    }
 
     // Select E unit from cvterm table to get cv_name and cvtem_id.
     $sql = "SELECT * FROM {1:cvterm} AS ct JOIN {1:cv} USING (cv_id) WHERE ct.name = :name;";

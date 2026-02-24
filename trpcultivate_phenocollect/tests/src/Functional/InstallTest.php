@@ -6,6 +6,9 @@ use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\LegacyRequirementsHook;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Simple test to ensure that main page loads with module enabled.
@@ -15,6 +18,9 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('TripPheno Collect')]
 #[Group('Installation')]
+#[LegacyRequirementsHook]
+#[IgnoreDeprecations]
+#[RunTestsInSeparateProcesses]
 class InstallTest extends ChadoTestBrowserBase {
 
   /**
