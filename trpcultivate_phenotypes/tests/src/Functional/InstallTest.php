@@ -9,6 +9,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\LegacyModuleImplementsAlter;
 use PHPUnit\Framework\Attributes\LegacyRequirementsHook;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -20,6 +21,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('TripPheno Phenotypes')]
 #[Group('Installation')]
+#[LegacyModuleImplementsAlter]
 #[LegacyRequirementsHook]
 #[IgnoreDeprecations]
 #[RunTestsInSeparateProcesses]
