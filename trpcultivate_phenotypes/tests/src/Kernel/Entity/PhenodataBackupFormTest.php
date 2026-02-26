@@ -21,8 +21,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * @group trpcultivate_phenotypes
  */
 #[Group('trpcultivate_phenotypes')]
-#[RunTestsInSeparateProcesses]
 #[IgnoreDeprecations]
+#[RunTestsInSeparateProcesses]
 class PhenodataBackupFormTest extends ChadoTestKernelBase {
 
   use TripalCultivateImporterTestTrait;

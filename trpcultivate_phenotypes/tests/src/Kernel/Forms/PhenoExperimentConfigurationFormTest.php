@@ -26,8 +26,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('configuration')]
-#[RunTestsInSeparateProcesses]
 #[IgnoreDeprecations]
+#[RunTestsInSeparateProcesses]
 class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

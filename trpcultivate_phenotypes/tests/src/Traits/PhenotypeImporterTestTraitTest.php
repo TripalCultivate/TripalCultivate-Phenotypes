@@ -6,7 +6,6 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -16,7 +15,6 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('trpcultivate_phenotypes_test_trait')]
 #[RunTestsInSeparateProcesses]
-#[IgnoreDeprecations]
 class PhenotypeImporterTestTraitTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
