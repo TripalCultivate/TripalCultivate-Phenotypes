@@ -317,7 +317,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->getRouteByName(self::ROUTE_NAME);
 
     $this->setCurrentUser(
-    $this->createUser([$route->getRequirements()['_permission']])
+      $this->createUser([$route->getRequirements()['_permission']])
     );
 
     // Experiment configuration form.

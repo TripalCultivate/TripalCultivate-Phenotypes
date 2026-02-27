@@ -188,7 +188,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
    *   The Drupal Messenger service.
    * @param Drupal\tripal\Services\TripalLogger $logger
    *   Tripal Logger service.
-   * @param Drupal\tripal\Services\TripalFileRetriever
+   * @param Drupal\tripal\Services\TripalFileRetriever $fileretriever
    *   Tripal File Retriever service.
    * @param Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager $publish_manager
    *   Tripal Backend Publish plugin manager.
@@ -1105,7 +1105,7 @@ class TripalCultivatePhenotypesTraitsImporter extends ChadoImporterBase implemen
 
       if ($line_no > 0 && !empty(trim($line))) {
         // Line split into individual data point.
-        $data_columns = str_getcsv($line, "\t", escape: '\\');
+        $data_columns = str_getcsv($line, "\t", escape: '');
         // Sanitize every data in rows and columns.
         $data = array_map(function ($col) {
           return isset($col) ? trim(str_replace(['"', '\''], '', $col)) : '';
