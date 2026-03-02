@@ -3,12 +3,10 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Traits;
 
 use Drupal\tripal_chado\Database\ChadoConnection;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Phenotypes test trait.
  */
-#[RunTestsInSeparateProcesses]
 trait PhenotypeImporterTestTrait {
 
   /**
