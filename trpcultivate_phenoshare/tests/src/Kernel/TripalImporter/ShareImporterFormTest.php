@@ -11,7 +11,6 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\user\Entity\User;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -20,7 +19,6 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  * @group shareImporter
  */
 #[Group('shareImporter')]
-#[IgnoreDeprecations]
 #[RunTestsInSeparateProcesses]
 class ShareImporterFormTest extends ChadoTestKernelBase {
 

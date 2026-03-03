@@ -16,7 +16,6 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -27,7 +26,6 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('configuration')]
-#[IgnoreDeprecations]
 #[RunTestsInSeparateProcesses]
 class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
