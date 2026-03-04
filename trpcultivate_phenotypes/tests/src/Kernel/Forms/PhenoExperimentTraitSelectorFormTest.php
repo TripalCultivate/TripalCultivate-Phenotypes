@@ -15,6 +15,8 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitSelectorForm;
 use Symfony\Component\HttpFoundation\Request;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests associated with PhenoExperimentTraitSelectorForm class.
@@ -24,6 +26,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('phenotypes_configuration')]
+#[RunTestsInSeparateProcesses]
 class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

@@ -10,6 +10,7 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the functionality of the run() method of the Traits Importer.
@@ -17,6 +18,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group traitsImporter
  */
 #[Group('traitsImporter')]
+#[RunTestsInSeparateProcesses]
 class TraitImporterRunTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
@@ -166,13 +168,16 @@ class TraitImporterRunTest extends ChadoTestKernelBase {
       'trpcultivate-phenotypes-traits-importer',
       $this->definitions,
       $this->chado_connection,
+      $this->container->get('messenger'),
+      $container->get('tripal.logger'),
+      $container->get('tripal.fileretriever'),
+      $container->get('tripal.backend_publish'),
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.traits'),
       $this->container->get('plugin.manager.trpcultivate_validator'),
       $this->container->get('trpcultivate.template_generator'),
       $this->container->get('entity_type.manager'),
       $this->container->get('renderer'),
-      $this->container->get('messenger'),
     );
 
     $this->module_path = $this->container->get('module_handler')

@@ -4,10 +4,12 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Controllers;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesSettingsController;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests associated with TripalCultivatePhenotypesSettingsController class.
  */
+#[RunTestsInSeparateProcesses]
 class ConfigSettingsControllerTest extends ChadoTestKernelBase {
 
   /**

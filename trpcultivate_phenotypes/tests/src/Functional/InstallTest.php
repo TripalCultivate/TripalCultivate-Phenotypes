@@ -7,6 +7,7 @@ use Drupal\Core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Simple test to ensure that main page loads with module enabled.
@@ -16,6 +17,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('TripPheno Phenotypes')]
 #[Group('Installation')]
+#[RunTestsInSeparateProcesses]
 class InstallTest extends ChadoTestBrowserBase {
 
   /**
@@ -75,6 +77,7 @@ class InstallTest extends ChadoTestBrowserBase {
    * Tests that a specific set of pages load with a 200 response.
    */
   public function testLoad() {
+
     $session = $this->getSession();
 
     // Ensure we have an admin user.
@@ -99,6 +102,7 @@ class InstallTest extends ChadoTestBrowserBase {
    * Tests the module overview help.
    */
   public function testHelp() {
+
     $session = $this->getSession();
 
     $some_extected_text = self::$help_text_excerpt;

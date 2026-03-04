@@ -5,10 +5,12 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Forms;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm;
 use Drupal\Core\Form\FormState;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests associated with TripalCultivatePhenotypesRSettingsForm class.
  */
+#[RunTestsInSeparateProcesses]
 class ConfigRSettingsFormTest extends ChadoTestKernelBase {
 
   /**

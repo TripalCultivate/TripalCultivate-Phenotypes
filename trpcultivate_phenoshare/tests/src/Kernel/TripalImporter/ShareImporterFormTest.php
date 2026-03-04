@@ -11,6 +11,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\user\Entity\User;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the form + form-related functionality of the Share Importer.
@@ -18,6 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group shareImporter
  */
 #[Group('shareImporter')]
+#[RunTestsInSeparateProcesses]
 class ShareImporterFormTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;
