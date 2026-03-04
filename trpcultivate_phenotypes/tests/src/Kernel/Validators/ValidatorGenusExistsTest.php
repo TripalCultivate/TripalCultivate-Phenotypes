@@ -8,6 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests Tripal Cultivate Phenotypes Genus Exists Validator Plugin.
@@ -17,6 +18,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('validators')]
+#[RunTestsInSeparateProcesses]
 class ValidatorGenusExistsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

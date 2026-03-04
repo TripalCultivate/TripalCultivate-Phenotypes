@@ -325,8 +325,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     if ($request->getMethod() == 'GET') {
       foreach (['remove', 'require', 'optional', 'active', 'archive'] as $action) {
-        if ((int) $request->get($action) > 0) {
-          $combo_id = $request->get($action);
+        if ((int) $request->query->get($action) > 0) {
+          $combo_id = $request->query->get($action);
           $this->handleOperation($action, $experiment_id, $combo_id);
 
           break;
