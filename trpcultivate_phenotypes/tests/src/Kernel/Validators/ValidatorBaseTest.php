@@ -6,6 +6,7 @@ use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Kernel\Validators\FakeValidators\BasicallyBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests Tripal Cultivate Phenotypes Validator Base functions.
@@ -15,6 +16,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('validators')]
+#[RunTestsInSeparateProcesses]
 class ValidatorBaseTest extends ChadoTestKernelBase {
 
   /**

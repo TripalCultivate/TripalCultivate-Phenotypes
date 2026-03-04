@@ -11,6 +11,7 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the formValidate() functionality of the Share Importer.
@@ -18,6 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group shareImporter
  */
 #[Group('shareImporter')]
+#[RunTestsInSeparateProcesses]
 class ShareImporterFormValidateTest extends ChadoTestKernelBase {
 
   use UserCreationTrait;

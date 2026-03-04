@@ -15,6 +15,8 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
 use Symfony\Component\HttpFoundation\Request;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests associated with PhenoExperimentConfigurationForm class.
@@ -24,6 +26,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('configuration')]
+#[RunTestsInSeparateProcesses]
 class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
@@ -313,7 +316,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->getRouteByName(self::ROUTE_NAME);
 
     $this->setCurrentUser(
-    $this->createUser([$route->getRequirements()['_permission']])
+      $this->createUser([$route->getRequirements()['_permission']])
     );
 
     // Experiment configuration form.
