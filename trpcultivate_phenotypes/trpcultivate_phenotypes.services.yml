@@ -21,3 +21,11 @@ services:
     arguments: []
     tags:
       - { name: 'access_check', applies_to: '_pheno_experiment_configuration_access_check' }
+
+  trpcultivate_phenotypes.hooks:
+    class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesHooks'
+  trpcultivate_phenotypes.theme_hooks:
+    class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesThemeHooks'
+  trpcultivate_phenotypes.alter_hooks:
+    class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
+    arguments: ['@current_route_match', '@database']

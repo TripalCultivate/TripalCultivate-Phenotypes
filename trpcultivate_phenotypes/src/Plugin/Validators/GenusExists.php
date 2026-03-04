@@ -12,12 +12,6 @@ use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValida
 
 /**
  * Validate that genus exists and is configured.
- *
- * @TripalCultivateValidator(
- *   id = "genus_exists",
- *   validator_name = @Translation("Genus Exists and Configured Validator"),
- *   input_types = {"metadata"}
- * )
  */
 #[TripalCultivateValidator(
    id: 'genus_exists',
