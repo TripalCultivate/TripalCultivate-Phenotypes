@@ -604,20 +604,21 @@ class TripalCultivatePhenotypesTraitsService {
   }
 
   /**
-   * Get trait method unit combinations for a given experiment.
+   * Get trait-method-unit combinations of an experiment.
    *
    * @param int $experiment_id
    *   The experiment id, a unique identifier used to filter traits and return
    *   only traits associated with the specified experiment id.
    * @param null|string $genus
    *   (Optional) The genus to further filter the traits combo results.
+   *   Default to null value.
    * @param array $options
    *   (Optional and default to format = full) Contains key-value pairs that
-   *   define options that allow customization to each trait returned.
+   *   define options that allow customization to each trait combos returned.
    *   Valid keys supported:
    *     - format: (default) full (values in base table and all ids resolved),
    *       component (for passing as render array value to a combo component),
-   *       importer (values in array structure as header property of importers).
+   *       importer (values in array structure as a header for data importers).
    *
    * @return array
    *   All traits associated to an experiment (plus genus) in an array keyed by
@@ -629,16 +630,13 @@ class TripalCultivatePhenotypesTraitsService {
    *
    * @throws \Exception
    *   - A genus not configured to be used in phenotypes module.
+   *   - Experiment provided does not reference an existing experiment.
    *   - Not a valid trait format or value requested in the $options parameter.
    */
   public function getExperimentTraitMethodUnitCombos(int $experiment_id, ?string $genus = NULL, array $options = []) {
 
-    if (!$experiment_id) {
-      throw new \Exception('Experiment id is required to get trait method unit combos of an experiment.');
-    }
-
-    if (!ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
-      throw new \Exception('Experiment id does not exist.');
+    if (!$experiment_id || !ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
+      throw new \Exception('Experiment ID is required and must reference an existing experiment.');
     }
 
     if ($genus) {
@@ -658,13 +656,11 @@ class TripalCultivatePhenotypesTraitsService {
       throw new \Exception('Not a valid options key provided. Use one of [' . implode(', ', $valid_option_keys) . ']');
     }
 
-    // Define the key/field name of each format. Default to - full key, if
+    // Define the key/field name of each format. Default format to - full, if
     // not specified.
     $option_format = strtolower($options['format'] ?? 'full');
     $expcombo_table = 'trpcultivate_phenocombo';
 
-    // Table fields: combo_id, project_id, attr_id, observable_id, unit_id, uid,
-    // label, is_archived, is_required, was_collected, was_shared and timestamp.
     $expcombo_table_fields = $this->chado_connection
       ->select('information_schema.columns', 'cl')
       ->fields('cl', ['column_name'])
@@ -684,6 +680,9 @@ class TripalCultivatePhenotypesTraitsService {
         'name',
         'definition',
       ],
+      // Table trpcultivate_phenocombo fields: combo_id, project_id, attr_id,
+      // observable_id, unit_id, uid, label, is_archived, is_required,
+      // was_collected, was_shared, and timestamp.
       'full' => $expcombo_table_fields,
     ];
 
@@ -700,44 +699,32 @@ class TripalCultivatePhenotypesTraitsService {
     $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
 
     $query->fields('tp');
-    $query->addField('p', 'name', 'experiment');
     $query->addField('c', 'definition', 'definition');
     $query->addField('c', 'definition', 'description');
 
-    // This field - label is used as key of each combo returned.
-    $query->addExpression('TRIM(tp.label)', 'label');
-    $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
-
-    // @todo: Determine what is the expected value for name for each format?
+    // @todo Determine what is the expected value for name for each format?
     // For header format request, the name is the trait name (appears in file),
     // whereas for non-header request, name is the combination of trait name
     // and the label text.
-    $query->addExpression(
-      ($option_format == 'header') ? "c.name" : "c.name || ' (' || tp.label || ')'",
-      'name'
-    );
+    $query->addExpression(($option_format == 'header') ? "c.name" : "c.name || ' (' || tp.label || ')'", 'name');
+    $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
+
+    $query->condition('tp.project_id', $experiment_id, '=');
 
     // Filter result to a specific genus or load all combo if none is supplied.
-    $query->condition('tp.project_id', $experiment_id, '=');
     if ($genus) {
       $query->condition('c.cv_id', $genus_config['trait'], '=');
     }
 
     // Results keyed by label field.
-    $exp_phenocombo = $query->orderBy('c.name', 'ASC')->execute()
+    $exp_phenocombo = $query->orderBy('c.name', 'ASC')
+      ->execute()
       ->fetchAllAssoc('label');
 
     $combos = [];
-
     if (!$exp_phenocombo) {
       return $combos;
     }
-
-    $field_map = [
-      'trait' => 'attr_id',
-      'method' => 'observable_id',
-      'unit' => 'unit_id',
-    ];
 
     foreach ($exp_phenocombo as $label => $combo) {
       // Append table values defined by the format array structure.
@@ -747,11 +734,14 @@ class TripalCultivatePhenotypesTraitsService {
         $field_values[$format_keys] = $combo->{$format_keys};
       }
 
-      // Add other format-specific values - id resolution.
+      // Append other format-specific values.
       $format_values = [];
 
       if ($option_format != 'header') {
-        foreach ($field_map as $field_alias => $field_name) {
+        $trait_combo = [];
+
+        // Get trait, method, unit of a combo.
+        foreach (['trait' => 'attr_id', 'method' => 'observable_id', 'unit' => 'unit_id'] as $field_alias => $field_name) {
           $trait_combo[$field_alias] = $this->cvterm_buddy
             ->getCvterm(['cvterm.cvterm_id' => $combo->{$field_name}])[0]
             ->getValues();
@@ -762,8 +752,8 @@ class TripalCultivatePhenotypesTraitsService {
 
         case 'full':
           // Resolve attr_id, observable_id, and unit_id into full table record.
-          foreach (array_keys($field_map) as $field_alias) {
-            $format_values[$field_alias] = $trait_combo[$field_alias];
+          foreach ($trait_combo as $field_alias => $field_value) {
+            $form_values[$field_alias] = $field_value;
           }
 
           break;

@@ -867,7 +867,7 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     }
     catch (\Exception $e) {
       $this->assertEquals(
-        'Experiment id does not exist.',
+        'Experiment ID is required and must reference an existing experiment.',
         $e->getMessage(),
         'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-existent project provided.',
       );
@@ -939,8 +939,11 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
 
       $tmp_trait[$i] = $trait;
 
-      $this->container->get('database')
-        ->insert('trpcultivate_phenocombo')
+      $expcombo_table = 'trpcultivate_phenocombo';
+      $drupal_dbconnection = $this->container->get('database');
+
+      $drupal_dbconnection
+        ->insert($expcombo_table)
         ->fields([
           'project_id' => $experiment_id,
           'attr_id' => $trait['trait'],
@@ -957,35 +960,29 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
         ->execute();
     }
 
+    $expcombo_table_fields = $drupal_dbconnection
+      ->select('information_schema.columns', 'cl')
+      ->fields('cl', ['column_name'])
+      ->condition('cl.table_name', $expcombo_table, '=')
+      ->execute()
+      ->fetchCol();
+
     $combo_format = [
       'header' => [
-        'combo_id',
+        $combo_id = $expcombo_table_fields[0],
         'name',
         'description',
         'type',
       ],
       'component' => [
-        'combo_id',
+        $combo_id,
         'name',
         'definition',
       ],
-      'full' => [
-        'combo_id',
-        'label',
-        'project_id',
-        'experiment',
-        'attr_id',
-        'observable_id',
-        'unit_id',
-        'is_required',
-        'is_archived',
-        'was_collected',
-        'was_shared',
-        'uid',
-      ],
+      'full' => $expcombo_table_fields,
     ];
 
-    // Test all formats and all genus.
+    // Test all formats and for each genus.
     foreach (array_keys($combo_format) as $format) {
       $combos = $this->service_traits
         ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
