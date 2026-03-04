@@ -5,6 +5,7 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
 use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 
@@ -636,11 +637,7 @@ class TripalCultivatePhenotypesTraitsService {
       throw new \Exception('Experiment id is required to get trait method unit combos of an experiment.');
     }
 
-    $query = $this->chado_connection->query(
-      "SELECT project_id FROM {1:project} WHERE project_id = :id", [':id' => $experiment_id]
-    );
-
-    if (!$query->fetchField()) {
+    if (!ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
       throw new \Exception('Experiment id does not exist.');
     }
 
@@ -661,59 +658,57 @@ class TripalCultivatePhenotypesTraitsService {
       throw new \Exception('Not a valid options key provided. Use one of [' . implode(', ', $valid_option_keys) . ']');
     }
 
-    // Valid format values. Default to - full key, if not specified.
+    // Define the key/field name of each format. Default to - full key, if
+    // not specified.
+    $option_format = strtolower($options['format'] ?? 'full');
+    $expcombo_table = 'trpcultivate_phenocombo';
+
+    // Table fields: combo_id, project_id, attr_id, observable_id, unit_id, uid,
+    // label, is_archived, is_required, was_collected, was_shared and timestamp.
+    $expcombo_table_fields = $this->chado_connection
+      ->select('information_schema.columns', 'cl')
+      ->fields('cl', ['column_name'])
+      ->condition('cl.table_name', $expcombo_table, '=')
+      ->execute()
+      ->fetchCol();
+
     $combo_format = [
       'header' => [
-        'combo_id',
+        $combo_id = $expcombo_table_fields[0],
         'name',
         'description',
         'type',
       ],
       'component' => [
-        'combo_id',
+        $combo_id,
         'name',
         'definition',
       ],
-      'full' => [
-        'combo_id',
-        'label',
-        'project_id',
-        'experiment',
-        'attr_id',
-        'observable_id',
-        'unit_id',
-        'is_required',
-        'is_archived',
-        'was_collected',
-        'was_shared',
-        'uid',
-      ],
+      'full' => $expcombo_table_fields,
     ];
 
-    $option_format = strtolower($options['format'] ?? 'full');
-    $combo_format_keys = array_keys($combo_format);
-
-    if (!in_array($option_format, $combo_format_keys)) {
+    if (!in_array($option_format, $combo_format_keys = array_keys($combo_format))) {
       throw new \Exception('Not a valid options format value. Use one of [' . implode(', ', $combo_format_keys) . ']');
     }
 
-    // Retrieve the trait method unit combos of the experiment using the
+    // Retrieve the trait-method-unit combos of the experiment using the
     // project_id field of the base table. If genus is provided, apply
     // additional filter based on project-genus-cv ontology configuration.
-    $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
+    $query = $this->chado_connection->select($expcombo_table, 'tp');
     $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
     $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
     $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
 
     $query->fields('tp');
+    $query->addField('p', 'name', 'experiment');
     $query->addField('c', 'definition', 'definition');
     $query->addField('c', 'definition', 'description');
-    $query->addField('p', 'name', 'experiment');
 
     // This field - label is used as key of each combo returned.
     $query->addExpression('TRIM(tp.label)', 'label');
-
     $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
+
+    // @todo: Determine what is the expected value for name for each format?
     // For header format request, the name is the trait name (appears in file),
     // whereas for non-header request, name is the combination of trait name
     // and the label text.
@@ -722,9 +717,9 @@ class TripalCultivatePhenotypesTraitsService {
       'name'
     );
 
+    // Filter result to a specific genus or load all combo if none is supplied.
     $query->condition('tp.project_id', $experiment_id, '=');
     if ($genus) {
-      // Filter result to a specific genus, load all combo if none is supplied.
       $query->condition('c.cv_id', $genus_config['trait'], '=');
     }
 
@@ -752,7 +747,7 @@ class TripalCultivatePhenotypesTraitsService {
         $field_values[$format_keys] = $combo->{$format_keys};
       }
 
-      // Add other format-specific values - id resolutions and computed values.
+      // Add other format-specific values - id resolution.
       $format_values = [];
 
       if ($option_format != 'header') {

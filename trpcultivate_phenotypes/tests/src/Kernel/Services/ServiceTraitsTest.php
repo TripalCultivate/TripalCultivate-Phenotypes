@@ -666,7 +666,6 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
 
     // Set accessible for protected method.
     $method = $reflection->getMethod('getPhenoCvTerm');
-    $method->setAccessible(TRUE);
 
     // Select E unit from cvterm table to get cv_name and cvtem_id.
     $sql = "SELECT * FROM {1:cvterm} AS ct JOIN {1:cv} USING (cv_id) WHERE ct.name = :name;";
