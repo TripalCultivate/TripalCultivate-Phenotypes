@@ -9,7 +9,6 @@ use Drupal\trpcultivate_phenotypes\TripalCultivateValidator\ValidatorTraits\Genu
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorBase;
 use Drupal\trpcultivate\TripalCultivateValidator\Attribute\TripalCultivateValidator;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Fake Validator that does not implement any of its own methods.
@@ -27,7 +26,6 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
    validator_name: new TranslatableMarkup('Validator Using GenusConfigured Trait'),
    input_types: ['header-row', 'data-row']
  )]
-#[RunTestsInSeparateProcesses]
 class ValidatorGenusConfiguredNOServiceTraits extends TripalCultivateValidatorBase {
 
   use GenusConfigured;
