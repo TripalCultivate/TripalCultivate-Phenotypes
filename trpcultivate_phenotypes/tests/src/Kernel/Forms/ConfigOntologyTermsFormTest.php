@@ -8,10 +8,12 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySetting
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests associated with TripalCultivatePhenotypesOntologySettingsForm class.
  */
+#[RunTestsInSeparateProcesses]
 class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
   /**
    * Modules to enable.

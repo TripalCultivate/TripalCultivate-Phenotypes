@@ -8,6 +8,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Url;
 use Drupal\Core\Database\StatementWrapperIterator;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests that a valid trait/method/unit combination can be inserted/retrieved.
@@ -19,7 +20,9 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('trpcultivate_phenotypes')]
 #[Group('services')]
 #[Group('traits')]
+#[RunTestsInSeparateProcesses]
 class ServiceTraitsTest extends ChadoTestKernelBase {
+
   use PhenotypeImporterTestTrait;
 
   /**

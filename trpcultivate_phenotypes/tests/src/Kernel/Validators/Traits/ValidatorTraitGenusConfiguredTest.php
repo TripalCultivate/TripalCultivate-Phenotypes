@@ -8,6 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the GenusConfigured validator trait.
@@ -17,6 +18,7 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('trpcultivate_phenotypes')]
 #[Group('validator_traits')]
+#[RunTestsInSeparateProcesses]
 class ValidatorTraitGenusConfiguredTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

@@ -11,6 +11,7 @@ use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoCvtermBuddy;
 use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Test Tripal Cultivate Phenotypes Terms service.
@@ -18,6 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group trpcultivate_phenotypes
  */
 #[Group('trpcultivate_phenotypes')]
+#[RunTestsInSeparateProcesses]
 class ServiceTermTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

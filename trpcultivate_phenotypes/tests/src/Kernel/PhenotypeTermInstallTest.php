@@ -5,6 +5,7 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests trpcultivate_phenotypes.module.
@@ -12,6 +13,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group trpcultivate_phenotypes
  */
 #[Group('trpcultivate_phenotypes')]
+#[RunTestsInSeparateProcesses]
 class PhenotypeTermInstallTest extends ChadoTestKernelBase {
 
   /**

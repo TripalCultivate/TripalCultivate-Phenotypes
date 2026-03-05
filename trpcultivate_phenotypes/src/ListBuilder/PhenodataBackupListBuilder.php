@@ -263,6 +263,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     $user_backup = $this->user_backup;
 
     $filter_project_id = \Drupal::request()
+      ->query
       ->get('project_id', 0);
 
     // Any attempt to mangle with the query string will just default to
@@ -324,6 +325,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     asort($project_names);
 
     $filter_project_id = \Drupal::request()
+      ->query
       ->get('project_id', 0);
 
     $form['project_id'] = [

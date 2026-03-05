@@ -7,10 +7,12 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm;
 use Drupal\Core\Form\FormState;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests for TripalCultivatePhenotypesOntologySettingsForm with exceptions.
  */
+#[RunTestsInSeparateProcesses]
 class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
   /**
    * Modules to enable.

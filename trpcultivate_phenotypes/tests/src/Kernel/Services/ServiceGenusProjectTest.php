@@ -8,6 +8,7 @@ use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal\Services\TripalLogger;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Test Tripal Cultivate Phenotypes Genus Project service.
@@ -15,6 +16,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group trpcultivate_phenotypes
  */
 #[Group('trpcultivate_phenotypes')]
+#[RunTestsInSeparateProcesses]
 class ServiceGenusProjectTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;

@@ -7,6 +7,7 @@ use Drupal\file\Entity\File;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Class definition ConfigWatermarkFormTest.
@@ -15,6 +16,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group trpcultivate_phenotypes
  */
 #[Group('trpcultivate_phenotypes')]
+#[RunTestsInSeparateProcesses]
 class ConfigWatermarkFormTest extends ChadoTestKernelBase {
 
   /**
