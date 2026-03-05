@@ -199,7 +199,7 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
     $i = 0;
     foreach ($phenobackup_storage->loadMultiple($backup_ids) as $backup) {
       $this->assertStringContainsString(
-        $backup->get('backup_date'),
+        date('Y-M-d H:i:s', strtotime($backup->get('backup_date'))),
         (string) $backups[$i]->asXML(),
         'The order of backup item does not match expected order (most recent first).',
       );

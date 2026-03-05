@@ -105,7 +105,7 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
       }
 
       $build['backup_table']['#rows'][] = [
-        $backup->get('backup_date'),
+        date('Y-M-d H:i:s', strtotime($backup->get('backup_date'))),
         $backup->get('comments') ?: 'No notes/comments placed on this file',
         $created_by,
         $file_download,
