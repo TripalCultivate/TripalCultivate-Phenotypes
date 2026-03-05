@@ -14,6 +14,8 @@ use Drupal\Core\Entity\EntityDeleteForm;
 /**
  * Defines the phenotypic data backup entity type.
  *
+ * @todo Remove this annotation when we no longer support Drupal 10.x.
+ *
  * @ConfigEntityType(
  *   id = "phenodata_backup",
  *   label = @Translation("Phenotypic Data Backup"),

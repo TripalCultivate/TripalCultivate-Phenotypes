@@ -11,6 +11,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Plugin\TripalImporter\TripalCultivatePhenotypesTraitsImporter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests processValidationMessages() and related methods in the Traits Importer.
@@ -18,6 +19,7 @@ use PHPUnit\Framework\Attributes\Group;
  * @group traitsImporter
  */
 #[Group('traitsImporter')]
+#[RunTestsInSeparateProcesses]
 class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
 
   use AssertContentTrait;
@@ -142,13 +144,16 @@ class TraitImporterProcessValidationTest extends ChadoTestKernelBase {
       'trpcultivate-phenotypes-traits-importer',
       $this->definitions,
       $this->chado_connection,
+      $container->get('messenger'),
+      $container->get('tripal.logger'),
+      $container->get('tripal.fileretriever'),
+      $container->get('tripal.backend_publish'),
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.traits'),
       $this->container->get('plugin.manager.trpcultivate_validator'),
       $this->container->get('trpcultivate.template_generator'),
       $this->container->get('entity_type.manager'),
       $this->renderer,
-      $this->container->get('messenger'),
     );
   }
 

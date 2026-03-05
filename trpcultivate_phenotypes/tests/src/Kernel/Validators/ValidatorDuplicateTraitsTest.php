@@ -9,6 +9,7 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsServic
 use Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
  * Tests the Duplicate Traits validator.
@@ -24,6 +25,7 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('validators')]
 #[Group('row_validators')]
 #[Group('trait_importer_validators')]
+#[RunTestsInSeparateProcesses]
 class ValidatorDuplicateTraitsTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
