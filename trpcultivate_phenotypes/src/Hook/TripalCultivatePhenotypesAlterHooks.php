@@ -61,7 +61,7 @@ class TripalCultivatePhenotypesAlterHooks {
       if (in_array($tripal_entity->bundle(), $content_types)) {
         $research_experiment = $tripal_entity->get('exp_name')->getValue()[0];
 
-        $has_pheno = $drupaldb_connection
+        $has_pheno = $this->drupaldb_connection
           ->select('trpcultivate_phenocombo', 'tc')
           ->condition('tc.project_id', $research_experiment['record_id'], '=')
           ->countQuery()
