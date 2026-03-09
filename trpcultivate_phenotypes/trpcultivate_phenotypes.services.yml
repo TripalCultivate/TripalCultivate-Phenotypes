@@ -26,6 +26,13 @@ services:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesHooks'
   trpcultivate_phenotypes.theme_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesThemeHooks'
+
+  Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService:
+    alias: trpcultivate_phenotypes.genus_ontology
+
+  Drupal\tripal_chado\Database\ChadoConnection:
+    alias: tripal_chado.database
+
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@current_route_match', '@database']
+    arguments: ['@current_route_match', '@database', '@tripal_chado.database', '@trpcultivate_phenotypes.genus_ontology']

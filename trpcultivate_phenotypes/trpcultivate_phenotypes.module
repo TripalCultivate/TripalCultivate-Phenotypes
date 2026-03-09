@@ -7,6 +7,7 @@
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Hook\Attribute\LegacyHook;
+use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
  * Implements hook_help().
@@ -53,6 +54,22 @@ function trpcultivate_phenotypes_menu_local_tasks_alter(&$data, $route_name, Ref
 
   return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
     ->menuLocalTasksAlter();
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Attach a custom form validation callback to edit form of research entity.
+ *
+ * This legacy hook is only run for Drupal < 11, and is replaced by class
+ * Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks in
+ * trpcultivate_phenotypes/src/Hook/TripalCultivatePhenotypesAlterHooks.php.
+ */
+#[LegacyHook]
+function trpcultivate_phenotypes_form_alter(&$form, FormState $form_state, $form_id) {
+
+  return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
+    ->formAlter();
 }
 
 /**
