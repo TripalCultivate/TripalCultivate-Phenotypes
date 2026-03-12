@@ -7,8 +7,6 @@ use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\Core\Url;
-use Drupal\field\Entity\FieldConfig;
-use Drupal\Tests\tripal\Traits\TripalTestTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -28,9 +26,7 @@ use Symfony\Component\Routing\Route;
 class HookAlterTest extends ChadoTestKernelBase {
 
   use PhenotypeImporterTestTrait;
-
   use UserCreationTrait;
-  use TripalTestTrait;
 
   /**
    * Modules to enable.
@@ -108,7 +104,8 @@ class HookAlterTest extends ChadoTestKernelBase {
     \trpcultivate_import_contenttypes();
     $config_terms = $this->setTermConfig();
 
-    // Create test records.
+    // Create test records - A research experiment entity with genus set to
+    // Lens and a trait-method-unit combo added.
     $exp_name = 'Awesome Research Experiment';
     $exp_entity_id = 1;
     $genus = 'Lens';
@@ -117,8 +114,6 @@ class HookAlterTest extends ChadoTestKernelBase {
       ->fields(['name'])
       ->values(['name' => $exp_name])
       ->execute();
-
-    FieldConfig::loadByName('tripal_entity', 'research_experiment', 'exp_hypothesis');
 
     $entity = TripalEntity::create([
       'id' => $exp_entity_id,
@@ -156,7 +151,6 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->exp_entity = $entity;
 
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
-    $db_service = $this->container->get('database');
 
     $trait_service->setTraitGenus($genus);
     $ids = $trait_service->insertTrait($combo = [
@@ -168,7 +162,8 @@ class HookAlterTest extends ChadoTestKernelBase {
       'Type' => 'Quantitative',
     ]);
 
-    $insert_combo = $db_service->insert(self::PHENO_COMBO_TABLE)
+    $this->container->get('database')
+      ->insert(self::PHENO_COMBO_TABLE)
       ->fields([
         'project_id',
         'attr_id',
@@ -194,9 +189,8 @@ class HookAlterTest extends ChadoTestKernelBase {
         mt_rand(0, 1),
         $this->container->get('current_user')->id(),
         time(),
-      ]);
-
-    $insert_combo->execute();
+      ])
+      ->execute();
   }
 
   /**
@@ -227,13 +221,13 @@ class HookAlterTest extends ChadoTestKernelBase {
       $this->assertStringContainsString(
         'class="visually-hidden"',
         (string) $el->asXML(),
-        'The Delete action button in edit page is expected to be disabled for experiment configured with phenotypes.'
+        'The Delete action button in edit page is expected to be disabled for experiment configured with phenotypes.',
       );
     }
   }
 
   /**
-   * Test hook_form_alter().
+   * Test the validator that maintains genus-experiment relationship.
    */
   public function testGenusExperimentValidator() {
 
@@ -242,7 +236,7 @@ class HookAlterTest extends ChadoTestKernelBase {
     );
 
     $edit_route = new Route('/bio_data/{tripal_entity}/edit');
-    $route = new RouteMatch('trpcultivate_phenotypes.edit_simulate', $edit_route, []);
+    $route = new RouteMatch('test.edit_simulate', $edit_route, []);
 
     $request = new Request();
     $request->attributes->set(RouteObjectInterface::ROUTE_NAME, $route);
@@ -282,7 +276,7 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->assertEquals(
       $entity_field,
       array_keys($errors)[0],
-      'The error is epected to be triggered by fiedl ' . $entity_field,
+      'The error is epected to be triggered by field ' . $entity_field,
     );
 
     $this->assertStringContainsString(
