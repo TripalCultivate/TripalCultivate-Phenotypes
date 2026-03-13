@@ -42,7 +42,6 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
     'field',
     'field_ui',
     'field_group',
-    'markup',
     'path',
     'path_alias',
     'system',
