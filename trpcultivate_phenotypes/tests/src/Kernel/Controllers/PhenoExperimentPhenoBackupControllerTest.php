@@ -37,7 +37,6 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
     'field_ui',
     'field_group',
     'file',
-    'markup',
     'path',
     'path_alias',
     'system',
