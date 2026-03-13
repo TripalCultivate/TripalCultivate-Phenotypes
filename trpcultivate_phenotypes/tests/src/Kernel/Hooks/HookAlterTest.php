@@ -40,7 +40,6 @@ class HookAlterTest extends ChadoTestKernelBase {
     'filter',
     'datetime',
     'text',
-    'markup',
     'node',
     'path',
     'path_alias',
