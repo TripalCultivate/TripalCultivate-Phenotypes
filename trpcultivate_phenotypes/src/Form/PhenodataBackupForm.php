@@ -149,7 +149,7 @@ final class PhenodataBackupForm extends EntityForm {
     $form['backup_file'] = [
       '#type' => 'managed_file',
       '#title' => 'Data File',
-      '#description' => $this->t('Select data file to backup. Only [@ext] file extensions are allowed. The maximum file size allowed is <strong>@size</strong>.', [
+      '#description' => $this->t('Select data file to backup. Only [@ext] file extensions are allowed. The maximum file size allowed is <strong>@size</strong>. If your file exceeds this size, please contact your administrator.', [
         '@ext' => $importer_file_extension,
         '@size' => ByteSizeMarkup::create(Environment::getUploadMaxSize()),
       ]),
