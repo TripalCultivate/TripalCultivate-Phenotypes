@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\LegacyHook;
 use Drupal\Core\Routing\RouteMatchInterface;
 
@@ -36,7 +37,7 @@ function trpcultivate_phenotypes_help($route_name, RouteMatchInterface $route_ma
 function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
 
   return \Drupal::service('trpcultivate_phenotypes.theme_hooks')
-    ->theme();
+    ->theme($existing, $type, $theme, $path);
 }
 
 /**
@@ -53,7 +54,7 @@ function trpcultivate_phenotypes_theme($existing, $type, $theme, $path) {
 function trpcultivate_phenotypes_menu_local_tasks_alter(&$data, $route_name, RefinableCacheableDependencyInterface &$cacheability) {
 
   return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
-    ->menuLocalTasksAlter();
+    ->menuLocalTasksAlter($data, $route_name, $cacheability);
 }
 
 /**
@@ -66,10 +67,10 @@ function trpcultivate_phenotypes_menu_local_tasks_alter(&$data, $route_name, Ref
  * trpcultivate_phenotypes/src/Hook/TripalCultivatePhenotypesAlterHooks.php.
  */
 #[LegacyHook]
-function trpcultivate_phenotypes_form_alter(&$form, FormState $form_state, $form_id) {
+function trpcultivate_phenotypes_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
-    ->formAlter();
+    ->formAlter($form, $form_state, $form_id);
 }
 
 /**
