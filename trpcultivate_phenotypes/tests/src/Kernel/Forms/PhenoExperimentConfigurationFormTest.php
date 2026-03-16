@@ -94,52 +94,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    *
    * @var array
    */
-  private $trait_set = [
-    'Lens' => [
-      [
-        'Trait Name' => 'Days to Flower',
-        'Trait Description' => 'DTF trait description text',
-        'Method Short Name' => 'DTF',
-        'Collection Method' => 'DTF trait collection method text',
-        'Unit' => 'days',
-        'Type' => 'Quantitative',
-      ],
-      [
-        'Trait Name' => 'Days to Flower',
-        'Trait Description' => 'DTF trait description text',
-        'Method Short Name' => 'DTF-2',
-        'Collection Method' => 'DTF-2 trait collection method text',
-        'Unit' => 'days',
-        'Type' => 'Quantitative',
-      ],
-      [
-        'Trait Name' => 'Plant Height',
-        'Trait Description' => 'PH trait description text',
-        'Method Short Name' => 'PHT',
-        'Collection Method' => 'PH trait collection method text',
-        'Unit' => 'cm',
-        'Type' => 'Quantitative',
-      ],
-      [
-        'Trait Name' => 'Is Dead',
-        'Trait Description' => 'ID trait description text',
-        'Method Short Name' => 'IS_D',
-        'Collection Method' => 'ID trait collection method text',
-        'Unit' => 'text',
-        'Type' => 'Qualitative',
-      ],
-    ],
-    'Triticum' => [
-      [
-        'Trait Name' => 'Green Cotyledon Colour',
-        'Trait Description' => 'GCC trait description text',
-        'Method Short Name' => 'GCC',
-        'Collection Method' => 'GCC trait collection method text',
-        'Unit' => 'colour',
-        'Type' => 'Qualitative',
-      ],
-    ],
-  ];
+  private $trait_set = [];
 
   /**
    * {@inheritdoc}
@@ -170,6 +125,60 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     $config_terms = $this->setTermConfig();
 
     // Create test records.
+    $trait_keys = [
+      'Trait Name',
+      'Trait Description',
+      'Method Short Name',
+      'Collection Method',
+      'Unit',
+      'Type',
+    ];
+
+    $trait_values = [
+      'Lens' => [
+        [
+          'Days to Flower',
+          'DTF trait description text',
+          'DTF',
+          'DTF trait collection method text',
+          'days',
+          'Quantitative',
+        ],
+        [
+          'Plant Height',
+          'PH trait description text',
+          'PHT',
+          'PH trait collection method text',
+          'cm',
+          'Quantitative',
+        ],
+        [
+          'Is Dead',
+          'ID trait description text',
+          'IS_D',
+          'ID trait collection method text',
+          'text',
+          'Qualitative',
+        ],
+      ],
+      'Triticum' => [
+        [
+          'Green Cotyledon Colour',
+          'GCC trait description text',
+          'GCC',
+          'GCC trait collection method text',
+          'colour',
+          'Qualitative',
+        ],
+      ],
+    ];
+
+    foreach ($trait_values as $trait_genus => $values) {
+      foreach ($values as $value) {
+        $this->trait_set[$trait_genus][] = array_combine($trait_keys, $value);
+      }
+    }
+
     $good_research = 'A Good Research Experiment';
     $experiments = [
       $good_research => [
