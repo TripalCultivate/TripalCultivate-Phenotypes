@@ -4,7 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\Hook;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -131,7 +131,7 @@ class TripalCultivatePhenotypesAlterHooks {
    * @see phenoGenusExperimentEditFormValidate()
    */
   #[Hook('form_alter')]
-  public function formAlter(&$form, FormState $form_state, $form_id) {
+  public function formAlter(&$form, FormStateInterface $form_state, $form_id) {
 
     if ($form_id == 'tripal_entity_research_experiment_edit_form') {
       if (isset($form['actions']['delete']) && $this->experiment_id && $this->has_pheno) {
@@ -151,7 +151,7 @@ class TripalCultivatePhenotypesAlterHooks {
    * and preventing modification or removal of the genus entry once phenotypic
    * data has been associated.
    */
-  public function phenoGenusExperimentEditFormValidate($form, FormState $form_state) {
+  public function phenoGenusExperimentEditFormValidate($form, FormStateInterface $form_state) {
 
     // All genus configured in Phenotypes.
     $pheno_configgenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
