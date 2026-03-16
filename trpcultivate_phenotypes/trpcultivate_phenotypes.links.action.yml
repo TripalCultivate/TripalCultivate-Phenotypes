@@ -2,13 +2,13 @@ entity.phenodata_backup.add_form:
   route_name: 'entity.phenodata_backup.add_form'
   title: 'Backup Phenotypic Data'
   appears_on:
-    - entity.phenodata_backup.collection
+    - 'entity.phenodata_backup.collection'
 
 trpcultivate_phenotypes.trait_selector:
-  route_name: trpcultivate_phenotypes.experiment_traitselector
+  route_name: 'trpcultivate_phenotypes.experiment_traitselector'
   title: 'Add Trait'
   appears_on:
-    - trpcultivate_phenotypes.experiment_configuration
+    - 'trpcultivate_phenotypes.experiment_configuration'
   options:
     attributes:
       class:
@@ -17,10 +17,10 @@ trpcultivate_phenotypes.trait_selector:
       data-dialog-options: '{"width": 850}'
 
 trpcultivate_phenotypes.exp_backupfile:
-  route_name: entity.phenodata_backup.add_form
+  route_name: 'entity.phenodata_backup.add_form'
   title: 'Backup a File'
   appears_on:
-    - trpcultivate_phenotypes.experiment_phenobackup
+    - 'trpcultivate_phenotypes.experiment_phenobackup'
   options:
     attributes:
-      target: _blank
+      target: '_blank'
