@@ -21,13 +21,6 @@ class TripalCultivatePhenotypesAlterHooks {
   use StringTranslationTrait;
 
   /**
-   * Drupal database connection.
-   *
-   * @var \Drupal\Core\Database\Connection
-   */
-  protected Connection $drupaldb_connection;
-
-  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConneciton
@@ -74,7 +67,6 @@ class TripalCultivatePhenotypesAlterHooks {
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
   ) {
 
-    $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
 
@@ -88,7 +80,7 @@ class TripalCultivatePhenotypesAlterHooks {
         $this->experiment_id = $tripal_entity->get('exp_name')
           ->getValue()[0]['record_id'];
 
-        $has_pheno = $this->drupaldb_connection
+        $has_pheno = $drupaldb_connection
           ->select('trpcultivate_phenocombo', 'tc')
           ->fields('tc', ['combo_id'])
           ->condition('tc.project_id', $this->experiment_id, '=')
