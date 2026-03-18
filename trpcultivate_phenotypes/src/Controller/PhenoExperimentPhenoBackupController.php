@@ -6,6 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 use League\Container\Exception\NotFoundException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -68,11 +69,6 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
       throw new NotFoundException();
     }
 
-    // @todo Replace if service/helper method to pull experiment id and/or name,
-    // becomes available.
-    $exp_id = $tripal_entity->get('exp_name')
-      ->getValue()[0]['record_id'];
-
     $build['#title'] = 'Phenotypes Backup for ' . $tripal_entity->label();
 
     $build['backup_table'] = [
@@ -100,6 +96,10 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
 
     $phenobackup_storage = $this->entityTypeManager()
       ->getStorage('phenodata_backup');
+
+    // @todo Replace if service/helper method to pull experiment id and/or name,
+    // becomes available.
+    $exp_id = ChadoProjectAutocompleteController::getProjectId($tripal_entity->label());
 
     $backup_ids = $phenobackup_storage
       ->getQuery()
