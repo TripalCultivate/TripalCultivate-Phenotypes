@@ -4,6 +4,9 @@ namespace Drupal\trpcultivate_phenotypes\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+use Drupal\tripal\Services\TripalLogger;
+use League\Container\Exception\NotFoundException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -19,14 +22,24 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
   protected RouteMatchInterface $service_RouteMatch;
 
   /**
+   * Tripal logger service.
+   *
+   * @var \Drupal\tripal\Services\TripalLogger
+   */
+  protected TripalLogger $tripal_logger;
+
+  /**
    * Constructor.
    *
    * @param \Drupal\Core\Routing\RouteMatchInterface $route_match
    *   Route match service.
+   * @param \Drupal\tripal\Services\TripalLogger $tripal_logger
+   *   Tripal logger service.
    */
-  public function __construct(RouteMatchInterface $route_match) {
+  public function __construct(RouteMatchInterface $route_match, TripalLogger $tripal_logger) {
 
     $this->service_RouteMatch = $route_match;
+    $this->tripal_logger = $tripal_logger;
   }
 
   /**
@@ -36,6 +49,7 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
 
     return new static(
       $container->get('current_route_match'),
+      $container->get('tripal.logger'),
     );
   }
 
@@ -44,12 +58,22 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
    */
   public function loadBackups() {
 
-    ['record_id' => $exp_id, 'value' => $exp_name] = $this->service_RouteMatch
-      ->getParameter('tripal_entity')
-      ->get('exp_name')
-      ->getValue()[0];
+    if (!$tripal_entity = $this->service_RouteMatch->getParameter('tripal_entity')) {
+      $this->tripal_logger->error('The research experiment entity does not exist.');
+      throw new NotFoundHttpException();
+    }
 
-    $build['#title'] = 'Phenotypes Backup for ' . $exp_name;
+    if (!$tripal_entity->hasField('exp_name')) {
+      $this->tripal_logger->error('The research experiment entity does not contain a required field - exp_name.');
+      throw new NotFoundException();
+    }
+
+    // @todo Replace if service/helper method to pull experiment id and/or name,
+    // becomes available.
+    $exp_id = $tripal_entity->get('exp_name')
+      ->getValue()[0]['record_id'];
+
+    $build['#title'] = 'Phenotypes Backup for ' . $tripal_entity->label();
 
     $build['backup_table'] = [
       '#type' => 'table',
@@ -95,11 +119,14 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
 
       if ($file_obj) {
         $file_download['data'] = [
-          '#type' => 'button',
-          '#value' => 'Download',
-          '#button_type' => 'primary',
+          '#type' => 'link',
+          '#title' => 'Download',
+          '#url' => Url::fromUri($file_obj->createFileUrl($relative = FALSE)),
           '#attributes' => [
-            'onClick' => 'window.location.href="' . $file_obj->createFileUrl() . '"; return false;',
+            'class' => [
+              'button',
+              'button--primary',
+            ],
           ],
         ];
       }

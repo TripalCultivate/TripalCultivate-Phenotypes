@@ -189,11 +189,14 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     if ($file_obj) {
       $values[$key]['data'] = [
-        '#type' => 'button',
-        '#value' => 'Download',
-        '#button_type' => 'primary',
+        '#type' => 'link',
+        '#title' => 'Download',
+        '#url' => Url::fromUri($file_obj->createFileUrl($relative = FALSE)),
         '#attributes' => [
-          'onClick' => 'window.location.href="' . $file_obj->createFileUrl() . '"; return false;',
+          'class' => [
+            'button',
+            'button--primary',
+          ],
         ],
       ];
     }
