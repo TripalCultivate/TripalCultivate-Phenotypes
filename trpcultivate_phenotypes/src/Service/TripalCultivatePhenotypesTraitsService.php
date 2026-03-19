@@ -738,7 +738,7 @@ class TripalCultivatePhenotypesTraitsService {
         case 'full':
           // Resolve attr_id, observable_id, unit_id into full table record.
           foreach ($trait_combo as $field_alias => $field_value) {
-            $form_values[$field_alias] = $field_value;
+            $field_values[$field_alias] = $field_value;
           }
 
           break;

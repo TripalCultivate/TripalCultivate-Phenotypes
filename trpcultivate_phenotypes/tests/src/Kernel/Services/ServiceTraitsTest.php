@@ -1004,6 +1004,27 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
             $combo[$key],
             'Experiment trait combo in ' . $format . ' format, is expected to contain key: ' . $key,
           );
+
+          if ($format == 'full') {
+            // Verify the trait, method, and unit.
+            $this->assertEquals(
+              $combo['trait']['cvterm.cvterm_id'],
+              $combo['attr_id'],
+              'The attr_id resolved to incorrect cvterm record.',
+            );
+
+            $this->assertEquals(
+              $combo['method']['cvterm.cvterm_id'],
+              $combo['observable_id'],
+              'The observable_id resolved to incorrect cvterm record.',
+            );
+
+            $this->assertEquals(
+              $combo['unit']['cvterm.cvterm_id'],
+              $combo['unit_id'],
+              'The unit_id resolved to incorrect cvterm record.',
+            );
+          }
         }
       }
     }
