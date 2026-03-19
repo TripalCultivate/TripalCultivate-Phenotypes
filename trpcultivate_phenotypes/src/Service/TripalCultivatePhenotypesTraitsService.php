@@ -618,7 +618,7 @@ class TripalCultivatePhenotypesTraitsService {
    *   Valid keys supported:
    *     - format: (default) full (values in base table and all ids resolved),
    *       component (for passing as render array value to a combo component),
-   *       importer (values in array structure as a header for data importers).
+   *       header (values in array structure as a header for data importers).
    *
    * @return array
    *   All traits associated to an experiment (plus genus) in an array keyed by
@@ -648,10 +648,7 @@ class TripalCultivatePhenotypesTraitsService {
       }
     }
 
-    $valid_option_keys = [
-      'format',
-    ];
-
+    $valid_option_keys = ['format'];
     if (array_diff(array_keys($options), $valid_option_keys)) {
       throw new \Exception('Not a valid options key provided. Use one of [' . implode(', ', $valid_option_keys) . ']');
     }
@@ -661,63 +658,53 @@ class TripalCultivatePhenotypesTraitsService {
     $option_format = strtolower($options['format'] ?? 'full');
     $expcombo_table = 'trpcultivate_phenocombo';
 
-    $expcombo_table_fields = $this->chado_connection
-      ->select('information_schema.columns', 'cl')
-      ->fields('cl', ['column_name'])
-      ->condition('cl.table_name', $expcombo_table, '=')
+    // Format full is table trpcultivate_phenocombo fields: combo_id,
+    // project_id, attr_id, observable_id, unit_id, uid, label, is_archived,
+    // is_required, was_collected, was_shared, and timestamp.
+    $expcombo_table_fields = ($option_format == 'full') ? $this->chado_connection
+      ->select('information_schema.columns', 'info')
+      ->fields('info', ['column_name'])
+      ->condition('info.table_name', $expcombo_table, '=')
       ->execute()
-      ->fetchCol();
+      ->fetchCol() : [];
 
     $combo_format = [
+      'full' => $expcombo_table_fields,
       'header' => [
-        $combo_id = $expcombo_table_fields[0],
+        'combo_id',
         'name',
         'description',
         'type',
       ],
       'component' => [
-        $combo_id,
+        'combo_id',
         'name',
         'definition',
       ],
-      // Table trpcultivate_phenocombo fields: combo_id, project_id, attr_id,
-      // observable_id, unit_id, uid, label, is_archived, is_required,
-      // was_collected, was_shared, and timestamp.
-      'full' => $expcombo_table_fields,
     ];
 
     if (!in_array($option_format, $combo_format_keys = array_keys($combo_format))) {
       throw new \Exception('Not a valid options format value. Use one of [' . implode(', ', $combo_format_keys) . ']');
     }
 
-    // Retrieve the trait-method-unit combos of the experiment using the
-    // project_id field of the base table. If genus is provided, apply
-    // additional filter based on project-genus-cv ontology configuration.
-    $query = $this->chado_connection->select($expcombo_table, 'tp');
-    $query->leftJoin('1:project', 'p', 'tp.project_id = p.project_id');
-    $query->leftJoin('1:cvterm', 'c', 'tp.attr_id = c.cvterm_id');
-    $query->leftJoin('1:cv', 'v', 'c.cv_id = v.cv_id');
+    // Retrieve the trait-method-unit combos of the experiment. Each combo is
+    // keyed by the unique label.
+    $query = $this->chado_connection->select($expcombo_table, 'combo');
+    $query->leftJoin('1:cvterm', 'term', 'combo.attr_id = term.cvterm_id');
+    $query->leftJoin('1:cv', 'vocab', 'term.cv_id = vocab.cv_id');
 
-    $query->fields('tp');
-    $query->addField('c', 'definition', 'definition');
-    $query->addField('c', 'definition', 'description');
+    $query->fields('combo');
+    $query->addField('combo', 'label', 'name');
+    $query->addField('term', 'definition', 'definition');
+    $query->addField('term', 'definition', 'description');
+    $query->addExpression("CASE WHEN combo.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
 
-    // @todo Determine what is the expected value for name for each format?
-    // For header format request, the name is the trait name (appears in file),
-    // whereas for non-header request, name is the combination of trait name
-    // and the label text.
-    $query->addExpression(($option_format == 'header') ? "c.name" : "c.name || ' (' || tp.label || ')'", 'name');
-    $query->addExpression("CASE WHEN tp.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
-
-    $query->condition('tp.project_id', $experiment_id, '=');
-
-    // Filter result to a specific genus or load all combo if none is supplied.
+    $query->condition('combo.project_id', $experiment_id, '=');
     if ($genus) {
-      $query->condition('c.cv_id', $genus_config['trait'], '=');
+      $query->condition('term.cv_id', $genus_config['trait'], '=');
     }
 
-    // Results keyed by label field.
-    $exp_phenocombo = $query->orderBy('c.name', 'ASC')
+    $exp_phenocombo = $query->orderBy('term.name', 'ASC')
       ->execute()
       ->fetchAllAssoc('label');
 
@@ -735,8 +722,6 @@ class TripalCultivatePhenotypesTraitsService {
       }
 
       // Append other format-specific values.
-      $format_values = [];
-
       if ($option_format != 'header') {
         $trait_combo = [];
 
@@ -751,7 +736,7 @@ class TripalCultivatePhenotypesTraitsService {
       switch ($option_format) {
 
         case 'full':
-          // Resolve attr_id, observable_id, and unit_id into full table record.
+          // Resolve attr_id, observable_id, unit_id into full table record.
           foreach ($trait_combo as $field_alias => $field_value) {
             $form_values[$field_alias] = $field_value;
           }
@@ -760,34 +745,31 @@ class TripalCultivatePhenotypesTraitsService {
 
         case 'component':
           // Setup required key-value pairs of the component.
-          $data_type = $this->chado_connection->query(
-            "SELECT value FROM {1:cvtermprop} WHERE cvterm_id = :id AND type_id = :type_id",
-            [':id' => $combo->unit_id, ':type_id' => $this->terms['unit_type']]
-          )
+          $data_type = $this->chado_connection->select('1:cvtermprop', 'prop')
+            ->fields('prop', ['value'])
+            ->condition('prop.cvterm_id', $combo->unit_id, '=')
+            ->condition('prop.type_id', $this->terms['unit_type'], '=')
+            ->execute()
             ->fetchField();
 
-          $format_values = [
-            'multiselect_method' => FALSE,
-            'method_unit_combo' => [
-              [
-                'method_shortname' => $trait_combo['method']['cvterm.name'],
-                'unit' => $trait_combo['unit']['cvterm.name'],
-                'type' => $data_type,
-                'collection_method' => $trait_combo['method']['cvterm.definition'],
-              ],
-            ],
-            'status' => [
-              'archived' => $combo->is_archived,
-              'required' => $combo->is_required,
-              'collected' => $combo->was_collected,
-              'shared' => $combo->was_shared,
-            ],
+          $field_values['multiselect_method'] = FALSE;
+          $field_values['method_unit_combo'][] = [
+            'method_shortname' => $trait_combo['method']['cvterm.name'],
+            'unit' => $trait_combo['unit']['cvterm.name'],
+            'type' => $data_type,
+            'collection_method' => $trait_combo['method']['cvterm.definition'],
+          ];
+          $field_values['status'] = [
+            'archived' => $combo->is_archived,
+            'required' => $combo->is_required,
+            'collected' => $combo->was_collected,
+            'shared' => $combo->was_shared,
           ];
 
           break;
       }
 
-      $combos[$label] = array_merge($field_values, $format_values);
+      $combos[trim($label)] = $field_values;
     }
 
     return $combos;
