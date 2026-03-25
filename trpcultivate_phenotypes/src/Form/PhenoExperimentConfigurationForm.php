@@ -132,14 +132,19 @@ class PhenoExperimentConfigurationForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $tripal_entity = $this->getRouteMatch()->getParameter('tripal_entity');
+    if (!$tripal_entity = $this->getRouteMatch()->getParameter('tripal_entity')) {
+      $this->tripal_logger->error('The research experiment entity does not exist.');
+      throw new NotFoundHttpException();
+    }
 
-    // Route validates instance of tripal_entity and presence of exp_name field.
-    $experiment = $tripal_entity->get('exp_name')->getValue();
-    ['record_id' => $experiment_id, 'value' => $experiment_name] = $experiment[0];
+    $experiment_id = $tripal_entity->getBackendRecordId('chado_storage');
+    if ($experiment_id === NULL) {
+      $this->tripal_logger->error('The research experiment entity does not contain backend storage values or it cannot be found.');
+      throw new NotFoundHttpException();
+    }
 
     // Update the title to show which reseach experiment is being configured.
-    $form['#title'] = 'Configure Phenotypes for ' . $experiment_name;
+    $form['#title'] = 'Configure Phenotypes for ' . $tripal_entity->label();
 
     $form['tripal_entity_id'] = [
       '#type' => 'hidden',
