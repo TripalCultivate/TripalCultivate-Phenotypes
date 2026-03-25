@@ -174,15 +174,12 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
       );
     }
 
-    ['record_id' => $exp_id, 'value' => $exp_name] = $this->research_experiment_entity->get('exp_name')
-      ->getValue()[0];
-
     // Test data row and order of items by date created (most recent first).
     $backups = $this->cssSelect('tbody tr', $table);
 
     // Test page title.
     $this->assertStringContainsString(
-      'Phenotypes Backup for ' . $exp_name,
+      'Phenotypes Backup for ' . $this->research_experiment_entity->label(),
       (string) $page,
       'The page does not contain the expected page title containing the experiment name.'
     );
@@ -193,7 +190,7 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
 
     $backup_ids = $phenobackup_storage
       ->getQuery()
-      ->condition('project_id', $exp_id, '=')
+      ->condition('project_id', $this->research_experiment_entity->getBackendRecordId('chado_storage'), '=')
       ->sort('backup_date', 'DESC')
       ->execute();
 

@@ -6,9 +6,8 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\tripal\Services\TripalLogger;
-use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
-use League\Container\Exception\NotFoundException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class definition of PhenoExperimentPhenoBackupController.
@@ -64,9 +63,10 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
       throw new NotFoundHttpException();
     }
 
-    if (!$tripal_entity->hasField('exp_name')) {
-      $this->tripal_logger->error('The research experiment entity does not contain a required field - exp_name.');
-      throw new NotFoundException();
+    $exp_id = $tripal_entity->getBackendRecordId('chado_storage');
+    if ($exp_id === NULL) {
+      $this->tripal_logger->error('The research experiment entity does not contain backend storage values or it cannot be found.');
+      throw new NotFoundHttpException();
     }
 
     $build['#title'] = 'Phenotypes Backup for ' . $tripal_entity->label();
@@ -96,10 +96,6 @@ class PhenoExperimentPhenoBackupController extends ControllerBase {
 
     $phenobackup_storage = $this->entityTypeManager()
       ->getStorage('phenodata_backup');
-
-    // @todo Replace if service/helper method to pull experiment id and/or name,
-    // becomes available.
-    $exp_id = ChadoProjectAutocompleteController::getProjectId($tripal_entity->label());
 
     $backup_ids = $phenobackup_storage
       ->getQuery()
