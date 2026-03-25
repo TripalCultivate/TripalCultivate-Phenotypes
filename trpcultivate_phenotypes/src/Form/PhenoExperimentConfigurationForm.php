@@ -282,7 +282,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
         [
           '#prefix' => 'No traits found ' . ($genus ? 'for genus "<i>' . $genus . '</i>" ' : '') . 'for this research experiment: ',
           '#attributes' => [
-            'style' => 'color: blue; font-weight: 200; text-decoration: underline;',
+            'style' => 'font-weight: 200; text-decoration: underline;',
           ],
         ]
       ),
