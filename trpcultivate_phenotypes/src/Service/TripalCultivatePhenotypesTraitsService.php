@@ -695,6 +695,7 @@ class TripalCultivatePhenotypesTraitsService {
     $query->addField('combo', 'label', 'name');
     $query->addField('term', 'definition', 'definition');
     $query->addField('term', 'definition', 'description');
+    // Use an expression to format the 'type' based on `combo.is_required`.
     $query->addExpression("CASE WHEN combo.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
 
     $query->condition('combo.project_id', $experiment_id, '=');
