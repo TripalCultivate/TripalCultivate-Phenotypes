@@ -695,10 +695,11 @@ class TripalCultivatePhenotypesTraitsService {
       ],
     ];
 
-    // Field-alias mapping array - maps actual table columns to alternative
+    // Alias-field mapping array - maps actual table columns to alternative
     // names or alias used in $combo_format definitions array.
-    $field_alias_mapping = [
-      'definition' => 'description',
+    $alias_field_mapping = [
+      'description' => 'definition',
+      'name' => 'label',
     ];
 
     if (!in_array($option_format, $combo_format_keys = array_keys($combo_format))) {
@@ -712,7 +713,6 @@ class TripalCultivatePhenotypesTraitsService {
 
     $query->fields('combo');
     $query->fields('trait', ['definition']);
-    $query->addField('combo', 'label', 'name');
     // Use an expression to format the 'type' based on `combo.is_required`.
     $query->addExpression("CASE WHEN combo.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
 
@@ -736,8 +736,7 @@ class TripalCultivatePhenotypesTraitsService {
 
       foreach ($combo_format[$option_format] as $format_keys) {
         // Resolve to actual table field for aliases, otherwise use field as is.
-        $field_name = array_search($format_keys, $field_alias_mapping) ?: $format_keys;
-        $field_values[$format_keys] = $combo->{$field_name};
+        $field_values[$format_keys] = $combo->{$alias_field_mapping[$format_keys] ?? $format_keys};
       }
 
       // Append other format-specific values.
