@@ -613,12 +613,10 @@ class TripalCultivatePhenotypesTraitsService {
    *   (Optional) The genus to further filter the traits combo results.
    *   Default to null value.
    * @param array $options
-   *   (Optional and default to format = full) Contains key-value pairs that
-   *   define options that allow customization to each trait combos returned.
-   *   Valid keys supported:
-   *     - format: (default) full (values in base table and all ids resolved),
-   *       component (for passing as render array value to a combo component),
-   *       header (values in array structure as a header for data importers).
+   *   The follolwing options are supported:
+   *     - format: one of 'full' (default), 'component', or 'header' depending
+   *       on the format of the return value desired. See the return value
+   *       below for more details.
    *
    * @return array
    *   All traits associated to an experiment (plus genus) in an array keyed by
