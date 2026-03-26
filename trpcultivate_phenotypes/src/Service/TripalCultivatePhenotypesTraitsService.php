@@ -620,11 +620,25 @@ class TripalCultivatePhenotypesTraitsService {
    *
    * @return array
    *   All traits associated to an experiment (plus genus) in an array keyed by
-   *   the combo label text. An empty array if no trait combos are found.
+   *   the combo label text or an empty array if no trait combos are found. Each
+   *   item in the return value defines a single trait according to the format
+   *   chosen in 'options'. Specifically,
    *
-   * @see /component/trait_combo
-   *   The component format is suitable of use with trait_combo component as
-   *   value to the key #props.
+   *   - full: includes combo_id, project_id, attr_id, observable_id, unit_id,
+   *   uid, label, is_archived, is_required, was_collected, was_shared, and
+   *   timestamp from trpcultivate_phenocombo table. Furthermore, 'trait',
+   *   'method' and 'unit' are the cvterm names referenced by the 'attr_id',
+   *   'observable_id', and 'unit_id' respectively.
+   *   @see trpcultivate_phenotypes_schema()
+   *
+   *   - component: the component format is suitable of use with trait_combo
+   *   component as value to the key #props.
+   *   @see component/trait_combo
+   *
+   *   - header: the format used for data loader headers. This format includes
+   *   combo_id, name (trait cvterm.name), description (trait cvterm.definition)
+   *   and type(required or optional).
+   *   @see TripalCultivatePhenoShareImporter::$headers
    *
    * @throws \Exception
    *   - A genus not configured to be used in phenotypes module.
@@ -647,8 +661,8 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     $valid_option_keys = ['format'];
-    if (array_diff(array_keys($options), $valid_option_keys)) {
-      throw new \Exception('Not a valid options key provided. Use one of [' . implode(', ', $valid_option_keys) . ']');
+    if ($option_diff = array_diff(array_keys($options), $valid_option_keys)) {
+      throw new \Exception('The ' . __METHOD__ . ' method accepts options keys [' . impoode(', ', $valid_option_keys) . ']. You provided ' . implode(', ', $option_diff));
     }
 
     // Define the key/field name of each format. Default format to - full, if
@@ -681,29 +695,33 @@ class TripalCultivatePhenotypesTraitsService {
       ],
     ];
 
+    // Field-alias mapping array - maps actual table columns to alternative
+    // names or alias used in $combo_format definitions array.
+    $field_alias_mapping = [
+      'definition' => 'description',
+    ];
+
     if (!in_array($option_format, $combo_format_keys = array_keys($combo_format))) {
-      throw new \Exception('Not a valid options format value. Use one of [' . implode(', ', $combo_format_keys) . ']');
+      throw new \Exception('The ' . __METHOD__ . ' method accepts format values [' . impoode(', ', $combo_format_keys) . ']. You provided ' . $combo_format);
     }
 
     // Retrieve the trait-method-unit combos of the experiment. Each combo is
     // keyed by the unique label.
     $query = $this->chado_connection->select($expcombo_table, 'combo');
-    $query->leftJoin('1:cvterm', 'term', 'combo.attr_id = term.cvterm_id');
-    $query->leftJoin('1:cv', 'vocab', 'term.cv_id = vocab.cv_id');
+    $query->leftJoin('1:cvterm', 'trait', 'combo.attr_id = trait.cvterm_id');
 
     $query->fields('combo');
+    $query->fields('trait', ['definition']);
     $query->addField('combo', 'label', 'name');
-    $query->addField('term', 'definition', 'definition');
-    $query->addField('term', 'definition', 'description');
     // Use an expression to format the 'type' based on `combo.is_required`.
     $query->addExpression("CASE WHEN combo.is_required = 1 THEN 'required' ELSE 'optional' END", "type");
 
     $query->condition('combo.project_id', $experiment_id, '=');
     if ($genus) {
-      $query->condition('term.cv_id', $genus_config['trait'], '=');
+      $query->condition('trait.cv_id', $genus_config['trait'], '=');
     }
 
-    $exp_phenocombo = $query->orderBy('term.name', 'ASC')
+    $exp_phenocombo = $query->orderBy('trait.name', 'ASC')
       ->execute()
       ->fetchAllAssoc('label');
 
@@ -717,7 +735,9 @@ class TripalCultivatePhenotypesTraitsService {
       $field_values = [];
 
       foreach ($combo_format[$option_format] as $format_keys) {
-        $field_values[$format_keys] = $combo->{$format_keys};
+        // Resolve to actual table field for aliases, otherwise use field as is.
+        $field_name = array_search($format_keys, $field_alias_mapping) ?: $format_keys;
+        $field_values[$format_keys] = $combo->{$field_name};
       }
 
       // Append other format-specific values.
