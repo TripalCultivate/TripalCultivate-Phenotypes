@@ -4,12 +4,11 @@ namespace Drupal\trpcultivate_phenotypes\Hook;
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
-use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 
@@ -77,8 +76,7 @@ class TripalCultivatePhenotypesAlterHooks {
     if ($tripal_entity = $page_params->get('tripal_entity')) {
       if (method_exists($tripal_entity, 'bundle') && $tripal_entity->bundle() == 'research_experiment') {
 
-        $this->experiment_id = $tripal_entity->get('exp_name')
-          ->getValue()[0]['record_id'];
+        $this->experiment_id = $tripal_entity->getBackendRecordId('chado_storage');
 
         $has_pheno = $drupaldb_connection
           ->select('trpcultivate_phenocombo', 'tc')
@@ -131,67 +129,21 @@ class TripalCultivatePhenotypesAlterHooks {
           'class' => ['visually-hidden'],
         ];
       }
-
-      $form['#validate'][] = self::class . ':phenoGenusExperimentEditFormValidate';
     }
   }
 
   /**
-   * Form edit validate callback.
+   * Implemnts hook_entity_bundle_field_info_alter().
    *
    * Enforces the genus-experiment-phenotype relationship by ensuring uniqueness
    * and preventing modification or removal of the genus entry once phenotypic
    * data has been associated.
    */
-  public function phenoGenusExperimentEditFormValidate($form, FormStateInterface $form_state) {
+  #[Hook('entity_bundle_field_info_alter')]
+  public function entityBundleFieldInfoAlter(&$fields, EntityTypeInterface $entity_type, $bundle) {
 
-    // All genus configured in Phenotypes.
-    $pheno_configgenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
-
-    if (count($pheno_configgenus) > 0 && $this->has_pheno) {
-      // Genus as provided in the Design/Germplasm/Germplasm Genus field.
-      // Removes the trailing genus field value set to empty string.
-      $exp_germgenus = array_filter(
-        array_column($form_state->getValue('exp_germgenus'), 'value')
-      );
-
-      $count_bygenus = array_count_values($exp_germgenus);
-
-      foreach ($pheno_configgenus as $genus) {
-        $genus_config = $this->service_PhenoGenusOntology
-          ->getGenusOntologyConfigValues($genus);
-
-        if (!$genus_config) {
-          continue;
-        }
-
-        $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
-        $query->join('1:cvterm', 't', 'tp.attr_id = t.cvterm_id');
-        $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
-
-        // A phenotype to a genus would suffice enforcement check.
-        $has_pheno = $query
-          ->fields('tp', ['combo_id'])
-          ->condition('tp.project_id', $this->experiment_id, '=')
-          ->condition('v.cv_id', $genus_config['trait'], '=')
-          ->range(0, 1)
-          ->execute()
-          ->fetchField();
-
-        // Genus has phenotypes and is missing/has duplicates from the list of
-        // germplasm genus of the research experiment entity.
-        $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
-
-        if ($has_pheno > 0 && (!in_array($genus, $exp_germgenus) || $not_unique)) {
-          $form_state->setErrorByName(
-            'exp_germgenus',
-            $this->t('Update failed: Genus "@genus" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.', [
-              '@genus' => $genus,
-              '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-            ])
-          );
-        }
-      }
+    if ($entity_type->id() == 'tripal_entity' && $bundle == 'research_experiment') {
+      $fields['exp_germgenus']->addConstraint('LockExperimentGenusWithPhenotypes', []);
     }
   }
 

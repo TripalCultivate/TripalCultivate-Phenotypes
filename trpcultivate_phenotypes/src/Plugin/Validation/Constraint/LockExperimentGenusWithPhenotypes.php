@@ -1,16 +1,15 @@
 <?php
 
-namespace Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraints;
+namespace Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint;
 
 use Symfony\Component\Validator\Constraint;
 
 /**
  * Checks that a genus with phenotypes cannot be altered, duplicated or removed.
  *
- * @Constraints(
+ * @Constraint(
  *   id = "LockExperimentGenusWithPhenotypes",
  *   label = @Translation("Lock Experiment Genus with Phenotypes", context = "Validation"),
- *   type = "string",
  * )
  */
 class LockExperimentGenusWithPhenotypes extends Constraint {
