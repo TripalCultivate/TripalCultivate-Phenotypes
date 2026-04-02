@@ -19,6 +19,6 @@ class LockExperimentGenusWithPhenotypes extends Constraint {
    *
    * @var string
    */
-  public $genus_failed = 'The "%value" of this research experiment is linked to the Phenotypes Module and must be unique entry in the Germplasm Genus field';
+  public $genus_failed = 'The "%genus" of this research experiment is linked to the Phenotypes Module and must be unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.';
 
 }
