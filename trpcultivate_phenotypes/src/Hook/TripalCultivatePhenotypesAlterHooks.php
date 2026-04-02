@@ -9,8 +9,10 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
+use Drupal\tripal_chado\Controller\ChadoCVTermAutocompleteController;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 
 /**
  * Phenotypes module alter hooks.
@@ -32,6 +34,13 @@ class TripalCultivatePhenotypesAlterHooks {
    * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
    */
   protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology;
+
+  /**
+   * Phenotypes terms service.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService
+   */
+  protected TripalCultivatePhenotypesTermsService $service_PhenoTerms;
 
   /**
    * Determine if the research experiment entity has phenotypes.
@@ -58,16 +67,20 @@ class TripalCultivatePhenotypesAlterHooks {
    *   Tripal Chado database connection.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   Phenotypes genus ontology service.
+   * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService $service_PhenoTerms
+   *   Phenotypes terms service.
    */
   public function __construct(
     Connection $drupaldb_connection,
     RouteMatchInterface $current_routematch,
     ChadoConnection $chado_connection,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
+    TripalCultivatePhenotypesTermsService $service_PhenoTerms,
   ) {
 
     $this->chado_connection = $chado_connection;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_PhenoTerms = $service_PhenoTerms;
 
     $page_params = $current_routematch->getParameters();
 
@@ -138,12 +151,50 @@ class TripalCultivatePhenotypesAlterHooks {
    * Enforces the genus-experiment-phenotype relationship by ensuring uniqueness
    * and preventing modification or removal of the genus entry once phenotypic
    * data has been associated.
+   *
+   * This applies to any field in tripal entity that references Chado project
+   * table and stores organism (genus) value as a project property.
    */
   #[Hook('entity_bundle_field_info_alter')]
   public function entityBundleFieldInfoAlter(&$fields, EntityTypeInterface $entity_type, $bundle) {
 
-    if ($entity_type->id() == 'tripal_entity' && $bundle == 'research_experiment') {
-      $fields['exp_germgenus']->addConstraint('LockExperimentGenusWithPhenotypes', []);
+    // Operate on Tripal entities only.
+    if ($entity_type->id() !== 'tripal_entity') {
+      return;
+    }
+
+    // The term corresponding to genus used by the Phenotypes module.
+    // @see settings.yml in trpcultivate_phenotypes/config/install
+    $constraint = [
+      'term' => 'genus',
+      'table' => 'project',
+    ];
+
+    // Resolve the term to the cvterm id and construct the term along with
+    // the id space and accession values.
+    $term_namespace = ChadoCVTermAutocompleteController::formatCVterm(
+      $this->service_PhenoTerms->getTermId($constraint['term'])
+    );
+
+    // Inspect each field for reference to the project base table and matching
+    // term, id space, and accession.
+    foreach ($fields as $field) {
+      $field_settings = $field->getSettings();
+
+      $table = $field_settings['storage_plugin_settings']['base_table'] ?? NULL;
+      $idspace = $field_settings['termIdSpace'] ?? NULL;
+      $accession = $field_settings['termAccession'] ?? NULL;
+
+      if ($table != $constraint['table'] || is_null($idspace) || is_null($accession)) {
+        continue;
+      }
+
+      if ($term_namespace == $constraint['term'] . ' (' . $idspace . ':' . $accession . ')') {
+        // This field has project as base storage and creates a genus project
+        // property using the term set by phenotypes module.
+        // Apply lock constraint.
+        $fields[$field->getName()]->addConstraint('LockExperimentGenusWithPhenotypes', []);
+      }
     }
   }
 
