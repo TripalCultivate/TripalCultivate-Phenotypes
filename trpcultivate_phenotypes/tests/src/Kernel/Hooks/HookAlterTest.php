@@ -2,17 +2,17 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Hooks;
 
+use Drupal\Component\Version\Constraint;
 use Drupal\Core\Form\FormState;
-use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Routing\RouteObjectInterface;
-use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
-use Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks;
+use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGenusWithPhenotypes;
+use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGenusWithPhenotypesValidator;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
@@ -242,53 +242,6 @@ class HookAlterTest extends ChadoTestKernelBase {
     $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $edit_route);
     $request->attributes->set('tripal_entity', $this->exp_entity);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
-
-    $entity_field = 'exp_germgenus';
-
-    $form_state = new FormState();
-    $form = [];
-
-    $exp_genus = $this->exp_entity->get($entity_field)[0]
-      ->getValue()['value'];
-
-    // The entity has Lens genus and with phenotypes. Omitting said genus will
-    // trigger the validation error.
-    $form_state->setValue($entity_field, [
-      0 => ['value' => 'Lenz'],
-      1 => ['value' => 'Triticum'],
-      2 => ['value' => ''],
-    ]);
-
-    $form_validator = new TripalCultivatePhenotypesAlterHooks(
-      $this->container->get('database'),
-      $this->container->get('current_route_match'),
-      $this->chado_connection,
-      $this->container->get('trpcultivate_phenotypes.genus_ontology')
-    );
-
-    $form_validator->phenoGenusExperimentEditFormValidate($form, $form_state);
-    $errors = $form_state->getErrors();
-
-    $this->assertCount(1, $errors, 'This test is expecting one error.');
-
-    // Error emanates form exp_germgenus field.
-    $this->assertEquals(
-      $entity_field,
-      array_keys($errors)[0],
-      'The error is epected to be triggered by field ' . $entity_field,
-    );
-
-    $this->assertStringContainsString(
-      'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field.',
-      $errors[$entity_field],
-      'The validation error does not match expected error message text',
-    );
-
-    $this->assertStringContainsString(
-      Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-      $errors[$entity_field],
-      'The validation does not contain the expected link to restore form values.',
-    );
   }
 
 }

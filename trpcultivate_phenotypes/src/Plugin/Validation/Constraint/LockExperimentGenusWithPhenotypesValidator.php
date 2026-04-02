@@ -16,7 +16,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator {
   /**
    * {@inheritdoc}
    */
-  public function validate($value, Constraint $constraint) {
+  public function validate($value, Constraint $constraint): void {
 
     $entity = $value->getEntity();
     $genusontology_service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');

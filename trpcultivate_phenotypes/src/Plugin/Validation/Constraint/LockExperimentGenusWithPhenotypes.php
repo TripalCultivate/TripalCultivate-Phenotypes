@@ -2,16 +2,17 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint;
 
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Validation\Attribute\Constraint as AttributeConstraint;
 use Symfony\Component\Validator\Constraint;
 
 /**
  * Checks that a genus with phenotypes cannot be altered, duplicated or removed.
- *
- * @Constraint(
- *   id = "LockExperimentGenusWithPhenotypes",
- *   label = @Translation("Lock Experiment Genus with Phenotypes", context = "Validation"),
- * )
  */
+#[AttributeConstraint(
+  id: 'LockExperimentGenusWithPhenotypes',
+  label: new TranslatableMarkup('Lock Experiment Genus with Phenotypes')
+)]
 class LockExperimentGenusWithPhenotypes extends Constraint {
 
   /**
