@@ -205,7 +205,7 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->setCurrentUser($this->createUser(['administer tripal']));
     $exp_etity_baseuri = '/bio_data/' . $this->exp_entity->id();
 
-    $request = Request::create($exp_etity_baseuri . '/edit');
+    $request = Request::create($exp_etity_baseuri . '/edit?destination=/admin/content/bio_data');
     $page_edit = $this->container->get('http_kernel')
       ->handle($request)
       ->getContent();
