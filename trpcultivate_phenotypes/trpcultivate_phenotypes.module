@@ -75,8 +75,6 @@ function trpcultivate_phenotypes_form_alter(&$form, FormStateInterface $form_sta
 /**
  * Implements hook_entity_bundle_field_info_alter().
  *
- * Attach a custom form validation callback to edit form of research entity.
- *
  * This legacy hook is only run for Drupal < 11, and is replaced by class
  * Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks in
  * trpcultivate_phenotypes/src/Hook/TripalCultivatePhenotypesAlterHooks.php.

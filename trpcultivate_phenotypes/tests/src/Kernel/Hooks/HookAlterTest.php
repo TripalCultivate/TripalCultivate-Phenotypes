@@ -264,23 +264,9 @@ class HookAlterTest extends ChadoTestKernelBase {
 
     $constraint_message = 'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click ' . Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString() . ' to restore form values if you have removed or altered a genus';
 
-    // Remove the genus with phenotypes from the experiment.
-    $this->exp_entity
-      ->set($entity_field, [])
-      ->save();
-    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
-
-    $this->assertStringContainsString(
-      $constraint_message,
-      $this->violation_message,
-      'The validation error does not match expected error message text',
-    );
-
     // Alter the genus (is equivalent to missing/removing).
-    $this->violation_message = '';
-
     $this->exp_entity
-      ->set('exp_germgenus', [
+      ->set($entity_field, [
         'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
         'value' => $exp_genus . 'ALTERED',
       ])
@@ -290,7 +276,26 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->assertStringContainsString(
       $constraint_message,
       $this->violation_message,
-      'The validation error does not match expected error message text',
+      'Missing/Altered: The validation error does not match expected error message text',
+    );
+
+    // Duplicate genus.
+    $this->exp_entity
+      ->set($entity_field, [
+        'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
+        'value' => $exp_genus,
+      ])
+      ->set($entity_field, [
+        'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
+        'value' => $exp_genus,
+      ])
+      ->save();
+    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+
+    $this->assertStringContainsString(
+      $constraint_message,
+      $this->violation_message,
+      'Duplicate: The validation error does not match expected error message text',
     );
   }
 
