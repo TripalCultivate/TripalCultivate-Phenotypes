@@ -11,7 +11,8 @@ use Symfony\Component\Validator\Constraint;
  */
 #[AttributeConstraint(
   id: 'LockExperimentGenusWithPhenotypes',
-  label: new TranslatableMarkup('Lock Experiment Genus with Phenotypes')
+  label: new TranslatableMarkup('Lock Experiment Genus with Phenotypes'),
+  type: 'tripal_entity'
 )]
 class LockExperimentGenusWithPhenotypes extends Constraint {
 
@@ -20,6 +21,6 @@ class LockExperimentGenusWithPhenotypes extends Constraint {
    *
    * @var string
    */
-  public $genus_failed = 'The "%genus" of this research experiment is linked to the Phenotypes Module and must be unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.';
+  public $genus_failed = 'Update failed: Genus "%genus" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.';
 
 }

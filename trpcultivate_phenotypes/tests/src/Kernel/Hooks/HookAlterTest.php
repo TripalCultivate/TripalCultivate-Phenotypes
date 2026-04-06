@@ -2,10 +2,8 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Hooks;
 
-use Drupal\Component\Version\Constraint;
-use Drupal\Core\Form\FormState;
-use Drupal\Core\Routing\RouteMatch;
-use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -16,7 +14,7 @@ use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGe
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Route;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * Test alter hooks.
@@ -73,6 +71,13 @@ class HookAlterTest extends ChadoTestKernelBase {
    * @var \Drupal\tripal\Entity\TripalEntity
    */
   private TripalEntity $exp_entity;
+
+  /**
+   * Field constraint violation message.
+   *
+   * @var string
+   */
+  private string $violation_message = '';
 
   /**
    * {@inheritDoc}
@@ -230,18 +235,63 @@ class HookAlterTest extends ChadoTestKernelBase {
    */
   public function testGenusExperimentValidator() {
 
-    $this->setCurrentUser(
-      $this->createUser(['administer tripal'])
+    // Constraint violations are stored in execution context.
+    $exe_context = $this->getMockBuilder(ExecutionContextInterface::class)
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $exe_context->method('addViolation')
+      ->willReturnCallback(function ($message) {
+        $this->violation_message = $message;
+        return NULL;
+      }
     );
 
-    $edit_route = new Route('/bio_data/{tripal_entity}/edit');
-    $route = new RouteMatch('test.edit_simulate', $edit_route, []);
+    $entity_field = 'exp_germgenus';
+    $exp_genus = $this->exp_entity->get($entity_field)[0]
+      ->getValue()['value'];
 
-    $request = new Request();
-    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, $route);
-    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, $edit_route);
-    $request->attributes->set('tripal_entity', $this->exp_entity);
-    $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
+    $constraint = new LockExperimentGenusWithPhenotypes();
+    $constraint_validator = new LockExperimentGenusWithPhenotypesValidator();
+    $constraint_validator->initialize($exe_context);
+
+    // Genus-experiemnt is maintained.
+    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+    $this->assertEmpty(
+      $this->violation_message,
+      'No field constraint violation is expected if genus-experiment with phenotypes is maintained.'
+    );
+
+    $constraint_message = 'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click ' . Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString() . ' to restore form values if you have removed or altered a genus';
+
+    // Remove the genus with phenotypes from the experiment.
+    $this->exp_entity
+      ->set($entity_field, [])
+      ->save();
+    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+
+    $this->assertStringContainsString(
+      $constraint_message,
+      $this->violation_message,
+      'The validation error does not match expected error message text',
+    );
+
+    // Alter the genus (is equivalent to missing/removing).
+    $this->violation_message = '';
+
+    $this->exp_entity
+      ->set('exp_germgenus', [
+        'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
+        'value' => $exp_genus . 'ALTERED',
+      ])
+      ->save();
+    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+
+    $this->assertStringContainsString(
+      $constraint_message,
+      $this->violation_message,
+      'The validation error does not match expected error message text',
+    );
   }
 
 }
