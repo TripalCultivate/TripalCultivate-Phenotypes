@@ -6,7 +6,7 @@
  */
 
 use Drupal\Core\Cache\RefinableCacheableDependencyInterface;
-use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\LegacyHook;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -82,7 +82,7 @@ function trpcultivate_phenotypes_form_alter(&$form, FormStateInterface $form_sta
  * trpcultivate_phenotypes/src/Hook/TripalCultivatePhenotypesAlterHooks.php.
  */
 #[LegacyHook]
-function trpcultivate_phenotypes_entity_bundle_field_info_alter(&$fields, EntityInterface $entity_type, $bundle) {
+function trpcultivate_phenotypes_entity_bundle_field_info_alter(&$fields, EntityTypeInterface $entity_type, $bundle) {
 
   return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
     ->entityBundleFieldInfoAlter($fields, $entity_type, $bundle);
