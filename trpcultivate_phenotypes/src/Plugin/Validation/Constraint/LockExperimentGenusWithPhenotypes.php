@@ -17,6 +17,13 @@ use Symfony\Component\Validator\Constraint;
 class LockExperimentGenusWithPhenotypes extends Constraint {
 
   /**
+   * The fiend entity name that defines a genus-project property.
+   *
+   * @var string
+   */
+  public string $genus_field = '';
+
+  /**
    * The message that will be shown if the genus has failed validation.
    *
    * @var string

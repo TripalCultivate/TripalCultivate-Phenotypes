@@ -38,4 +38,4 @@ services:
 
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@database', '@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms']
+    arguments: ['@entity_field.manager', '@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.terms']
