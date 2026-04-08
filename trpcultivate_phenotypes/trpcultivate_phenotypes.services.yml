@@ -27,9 +27,6 @@ services:
   trpcultivate_phenotypes.theme_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesThemeHooks'
 
-  Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService:
-    alias: 'trpcultivate_phenotypes.genus_ontology'
-
   Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService:
     alias: 'trpcultivate_phenotypes.terms'
 
@@ -38,4 +35,4 @@ services:
 
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@entity_field.manager', '@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.terms']
+    arguments: ['@current_route_match', '@tripal_chado.database']
