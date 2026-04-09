@@ -25,7 +25,7 @@ class TripalCultivatePhenotypesAlterHooks {
    *
    * @var array
    */
-  private const array TRIPAL_ENTITY = [
+  private const TRIPAL_ENTITY = [
     'type' => 'tripal_entity',
     'bundle' => 'research_experiment',
   ];
@@ -119,7 +119,7 @@ class TripalCultivatePhenotypesAlterHooks {
   #[Hook('entity_type_alter')]
   public function entityTypeAlter(array &$entity_types) {
 
-    $tripal_entity = 'tripal_entity';
+    $tripal_entity = self::TRIPAL_ENTITY['type'];
 
     if (isset($entity_types[$tripal_entity])) {
       if ($entity_types[$tripal_entity]->id() == $tripal_entity) {

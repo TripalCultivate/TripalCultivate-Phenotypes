@@ -28,7 +28,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *
    * @see TripalCultivate Base/config/install/tripal.tripalfield_collection.trpcultivate_experiments.yml (genus)
    */
-  private const array CONSTRAINT_TERM_REQUIREMENT = [
+  private const CONSTRAINT_TERM_REQUIREMENT = [
     'idspace' => 'TAXRANK',
     'accession' => '0000005',
   ];
