@@ -109,6 +109,12 @@ class TripalCultivatePhenotypesAlterHooks {
    * Enforces the genus-experiment-phenotype relationship by ensuring uniqueness
    * and preventing modifications or removal of the genus entry once phenotypic
    * data has been associated.
+   *
+   * NOTE: this is adding constraint to Entity Type not defined by Phenotypes at
+   * the entity level. The constraint validator rebuilds the violations to
+   * target a specific field entity to apply field-highlighting on failure.
+   *
+   * @see src/Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypesValidator.php
    */
   #[Hook('entity_type_alter')]
   public function entityTypeAlter(array &$entity_types) {
@@ -119,7 +125,7 @@ class TripalCultivatePhenotypesAlterHooks {
       if ($entity_types[$tripal_entity]->id() == $tripal_entity) {
 
         $entity_types[$tripal_entity]
-          ->addConstraint('LockExperimentGenusWithPhenotypes', []);
+          ->addConstraint('LockExperimentGenusWithPhenotypes');
       }
     }
   }

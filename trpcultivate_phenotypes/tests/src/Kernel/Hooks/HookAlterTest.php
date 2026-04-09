@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
+use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
 
 /**
  * Test alter hooks.
@@ -80,6 +81,13 @@ class HookAlterTest extends ChadoTestKernelBase {
   private string $violation_message = '';
 
   /**
+   * Constraint execution context.
+   *
+   * @var object
+   */
+  private $constraint_execontext;
+
+  /**
    * {@inheritDoc}
    */
   public function setUp(): void {
@@ -106,28 +114,16 @@ class HookAlterTest extends ChadoTestKernelBase {
       ->installTerms();
 
     \trpcultivate_import_contenttypes();
-    $config_terms = $this->setTermConfig();
+    $this->setTermConfig();
 
-    // Create test records - A research experiment entity with genus set to
-    // Lens and a trait-method-unit combo added.
-    $exp_name = 'Awesome Research Experiment';
-    $exp_entity_id = 1;
-    $genus = 'Lens';
-
+    // Create research experiment content.
+    $exp_name = 'Test Research Experiment';
     $project_id = $this->chado_connection->insert('1:project')
       ->fields(['name'])
       ->values(['name' => $exp_name])
       ->execute();
 
-    $entity = TripalEntity::create([
-      'id' => $exp_entity_id,
-      'type' => 'research_experiment',
-      'label' => $exp_name,
-    ]);
-
-    $entity
-      ->set('exp_name', ['record_id' => $project_id, 'value' => $exp_name]);
-
+    $genus = 'Lens';
     $this->chado_connection->insert('1:organism')
       ->fields(['genus', 'species', 'type_id'])
       ->values([
@@ -139,21 +135,20 @@ class HookAlterTest extends ChadoTestKernelBase {
 
     $this->setOntologyConfig($genus);
 
-    $this->chado_connection->insert('1:projectprop')
-      ->fields([
-        'project_id' => $project_id,
-        'type_id' => $config_terms['genus'],
+    $this->exp_entity = TripalEntity::create([
+      'type' => 'research_experiment',
+      'exp_name' => [
+        'record_id' => $project_id,
+        'value' => $exp_name,
+      ],
+      'exp_germgenus' => [
         'value' => $genus,
-        'rank' => 1,
-      ])
-      ->execute();
+      ],
+    ]);
 
-    $entity
-      ->set('exp_germgenus', ['record_id' => $project_id, 'value' => $genus]);
+    $this->exp_entity->save();
 
-    $entity->save();
-    $this->exp_entity = $entity;
-
+    // Associate phenotypes to genus-experiment.
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
 
     $trait_service->setTraitGenus($genus);
@@ -195,6 +190,35 @@ class HookAlterTest extends ChadoTestKernelBase {
         time(),
       ])
       ->execute();
+
+    // Constraint violations are stored in execution context.
+    // Mock constraint buildViolation()->atPath()->addViolation().
+    $builder = $this->getMockBuilder(ConstraintViolationBuilderInterface::class)
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $builder->method('atPath')
+      ->willReturnSelf();
+
+    $builder->method('addViolation')
+      ->willReturnCallback(function () {
+        return NULL;
+      });
+
+    $this->constraint_execontext = $this->getMockBuilder(ExecutionContextInterface::class)
+      ->disableOriginalConstructor()
+      ->getMock();
+
+    $this->constraint_execontext
+      ->method('buildViolation')
+      ->willReturnCallback(function ($message) use ($builder) {
+        $this->violation_message = $message;
+        return $builder;
+      }
+    );
+
+    // Setup an admin user.
+    $this->setCurrentUser($this->createUser(['administer tripal']));
   }
 
   /**
@@ -202,7 +226,6 @@ class HookAlterTest extends ChadoTestKernelBase {
    */
   public function testDisableDeleteButton() {
 
-    $this->setCurrentUser($this->createUser(['administer tripal']));
     $exp_etity_baseuri = '/bio_data/' . $this->exp_entity->id();
 
     $request = Request::create($exp_etity_baseuri . '/edit?destination=/admin/content/bio_data');
@@ -235,62 +258,65 @@ class HookAlterTest extends ChadoTestKernelBase {
    */
   public function testGenusExperimentValidator() {
 
-    // Constraint violations are stored in execution context.
-    $exe_context = $this->getMockBuilder(ExecutionContextInterface::class)
-      ->disableOriginalConstructor()
-      ->getMock();
-
-    $exe_context->method('addViolation')
-      ->willReturnCallback(function ($message) {
-        $this->violation_message = $message;
-        return NULL;
-      }
+    $constraint = new LockExperimentGenusWithPhenotypes();
+    $constraint_validator = new LockExperimentGenusWithPhenotypesValidator(
+      $this->container->get('tripal_chado.database'),
+      $this->container->get('trpcultivate_phenotypes.genus_ontology'),
     );
 
-    $entity_field = 'exp_germgenus';
-    $exp_genus = $this->exp_entity->get($entity_field)[0]
-      ->getValue()['value'];
-
-    $constraint = new LockExperimentGenusWithPhenotypes();
-    $constraint_validator = new LockExperimentGenusWithPhenotypesValidator();
-    $constraint_validator->initialize($exe_context);
-
     // Genus-experiemnt is maintained.
-    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+    $constraint_validator->initialize($this->constraint_execontext);
+    $constraint_validator->validate($this->exp_entity, $constraint);
+
     $this->assertEmpty(
       $this->violation_message,
       'No field constraint violation is expected if genus-experiment with phenotypes is maintained.'
     );
 
-    $constraint_message = 'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click ' . Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString() . ' to restore form values if you have removed or altered a genus';
+    // Modify genus - alter, remove or duplicate value.
+    $entity_field = 'exp_germgenus';
+    $exp_genus = $this->exp_entity->get($entity_field)->first()
+      ->getValue()['value'];
 
-    // Alter the genus (is equivalent to missing/removing).
-    $this->exp_entity
-      ->set($entity_field, [
-        'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
-        'value' => $exp_genus . 'ALTERED',
-      ])
-      ->save();
-    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+    $constraint_message = strtr($constraint->genus_failed, [
+      '%genus' => $exp_genus,
+      '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+    ]);
+
+    // Altered.
+    $this->exp_entity->get($entity_field)->first()
+      ->setValue(['value' => $exp_genus . 'IS ALTERED']);
+    $this->exp_entity->save();
+
+    $constraint_validator->initialize($this->constraint_execontext);
+    $constraint_validator->validate($this->exp_entity, $constraint);
 
     $this->assertStringContainsString(
       $constraint_message,
       $this->violation_message,
-      'Missing/Altered: The validation error does not match expected error message text',
+      'Altered: The validation error does not match expected error message text',
     );
 
-    // Duplicate genus.
-    $this->exp_entity
-      ->set($entity_field, [
-        'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
-        'value' => $exp_genus,
-      ])
-      ->set($entity_field, [
-        'record_id' => $this->exp_entity->getBackendRecordId('chado_storage'),
-        'value' => $exp_genus,
-      ])
-      ->save();
-    $constraint_validator->validate($this->exp_entity->get($entity_field), $constraint);
+    // Removed.
+    $this->exp_entity->get($entity_field)->first()->setValue([]);
+    $this->exp_entity->save();
+
+    $constraint_validator->initialize($this->constraint_execontext);
+    $constraint_validator->validate($this->exp_entity, $constraint);
+
+    $this->assertStringContainsString(
+      $constraint_message,
+      $this->violation_message,
+      'Missing: The validation error does not match expected error message text',
+    );
+
+    // Duplicate.
+    $this->exp_entity->get($entity_field)
+      ->setValue(['value' => $exp_genus], ['value' => $exp_genus]);
+    $this->exp_entity->save();
+
+    $constraint_validator->initialize($this->constraint_execontext);
+    $constraint_validator->validate($this->exp_entity, $constraint);
 
     $this->assertStringContainsString(
       $constraint_message,

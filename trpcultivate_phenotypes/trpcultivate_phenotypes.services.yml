@@ -2,7 +2,7 @@
 services:
   trpcultivate_phenotypes.terms:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService'
-    arguments: ['@config.factory', '@tripal.logger', '@tripal_chado.chado_buddy']
+    arguments: ['@config.factory', '@tripal_chado.chado_buddy', '@tripal.logger']
 
   trpcultivate_phenotypes.genus_ontology:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService'
@@ -26,9 +26,6 @@ services:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesHooks'
   trpcultivate_phenotypes.theme_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesThemeHooks'
-
-  Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService:
-    alias: 'trpcultivate_phenotypes.terms'
 
   Drupal\tripal_chado\Database\ChadoConnection:
     alias: 'tripal_chado.database'
