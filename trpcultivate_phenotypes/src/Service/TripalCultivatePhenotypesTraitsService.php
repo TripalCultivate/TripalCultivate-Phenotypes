@@ -834,7 +834,7 @@ class TripalCultivatePhenotypesTraitsService {
    *    - $experiment did not return a project record.
    *
    * @return int
-   *   The combo id number inserted.
+   *   The combo id number inserted or 0 on failed assignment.
    */
   public function assignTraitMethodUnitComboToExperiment(array $trait_combo, array $combo_experiment_details, int|string $experiment): int {
 
@@ -870,6 +870,35 @@ class TripalCultivatePhenotypesTraitsService {
 
     // Will handle invalid experiment value.
     $experiment_id = $this->getExperimentId($experiment);
+
+    if (!$this->labelIsUniqueInExperiment($experiment_id, $combo_experiment_details['label'])) {
+      [$attr_id, $observable_id, $unit_id] = $trait_combo;
+
+      $transaction = $this->chado_connection->startTransaction();
+      try {
+        $assigned_combo = $this->chado_connection
+          ->insert('0:trpcultivate_phenocombo')
+          ->fields([
+            'project_id' => $experiment_id,
+            'attr_id' => $attr_id,
+            'observable_id' => $observable_id,
+            'unit_id' => $unit_id,
+            'label' => $label,
+            'is_archived' => $combo_experiment_details['is_archive'] ?? 0,
+            'is_required' => $combo_experiment_details['is_required'] ?? 0,
+            'was_shared' => $combo_experiment_details['was_shared'] ?? 0,
+            'was_collected' => $combo_experiment_details['was_collected'] ?? 0,
+            'uid' => $this->currentUser()->id(),
+            'timestamp' => time(),
+          ])
+          ->execute();
+      }
+      catch (Exception $e) {
+        $transaction->rollback();
+      }
+    }
+
+    return $assigned_combo->combo_id ?? 0;
   }
 
   /**
@@ -995,7 +1024,18 @@ class TripalCultivatePhenotypesTraitsService {
    */
   protected function labelIsUniqueInExperiment(int|string $experiment, $label): bool {
 
-    $experiment_id = getExperimentId($experiment_id);
+    $experiment_id = $this->getExperimentId($experiment_id);
+
+    // No same labels within an experiment.
+    $label_exists = $this->chado_connection_connection
+      ->select('0:trpcultivate_phenocombo', 'tc')
+      ->fields('tc', ['combo_id'])
+      ->condition('tc.label', $label, '=')
+      ->condition('tc.project_id', $experiment_id, '=')
+      ->execute()
+      ->fetchField();
+
+    return $label_exists ? TRUE : FALSE;
   }
 
 }
