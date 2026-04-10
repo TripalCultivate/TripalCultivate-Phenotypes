@@ -73,6 +73,13 @@ class TripalCultivatePhenotypesTraitsService {
   ];
 
   /**
+   * The table name that contains experiment combos.
+   *
+   * @var string
+   */
+  private const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
+
+  /**
    * Constructor.
    */
   public function __construct(
@@ -826,7 +833,7 @@ class TripalCultivatePhenotypesTraitsService {
    *   - A string experiment name (corresponding to 'name' column in Chado
    *    'project' table).
    *
-   * @throws \Exception
+   * @throws \InvalidArgumentException
    *   An exception is thrown if
    *    - $trait_combo and $combo_experiment_details do not contain expected
    *    keys defined by the parameter.
@@ -834,9 +841,12 @@ class TripalCultivatePhenotypesTraitsService {
    *    - $experiment did not return a project record.
    *
    * @return int
-   *   The combo id number inserted or 0 on failed assignment.
+   *   The combo id number inserted.
    */
   public function assignTraitMethodUnitComboToExperiment(array $trait_combo, array $combo_experiment_details, int|string $experiment): int {
+
+    // Will handle invalid experiment value.
+    $experiment_id = $this->getExperimentId($experiment);
 
     $combo_keys = [
       'trait_combo' => ['trait', 'method', 'unit'],
@@ -844,61 +854,74 @@ class TripalCultivatePhenotypesTraitsService {
         'label',
         'is_archived',
         'is_required',
-        'was_collected',
         'was_shared',
-        'was_collected'
+        'was_collected',
       ],
     ];
 
+    // Verify that for bot trait combo and combo details parameter contain
+    // required combo keys.
     foreach ($combo_keys as $param => $valid_keys) {
       if ($option_diff = array_diff(array_keys($$param), $valid_keys)) {
-        throw new \Exception('The ' . __METHOD__ . ' method accepts $' . $param . ' keys [' . impoode(', ', $valid_keys) . ']. You provided ' . implode(', ', $option_diff));
+        throw new \InvalidArgumentException(
+          sprintf(
+            'The %s method accepts keys for parameter %s [ %s ]. You provided %s.',
+            __METHOD__,
+            $param,
+            implode(', ', $valid_keys),
+            implode(', ', $option_diff)
+          )
+        );
       }
     }
 
-    $combo = $this->getTraitMethodUnitCombo($trait_combo['trait'], $trait_combo['method'], $trait_combo['unit']);
+    // Ensure that label is unique within the experiment.
+    if (!$this->labelIsUniqueInExperiment($combo_experiment_details['label'], $experiment_id)) {
+      throw new \InvalidArgumentException('The label ' . $combo_experiment_details['label'] . ' is already in used within the experiment.');
+    }
 
-    $has_missing_item = count(
-      array_filter($combo_keys['trait_combo'], function ($item) use ($combo) {
-        return empty($combo[$item]);
-      })
+    // Combo has trait, method and unit.
+    [$attr_id, $observable_id, $unit_id] = $this->getTraitMethodUnitCombo(
+      $trait_combo['trait'], $trait_combo['method'], $trait_combo['unit']
     );
 
-    if ($has_missing_itemt > 0) {
-      throw new \Exception('The trait combo failed to return a trait, method and unit values.');
+    if (!$attr_id || !$observable_id || !$unit_id) {
+      throw new \InvalidArgumentException('The trait combo failed to return a trait-method-unit values.');
     }
 
-    // Will handle invalid experiment value.
-    $experiment_id = $this->getExperimentId($experiment);
-
-    if (!$this->labelIsUniqueInExperiment($experiment_id, $combo_experiment_details['label'])) {
-      [$attr_id, $observable_id, $unit_id] = $trait_combo;
-
-      $transaction = $this->chado_connection->startTransaction();
-      try {
-        $assigned_combo = $this->chado_connection
-          ->insert('0:trpcultivate_phenocombo')
-          ->fields([
-            'project_id' => $experiment_id,
-            'attr_id' => $attr_id,
-            'observable_id' => $observable_id,
-            'unit_id' => $unit_id,
-            'label' => $label,
-            'is_archived' => $combo_experiment_details['is_archive'] ?? 0,
-            'is_required' => $combo_experiment_details['is_required'] ?? 0,
-            'was_shared' => $combo_experiment_details['was_shared'] ?? 0,
-            'was_collected' => $combo_experiment_details['was_collected'] ?? 0,
-            'uid' => $this->currentUser()->id(),
-            'timestamp' => time(),
-          ])
-          ->execute();
-      }
-      catch (Exception $e) {
-        $transaction->rollback();
+    // Make sure that combo status flag is either 0 or 1 and if neither or not
+    // provided will default to 0.
+    foreach ($combo_keys['combo_experiment_details'] as $key) {
+      if ($key != 'label') {
+        $combo_experiment_details[$key] = (int) ((bool) $combo_experiment_details[$key]);
       }
     }
 
-    return $assigned_combo->combo_id ?? 0;
+    $transaction = $this->chado_connection->startTransaction();
+    try {
+      $assigned_combo = $this->chado_connection
+        ->insert('0:' . self::PHENO_COMBO_TABLE)
+        ->fields([
+          'project_id' => $experiment_id,
+          'attr_id' => $attr_id,
+          'observable_id' => $observable_id,
+          'unit_id' => $unit_id,
+          'label' => $combo_experiment_details['label'],
+          'is_archived' => $combo_experiment_details['is_archived'],
+          'is_required' => $combo_experiment_details['is_required'],
+          'was_shared' => $combo_experiment_details['was_shared'],
+          'was_collected' => $combo_experiment_details['was_collected'],
+          'uid' => $this->currentUser()->id(),
+          'timestamp' => time(),
+        ])
+        ->execute();
+    }
+    catch (Exception $e) {
+      $transaction->rollback();
+      throw new \Exception($e);
+    }
+
+    return $assigned_combo->combo_id;
   }
 
   /**
@@ -992,7 +1015,7 @@ class TripalCultivatePhenotypesTraitsService {
   }
 
   /**
-   * Get the experiment by id or by name.
+   * Get the experiment unique indetifier id number from an ID or name.
    *
    * @param int|string $experiment
    *   The experiment identifier, either:
@@ -1002,40 +1025,73 @@ class TripalCultivatePhenotypesTraitsService {
    *
    * @throws \Exception
    *   An exception is thrown if
-   *    - experiment did not return a project record.
+   *    - experiment (id or name) did not match an experiment record.
    *
    * @return int
-   *   The experiment id (project_id).
+   *   The resolved experiment id (project_id).
    */
   protected function getExperimentId(int|string $experiment): int {
 
-    $experiment_id = (is_int($experiment) && $experiment > 0) || (is_string($experiment) && ctype_digit($experiment))
-      ? (int) $experiment : ChadoProjectAutocompleteController::getProjectId($experiment);
+    if ((is_int($experiment) && $experiment > 0) || (is_string($experiment) && ctype_digit($experiment))) {
+      $experiment_id = (int) $experiment;
 
-    if (!ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
-      throw new \Exception('Experiment ID is required and must reference an existing experiment.');
+      if (!ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
+        throw new \InvalidArgumentException('Experiment ID #' . $experiment_id . ' does not exist.');
+      }
+    }
+    else {
+      $experiment_id = ChadoProjectAutocompleteController::getProjectId($experiment);
+
+      if (!$experiment_id) {
+        throw new \InvalidArgumentException('Experiment name ' . $experiment . ' does not exist.');
+      }
     }
 
-    return $experiment_id;
+    return (int) $experiment_id;
   }
 
   /**
    * Is combo label unique within an experiment.
+   *
+   * @param string $label
+   *   A human-readable text label used as an alternative reference to the trait
+   *   name. Labels must be unique within an experiment.
+   * @param int|string $experiment
+   *   The experiment to assign this trait-method-unit combination to.
+   *   The following are supported:
+   *   - An integer project_id
+   *   - A string experiment name (corresponding to 'name' column in Chado
+   *    'project' table).
+   *
+   * @throws \InvalidArgumentException
+   *   An exception is thrown if
+   *    - label is an empty string.
+   *    - experiment did not return a project record.
+   *
+   * @return bool
+   *   TRUE if the label is UNIQUE within the experiment and FALSE, otherwise.
    */
-  protected function labelIsUniqueInExperiment(int|string $experiment, $label): bool {
+  protected function labelIsUniqueInExperiment(string $label, int|string $experiment): bool {
 
-    $experiment_id = $this->getExperimentId($experiment_id);
+    $label = trim($label);
+    $experiment_id = $this->getExperimentId($experiment);
 
-    // No same labels within an experiment.
-    $label_exists = $this->chado_connection_connection
-      ->select('0:trpcultivate_phenocombo', 'tc')
+    if ($label === '' || !$experiment_id) {
+      throw new \InvalidArgumentException(
+        'Invalid label or experiment value provided. Label: ' . $label . ', Experiment: ' . $experiment
+      );
+    }
+
+    $label_exists = $this->chado_connection
+      ->select('0:' . self::PHENO_COMBO_TABLE, 'tc')
       ->fields('tc', ['combo_id'])
       ->condition('tc.label', $label, '=')
       ->condition('tc.project_id', $experiment_id, '=')
+      ->range(0, 1)
       ->execute()
       ->fetchField();
 
-    return $label_exists ? TRUE : FALSE;
+    return $label_exists ? FALSE : TRUE;
   }
 
 }
