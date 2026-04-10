@@ -798,6 +798,81 @@ class TripalCultivatePhenotypesTraitsService {
   }
 
   /**
+   * Assign a trait-method-unit combo to an experiment.
+   *
+   * @param array $trait_combo
+   *   An associative array describing the trait-method-unit combination
+   *   to assign to this experiment. This MUST ALREADY EXIST.
+   *   Required keys are:
+   *   - trait (int|string): A string value is the trait name, whereas an
+   *     integer value is the trait id (phenotype.attr_id).
+   *   - method (int|string): A string value is the trait method short name,
+   *     whereas an integer value is the method id (phenotype.observable_id).
+   *   - unit (int|string): A string value is the method unit name, whereas
+   *     an integer value is the unit id (phenotype.unit_id).
+   * @param array $combo_experiment_details
+   *   An associative array describing the label and status flags to assign
+   *   to this combo within this experiment. The following keys are expected:
+   *   - label: a human-readable text label used as an alternative reference to
+   *     the trait name. Labels must be unique within an experiment.
+   *   - is_archived: 1 if archived, 0 otherwise.
+   *   - is_required: 1 if required, 0 otherwise.
+   *   - was_shared: 1 if used in Phenotypes Share module, 0 otherwise.
+   *   - was_collected: 1 if measured in Phenotypes Collect module, 0 otherwise.
+   * @param int|string $experiment
+   *   The experiment to assign this trait-method-unit combination to.
+   *   The following are supported:
+   *   - An integer project_id
+   *   - A string experiment name (corresponding to 'name' column in Chado
+   *    'project' table).
+   *
+   * @throws \Exception
+   *   An exception is thrown if
+   *    - $trait_combo and $combo_experiment_details do not contain expected
+   *    keys defined by the parameter.
+   *   - $trait_combo did not return trait, method and unit values.
+   *    - $experiment did not return a project record.
+   *
+   * @return int
+   *   The combo id number inserted.
+   */
+  public function assignTraitMethodUnitComboToExperiment(array $trait_combo, array $combo_experiment_details, int|string $experiment): int {
+
+    $combo_keys = [
+      'trait_combo' => ['trait', 'method', 'unit'],
+      'combo_experiment_details' => [
+        'label',
+        'is_archived',
+        'is_required',
+        'was_collected',
+        'was_shared',
+        'was_collected'
+      ],
+    ];
+
+    foreach ($combo_keys as $param => $valid_keys) {
+      if ($option_diff = array_diff(array_keys($$param), $valid_keys)) {
+        throw new \Exception('The ' . __METHOD__ . ' method accepts $' . $param . ' keys [' . impoode(', ', $valid_keys) . ']. You provided ' . implode(', ', $option_diff));
+      }
+    }
+
+    $combo = $this->getTraitMethodUnitCombo($trait_combo['trait'], $trait_combo['method'], $trait_combo['unit']);
+
+    $has_missing_item = count(
+      array_filter($combo_keys['trait_combo'], function ($item) use ($combo) {
+        return empty($combo[$item]);
+      })
+    );
+
+    if ($has_missing_itemt > 0) {
+      throw new \Exception('The trait combo failed to return a trait, method and unit values.');
+    }
+
+    // Will handle invalid experiment value.
+    $experiment_id = $this->getExperimentId($experiment);
+  }
+
+  /**
    * Get cvterm record for a trait, method or unit.
    *
    * @param string|int $key
@@ -885,6 +960,42 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     return reset($asset_rec);
+  }
+
+  /**
+   * Get the experiment by id or by name.
+   *
+   * @param int|string $experiment
+   *   The experiment identifier, either:
+   *   - An integer project_id
+   *   - A string experiment name (corresponding to 'name' column in Chado
+   *    'project' table).
+   *
+   * @throws \Exception
+   *   An exception is thrown if
+   *    - experiment did not return a project record.
+   *
+   * @return int
+   *   The experiment id (project_id).
+   */
+  protected function getExperimentId(int|string $experiment): int {
+
+    $experiment_id = (is_int($experiment) && $experiment > 0) || (is_string($experiment) && ctype_digit($experiment))
+      ? (int) $experiment : ChadoProjectAutocompleteController::getProjectId($experiment);
+
+    if (!ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
+      throw new \Exception('Experiment ID is required and must reference an existing experiment.');
+    }
+
+    return $experiment_id;
+  }
+
+  /**
+   * Is combo label unique within an experiment.
+   */
+  protected function labelIsUniqueInExperiment(int|string $experiment, $label): bool {
+
+    $experiment_id = getExperimentId($experiment_id);
   }
 
 }
