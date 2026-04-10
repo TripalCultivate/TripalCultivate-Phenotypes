@@ -284,7 +284,7 @@ final class PhenodataBackupForm extends EntityForm {
       $this->entity->set('user_id', $user_id);
       $filename_components[] = $user_id;
 
-      $backup_date = date('Y-M-d H:i:s');
+      $backup_date = date('Y-m-d H:i:s');
       $this->entity->set('backup_date', $backup_date);
       $filename_components[] = $backup_date;
 
