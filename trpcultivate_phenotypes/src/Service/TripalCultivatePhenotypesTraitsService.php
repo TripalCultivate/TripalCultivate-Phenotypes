@@ -606,9 +606,10 @@ class TripalCultivatePhenotypesTraitsService {
   /**
    * Get trait-method-unit combinations of an experiment.
    *
-   * @param int $experiment_id
-   *   The experiment id, a unique identifier used to filter traits and return
-   *   only traits associated with the specified experiment id.
+   * @param int|string $experiment
+   *   The experiment id (int), a unique identifier or experiment name (string),
+   *   used to filter traits and return only traits associated with the
+   *   specified experiment id or name.
    * @param null|string $genus
    *   (Optional) The genus to further filter the traits combo results.
    *   Default to null value.
@@ -645,9 +646,12 @@ class TripalCultivatePhenotypesTraitsService {
    *   - Experiment provided does not reference an existing experiment.
    *   - Not a valid trait format or value requested in the $options parameter.
    */
-  public function getExperimentTraitMethodUnitCombos(int $experiment_id, ?string $genus = NULL, array $options = []) {
+  public function getExperimentTraitMethodUnitCombos(int|string $experiment, ?string $genus = NULL, array $options = []) {
 
-    if (!$experiment_id || !ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
+    $experiment_id = (is_int($experiment) && $experiment > 0) || (is_string($experiment) && ctype_digit($experiment))
+      ? (int) $experiment : ChadoProjectAutocompleteController::getProjectId($experiment);
+
+    if (!ChadoProjectAutocompleteController::getProjectName($experiment_id)) {
       throw new \Exception('Experiment ID is required and must reference an existing experiment.');
     }
 

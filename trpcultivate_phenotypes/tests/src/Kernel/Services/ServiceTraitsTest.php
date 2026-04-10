@@ -876,8 +876,9 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       );
     }
 
+    $experiment_name = 'Test Project 1';
     $experiment_id = $this->chado_connection->insert('1:project')
-      ->fields(['name' => 'Test Project 1'])
+      ->fields(['name' => $experiment_name])
       ->execute();
 
     $a_genus = 'Another Genus';
@@ -989,6 +990,17 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     foreach (array_keys($combo_format) as $format) {
       $combos = $this->service_traits
         ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
+
+      $combos_fetched_by_expname = $this->service_traits
+        ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
+
+      $this->assertEquals(
+        $combos,
+        $combos_fetched_by_expname,
+        'Fetching combos by experiment id or by experiment name is expected to return identical results.',
+      );
+
+      unset($combos_fetched_by_expname);
 
       foreach ($combo_format[$format] as $key) {
         foreach ($combos as $label => $combo) {
