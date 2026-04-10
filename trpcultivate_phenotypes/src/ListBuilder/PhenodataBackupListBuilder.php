@@ -119,11 +119,10 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     if (!isset($this->entity_field_header['user_id'])) {
       $query
-        ->condition('user_id', $this->user->id())
-        ->sort('backup_date', 'DESC');
+        ->condition('user_id', $this->user->id());
     }
 
-    $entity_ids = $query->execute();
+    $entity_ids = $query->sort('backup_date', 'DESC')->execute();
     $this->user_backup = $this->storage->loadMultiple($entity_ids);
 
     $this->service_TripalEntityLookup = $tripalentity_lookup;
@@ -180,7 +179,7 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
     ];
 
     $key = 'backup_date';
-    $values[$key] = $entity->get($key);
+    $values[$key] = date('Y-M-d H:i:s', strtotime($entity->get($key)));
 
     $key = 'file_id';
     $file_id = $entity->get($key);
@@ -190,11 +189,14 @@ final class PhenodataBackupListBuilder extends ConfigEntityListBuilder implement
 
     if ($file_obj) {
       $values[$key]['data'] = [
-        '#type' => 'button',
-        '#value' => 'Download',
-        '#button_type' => 'primary',
+        '#type' => 'link',
+        '#title' => 'Download',
+        '#url' => Url::fromUri($file_obj->createFileUrl($relative = FALSE)),
         '#attributes' => [
-          'onClick' => 'window.location.href="' . $file_obj->createFileUrl() . '"; return false;',
+          'class' => [
+            'button',
+            'button--primary',
+          ],
         ],
       ];
     }
