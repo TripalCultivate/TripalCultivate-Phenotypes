@@ -51,11 +51,12 @@ class PhenotypeTermInstallTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test trpcultivate_phenotypes_install_ontologyterms() method.
+   * Test installOntologyTerms() method.
    */
   public function testInstallOntologyTerms() {
-    // Call the trpcultivate_phenotypes_install_ontologyterms() method.
-    trpcultivate_phenotypes_install_ontologyterms();
+    // Call the installOntologyTerms() method.
+    \Drupal::service('trpcultivate_phenotypes.setup_module_service')
+      ->installOntologyTerms();
 
     // Call defineTerms in Term Service.
     $terms = \Drupal::service('trpcultivate_phenotypes.terms')
