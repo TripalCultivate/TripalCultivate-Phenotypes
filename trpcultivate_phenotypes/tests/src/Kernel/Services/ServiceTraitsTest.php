@@ -1093,4 +1093,150 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
     }
   }
 
+  /**
+   * Test assignTraitMethodUnitComboToExperiment().
+   */
+  public function testAssignTraitMethodUnitComboToExperiment() {
+
+    $experiment_name = 'Experiment With Phenotypes';
+    $experiment_id = $this->chado_connection->insert('1:project')
+      ->fields(['name' => $experiment_name])
+      ->execute();
+
+    $pheno_genus = 'Genus With Pheno';
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $pheno_genus,
+        'species' => 'species',
+      ])
+      ->execute();
+
+    $this->setOntologyConfig($pheno_genus);
+
+    $this->chado_connection->insert('1:projectprop')
+      ->fields(['project_id', 'type_id', 'value', 'rank'])
+      ->values([
+        'project_id' => $experiment_id,
+        'type_id' => $this->terms['genus'],
+        'value' => $this->genus,
+        'rank' => 1,
+      ])
+      ->execute();
+
+    $exp_phenocombo = $this->service_traits
+      ->getExperimentTraitMethodUnitCombos($experiment_id, $pheno_genus);
+
+    $this->assertEmpty(
+      $exp_phenocombo,
+      'The experiment is expected to contain 0 combo at this point.'
+    );
+
+    // Test paramenter array keys.
+    $combo_keys = [
+      'trait_combo' => ['trait', 'method', 'unit'],
+      'combo_experiment_details' => [
+        'label',
+        'is_archived',
+        'is_required',
+        'was_shared',
+        'was_collected',
+      ],
+    ];
+
+    // Create parameter values of key => key to trigger missing key exception.
+    $entry = [];
+    foreach ($combo_keys as $param => $keys) {
+      $entry[$param] = array_combine($keys, $keys);
+    }
+
+    foreach ($entry as $param_name => $param_values) {
+      $param_value_keys = array_keys($param_values);
+
+      foreach ($param_value_keys as $key) {
+        $input = $entry[$param_name];
+        // Remove current key.
+        unset($input[$key]);
+
+        if ($param_name == 'trait_combo') {
+          $trait_combo = $input;
+          $combo_experiment_details = $entry['combo_experiment_details'];
+        }
+        else {
+          $trait_combo = $entry['trait_combo'];
+          $combo_experiment_details = $input;
+        }
+
+        try {
+          $this->service_traits
+            ->assignTraitMethodUnitComboToExperiment(
+              $trait_combo,
+              $combo_experiment_details,
+              $experiment_id
+            );
+        }
+        catch (\Exception $e) {
+          $missing_keys = array_diff($param_values, array_keys($input));
+          $this->assertEquals(
+            'The Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService::assignTraitMethodUnitComboToExperiment method accepts keys for parameter ' . $param_name . ' [ ' . implode(', ', $param_values) . ' ]. You are missing keys [ ' . implode(', ', $missing_keys) . ' ].',
+            $e->getMessage(),
+            'An exception with the message shown is expected if parameter is missing a key',
+          );
+        }
+
+        unset($input);
+      }
+    }
+
+    // Assign a combo.
+    $this->service_traits->setTraitGenus($pheno_genus);
+
+    $trait_name = 'Trait 1';
+    $method_name = 'Method 1';
+    $unit_name = 'Unit 1';
+
+    $trait_combo = $this->service_traits->insertTrait([
+      'Trait Name' => $trait_name,
+      'Trait Description' => $trait_name . ' Description',
+      'Method Short Name' => $method_name . '-SName',
+      'Collection Method' => $method_name . ' - Collection Method',
+      'Unit' => $unit_name,
+      'Type' => 'Quantitative',
+    ], $this->chado_connection->getSchemaName());
+
+    $label = 'My Trait 1 Label';
+    $assigned_combo = $this->service_traits->assignTraitMethodUnitComboToExperiment(
+      $trait_combo,
+      $combo_experiment_details = [
+        'label' => $label,
+        'is_archived' => 1,
+        'is_required' => 0,
+        'was_shared' => 1,
+        'was_collected' => 0,
+      ],
+      $experiment_id
+    );
+
+    $this->assertNotNull($assigned_combo, 'Test failed to assign a combo to experiment.');
+
+    // Result is keyed by label.
+    $exp_phenocombo = $this->service_traits
+      ->getExperimentTraitMethodUnitCombos($experiment_id, $pheno_genus);
+
+    foreach ($combo_keys['trait_combo'] as $key) {
+      $this->assertEquals(
+        $trait_combo[$key],
+        $exp_phenocombo[$label][$key]['cvterm.cvterm_id'],
+        'The assigned trait key ' . $key . ' does not match expected value.',
+      );
+    }
+
+    foreach ($combo_keys['combo_experiment_details'] as $key) {
+      $this->assertEquals(
+        $combo_experiment_details[$key],
+        $exp_phenocombo[$label][$key],
+        'The assigned combo key ' . $key . ' does not match expected value.',
+      );
+    }
+  }
+
 }

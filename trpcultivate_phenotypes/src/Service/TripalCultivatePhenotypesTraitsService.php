@@ -2,6 +2,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Service;
 
+use Drupal\Core\Session\AccountInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\ChadoBuddy\PluginManagers\ChadoBuddyPluginManager;
@@ -16,6 +17,13 @@ use Drupal\tripal_chado\Plugin\ChadoBuddy\ChadoDbxrefBuddy;
  * cvterms that are used as phenotypic traits/unit/method.
  */
 class TripalCultivatePhenotypesTraitsService {
+
+  /**
+   * Users.
+   *
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected AccountInterface $current_user;
 
   /**
    * Genus Ontology Service.
@@ -83,11 +91,15 @@ class TripalCultivatePhenotypesTraitsService {
    * Constructor.
    */
   public function __construct(
+    AccountInterface $current_user,
     TripalCultivatePhenotypesGenusOntologyService $genus_ontology,
     TripalCultivatePhenotypesTermsService $terms,
     ChadoConnection $chado,
     ChadoBuddyPluginManager $buddy_manager,
   ) {
+
+    $this->current_user = $current_user;
+
     // Genus ontology service.
     $this->service_PhenoGenusOntology = $genus_ontology;
     // Terms service.
@@ -859,13 +871,13 @@ class TripalCultivatePhenotypesTraitsService {
       ],
     ];
 
-    // Verify that for bot trait combo and combo details parameter contain
+    // Verify that for both trait combo and combo details parameter contain
     // required combo keys.
     foreach ($combo_keys as $param => $valid_keys) {
-      if ($option_diff = array_diff(array_keys($$param), $valid_keys)) {
+      if ($option_diff = array_diff($valid_keys, array_keys($$param))) {
         throw new \InvalidArgumentException(
           sprintf(
-            'The %s method accepts keys for parameter %s [ %s ]. You provided %s.',
+            'The %s method accepts keys for parameter %s [ %s ]. You are missing keys [ %s ].',
             __METHOD__,
             $param,
             implode(', ', $valid_keys),
@@ -881,8 +893,8 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     // Combo has trait, method and unit.
-    [$attr_id, $observable_id, $unit_id] = $this->getTraitMethodUnitCombo(
-      $trait_combo['trait'], $trait_combo['method'], $trait_combo['unit']
+    ['trait' => $attr_id, 'method' => $observable_id, 'unit' => $unit_id] = $this->getTraitMethodUnitCombo(
+      (int) $trait_combo['trait'], (int) $trait_combo['method'], (int) $trait_combo['unit']
     );
 
     if (!$attr_id || !$observable_id || !$unit_id) {
@@ -903,15 +915,15 @@ class TripalCultivatePhenotypesTraitsService {
         ->insert('0:' . self::PHENO_COMBO_TABLE)
         ->fields([
           'project_id' => $experiment_id,
-          'attr_id' => $attr_id,
-          'observable_id' => $observable_id,
-          'unit_id' => $unit_id,
+          'attr_id' => $attr_id->cvterm_id,
+          'observable_id' => $observable_id->cvterm_id,
+          'unit_id' => $unit_id->cvterm_id,
           'label' => $combo_experiment_details['label'],
           'is_archived' => $combo_experiment_details['is_archived'],
           'is_required' => $combo_experiment_details['is_required'],
           'was_shared' => $combo_experiment_details['was_shared'],
           'was_collected' => $combo_experiment_details['was_collected'],
-          'uid' => $this->currentUser()->id(),
+          'uid' => $this->current_user->id(),
           'timestamp' => time(),
         ])
         ->execute();
@@ -921,7 +933,7 @@ class TripalCultivatePhenotypesTraitsService {
       throw new \Exception($e);
     }
 
-    return $assigned_combo->combo_id;
+    return $assigned_combo;
   }
 
   /**
@@ -1083,7 +1095,7 @@ class TripalCultivatePhenotypesTraitsService {
     }
 
     $label_exists = $this->chado_connection
-      ->select('0:' . self::PHENO_COMBO_TABLE, 'tc')
+      ->select(self::PHENO_COMBO_TABLE, 'tc')
       ->fields('tc', ['combo_id'])
       ->condition('tc.label', $label, '=')
       ->condition('tc.project_id', $experiment_id, '=')

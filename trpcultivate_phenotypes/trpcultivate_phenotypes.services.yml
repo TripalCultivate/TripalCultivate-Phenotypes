@@ -14,7 +14,7 @@ services:
 
   trpcultivate_phenotypes.traits:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService'
-    arguments: ['@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms', '@tripal_chado.database', '@tripal_chado.chado_buddy']
+    arguments: ['@current_user', '@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms', '@tripal_chado.database', '@tripal_chado.chado_buddy']
 
   trpcultivate_phenotypes.pheno_experiment_configuration_access_check:
     class: 'Drupal\trpcultivate_phenotypes\Access\PhenoExperimentConfigurationAccessCheck'
