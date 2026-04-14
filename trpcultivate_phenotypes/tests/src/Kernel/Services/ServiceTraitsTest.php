@@ -1094,6 +1094,51 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test getExperimentTraitMethodUnitCombo().
+   */
+  public function testGetExperimentTraitMethodUnitCombo() {
+
+    $a_genus = 'Get Combo - Test Genus';
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $a_genus,
+        'species' => 'species',
+      ])
+      ->execute();
+
+    $this->setOntologyConfig($a_genus);
+    $test_combo = $this->createExperimentWithTraitMethodUnitCombos($a_genus);
+
+    $combo_row = $this->chado_connection->select('trpcultivate_phenocombo', 'pc')
+      ->fields('pc')
+      ->condition('pc.combo_id', $test_combo['combo_id'], '=')
+      ->execute()
+      ->fetchAssoc();
+
+    $combo_by = [];
+
+    // Get by trait combo - trait, method and unit.
+    $combo_by['trait_combo'] = $this->service_traits->getExperimentTraitMethodUnitCombo(
+      $test_combo['experiment']['id'],
+      $test_combo['trait_inserted']
+    );
+
+    // Get by label.
+    $combo_by['label'] = $this->service_traits->getExperimentTraitMethodUnitCombo(
+      $test_combo['experiment']['id'],
+      $test_combo['combo_details']['label']
+    );
+
+    foreach ($combo_by as $by_key => $exp_combo) {
+      $this->assertEquals(
+        $combo_row,
+        $exp_combo,
+        'Failed to get the expected experiment trait-method-unit combo by ' . $by_key . ' key.',
+      );
+    }
+  }
+
+  /**
    * Test assignTraitMethodUnitComboToExperiment().
    */
   public function testAssignTraitMethodUnitComboToExperiment() {
@@ -1136,10 +1181,10 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       'trait_combo' => ['trait', 'method', 'unit'],
       'combo_experiment_details' => [
         'label',
-        'is_archived',
-        'is_required',
-        'was_shared',
-        'was_collected',
+        $this->service_traits::PHENO_COMBO_STATUS['archived'],
+        $this->service_traits::PHENO_COMBO_STATUS['required'],
+        $this->service_traits::PHENO_COMBO_STATUS['collected'],
+        $this->service_traits::PHENO_COMBO_STATUS['shared'],
       ],
     ];
 
@@ -1208,10 +1253,10 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
       $trait_combo,
       $combo_experiment_details = [
         'label' => $label,
-        'is_archived' => 1,
-        'is_required' => 0,
-        'was_shared' => 1,
-        'was_collected' => 0,
+        $this->service_traits::PHENO_COMBO_STATUS['archived'] => 1,
+        $this->service_traits::PHENO_COMBO_STATUS['required'] => 0,
+        $this->service_traits::PHENO_COMBO_STATUS['collected'] => 0,
+        $this->service_traits::PHENO_COMBO_STATUS['shared'] => 1,
       ],
       $experiment_id
     );
@@ -1237,6 +1282,130 @@ class ServiceTraitsTest extends ChadoTestKernelBase {
         'The assigned combo key ' . $key . ' does not match expected value.',
       );
     }
+  }
+
+  /**
+   * Test setExperimentTraitMethodUnitComboStatus().
+   */
+  public function testSetExperimentTraitMethodUnitComboStatus() {
+
+    $status_flags = [
+      $this->service_traits::PHENO_COMBO_STATUS['archived'],
+      $this->service_traits::PHENO_COMBO_STATUS['required'],
+      $this->service_traits::PHENO_COMBO_STATUS['collected'],
+      $this->service_traits::PHENO_COMBO_STATUS['shared'],
+    ];
+
+    $a_genus = 'Set Combo Status - Test Genus';
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $a_genus,
+        'species' => 'species',
+      ])
+      ->execute();
+
+    $this->setOntologyConfig($a_genus);
+    $test_combo = $this->createExperimentWithTraitMethodUnitCombos($a_genus);
+
+    $invalid_combo_param = [
+      'combo_id' => 0,
+      'trait-method-unit' => ['trait' => '', 'method' => ''],
+      'label' => '',
+    ];
+
+    foreach ($invalid_combo_param as $combo_as => $combo_value) {
+      try {
+        $this->service_traits->setExperimentTraitMethodUnitComboStatus(
+          $combo_value,
+          array_fill_keys(array_values($status_flags), mt_rand(0, 1)),
+        );
+      }
+      catch (\Exception $e) {
+        $this->assertStringContainsString(
+          'method parameter \'combo\' as ' . $combo_as,
+          $e->getMessage(),
+          'The exception message does not match expected message when invalid combo parameter as ' . $combo_as . ' is set to an invalid value.',
+        );
+      }
+    }
+
+    $this->service_traits->setExperimentTraitMethodUnitComboStatus(
+      $test_combo['combo_id'],
+      ['is_required' => 1]
+    );
+  }
+
+  /**
+   * Insert a test trait-method-unit combo row.
+   *
+   * @param string $genus
+   *   Genus the trait is specific to.
+   *
+   * @return array
+   *   The combo parameter values.
+   *   - 'genus': the genus the trait is specific to.
+   *   - 'experiment': contains the id and name of the experiment.
+   *   - 'trait_inserted': the trait-method-unit combo inserted.
+   *   - 'combo_trait': the trait meta data used to create trait-method-unit.
+   *   - 'combo_details': the experiment combo metadata.
+   *   - 'combo_id': the combo_id of the trait assigned to an experiment.
+   */
+  public function createExperimentWithTraitMethodUnitCombos($genus): array {
+
+    $combo['genus'] = $genus;
+    $this->service_traits->setTraitGenus($genus);
+
+    $experiment_name = 'Experiment With Phenotypes';
+    $combo['experiment']['name'] = $experiment_name;
+    $experiment_id = $this->chado_connection->insert('1:project')
+      ->fields(['name' => $experiment_name])
+      ->execute();
+    $combo['experiment']['id'] = $experiment_id;
+
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'species',
+      ])
+      ->execute();
+
+    $this->chado_connection->insert('1:projectprop')
+      ->fields(['project_id', 'type_id', 'value', 'rank'])
+      ->values([
+        'project_id' => $experiment_id,
+        'type_id' => $this->terms['genus'],
+        'value' => $genus,
+        'rank' => 1,
+      ])
+      ->execute();
+
+    $combo['combo_trait'] = [
+      'Trait Name' => $this->randomString(10),
+      'Trait Description' => $this->randomString(10),
+      'Method Short Name' => $this->randomString(10),
+      'Collection Method' => $this->randomString(10),
+      'Unit' => $this->randomString(10),
+      'Type' => (mt_rand(0, 1) == 0) ? 'Quantitative' : 'Quantitative',
+    ];
+
+    $combo['trait_inserted'] = $this->service_traits->insertTrait(
+      $combo['combo_trait'],
+      $this->chado_connection->getSchemaName()
+    );
+
+    $combo['combo_id'] = $this->service_traits->assignTraitMethodUnitComboToExperiment(
+      $combo['trait_inserted'],
+      $combo['combo_details'] = [
+        'label' => $this->randomString(10),
+        $this->service_traits::PHENO_COMBO_STATUS['archived'] => mt_rand(0, 1),
+        $this->service_traits::PHENO_COMBO_STATUS['required'] => mt_rand(0, 1),
+        $this->service_traits::PHENO_COMBO_STATUS['collected'] => mt_rand(0, 1),
+        $this->service_traits::PHENO_COMBO_STATUS['shared'] => mt_rand(0, 1),
+      ],
+      $combo['experiment']['id']
+    );
+
+    return $combo;
   }
 
 }
