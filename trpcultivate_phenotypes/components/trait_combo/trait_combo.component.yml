@@ -2,8 +2,6 @@ name: trait_combo
 props:
   type: object
   required:
-    - name
-    - definition
     - method_unit_combo
     - multiselect_method
   properties:
