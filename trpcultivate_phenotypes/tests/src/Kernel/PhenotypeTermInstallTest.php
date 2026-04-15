@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Tests trpcultivate_phenotypes.module.
+ * Tests the setup of the trpcultivate_phenotypes module.
  *
  * @group trpcultivate_phenotypes
  */
