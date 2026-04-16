@@ -527,7 +527,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         $method_name = explode(':', strip_tags($render_method->asXML()))[0];
 
         $this->assertContains(
-          $method_name,
+          trim($method_name),
           $trait_group_methods,
           'The rendered markup of the search result does not contain the exact method-unit combo items.',
         );
