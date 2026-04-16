@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services\Traits;
+namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services;
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
@@ -21,7 +21,8 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('services')]
 #[Group('traits')]
 #[RunTestsInSeparateProcesses]
-class ValidTraitTest extends ChadoTestKernelBase {
+class ServiceTraitsTest extends ChadoTestKernelBase {
+
   use PhenotypeImporterTestTrait;
 
   /**
@@ -99,6 +100,7 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     // Install module configuration/settings.
     $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installSchema('trpcultivate_phenotypes', ['trpcultivate_phenocombo']);
 
     // Configure the module.
     $this->genus = 'Tripalus';
@@ -855,6 +857,240 @@ class ValidTraitTest extends ChadoTestKernelBase {
 
     $this->assertMatchesRegularExpression('/CV value does not match the CV the genus was configured/',
       $exception_message, 'Combo getter failed parameter (all parameter a unit id) does not match the expected exception error message.');
+  }
+
+  /**
+   * Test getExperimentTraitMethodUnitCombos().
+   */
+  public function testGetExperimentTraitMethodUnitCombos() {
+
+    try {
+      $this->service_traits
+        ->getExperimentTraitMethodUnitCombos(999);
+    }
+    catch (\Exception $e) {
+      $this->assertEquals(
+        'Experiment ID is required and must reference an existing experiment.',
+        $e->getMessage(),
+        'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-existent project provided.',
+      );
+    }
+
+    $experiment_name = 'Test Project 1';
+    $experiment_id = $this->chado_connection->insert('1:project')
+      ->fields(['name' => $experiment_name])
+      ->execute();
+
+    $a_genus = 'Another Genus';
+    $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $a_genus,
+        'species' => 'species',
+      ])
+      ->execute();
+
+    try {
+      $this->service_traits
+        ->getExperimentTraitMethodUnitCombos($experiment_id, $a_genus);
+    }
+    catch (\Exception $e) {
+      $this->assertEquals(
+        'The genus is not configured to contain phenotypic traits.',
+        $e->getMessage(),
+        'The method getExperimentTraitMethodUnitCombos() is expected to throw an exception with a non-configured genus provided.',
+      );
+    }
+
+    $this->setOntologyConfig($a_genus);
+
+    $ins = $this->chado_connection->insert('1:projectprop')
+      ->fields(['project_id', 'type_id', 'value', 'rank']);
+
+    $ins->values([
+      'project_id' => $experiment_id,
+      'type_id' => $this->terms['genus'],
+      'value' => $this->genus,
+      'rank' => 1,
+    ]);
+
+    $ins->values([
+      'project_id' => $experiment_id,
+      'type_id' => $this->terms['genus'],
+      'value' => $a_genus,
+      'rank' => 2,
+    ]);
+
+    $ins->execute();
+
+    $schema = $this->chado_connection->getSchemaName();
+    $tmp_trait = [];
+
+    foreach ([$this->genus, $a_genus] as $i => $genus) {
+      $this->service_traits->setTraitGenus($genus);
+
+      $trait_name = 'Trait' . $i;
+      $method_name = 'Method' . $i;
+      $unit_name = 'Unit' . $i;
+
+      $trait = $this->service_traits->insertTrait([
+        'Trait Name' => $trait_name,
+        'Trait Description' => $trait_name . ' Description',
+        'Method Short Name' => $method_name . '-SName',
+        'Collection Method' => $method_name . ' - Collection Method',
+        'Unit' => $unit_name,
+        'Type' => 'Quantitative',
+      ], $schema);
+
+      $tmp_trait[$i] = $trait;
+
+      $expcombo_table = 'trpcultivate_phenocombo';
+      $drupal_dbconnection = $this->container->get('database');
+
+      $drupal_dbconnection
+        ->insert($expcombo_table)
+        ->fields([
+          'project_id' => $experiment_id,
+          'attr_id' => $trait['trait'],
+          'observable_id' => $trait['method'],
+          'unit_id' => $trait['unit'],
+          'label' => 'Label' . uniqid(),
+          'is_archived' => mt_rand(0, 1),
+          'is_required' => mt_rand(0, 1),
+          'was_shared' => mt_rand(0, 1),
+          'was_collected' => mt_rand(0, 1),
+          'uid' => $this->container->get('current_user')->id(),
+          'timestamp' => time(),
+        ])
+        ->execute();
+    }
+
+    $expcombo_table_fields = $drupal_dbconnection
+      ->select('information_schema.columns', 'cl')
+      ->fields('cl', ['column_name'])
+      ->condition('cl.table_name', $expcombo_table, '=')
+      ->execute()
+      ->fetchCol();
+
+    $combo_format = [
+      'header' => [
+        $combo_id = $expcombo_table_fields[0],
+        'name',
+        'description',
+        'type',
+      ],
+      'component' => [
+        $combo_id,
+        'name',
+        'definition',
+      ],
+      'full' => $expcombo_table_fields,
+    ];
+
+    // Test all formats and for each genus.
+    foreach (array_keys($combo_format) as $format) {
+      $combos = $this->service_traits
+        ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
+
+      $combos_fetched_by_expname = $this->service_traits
+        ->getExperimentTraitMethodUnitCombos($experiment_id, NULL, ['format' => $format]);
+
+      $this->assertEquals(
+        $combos,
+        $combos_fetched_by_expname,
+        'Fetching combos by experiment id or by experiment name is expected to return identical results.',
+      );
+
+      unset($combos_fetched_by_expname);
+
+      foreach ($combo_format[$format] as $key) {
+        foreach ($combos as $label => $combo) {
+          if (isset($ombo['label'])) {
+            $this->assertEquals(
+              $label,
+              $combo['lable'],
+              'The label key of the combo does not match label/name value in the array.',
+            );
+          }
+
+          $this->assertNotNull(
+            $combo[$key],
+            'Experiment trait combo in ' . $format . ' format, is expected to contain key: ' . $key,
+          );
+
+          if ($format == 'full') {
+            // Verify the trait, method, and unit.
+            $this->assertEquals(
+              $combo['trait']['cvterm.cvterm_id'],
+              $combo['attr_id'],
+              'The attr_id resolved to incorrect cvterm record.',
+            );
+
+            $this->assertEquals(
+              $combo['method']['cvterm.cvterm_id'],
+              $combo['observable_id'],
+              'The observable_id resolved to incorrect cvterm record.',
+            );
+
+            $this->assertEquals(
+              $combo['unit']['cvterm.cvterm_id'],
+              $combo['unit_id'],
+              'The unit_id resolved to incorrect cvterm record.',
+            );
+          }
+        }
+      }
+    }
+
+    // Test full dataset.
+    $combos = $this->service_traits->getExperimentTraitMethodUnitCombos($experiment_id);
+
+    $i = 0;
+    foreach ($combos as $combo) {
+      $this->assertEquals(
+        $tmp_trait[$i]['trait'],
+        $combo['attr_id'],
+        'The attr_id value of the combo returned does not match expected value.',
+      );
+
+      $this->assertEquals(
+        $tmp_trait[$i]['method'],
+        $combo['observable_id'],
+        'The observable_id value of the combo returned does not match expected value.',
+      );
+
+      $this->assertEquals(
+        $tmp_trait[$i]['unit'],
+        $combo['unit_id'],
+        'The unit_id value of the combo returned does not match expected value.',
+      );
+
+      $i++;
+    }
+
+    // Pull specific genus.
+    foreach ([$this->genus, $a_genus] as $i => $genus) {
+      $combos = $this->service_traits->getExperimentTraitMethodUnitCombos($experiment_id, $genus);
+
+      foreach ($combos as $combo) {
+        $this->assertEquals(
+          $tmp_trait[$i]['trait'],
+          $combo['attr_id'],
+          'The attr_id value of the combo returned does not match expected value.',
+        );
+
+        $this->assertEquals(
+          $tmp_trait[$i]['method'],
+          $combo['observable_id'],
+          'The observable_id value of the combo returned does not match expected value.',
+        );
+
+        $this->assertEquals(
+          $tmp_trait[$i]['unit'],
+          $combo['unit_id'],
+          'The unit_id value of the combo returned does not match expected value.',
+        );
+      }
+    }
   }
 
 }
