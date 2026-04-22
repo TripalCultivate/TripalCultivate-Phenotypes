@@ -41,18 +41,17 @@ function trpcultivate_phenotypes_install() {
   $user = \Drupal::currentUser();
 
   try {
-    tripal_add_job(
-      'Tripal Cultivate Phenotypes: Install Ontology and Terms',
-      'tripal',
-      'trpcultivate_phenotypes_install_ontologyterms',
-      [],
-      $user->id(),
-      10,
-      []
-    );
+    \Drupal::service('tripal.job')->create([
+      'job_name'   => t('Tripal Cultivate Phenotypes: Install Ontology and Terms'),
+      'modulename' => 'trpcultivate',
+      'callback'   => ['Drupal\trpcultivate_phenotypes\Service\SetupModuleService', 'installOntologyTerms'],
+      'arguments'  => [],
+      'uid'        => $user->id(),
+      'priority'   => 10,
+    ]);
   }
   catch (\Exception $e) {
-    throw new \Exception('Cannot create a job to install terms:' . $e->getMessage);
+    throw new \Exception('Cannot create a job to install terms: ' . $e->getMessage());
   }
 }
 
