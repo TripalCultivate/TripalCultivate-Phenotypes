@@ -161,7 +161,7 @@ class ExperimentPhenoTraitComboService {
    *   Both forms reference a field from the same Chado 'projects' table.
    *
    * @throws InvalidArgumentException
-   *   - Experiment identifier paramter is not of type integer or string.
+   *   - Not an integer or string value (data type) $experiment parameter.
    *   - Experiment does to correspond to an row in the Chado projects table.
    *   - Experiment is not configured with a genus.
    */
@@ -170,7 +170,7 @@ class ExperimentPhenoTraitComboService {
     if (!in_array(gettype($experiment, $valid_types = ['integer', 'string']))) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The data type of the experiment indentifier provided to %s, does not match expected type of [%s]',
+          'Type error in %s: received experiment identifier with invalid data type. Value must be of type [%s].',
           __METHOD__,
           implode(', ', $valid_types)
         )
@@ -184,7 +184,7 @@ class ExperimentPhenoTraitComboService {
     if ($experiment_id === 0 || $experiment_id === '') {
       throw new \InvalidArgumentException(
         sprintf(
-          'The experiment identifier - %s, provided to %s, does not match an experiment record.',
+          'Invalid experiment identifier in %s: received experiment identifier - %s that does not exist.',
           $experiment,
           __METHOD__
         )
@@ -196,11 +196,9 @@ class ExperimentPhenoTraitComboService {
     if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList()) ||
         empty($this->service_PhenoGenusProject->getGenusOfProject($experiment_id))) {
 
-      // Adding a log entry about this not-fully-configured experiment
-      // project_id or project name.
       $this->tripal_logger->error(
         $invalid_exp_error = sprintf(
-          'The experiment identifier - %s (%s), provided to %s, is not configured with a genus.',
+          'Invalid experiment identifier in %s: received experiment identifier - %s that is not configured with a Genus.',
           $experiment,
           gettype($experiment),
           __METHOD__
@@ -218,7 +216,7 @@ class ExperimentPhenoTraitComboService {
    *
    * @param array $trait_combo
    *   An associative array describing the TRAIT-METHOD-UNIT combination.
-   *   The following keys are expected:
+   *   This MUST ALREADY EXIST. The following keys are expected:
    *   - 'trait' (integer|string): a string value is the trait name, whereas an
    *     integer value is the trait id (a value to phenotype.attr_id).
    *   - 'method' (integer|string): a string value is the method name, whereas
@@ -228,70 +226,51 @@ class ExperimentPhenoTraitComboService {
    * @param array $combo_experiment_details
    *   An associative array describing the label and status flags to assign to
    *   to this trait combo within an experiment.
-   *   The following keys are expected:
-   *   - 'label': a human-readable text label used as an alternative reference
-   *     to the trait name. Labels must be unique within an experiment.
+   *   The following keys are supported:
+   *   - 'label' (REQUIRED): a human-readable text label used as an alternative
+   *     reference to the trait name. Labels must be unique within experiment.
    *   - 'is_archived': 1 if archived, 0 otherwise.
    *   - 'is_required': 1 if required, 0 otherwise.
    *   - 'was_shared': 1 if used in Phenotypes Share module, 0 otherwise.
    *   - 'was_collected': 1 if measured in Phenotypes Collect module, 0 if not.
    *
-   *   The default values at assignment and if a flag(s) is not provided.
+   *   The default values of each status flags at assignment and if a flag(s) is
+   *   not provided.
    *   - 'is_archived': 0 (no, active combo).
    *   - 'is_required': 0 (no, optional combo).
    *   - 'is_shared': 0 (no, not used in Shared Module to start with).
    *   - 'is_collected': 0 (no, not used in Collect Module to start with).
    *
-   * @return int|null
-   *   The last inserted combo_id as a result of an insert query in this method.
+   * @return int
+   *   The last inserted combo_id as a result of an insert query.
    *
    * @throws \InvalidArgumentException
-   *   - $trait_combo and $combo_experiment_details do not contain expected keys
+   *   - Not an array value (data type) pass to both parameters.
    *     defined for each parameter in the parameter definition.
    *   - Not an integer or string value (data type) passed to either parameters.
    */
-  public function assignPhenoComboToExperiment(array $trait_combo, array $combo_experiment_details = []): int {
+  public function assignPhenoComboToExperiment(array $trait_combo, array $combo_experiment_details): int {
 
     $this->ensureExperimentIsSet();
 
-    // Ensure expected argument data type.
     if (!is_array($trait_combo) || !is_array($combo_experiment_details)) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The method %s has been provided with parameter(s) with unexpected data type. Ensure values are of array data type.',
+          'Type error in %s: received one or more parameters with invalid data types. All parameters must be of type [array].',
           __METHOD__
         )
       );
     }
 
-    $this->ensurePhenoComboArrayExists($trait_combo);
+    $this->ensureTraitComboExists($trait_combo);
 
-    // Verify required fields in combo details.
-    $required_fields = [
-      'label',
-      self::PHENO_COMBO_STATUS_FLAGS['archived'],
-      self::PHENO_COMBO_STATUS_FLAGS['required'],
-      self::PHENO_COMBO_STATUS_FLAGS['collected'],
-      self::PHENO_COMBO_STATUS_FLAGS['shared'],
-    ];
-
-    if ($option_diff = array_diff($required_fields, array_keys($combo_experiment_details))) {
+    // Verify label field is provided in combo exp. details.
+    $label = trim($combo_experiment_details['label']) ?? '';
+    if (empty($label) || !$this->labelIsUniqueInExperiment($label)) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The pheno combo details array provided to %s, does not contain all expected keys: [%s]. You provided - [%s]',
-          __METHOD__,
-          implode(', ', $required_fields),
-          implode(', ', $option_diff)
-        )
-      );
-    }
-
-    if (!$this->labelIsUniqueInExperiment($combo_experiment_details['label'])) {
-      throw new \InvalidArgumentException(
-        sprintf(
-          'The label pheno combo detail provided to %s, is already in used within the experiment. Label provided - [%s]',
-          __METHOD__,
-          implode(', ', $combo_experiment_details['label'])
+          'Missing or duplicate label error in %s: Combo label must exists, unique withing the experiment, and must not be an empty string.',
+          __METHOD__
         )
       );
     }
@@ -339,8 +318,8 @@ class ExperimentPhenoTraitComboService {
    *
    * @param array|string $combo
    *   The combo to be retrieved, the following are supported:
-   *   - label (string) uniquely identifying this pheno combo in the experiment.
-   *   - pheno combo (array) indicating the trait-method-unit combo.
+   *   - label (string) uniquely identifying this pheno combo in experiment.
+   *   - trait combo (array) indicating the trait-method-unit combo.
    *     @see assignTraitMethodUnitComboToExperiment()
    *
    * @return array
@@ -351,15 +330,27 @@ class ExperimentPhenoTraitComboService {
    *   'method' and 'unit' are the cvterm names referenced by the 'attr_id',
    *   'observable_id', and 'unit_id' respectively. An empty array if not found.
    *   @see trpcultivate_phenotypes_schema()
+   *
+   * @throws \InvalidArgumentException
+   *   - Not an array or string value (data type) $combo parameter.
    */
   public function getExperimentPhenoCombo(array|string $combo): array {
 
     $this->ensureExperimentIsSet();
 
+    if (!in_array(gettype($combo, $valid_types = ['array', 'string']))) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Type error in %s: received combo with invalid data type. Value must be of type [%s].',
+          __METHOD__,
+          implode(', ', $valid_types)
+        )
+      );
+    }
+
     $combo_id = $this->resolvePhenoCombo($combo);
     if ($combo_id !== 0) {
-      $pheno_combo = $this->drupaldb_connection
-        ->select(self::PHENO_COMBO_TABLE, 'tbl')
+      $pheno_combo = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
         ->fields('tbl')
         ->condition('tbl.combo_id', $combo_id, '=')
         ->range(0, 1)
@@ -373,8 +364,8 @@ class ExperimentPhenoTraitComboService {
   /**
    * Get the fullset of pheno trait combos in an experiment.
    *
-   * @param null|array $filter
-   * @param null|array $options
+   * @param array|null $filter
+   * @param array|null $options
    */
   public function getAllExperimentPhenoCombos(null|array $filter, null|array $otions): array {
 
@@ -383,74 +374,74 @@ class ExperimentPhenoTraitComboService {
   /**
    * Set trait-method-unit combo status flags.
    *
-   * @param mixed $combo
+   * @param array|int|string $combo
    *   The trait-method-unit combo previously assigned to the experiment.
    *   The following formats are supported:
+   *   - trait combo (array) indicating the trait-method-unit combo.
+   *     @see assignTraitMethodUnitComboToExperiment()
    *   - combo_id (int) uniquely identifying this trait-method-unit-experiment
    *     combo as returned when assigning / getting experiment trait-method-unit
    *     associations.
    *   - label (string) uniquely identifying this trait-method-unit combo in
    *     the experiment indicated.
-   *   - trait combo (array) indicating the trait-method-unit combo.
-   *     @see assignTraitMethodUnitComboToExperiment()
    * @param array $status_flags
    *   The status array key-value pair where the value is 0 or 1
    *   (yes or no, respectively) and the keys are the following status flags.
+   *   At least one key is required in the status flags array parameter.
    *   - is_archived: indicates trait combo is archived.
    *   - is_required: indicates trait combo is a required trait and must contain
    *      a value in the data file for this column.
    *   - was_shared: indicates trait combo was used in Phenotypes Share module.
    *   - was_collected: indicates trait measured in Phenotypes Collect module.
-   * @param int|string|null $experiment
-   *   The experiment the trait-method-unit combination belongs to.
-   *   The following are supported:
-   *   - An integer project_id
-   *   - A string experiment name (corresponding to 'name' column in Chado
-   *    'project' table).
+   *
+   * @throws \InvalidArgumentException
+   *   - Not an array or string value (data type) $combo parameter.
+   *   - Not an array value (data type) $status_flags parameter.
+   *   - $status_flags array does not contain at least 1 status flag to modify.
    */
-  public function setExperimentPhenoComboStatus(mixed $combo, array $status_flags): void {
+  public function setExperimentPhenoComboStatus(array|int|string $combo, array $status_flags): void {
 
     $this->ensureExperimentIsSet();
     $combo_id = $this->resolvePhenoCombo($combo);
 
+    if (!in_array(gettype($combo, $valid_types = ['array', 'integer', 'string']))) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Type error in %s: received combo with invalid data type. Value must be of type [%s].',
+          __METHOD__,
+          implode(', ', $valid_types)
+        )
+      );
+    }
+
     if (!is_array($status_flags)) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The status flags array provided to %s, is not an array. Please provide an array value.',
+          'Type error in %s: received status flags with invalid data type. Value must be of type [array].',
           __METHOD__
         )
       );
     }
 
-    // Verify required fields in status flags.
-    $required_fields = [
-      self::PHENO_COMBO_STATUS_FLAGS['archived'],
-      self::PHENO_COMBO_STATUS_FLAGS['required'],
-      self::PHENO_COMBO_STATUS_FLAGS['collected'],
-      self::PHENO_COMBO_STATUS_FLAGS['shared'],
-    ];
-
-    // Verify status flags contain expeected status fields.
-    $field_status_flags = [];
-
-    foreach ($status_flags as $key => $entry_value) {
-      if (in_array($key, $required_fields)) {
-        $field_status_flags[$field] = (int) ((bool) $entry_value);
-      }
-    }
-
-    if (empty($field_status_flags)) {
+    // At least one status flag is requested to be modified.
+    if (!array_intersect(self::PHENO_COMBO_STATUS_FLAGS, array_keys($status_flags))) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The status flags array provided to %s, does not contain expected keys: [%s].',
-          __METHOD__,
-          implode(', ', $required_fields),
+          'Missing status flag key in %s: received status flags without any flags. Value must have at least 1 status flag to modify.',
+          __METHOD__
         )
       );
     }
 
-    $db_transaction = $this->drupaldb_connection->startTransaction();
+    // Status flags:
+    $field_status_flags = [];
+    foreach ($status_flags as $key => $entry_value) {
+      if (in_array($key, PHENO_COMBO_STATUS_FLAGS)) {
+        $field_status_flags[$field] = (int) ((bool) $entry_value);
+      }
+    }
 
+    $db_transaction = $this->drupaldb_connection->startTransaction();
     try {
       $this->drupaldb_connection->update(self::PHENO_COMBO_TABLE)
         ->fields($field_status_flags)
@@ -476,40 +467,42 @@ class ExperimentPhenoTraitComboService {
     if ($this->experiment_context === NULL || $this->experiment_context === 0) {
       throw new \Exception(
         sprintf(
-          'Class %s, experiment context must be set before performing operations. Use %s to set an experiment context.',
-          get_class($this),
-          'setExperiment(EXPERIMENT ID or NAME)'
+          'Experiment context not set error in %s: experiment context must be set before performing operations.
+           Use setExperiment(EXPERIMENT ID or NAME) to set an experiment context.',
+          get_class($this)
         )
       );
     }
   }
 
   /**
-   * Ensure that the pheno combo (array with trait, method and unit) exits.
+   * Ensure that the trait combo (array with trait, method and unit) exits.
    *
-   * @param array $combo
-   *   An associative array describing the trait-method-unit combination
-   *     to assign to this experiment. This MUST ALREADY EXIST.
-   *     Required keys are:
-   *     - trait (int|string): A string value is the trait name, whereas an
-   *       integer value is the trait id (phenotype.attr_id).
-   *     - method (int|string): A string value is the trait method short name,
-   *       whereas an integer value is the method id (phenotype.observable_id).
-   *     - unit (int|string): A string value is the method unit name, whereas
-   *       an integer value is the unit id (phenotype.unit_id).
+   * @param array $trait_combo
+   *   The trait-method-unit combination.
+   *   @see assignPhenoComboToExperiment()
    *
    * @throws InvalidArgumentException
    *   - The combo array is missing required key.
    *   - The combo array value is not the expected type of integer or string.
    *   - The combo did not match a trait-method-unit combo.
    */
-  protected function ensurePhenoComboArrayExists($combo): void {
+  protected function ensureTraitComboExists(array $trait_combo): void {
+
+    if (!is_array($trait_combo)) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Type error in %s: received trait combo with invalid data types. Value must be of type [array].',
+          __METHOD__
+        )
+      );
+    }
 
     // Ensure that array has the expected keys - trait, method and unit.
     if ($option_diff = array_diff(array_keys(self::PHENO_COMBO_KEYS), array_keys($combo))) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The pheno combo array, provided to %s, does not contain all expected keys: [%s]. You provided - [%s]',
+          'Missing key error in %s: received trait combo with missing key(s). Value must have keys [%s]. You provided [%s]',
           __METHOD__,
           implode(', ', self::PHENO_COMBO_KEYS),
           implode(', ', $option_diff)
@@ -520,7 +513,7 @@ class ExperimentPhenoTraitComboService {
     // Ensure that value for each combo key is either integer or string type.
     $unexpected_values = [];
     foreach (self::PHENO_COMBO_KEYS as $key => $_) {
-      if (!in_array(gettype($combo[$key]), ['integer', 'string'])) {
+      if (!is_int($combo[$key]) && !is_string($combo[$key])) {
         $unexpected_values[] = $key;
       }
     }
@@ -528,7 +521,7 @@ class ExperimentPhenoTraitComboService {
     if (count($unexpected_values) > 0) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The pheno combo array, provided to %s, contains invalid value for keys: [%s]. Use only string or integer value.',
+          'Type error in %s: received trait combo with invalid data types for keys - [%s]. Use only integer or string value.',
           __METHOD__,
           implode(', ', $unexpected_values)
         )
@@ -558,7 +551,7 @@ class ExperimentPhenoTraitComboService {
     if ($pheno_combo === 0) {
       throw new \InvalidArgumentException(
         sprintf(
-          'The pheno combo array, provided to %s, does not match a trait-method-unit combo record.',
+          'Invalid trait combo error in %s: received trait combo that does not match a trait-method-unit record.',
           __METHOD__
         )
       );
@@ -568,30 +561,28 @@ class ExperimentPhenoTraitComboService {
   /**
    * Resolve pheno combo parameter values to pheno combo id.
    *
-   * @param array|string|int $combo
+   * @param array|int|string $combo
    *   The trait-method-unit combo previously assigned to the experiment.
-   *   The following formats are supported:
-   *   - trait combo (array): indicating the trait-method-unit combo.
-   *     combo as returned when assigning / getting experiment trait-method-unit
-   *     associations.
-   *   - label (string): uniquely identifying this trait-method-unit combo in
-   *     the experiment indicated.
-   *   - combo_id (int): uniquely identifying this trait-method-unit-experiment.
+   *   @see setExperimentPhenoComboStatus()
    *
-   * @return int
-   *   The combo unique identifier (combo_id). 0 if combo could not be resolved.
+   * @return int|null
+   *   The combo unique identifier (combo_id). NULL if combo could not be resolved.
    *
    * @throws InvalidArgumentException
    *   - The combo array is not the expected data type of array, integer or
    *     string value.
    */
-  protected function resolvePhenoCombo(array|string|int $combo): int {
+  protected function resolvePhenoCombo(array|int|string $combo): int|null {
 
     $query = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
       ->fields('tbl', ['combo_id']);
 
     switch (gettype($combo)) {
+
       case 'array':
+        // Param combo is trait combo.
+        $this->ensureTraitComboExists($combo);
+
         $query->condition('tbl.project_id', $this->experiment_context, '=');
         foreach (self::PHENO_COMBO_KEYS as $key => $field) {
           $query->condition('tbl.' . $field, $combo[$key], '=');
@@ -600,10 +591,12 @@ class ExperimentPhenoTraitComboService {
         break;
 
       case 'string':
+        // Param combo is label.
         $query->condition('tbl.label', trim($combo), '=');
         break;
 
       case 'integer':
+        // Param combo is combo_id.
         $query->condition('tbl.combo_id', $combo, '=');
         break;
 
@@ -619,11 +612,11 @@ class ExperimentPhenoTraitComboService {
     $combo_id = $query
       ->range(0, 1)->execute()->fetchField();
 
-    return $combo_id ?: 0;
+    return $combo_id ?: NULL;
   }
 
   /**
-   * Verify label is unique within an experiment.
+   * Verify label is unique within an experiment (case insensitive check).
    *
    * @param string $label
    *   A human-readable text label used as an alternative reference to the trait
@@ -639,16 +632,10 @@ class ExperimentPhenoTraitComboService {
    */
   protected function labelIsUniqueInExperiment(string $label): bool {
 
-    if (!is_string($label) || $label === '') {
-      throw new \InvalidArgumentException(
-        sprintf('The label provided to %s, cannot be an empty string value.', __METHOD__)
-      );
-    }
-
-    $label_exists = $this->drupaldb_connection
-      ->select(self::PHENO_COMBO_TABLE, 'tbl')
+    $label_exists = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
       ->fields('tbl', ['combo_id'])
-      ->condition('tbl.label', $label, '=')
+      ->addExpression('LOWER(tbl.label)', 'label_lower')
+      ->condition('label_lower', strtolower($label), '=')
       ->condition('tbl.project_id', $this->experiment_context, '=')
       ->range(0, 1)
       ->execute()
