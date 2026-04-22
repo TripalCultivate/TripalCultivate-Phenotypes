@@ -114,7 +114,8 @@ class ServiceTermTest extends ChadoTestKernelBase {
     $this->prepareEnvironment(['TripalTerm']);
 
     $this->installConfig('trpcultivate');
-    trpcultivate_install_terms();
+    $this->container->get('trpcultivate.setup_module_service')
+      ->installTerms();
 
     // Mock Tripal Logger.
     $mock_logger = $this->getMockBuilder(TripalLogger::class)

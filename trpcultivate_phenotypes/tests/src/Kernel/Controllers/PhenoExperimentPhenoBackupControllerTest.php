@@ -85,11 +85,15 @@ class PhenoExperimentPhenoBackupControllerTest extends ChadoTestKernelBase {
     $this->installEntitySchema('file');
     $this->installEntitySchema('user');
 
-    \trpcultivate_install_terms();
+    $this->container->get('trpcultivate.setup_module_service')
+      ->installTerms();
+
     $this->container->get('tripal_chado.terms_init')
       ->installTerms();
 
-    \trpcultivate_import_contenttypes();
+    $this->container->get('trpcultivate.setup_module_service')
+      ->importContenttypes();
+
     $this->setTermConfig();
 
     // Create Research Experiment Tripal content.
