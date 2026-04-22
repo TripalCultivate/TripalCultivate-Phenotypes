@@ -26,9 +26,11 @@ services:
     arguments: [
       '@current_user',
       '@database',
+      '@trpcultivate_phenotypes.terms',
       '@trpcultivate_phenotypes.traits',
       '@trpcultivate_phenotypes.genus_project',
       '@trpcultivate_phenotypes.genus_ontology',
+      '@tripal_chado.database',
       '@tripal.logger'
     ]
 
