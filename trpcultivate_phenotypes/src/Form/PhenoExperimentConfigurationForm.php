@@ -8,6 +8,7 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
@@ -151,24 +152,27 @@ class PhenoExperimentConfigurationForm extends FormBase {
       '#value' => $tripal_entity->id(),
     ];
 
+    $germgenus_field = FieldStorageConfig::loadByName('tripal_entity', 'exp_germgenus');
+
     // If the /genus slug is not provided, show all trait for all genus.
     $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-    $invalid_genus = 0;
-    $exp_germgenus = $tripal_entity->get('exp_germgenus')->getValue();
+    if ($germgenus_field) {
+      $invalid_genus = 0;
+      $exp_germgenus = $tripal_entity->get('exp_germgenus')->getValue();
 
-    foreach ($exp_germgenus as $germgenus) {
-      if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['value'])) {
-        $invalid_genus++;
+      foreach ($exp_germgenus as $germgenus) {
+        if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['value'])) {
+          $invalid_genus++;
+        }
+      }
+
+      if ($invalid_genus == count($exp_germgenus)) {
+        $this->messenger()->addError('The Research Experiment has no configured genus set.');
+
+        return $form;
       }
     }
-
-    if ($invalid_genus == count($exp_germgenus)) {
-      $this->messenger()->addError('The Research Experiment has no configured genus set.');
-
-      return $form;
-    }
-
     $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
     if ($genus && !in_array($genus, $exp_phenogenus)) {
       // Genus does not exist.
