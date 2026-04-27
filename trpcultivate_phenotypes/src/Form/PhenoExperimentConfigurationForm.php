@@ -8,7 +8,6 @@ use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
@@ -152,12 +151,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
       '#value' => $tripal_entity->id(),
     ];
 
-    $germgenus_field = FieldStorageConfig::loadByName('tripal_entity', 'exp_germgenus');
-
     // If the /genus slug is not provided, show all trait for all genus.
     $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-    if ($germgenus_field) {
+    if ($tripal_entity->hasField('exp_germgenus')) {
       $invalid_genus = 0;
       $exp_germgenus = $tripal_entity->get('exp_germgenus')->getValue();
 
