@@ -96,11 +96,15 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->installSchema('trpcultivate_phenotypes', [self::PHENO_COMBO_TABLE]);
     $this->installEntitySchema('user');
 
-    \trpcultivate_install_terms();
+    $this->container->get('trpcultivate.setup_module_service')
+      ->installTerms();
+
     $this->container->get('tripal_chado.terms_init')
       ->installTerms();
 
-    \trpcultivate_import_contenttypes();
+    $this->container->get('trpcultivate.setup_module_service')
+      ->importContenttypes();
+
     $config_terms = $this->setTermConfig();
 
     // Create test records - A research experiment entity with genus set to
