@@ -660,6 +660,7 @@ class ExperimentPhenoTraitComboService {
    *   cvterm id number (NOT THE CVTERM RECORD).
    *
    * @throws InvalidArgumentException
+   *   - If host site has no genus configured.
    *   - If trait combo is missing any of the keys - [trait, method, unit].
    *   - If a value of a combo key is not an integer nor a string.
    */
@@ -667,6 +668,16 @@ class ExperimentPhenoTraitComboService {
 
     $sanitized_trait_combo = [];
     $trait_combo_keys = array_keys(self::TRAIT_COMBO_KEY_MAP);
+    $exp_phenogenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
+
+    if ($exp_phenogenus === []) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Phenotypes setup error in %s: site has no genus configured to contain traits.',
+          __METHOD__
+        )
+      );
+    }
 
     if (array_diff($trait_combo_keys, $input_keys = array_keys($trait_combo))) {
       throw new \InvalidArgumentException(
@@ -702,15 +713,13 @@ class ExperimentPhenoTraitComboService {
     }
 
     // Make trait combo-key values to always be in cvterm_id form.
-    // Genus context is derived from genus the experiment is configured with.
-    $exp_phenogenus = $this->service_PhenoGenusProject
-      ->getGenusOfProject($this->experiment_context);
-
     foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $_) {
       ${$alias} = $sanitized_trait_combo[$alias];
     }
 
     $pheno_combo = NULL;
+    $exp_phenogenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
+
     foreach ($exp_phenogenus as $genus) {
       $this->service_PhenoTraits->setTraitGenus($genus);
 
@@ -876,7 +885,7 @@ class ExperimentPhenoTraitComboService {
         $query->condition('tbl.' . $field, $trait_combo[$alias], '=');
       }
     }
-    elseif (is_int($sanitized_combo)) {
+    elseif (filter_var($sanitized_combo, FILTER_VALIDATE_INT) !== FALSE) {
       $combo_id = $sanitized_combo;
       $query->condition('tbl.combo_id', $combo_id, '=');
     }
