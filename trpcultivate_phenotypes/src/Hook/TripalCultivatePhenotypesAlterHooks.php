@@ -10,6 +10,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
+use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 
@@ -147,8 +148,9 @@ class TripalCultivatePhenotypesAlterHooks {
 
     // All genus configured in Phenotypes.
     $pheno_configgenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
+    $germgenus_field = FieldStorageConfig::loadByName('tripal_entity', 'exp_germgenus');
 
-    if (count($pheno_configgenus) > 0 && $this->has_pheno) {
+    if (count($pheno_configgenus) > 0 && $this->has_pheno && $germgenus_field) {
       // Genus as provided in the Design/Germplasm/Germplasm Genus field.
       // Removes the trailing genus field value set to empty string.
       $exp_germgenus = array_filter(
