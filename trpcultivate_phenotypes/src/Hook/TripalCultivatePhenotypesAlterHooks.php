@@ -133,7 +133,7 @@ class TripalCultivatePhenotypesAlterHooks {
         ];
       }
 
-      $form['#validate'][] = self::class . ':phenoGenusExperimentEditFormValidate';
+      $form['#validate'][] = [$this, 'phenoGenusExperimentEditFormValidate'];
     }
   }
 
