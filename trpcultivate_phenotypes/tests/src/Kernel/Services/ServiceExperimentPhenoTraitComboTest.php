@@ -298,7 +298,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
       ],
       [
         self::EXPERIMENT_NAME_CONTEXT_WITH_COMBO,
-        '',
+        NULL,
       ],
     ];
   }
@@ -312,7 +312,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
    *   The exception message thrown.
    */
   #[DataProvider('provideExperimentContext')]
-  public function testSetExperiment(int|string $experiment, string $exception_message) {
+  public function testSetExperiment(int|string $experiment, ?string $exception_message) {
 
     try {
       $this->service_PhenoTraitCombo->setExperiment($experiment);
