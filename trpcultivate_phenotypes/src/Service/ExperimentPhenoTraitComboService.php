@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Database\Statement\FetchAs;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Url;
+use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
@@ -34,19 +37,21 @@ class ExperimentPhenoTraitComboService {
   /**
    * Experiment context.
    *
+   * Operations to read/write will be restricted to this experiment context.
+   *
    * @var int|null
    */
   private int|null $experiment_context;
 
   /**
-   * The table name that contains experiment pheno trait combos.
+   * The table name that contains experiment pheno combos.
    *
    * @var string
    */
   public const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
-   * Status flags to table field combo status mapping.
+   * Status flags alias to combo status table field mapping.
    *
    * @var array
    */
@@ -58,7 +63,7 @@ class ExperimentPhenoTraitComboService {
   ];
 
   /**
-   * Pheno combo alias to table field (id) mapping.
+   * Trait combo alias to combo table field (id) mapping.
    *
    * @var array
    */
@@ -121,45 +126,44 @@ class ExperimentPhenoTraitComboService {
    * records belonging to the specified experiment context can be accessed,
    * retrieved or modified.
    *
-   * @param int|string $experiment
+   * @param \Drupal\tripal\Entity\TripalEntity|int|string $experiment
    *   The experiment identifier, either:
+   *   - Experiment entity (Tripal Entity) the experiment entity object.
    *   - An integer (int) value corresponding to the project_id number.
    *   - A string (string) value corresponding to the project name.
-   *   Both forms reference a field from the same Chado 'projects' table.
+   *   Both int and string forms reference a field from the same Chado
+   *   'projects' table.
    *
    * @throws InvalidArgumentException
-   *   - If experiment does not resolve to an existing project_id/name.
+   *   - Phenotypes module hosted has not been configured with a genus.
    *   - If experiment is not configured with a genus in Phenotypes module.
    */
-  public function setExperiment(int|string $experiment): void {
+  public function setExperiment(TripalEntity|int|string $experiment): void {
 
-    // Verify the existence of the experiment.
-    if (is_numeric($experiment)) {
-      $experiment_id = ChadoProjectAutocompleteController::getProjectName((int) $experiment) ? $experiment : 0;
-    }
-
-    if (is_string($experiment)) {
-      $experiment_id = ChadoProjectAutocompleteController::getProjectId($experiment);
-    }
-
-    if ($experiment_id === 0 || $experiment_id === '') {
-      throw new \InvalidArgumentException(
-        'Failed to set experiment context. Experiment name/id: ' . $experiment . ' does not exist.'
+    // The hosted phenotypes module has not been configured with a genus.
+    if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList())) {
+      throw new \Exception(
+        sprintf(
+          'The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
+          Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()
+        )
       );
     }
 
-    // Verify phenotypes module hosted and experiment have configured genus.
-    if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList()) &&
-        empty($this->service_PhenoGenusProject->getGenusOfProject($experiment_id))) {
+    $project_id = self::resolveExperimentToProjectId($experiment);
 
+    // Experiment is not paired with a configured genus.
+    if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
       $this->tripal_logger->error(
-        $failed_error = 'Failed to set experiment context. Experiment name/id: ' . $experiment . ' is not configured with a genus.'
+        $failed_error = sprintf(
+          'Failed to set experiment context. The specified experiment entity/id/name: %s is not configured with a genus.',
+          (($experiment instanceof TripalEntity) ? $experiment->label() : (string) $experiment)
+        )
       );
-
       throw new \InvalidArgumentException($failed_error);
     }
 
-    $this->experiment_context = $experiment_id;
+    $this->experiment_context = $project_id;
   }
 
   /**
@@ -189,21 +193,28 @@ class ExperimentPhenoTraitComboService {
    *   not provided.
    *   - 'is_archived': 0 (no, is an active combo).
    *   - 'is_required': 0 (no, is an optional combo).
-   *   - 'is_shared': 0 (no, not used in Shared Module to start with).
-   *   - 'is_collected': 0 (no, not used in Collect Module to start with).
+   *   - 'was_shared': 0 (no, not used in Shared Module to start with).
+   *   - 'was_collected': 0 (no, not used in Collect Module to start with).
    *
    * @return int
    *   The inserted combo_id.
    *
    * @throws \InvalidArgumentException
-   *   - If combo details is missing a label key or if label is an empty string.
-   *   - If the trait combo already exists with in the experiment.
+   *   - If combo details is missing label key.
+   *   - If the trait combo already exists within the experiment.
    */
   public function assignPhenoComboToExperiment(array $trait_combo, array $combo_experiment_details): int {
 
     $this->ensureExperimentIsSet();
-    $sanitized_trait_combo = $this->sanitizeTraitCombo($trait_combo);
+
+    if (!isset($combo_experiment_details['label'])) {
+      throw new \InvalidArgumentException(
+        'Failed to assign trait combo. The key \'label\' must exist in the $combo_experiment_details parameter.'
+      );
+    }
+
     $sanitized_combo_details = $this->sanitizePhenoComboDetails($combo_experiment_details);
+    $sanitized_trait_combo = $this->sanitizeTraitCombo($trait_combo);
 
     // Metadata fields.
     $field_metadata = [
@@ -268,44 +279,275 @@ class ExperimentPhenoTraitComboService {
    *   - label (string) uniquely identifying this pheno combo in experiment.
    *   - trait combo (array) indicating the trait-method-unit combo.
    *     @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoTraitComboService::assignPhenoComboToExperiment()
-   *   - null (default) will return a single pheno combo in an experiment. Use
-   *     this value to inspect if an experiment has phenotypes (1 pheno combo
-   *     row would suffice to confirm a phenotype).
    *
    * @return array
-   *   An associative array (keyed by combo label) describing the experiment
-   *   trait-method-unit combo including the combo_id, project_id, attr_id,
-   *   observable_id, unit_id, uid, label, is_archived, is_required,
-   *   was_collected, was_shared, and timestamp from trpcultivate_phenocombo
-   *   table. Furthermore, 'trait', 'method' and 'unit' are the cvterm names
-   *   referenced by the 'attr_id', 'observable_id', and 'unit_id' respectively.
-   *   An empty array if not found.
+   *   An associative array describing the experiment trait-method-unit combo
+   *   including the combo_id, project_id, attr_id, observable_id, unit_id, uid,
+   *   label, is_archived, is_required, was_collected, was_shared, and timestamp
+   *   from trpcultivate_phenocombo table. Furthermore, 'trait', 'method' and
+   *   'unit' are the cvterm names referenced by the 'attr_id', 'observable_id',
+   *   and 'unit_id' respectively.
+   *   For example, a trait cvterm (id:123, name: 'plant height') and
+   *   attr_id = 123 then trait = 'plant height'. An empty array if not found.
    *   @see trpcultivate_phenotypes_schema()
    */
-  public function getExperimentPhenoCombo(array|int|string|null $combo = NULL): array {
+  public function getExperimentPhenoCombo(array|int|string|null $combo): array {
 
     $this->ensureExperimentIsSet();
 
-    $query = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
-      ->fields('tbl');
-
-    if (is_null($combo)) {
-      $pheno_combo = $query
-        ->condition('tbl.project_id', $this->experiment_context, '=')
-        ->range(0, 1)
-        ->execute()
-        ->fetchAssoc();
-
-      return $pheno_combo === FALSE ? [] : $pheno_combo;
-    }
-
     $combo_id = $this->resolvePhenoCombo($combo);
-    $pheno_combo = $query->fields('tbl')
+
+    $pheno_combo = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+      ->fields('tbl')
       ->condition('tbl.combo_id', $combo_id, '=')
       ->execute()
       ->fetchAssoc();
 
     return $pheno_combo === FALSE ? [] : $pheno_combo;
+  }
+
+  /**
+   * Get trait-method-unit combinations of an experiment.
+   *
+   * @param string|null $genus
+   *   The genus to further filter the traits combo results.
+   * @param array $options
+   *   Options to customize the query result by restricting the fields returned.
+   *   The follolwing options are supported:
+   *     - format: one of 'full' (default), 'component', or 'header' depending
+   *       on the format of the return value desired. See the return value
+   *       below for more details.
+   *
+   * @return array
+   *   All traits associated to an experiment (plus genus) in an array keyed by
+   *   the combo label text or an empty array if no trait combos are found. Each
+   *   item in the return value defines a single trait according to the format
+   *   chosen in 'options'. Specifically,
+   *
+   *   - full: includes combo_id, project_id, attr_id, observable_id, unit_id,
+   *   uid, label, is_archived, is_required, was_collected, was_shared, and
+   *   timestamp from trpcultivate_phenocombo table. Furthermore, 'trait',
+   *   'method' and 'unit' are the cvterm names referenced by the 'attr_id',
+   *   'observable_id', and 'unit_id' respectively.
+   *   @see trpcultivate_phenotypes_schema()
+   *
+   *   - component: the component format is suitable of use with trait_combo
+   *   component as value to the key #props.
+   *   @see component/trait_combo
+   *
+   *   - header: the format used for data loader headers. This format includes
+   *   combo_id, name (trait cvterm.name), description (trait cvterm.definition)
+   *   and type(required or optional).
+   *   @see TripalCultivatePhenoShareImporter::$headers
+   *
+   * @throws \Exception
+   *   - A genus not a configured genus of the experiment.
+   *   - Experiment provided does not reference an existing experiment.
+   *   - Not a valid trait format or value requested in the $options parameter.
+   */
+  public function getAllExperimentPhenoCombos(string|null $genus = NULL, array $options = []):array {
+
+    $this->ensureExperimentIsSet();
+
+    if ($genus !== NULL && $genus !== '') {
+      $pheno_configgenus = $this->service_PhenoGenusProject->getGenusOfProject($this->experiment_context);
+      if (!in_array($genus, $pheno_configgenus)) {
+        throw new \InvalidArgumentException(
+          'Failed to get experiment pheno combos. The genus provided is not a configured genus of the experiment.'
+        );
+      }
+    }
+
+    $valid_option_keys = ['format'];
+    if (!$options !== [] && $option_diff = array_diff(array_keys($options), $valid_option_keys)) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Failed to get experiment pheno combos. Unsupported options key provided [%s]. Only keys [%s] are allowed.',
+          implode(', ', $option_diff),
+          implode(', ', $valid_option_keys)
+        )
+      );
+    }
+
+    // If format is not specified, default to full.
+    $use_format = strtolower($options['format'] ?? 'full');
+    $valid_option_format_values = ['component', 'header', 'full'];
+    if (!in_array($use_format, $valid_option_format_values)) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Failed to get experiment pheno combos. The option format value provided %s is not a valid format. Only values [%s] are allowed.',
+          $use_format,
+          implode(', ', $combo_format_keys),
+        )
+      );
+    }
+
+    $query = $this->chado_connection->select(self::PHENO_COMBO_TABLE, 'combo')
+      ->fields('combo');
+
+    foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $field) {
+      $query->leftJoin('1:cvterm', $alias, "combo.$field = $alias.cvterm_id");
+
+      // Resolve the attr_id, observable_id and unit_id to the cvterm record as
+      // as single JSON line.
+      $query->addExpression("row_to_json($alias)", $alias);
+
+      // Component requires additional trait metadata - unit type.
+      if ($use_format != 'header' && $alias == 'unit') {
+        $type_id = $this->service_PhenoTerms->getTermId($type = 'unit_type');
+        $query->leftJoin('1:cvtermprop', $type, "$alias.cvterm_id = $type.cvterm_id AND $type.type_id = $type_id");
+        $query->addField($type, 'value', $type);
+      }
+    }
+
+    if ($genus) {
+      $genus_config = $this->service_PhenoGenusOntology->getGenusOntologyConfigValues($genus);
+      $query->condition('trait.cv_id', $genus_config['trait'], '=');
+    }
+
+    $exp_phenocombo = $query
+      ->condition('combo.project_id', $this->experiment_context, '=')
+      ->orderBy('trait.name', 'ASC')
+      ->execute()
+      ->fetchAll(FetchAs::Associative);
+
+    // In the final pheno combo array, each formatted item is keyed by label.
+    $formatted_combos = [];
+
+    foreach ($exp_phenocombo as $combo_details) {
+      $label = $combo_details['label'];
+
+      // Prepare vars $trait, $method and $unit containing cvterm records.
+      foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $_) {
+        ${$alias} = json_decode($combo_details[$alias], TRUE);
+      }
+
+      switch ($use_format) {
+
+        case 'component':
+          $formatted_combos[$label] = [
+            'combo_id' => $combo_details['combo_id'],
+            'name' => $trait['name'],
+            'definition' => $trait['definition'],
+            'multiselect_method' => FALSE,
+            'method_unit_combo' => [
+              'method_shortname' => $method['name'],
+              'unit' => $unit['name'],
+              'type' => $combo_details['unit_type'],
+              'collection_method' => $method['definition'],
+            ],
+          ];
+
+          break;
+
+        case 'header':
+          $formatted_combos[$label] = [
+            'combo_id' => $combo_details['combo_id'],
+            'name' => $trait['name'],
+            'description' => $trait['definition'],
+            'type' => $combo_details['is_required'] == 1 ? 'Required' : 'Optional',
+          ];
+
+          break;
+
+        case 'full':
+          $formatted_combos[$label] = $combo_details;
+
+          // Expand trait, method, and unit keys.
+          foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $_) {
+            $formatted_combos[$label][$alias] = ${$alias};
+          }
+
+          break;
+      }
+    }
+
+    return $formatted_combos;
+  }
+
+  /**
+   * Set trait-method-unit combo status flags.
+   *
+   * @param array|int|string $combo
+   *   The trait-method-unit combo previously assigned to the experiment.
+   *   The following formats are supported:
+   *   - trait combo (array) indicating the trait-method-unit combo.
+   *     @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoTraitComboService::assignPhenoComboToExperiment()
+   *   - combo_id (int) uniquely identifying this trait-method-unit-experiment
+   *     combo as returned when assigning / getting experiment trait-method-unit
+   *     associations.
+   *   - label (string) uniquely identifying this trait-method-unit combo in
+   *     the experiment indicated.
+   * @param array $status_flags
+   *   The status array key-value pair where the value is 0 or 1
+   *   (yes or no, respectively) and the keys are the following status flags.
+   *   - is_archived: indicates trait combo is archived.
+   *   - is_required: indicates trait combo is a required trait and must contain
+   *      a value in the data file for this column.
+   *   - was_shared: indicates trait combo was used in Phenotypes Share module.
+   *   - was_collected: indicates trait measured in Phenotypes Collect module.
+   */
+  public function setExperimentPhenoComboStatus(array|int|string $combo, array $status_flags): void {
+
+    $this->ensureExperimentIsSet();
+
+    $combo_id = $this->resolvePhenoCombo($combo);
+    $sanitized_status_flags = $this->sanitizePhenoComboDetails($status_flags);
+
+    // Nothing to set if not one status was provided.
+    if ($sanitized_status_flags === []) {
+      return;
+    }
+
+    // Missing status flags are not filled in.
+    $field_status_flags = [];
+    foreach ($sanitized_status_flags as $status_flag => $flag_value) {
+      if (in_array($status_flag, self::PHENO_COMBO_STATUS_FLAG_MAP)) {
+        $field_status_flags[$status_flag] = $flag_value;
+      }
+    }
+
+    $db_transaction = $this->drupaldb_connection->startTransaction();
+    try {
+      $this->drupaldb_connection->update(self::PHENO_COMBO_TABLE)
+        ->fields($field_status_flags)
+        ->condition('combo_id', $combo_id, '=')
+        ->execute();
+    }
+    catch (\Exception $e) {
+      $db_transaction->rollBack();
+
+      $this->tripal_logger->error($e->getMessage());
+      throw new Exception($e->getMessage());
+    }
+  }
+
+  /**
+   * Remove a trait-method-unit combo from an experiment.
+   *
+   * NOTE: this does not delete the trait, method, and unit cvterm records.
+   *
+   * @param array|int|string $combo
+   *   The trait-method-unit combo previously assigned to the experiment.
+   *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoTraitComboService::setExperimentPhenoComboStatus()
+   */
+  public function removePhenoComboFromExperiment(array|int|string $combo): void {
+
+    $this->ensureExperimentIsSet();
+    $combo_id = $this->resolvePhenoCombo($combo);
+
+    $db_transaction = $this->drupaldb_connection->startTransaction();
+    try {
+      $this->drupaldb_connection->delete(self::PHENO_COMBO_TABLE)
+        ->condition('combo_id', $combo_id, '=')
+        ->execute();
+    }
+    catch (\Exception $e) {
+      $db_transaction->rollBack();
+
+      $this->tripal_logger->error($e->getMessage());
+      throw new Exception($e->getMessage());
+    }
   }
 
   /**
@@ -351,8 +593,11 @@ class ExperimentPhenoTraitComboService {
     // Phenotypes module hosted has no genus configured.
     $exp_phenogenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
     if ($exp_phenogenus === []) {
-      throw new \InvalidArgumentException(
-        'Failed to sanitize trait combo. The Phenotypes module is not configured with genus.'
+      throw new \Exception(
+        sprintf(
+          'The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
+          Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()
+        )
       );
     }
 
@@ -396,6 +641,7 @@ class ExperimentPhenoTraitComboService {
       ${$alias} = $sanitized_trait_combo[$alias];
     }
 
+    // Find the combo in each config-genus.
     foreach ($exp_phenogenus as $genus) {
       $this->service_PhenoTraits->setTraitGenus($genus);
 
@@ -415,6 +661,7 @@ class ExperimentPhenoTraitComboService {
       );
     }
 
+    // Return resolved cvterm id, regardless of the trait combo value provided.
     foreach ($trait_combo_alias as $alias) {
       $sanitized_trait_combo[$alias] = $pheno_combo[$alias]->cvterm_id;
     }
@@ -423,11 +670,11 @@ class ExperimentPhenoTraitComboService {
   }
 
   /**
-   * Sanitize pheno combo details array.
+   * Validates and sanitizes combo details.
    *
-   * @param array $details
-   *   An array of combo status flags and combo label to validate. The following
-   *   keys are supported:
+   * @param array $combo_details
+   *   An associative array containing label and combo status flags. Any of the
+   *   following optional keys may be provided and will be validated/sanitized:
    *   - label (string) uniquely identifying this trait-method-unit combo in
    *     the experiment indicated.
    *   - is_archived: indicates trait combo is archived.
@@ -437,38 +684,54 @@ class ExperimentPhenoTraitComboService {
    *   - was_collected: indicates trait measured in Phenotypes Collect module.
    *
    * @return array
-   *   A validated, sanitized, and normalized pheno combo details where status
-   *   flag values are guaranteed 0 or 1 and label trimmed and is unique value
-   *   within experiment context.
+   *   A validated and sanitized combo details where status flag values are
+   *   guaranteed 0 or 1 value and label trimmed and is a unique label within
+   *   experiment context.
    *
    * @throws InvalidArgumentException
+   *   - If label is an empty string and is not unique label in the experiment.
+   *   - If any of the status flag has unexpected or non-integer value.
    */
-  public function sanitizePhenoComboDetails(array $details): array {
+  public function sanitizePhenoComboDetails(array $combo_details): array {
 
-    if ($details === []) {
+    if ($combo_details === []) {
       return [];
     }
 
-    $label = trim($details['label'] ?? '');
-    if (empty($label) || !$this->labelIsUniqueInExperiment($label)) {
-      throw new \InvalidArgumentException(
-        'Failed to sanitize pheno-combo label detail. Label must exists, unique with in the experiment, and must not be an empty string.'
-      );
+    $sanitized_combo_details = [];
+
+    // If label is provided, ensure it is not an empty string and is a unique
+    // entry within the experiment context.
+    $field_label = 'label';
+
+    if (isset($combo_details[$field_label])) {
+      $label = trim($combo_details[$field_label] ?? '');
+
+      if (empty($label) || (!empty($label) && !$this->labelIsUniqueInExperiment($label))) {
+        throw new \InvalidArgumentException(
+          sprintf(
+            'Failed to sanitize pheno-combo \'%s\' detail. %s provided must be a unique entry within the experiment and not an empty string.',
+            $field_label,
+            ucfirst($field_label)
+          )
+        );
+      }
+
+      $sanitized_combo_details[$field_label] = $label;
     }
 
-    $sanitized_combo_detais = [];
-    $sanitized_combo_detais['label'] = $label;
-
+    // Sanitize only the status flags provided. No fill in of missing flags.
     $unexpected_values = [];
     foreach (self::PHENO_COMBO_STATUS_FLAG_MAP as $field) {
-      if (isset($details[$field])) {
-        $status_flag_val = $details[$field];
+      if (isset($combo_details[$field])) {
+        $status_flag_val = $combo_details[$field];
 
         if ($status_flag_val != 0 && $status_flag_val != 1) {
           array_push($unexpected_values, $field);
+          continue;
         }
 
-        $sanitized_combo_detais[$field] = $status_flag_val;
+        $sanitized_combo_details[$field] = $status_flag_val;
       }
     }
 
@@ -481,7 +744,7 @@ class ExperimentPhenoTraitComboService {
       );
     }
 
-    return $sanitized_combo_detais;
+    return $sanitized_combo_details;
   }
 
   /**
@@ -495,8 +758,9 @@ class ExperimentPhenoTraitComboService {
    *   The combo unique identifier id (combo_id).
    *
    * @throws InvalidArgumentException
-   *   - If pheno combo as integer combo id and number equal or less than 0.
-   *   - If pheno combo as string label and value is an empty string.
+   *   - If combo as an integer combo id and number equal or less than 0.
+   *   - If combo as a string label and value is an empty string.
+   *   - Unsupported combo input type.
    *   - If trait combo, combo id or label failed to resolved to a combo id.
    */
   protected function resolvePhenoCombo(array|int|string $combo): int {
@@ -506,13 +770,11 @@ class ExperimentPhenoTraitComboService {
 
     if (is_array($combo)) {
       $trait_combo = $this->sanitizeTraitCombo($combo);
-
-      $this->ensureExperimentIsSet();
-
-      $query->condition('tbl.project_id', $this->experiment_context, '=');
       foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $field) {
         $query->condition('tbl.' . $field, $trait_combo[$alias], '=');
       }
+
+      $query->condition('tbl.project_id', $this->experiment_context, '=');
     }
     elseif (is_numeric($combo)) {
       $combo_id = $combo;
@@ -534,17 +796,62 @@ class ExperimentPhenoTraitComboService {
         );
       }
 
-      $query->condition('tbl.label', $label, '=');
+      $query
+        ->condition('tbl.label', $label, '=')
+        ->condition('tbl.project_id', $this->experiment_context, '=');
+    }
+    else {
+      throw new \InvalidArgumentException('Unsupported combo input type');
     }
 
     $combo_id = $query->range(0, 1)->execute()->fetchField();
     if ($combo_id === FALSE) {
       throw new \InvalidArgumentException(
-        'Failed to resolve combo. The trait combo, combo id, or combo label does not exist.' . $query
+        'Failed to resolve combo. The trait combo, combo id, or combo label does not exist.'
       );
     }
 
     return (int) $combo_id;
+  }
+
+  /**
+   * Resolve experiment to project_id.
+   *
+   * @param \Drupal\tripal\Entity\TripalEntity|int|string $experiment
+   *   The experiment identifier.
+   *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoTraitComboService::setExperiment()
+   *
+   * @return int
+   *   The project id (Chado.project: project_id) of the experiment.
+   *
+   * @throws InvalidArgumentException
+   *   - If experiment could not resolve to an existing project_id.
+   */
+  protected static function resolveExperimentToProjectId(TripalEntity|int|string $experiment): int {
+
+    $project_id = 0;
+
+    if ($experiment instanceof TripalEntity) {
+      $project_id = $experiment->getBackendRecordId('chado_storage');
+    }
+    elseif (is_numeric($experiment)) {
+      $project_id = ChadoProjectAutocompleteController::getProjectName((int) $experiment)
+        ? $experiment : $project_id;
+    }
+    elseif (is_string($experiment)) {
+      $project_id = ChadoProjectAutocompleteController::getProjectId($experiment);
+    }
+
+    if (is_null($project_id) || $project_id === 0 || $project_id === '') {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Failed to set experiment context. The specified experiment entity/id/name: %s does not exist.',
+          (($experiment instanceof TripalEntity) ? $experiment->label() : (string) $experiment)
+        )
+      );
+    }
+
+    return (int) $project_id;
   }
 
   /**
@@ -554,9 +861,6 @@ class ExperimentPhenoTraitComboService {
    *   A human-readable text label used as an alternative reference to the trait
    *   name. Labels must be unique within an experiment.
    *
-   * @throws \InvalidArgumentException
-   *   - Label is an empty string.
-   *
    * @return bool
    *   TRUE if the label is UNIQUE within the experiment and FALSE, otherwise.
    */
@@ -564,14 +868,37 @@ class ExperimentPhenoTraitComboService {
 
     $label = trim($label);
 
-    $label_count = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+    $match_label = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
       ->where('LOWER(tbl.label) = :lowercase_label', [':lowercase_label' => strtolower($label)])
       ->condition('tbl.project_id', $this->experiment_context, '=')
       ->countQuery()
       ->execute()
       ->fetchField();
 
-    return $label_count ? FALSE : TRUE;
+    return $match_label ? FALSE : TRUE;
+  }
+
+  /**
+   * Verify that an experiment has a pheno combo.
+   *
+   * @param \Drupal\tripal\Entity\TripalEntity|int|string $experiment
+   *   The experiment identifier.
+   *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoTraitComboService::setExperiment()
+   *
+   * @return bool
+   *   TRUE if experiment has pheno combo. FALSE, otherwise.
+   */
+  public static function experimentHasPhenoCombo(TripalEntity|int|string $experiment): bool {
+
+    $project_id = self::resolveExperimentToProjectId($experiment);
+
+    $has_phenocombo = \Drupal::database()->select(self::PHENO_COMBO_TABLE, 'tbl')
+      ->condition('tbl.project_id', $project_id, '=')
+      ->countQuery()
+      ->execute()
+      ->fetchField();
+
+    return $has_phenocombo ? TRUE : FALSE;
   }
 
 }
