@@ -2,7 +2,6 @@
 
 namespace Drupal\trpcultivate_phenotypes\Kernel\Services;
 
-use Drupal\Core\Database\Statement\FetchAs;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -316,11 +315,11 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
       ],
       [
         self::EXPERIMENT_NAME_CONTEXT_WITH_COMBO,
-        NULL,
+        '',
       ],
       [
         'TripalEntity',
-        NULL,
+        '',
       ],
     ];
   }
@@ -332,6 +331,8 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
    *   The experiment name or id number to set as the experiment context.
    * @param string $exception_message
    *   The exception message thrown.
+   *
+   * @dataProvider provideExperimentContext
    */
   #[DataProvider('provideExperimentContext')]
   public function testSetExperiment(int|string $experiment, string|null $exception_message) {
@@ -342,11 +343,13 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
       );
     }
     catch (\Exception $e) {
-      $this->assertEquals(
-        sprintf($exception_message, $exp_input = ($experiment instanceof TripalEntity) ? $experiment->label() : $experiment),
-        $e->getMessage(),
-        'Set experiment failed to throw an exception for tests: ' . $exp_input,
-      );
+      $exp_input = ($experiment instanceof TripalEntity) ? $experiment->label() : $experiment;
+
+      if (!is_null($exception_message)) {
+        $exception_message = sprintf($exception_message, $exp_input);
+      }
+
+      $this->assertEquals($exception_message, $e->getMessage(), 'Set experiment failed to throw an exception for tests:' . $exp_input);
     }
   }
 
@@ -418,9 +421,10 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
       ->fields('tbl')
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
-      ->fetchAll(FetchAs::Associative);
+      ->fetchAllAssoc('combo_id');
 
     foreach ($assigned_combos as $exp_phenocombo) {
+      $exp_phenocombo = (array) $exp_phenocombo;
       $combo_by_id = $this->service_PhenoTraitCombo->getExperimentPhenoCombo($exp_phenocombo['combo_id']);
       $this->assertEquals($exp_phenocombo, $combo_by_id, 'Returned experiment combo does not match combo returned using combo id.');
 
@@ -447,7 +451,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
 
     $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos(options: ['format' => 'component']);
 
-    print_r($exp_phenocombos);
+    // print_r($exp_phenocombos);
   }
 
   /**
@@ -515,25 +519,25 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
       ->fields('tbl')
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
-      ->fetchAll(FetchAs::Associative);
+      ->fetchAll();
 
     $this->assertGreaterThanOrEqual(3, count($pheno_combos), 'To test the remove combo functionality, at least 3 pheno combo rows are expected.');
 
     foreach (['combo_id', 'label', 'trait_combo'] as $i => $combo_args) {
       if ($combo_args == 'trait_combo') {
         foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $field) {
-          $combo[$alias] = $pheno_combos[$i][$field];
+          $combo[$alias] = $pheno_combos[$i]->$field;
         }
       }
       else {
-        $combo = $pheno_combos[$i][$combo_args];
+        $combo = $pheno_combos[$i]->$combo_args;
       }
 
       $this->service_PhenoTraitCombo->removePhenoComboFromExperiment($combo);
       unset($combo);
 
       $find_combo_id = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
-        ->condition('tbl.combo_id', $pheno_combos[$i]['combo_id'], '=')
+        ->condition('tbl.combo_id', $pheno_combos[$i]->combo_id, '=')
         ->countQuery()
         ->execute()
         ->fetchField();

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Core\Database\Connection;
-use Drupal\Core\Database\Statement\FetchAs;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Url;
 use Drupal\tripal\Entity\TripalEntity;
@@ -409,32 +408,32 @@ class ExperimentPhenoTraitComboService {
       ->condition('combo.project_id', $this->experiment_context, '=')
       ->orderBy('trait.name', 'ASC')
       ->execute()
-      ->fetchAll(FetchAs::Associative);
+      ->fetchAllAssoc('combo_id');
 
     // In the final pheno combo array, each formatted item is keyed by label.
     $formatted_combos = [];
 
     foreach ($exp_phenocombo as $combo_details) {
-      $label = $combo_details['label'];
+      $label = $combo_details->label;
 
       // Prepare vars $trait, $method and $unit containing cvterm records.
       foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $_) {
-        ${$alias} = json_decode($combo_details[$alias], TRUE);
+        ${$alias} = json_decode($combo_details->{$alias});
       }
 
       switch ($use_format) {
 
         case 'component':
           $formatted_combos[$label] = [
-            'combo_id' => $combo_details['combo_id'],
-            'name' => $trait['name'],
-            'definition' => $trait['definition'],
+            'combo_id' => $combo_details->combo_id,
+            'name' => $trait->name,
+            'definition' => $trait->definition,
             'multiselect_method' => FALSE,
             'method_unit_combo' => [
-              'method_shortname' => $method['name'],
-              'unit' => $unit['name'],
-              'type' => $combo_details['unit_type'],
-              'collection_method' => $method['definition'],
+              'method_shortname' => $method->name,
+              'unit' => $unit->name,
+              'type' => $combo_details->unit_type,
+              'collection_method' => $method->definition,
             ],
           ];
 
@@ -442,10 +441,10 @@ class ExperimentPhenoTraitComboService {
 
         case 'header':
           $formatted_combos[$label] = [
-            'combo_id' => $combo_details['combo_id'],
-            'name' => $trait['name'],
-            'description' => $trait['definition'],
-            'type' => $combo_details['is_required'] == 1 ? 'Required' : 'Optional',
+            'combo_id' => $combo_details->combo_id,
+            'name' => $trait->name,
+            'description' => $trait->definition,
+            'type' => $combo_details->is_required == 1 ? 'Required' : 'Optional',
           ];
 
           break;
