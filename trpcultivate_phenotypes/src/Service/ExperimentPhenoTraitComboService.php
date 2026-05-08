@@ -391,7 +391,7 @@ class ExperimentPhenoTraitComboService {
       // as single JSON line.
       $query->addExpression("row_to_json($alias)", $alias);
 
-      // Component requires additional trait metadata - unit type.
+      // Component and full require additional trait metadata - unit type.
       if ($use_format != 'header' && $alias == 'unit') {
         $type_id = $this->service_PhenoTerms->getTermId($type = 'unit_type');
         $query->leftJoin('1:cvtermprop', $type, "$alias.cvterm_id = $type.cvterm_id AND $type.type_id = $type_id");
@@ -454,7 +454,7 @@ class ExperimentPhenoTraitComboService {
 
           // Expand trait, method, and unit keys.
           foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $_) {
-            $formatted_combos[$label][$alias] = ${$alias};
+            $formatted_combos[$label]->{$alias} = ${$alias};
           }
 
           break;

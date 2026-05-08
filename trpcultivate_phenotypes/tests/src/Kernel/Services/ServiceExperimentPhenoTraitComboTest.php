@@ -449,9 +449,94 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_COMBO);
     $this->service_PhenoTraitCombo->setExperiment($experiment);
 
-    $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos(options: ['format' => 'component']);
+    $drupaldb_connection = $this->container->get('database');
 
-    // print_r($exp_phenocombos);
+    $assigned_combos = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+      ->fields('tbl')
+      ->condition('tbl.project_id', $experiment, '=')
+      ->execute()
+      ->fetchAllAssoc('label');
+
+    // Get pheno combos and using format - full.
+    $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos(options: ['format' => 'full']);
+    $exp_phenocombos_clone = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos();
+
+    $this->assertEquals(
+      $exp_phenocombos,
+      $exp_phenocombos_clone,
+      'Failed to return expected experiment combos using full format option or unspecified format.',
+    );
+
+    $this->assertCount(
+      $combo_count = count($assigned_combos),
+      $exp_phenocombos,
+      'Experiment combos returned does not match expected combo count ' . $combo_count,
+    );
+
+    foreach ($assigned_combos as $label => $combo_details) {
+      foreach ($combo_details as $combo_field => $combo_value) {
+        $this->assertEquals(
+          $combo_value,
+          $exp_phenocombos[$label]->$combo_field,
+          'Experiment pheno combo field value for ' . $label . '/' . $combo_field . ' does not match expected value.',
+        );
+      }
+
+      foreach (self::TRAIT_COMBO_KEY_MAP as $alias => $field) {
+        $this->assertEquals(
+          $combo_details->{$field},
+          $exp_phenocombos[$label]->{$alias}->cvterm_id,
+          $alias . ' does not contain the expected resolved value for trait combo field ' . $field,
+        );
+      }
+    }
+
+    // Get pheno combos and using format - header.
+    $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos(options: ['format' => 'header']);
+    foreach ($assigned_combos as $label => $combo_details) {
+      $items = [
+        $combo_details->combo_id,
+        $exp_phenocombos_clone[$label]->trait->name,
+        $exp_phenocombos_clone[$label]->trait->definition,
+        $combo_details->is_required == 1 ? 'Required' : 'Optional',
+      ];
+
+      $this->assertEquals(
+        array_combine(array_keys($exp_phenocombos[$label]), $items),
+        $exp_phenocombos[$label],
+        'Experiment pheno combos by header failed to return expected combo for label ' . $label,
+      );
+    }
+
+    // Get pheno combos and using format - component.
+    $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos(options: ['format' => 'component']);
+    foreach ($assigned_combos as $label => $combo_details) {
+      $items = [
+        $combo_details->combo_id,
+        $exp_phenocombos_clone[$label]->trait->name,
+        $exp_phenocombos_clone[$label]->trait->definition,
+        FALSE,
+        [
+          'method_shortname' => $exp_phenocombos_clone[$label]->method->name,
+          'unit' => $exp_phenocombos_clone[$label]->unit->name,
+          'type' => $exp_phenocombos_clone[$label]->unit_type,
+          'collection_method' => $exp_phenocombos_clone[$label]->method->definition,
+        ],
+      ];
+
+      $this->assertEquals(
+        array_combine(array_keys($exp_phenocombos[$label]), $items),
+        $exp_phenocombos[$label],
+        'Experiment pheno combos by component failed to return expected combo for label ' . $label,
+      );
+    }
+
+    // Pull specific genus.
+    $exp_phenogenus = $this->container->get('trpcultivate_phenotypes.genus_project')->getGenusOfProject($experiment);
+    foreach ($exp_phenogenus as $genus) {
+      $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos($genus);
+
+    }
   }
 
   /**
