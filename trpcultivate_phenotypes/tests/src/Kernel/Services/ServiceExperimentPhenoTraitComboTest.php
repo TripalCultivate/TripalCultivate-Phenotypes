@@ -546,7 +546,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
 
     $genus = array_keys($this->test_trait_combo)[1];
     $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos($genus);
-    $this->assertEquals(count($exp_phenocombos), 0, 'Incorrect number of pheno combos returned.');
+    $this->assertEmpty($exp_phenocombos, 'Incorrect number of pheno combos returned by genus ' . $genus);
   }
 
   /**
