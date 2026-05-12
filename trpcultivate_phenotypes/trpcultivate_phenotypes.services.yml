@@ -22,7 +22,7 @@ services:
     ]
 
   trpcultivate_phenotypes.pheno_combo:
-    class: 'Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoTraitComboService'
+    class: 'Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService'
     arguments: [
       '@current_user',
       '@database',
