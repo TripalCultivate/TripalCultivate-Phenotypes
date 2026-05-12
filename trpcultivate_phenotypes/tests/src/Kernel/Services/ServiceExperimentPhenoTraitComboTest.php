@@ -15,7 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Tests associated with the Experiment pheno trait combo Service.
+ * Tests associated with the experiment pheno trait combo service.
  *
  * @group trpcultivate_phenotypes
  */
@@ -27,28 +27,28 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
   use UserCreationTrait;
 
   /**
-   * The table name that holds the experiment trait combos.
+   * The table name that stores the experiment trait-method-unit combos.
    *
    * @var string
    */
   const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
-   * Experiment name context - has experiment pheno combo.
+   * Experiment name context that has associated experiment pheno combos.
    *
    * @var string
    */
   const EXPERIMENT_NAME_CONTEXT_WITH_COMBO = 'Project Awesome';
 
   /**
-   * Experiment name context - no experiment pheno combo.
+   * Experiment name context that has no associated experiment pheno combo.
    *
    * @var string
    */
   const EXPERIMENT_NAME_CONTEXT_NO_COMBO = 'Project Not So Awesome';
 
   /**
-   * Pheno combo alias to table field (id) mapping.
+   * Mapping of trait-combo alias to their corresponding table fields.
    *
    * @var array
    */
@@ -94,7 +94,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
   protected ExperimentPhenoTraitComboService $service_PhenoTraitCombo;
 
   /**
-   * A test plant trait combo.
+   * A set of test trait-method-unit combos grouped by genus.
    *
    * @var array
    */
@@ -127,7 +127,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
     ],
     'Triticum' => [
       [
-        'Biomas',
+        'Biomass',
         'The total mass of plant-based or organic matter.',
         'B-MASS',
         'Use quadrant (a marked frame) to define a specific area',
@@ -295,11 +295,11 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Provide experiment context.
+   * Provides experiment context test cases.
    *
    * Each test experiment context in an array with the following values:
    * - The experiment name or id number to set as the experiment context.
-   * - The exception message thrown.
+   * - The exception message thrown (or empty string if none).
    */
   public static function provideExperimentContext() {
 
@@ -325,7 +325,7 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test setExperiment().
+   * Test setExperiment() with various experiment identifiers.
    *
    * @param int|string $experiment
    *   The experiment name or id number to set as the experiment context.
@@ -531,12 +531,6 @@ class ServiceExperimentPhenoTraitComboTest extends ChadoTestKernelBase {
       );
     }
 
-    // Pull specific genus.
-    $exp_phenogenus = $this->container->get('trpcultivate_phenotypes.genus_project')->getGenusOfProject($experiment);
-    foreach ($exp_phenogenus as $genus) {
-      $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos($genus);
-
-    }
     // Pull pheno combo using a specific genus.
     $genus = array_keys($this->test_trait_combo)[0];
     $exp_phenocombos = $this->service_PhenoTraitCombo->getAllExperimentPhenoCombos($genus);
