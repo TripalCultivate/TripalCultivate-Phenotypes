@@ -382,7 +382,7 @@ class ExperimentPhenoComboService {
 
     // If format is not specified, default to full, otherwise ensure that it can
     // only be component, header, or full.
-    $use_format = strtolower($options['format'] ?? array_last($valid_options_format_values));
+    $use_format = strtolower($options['format'] ?? end($valid_options_format_values));
 
     if (!in_array($use_format, $valid_options_format_values)) {
       throw new \InvalidArgumentException(
