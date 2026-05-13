@@ -15,7 +15,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Tests associated with the experiment pheno trait combo service.
+ * Tests associated with the experiment PhenoCombo service.
  *
  * @group trpcultivate_phenotypes
  */
@@ -27,25 +27,18 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   use UserCreationTrait;
 
   /**
-   * The table name that stores the experiment trait-method-unit combos.
+   * Experiment name context that has associated experiment PhenoCombos.
    *
    * @var string
    */
-  const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
+  const EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO = 'Project Awesome';
 
   /**
-   * Experiment name context that has associated experiment pheno combos.
+   * Experiment name context that has no associated experiment PhenoCombos.
    *
    * @var string
    */
-  const EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO = 'Project Awesome';
-
-  /**
-   * Experiment name context that has no associated experiment pheno combo.
-   *
-   * @var string
-   */
-  const EXPERIMENT_NAME_CONTEXT_NO_PHENO_COMBO = 'Project Not So Awesome';
+  const EXPERIMENT_NAME_CONTEXT_NO_PHENOCOMBO = 'Project Not So Awesome';
 
   /**
    * Modules to enable.
@@ -141,7 +134,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   ];
 
   /**
-   * The pheno combo ids of the test traits after being added.
+   * The trait-method-unit ids of the test traits after being added.
    *
    * @var array
    */
@@ -166,7 +159,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       'trpcultivate',
     ]);
 
-    $this->installSchema('trpcultivate_phenotypes', [self::PHENO_COMBO_TABLE]);
+    $this->installSchema('trpcultivate_phenotypes', ['trpcultivate_phenocombo']);
     $this->installEntitySchema('user');
 
     $this->container->get('trpcultivate.setup_module_service')
@@ -184,23 +177,29 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     // has none.
     $this->chado_connection->insert('1:project')
       ->fields(['name'])
-      ->values(['name' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO])
-      ->values(['name' => self::EXPERIMENT_NAME_CONTEXT_NO_PHENO_COMBO])
+      ->values(['name' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO])
+      ->values(['name' => self::EXPERIMENT_NAME_CONTEXT_NO_PHENOCOMBO])
       ->execute();
 
-    $experiment_id = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment_id = ChadoProjectAutocompleteController::getProjectId(
+      self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO
+    );
 
     // Create a tripal entity.
     $entity = TripalEntity::create([
       'id' => 1,
       'type' => 'research_experiment',
-      'label' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO,
+      'label' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO,
     ]);
 
-    $entity->set('exp_name', ['record_id' => $experiment_id, 'value' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO]);
+    $entity->set(
+      'exp_name',
+      ['record_id' => $experiment_id, 'value' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO]
+    );
+
     $this->exp_entity = $entity;
 
-    // Create configured organism and relate to experiment context with combo.
+    // Create configured organism and relate to experiment context with combos.
     $rank = 0;
     foreach ($this->test_trait_combo as $genus => $traits) {
       $this->chado_connection->insert('1:organism')
@@ -225,7 +224,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
         ->execute();
     }
 
-    // Create traits and assign pheno combo.
+    // Create traits and assign PhenoCombos.
     // Mock Tripal Logger.
     $mock_logger = $this->getMockBuilder(TripalLogger::class)
       ->onlyMethods(['error'])
@@ -265,19 +264,19 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
           break;
         }
 
-        $field_combo_ids = [];
-        foreach ($this->service_PhenoCombo::PHENO_COMBO_MAP as $alias => $field) {
-          $field_combo_ids[$field] = $this->test_trait_pheno_combo_ids[$genus][$i][$alias];
+        $field_pheno_combo_ids = [];
+        foreach ($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP as $alias => $field) {
+          $field_pheno_combo_ids[$field] = $this->test_trait_pheno_combo_ids[$genus][$i][$alias];
         }
 
-        // Insert a pheno combo - default all status flags to 0.
-        $drupaldb_connection->insert(self::PHENO_COMBO_TABLE)
+        // Insert a PhenoCombo - default all status flags to 0.
+        $drupaldb_connection->insert($this->service_PhenoCombo::PHENOCOMBO_TABLE)
           ->fields([
             'project_id' => $experiment_id,
             'uid' => $admin_user = 1,
             'label' => $this->randomString(),
             'timestamp' => time(),
-          ] + $field_combo_ids)
+          ] + $field_pheno_combo_ids)
           ->execute();
       }
     }
@@ -292,18 +291,25 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    */
   public static function provideExperimentContext() {
 
-    $does_not_exists = 'Failed to set experiment context. The specified experiment entity/id/name: %s does not exist.';
-
     return [
-      ['Experiment Spurious', $does_not_exists],
-      [0, $does_not_exists],
-      [123, $does_not_exists],
       [
-        self::EXPERIMENT_NAME_CONTEXT_NO_PHENO_COMBO,
+        'Experiment Spurious',
+        $does_not_exists = 'Missing experiment error. The specified experiment entity/id/name: %s does not exist.',
+      ],
+      [
+        0,
+        $does_not_exists,
+      ],
+      [
+        123,
+        $does_not_exists,
+      ],
+      [
+        self::EXPERIMENT_NAME_CONTEXT_NO_PHENOCOMBO,
         'Failed to set experiment context. The specified experiment entity/id/name: %s is not configured with a genus.',
       ],
       [
-        self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO,
+        self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO,
         '',
       ],
       [
@@ -318,6 +324,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    *
    * @param int|string $experiment
    *   The experiment name or id number to set as the experiment context.
+   *   TripalEntity (string) is resolved to a TripalEntity object.
    * @param string $exception_message
    *   The exception message thrown.
    *
@@ -335,10 +342,14 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       $exp_input = ($experiment instanceof TripalEntity) ? $experiment->label() : $experiment;
 
       if (!is_null($exception_message)) {
-        $exception_message = sprintf($exception_message, $exp_input);
+        $exception_message = sprintf($exception_message, (string) $exp_input);
       }
 
-      $this->assertEquals($exception_message, $e->getMessage(), 'Set experiment failed to throw an exception for tests:' . $exp_input);
+      $this->assertEquals(
+        $exception_message,
+        $e->getMessage(),
+        'Set experiment failed to throw an exception for tests:' . $exp_input
+      );
     }
   }
 
@@ -347,50 +358,73 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    */
   public function testAssignPhenoComboToExperiment() {
 
-    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
 
-    $combo_details = [];
-    $combo_details['label'] = $this->randomString();
-
-    foreach ($this->service_PhenoCombo::PHENO_COMBO_STATUS_FLAG_MAP as $field) {
-      $combo_details[$field] = (int) mt_rand(0, 1);
+    // No label.
+    try {
+      $this->service_PhenoCombo->assignPhenoComboToExperiment([], ['tag' => 'My Label']);
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        'Missing label key error',
+        $e->getMessage(),
+        'Label is required in assignment call.'
+      );
     }
 
-    // Traits in Lens genus have been assigned to the experiment.
-    foreach ($this->test_trait_pheno_combo_ids['Lens'] as $trait_combo) {
+    $pheno_combo_details = [];
+    $pheno_combo_details['label'] = $this->randomString();
+
+    foreach ($this->service_PhenoCombo::PHENOCOMBO_STATUS_FLAG_FIELD_MAP as $field) {
+      $pheno_combo_details[$field] = (int) mt_rand(0, 1);
+    }
+
+    // Attempt to reassign the same PhenoCombos that have been previously
+    // assigned at setUp().
+    foreach ($this->test_trait_pheno_combo_ids['Lens'] as $pheno_combo) {
       try {
-        $this->service_PhenoCombo->assignPhenoComboToExperiment($trait_combo, $combo_details);
+        $this->service_PhenoCombo
+          ->assignPhenoComboToExperiment($pheno_combo, $pheno_combo_details);
       }
       catch (\Exception $e) {
-        $this->assertEquals(
-          'Failed to assign trait combo. The trait combo is already in use in the experiment.',
+        $this->assertStringContainsString(
+          'Duplicate PhenoCombo error',
           $e->getMessage(),
-          'Assignment of an existing trait combo is expected to throw an exception.'
-        );
+          'Duplicate PhenoCombo in the same experiment context is not allowed.');
       }
     }
 
     // Traits in genus other than Lens have not been assigned to an experiment.
-    foreach ($this->test_trait_pheno_combo_ids as $genus => $trait_combo_ids) {
+    foreach ($this->test_trait_pheno_combo_ids as $genus => $pheno_combos) {
       if ($genus == 'Lens') {
         continue;
       }
 
-      foreach ($trait_combo_ids as $trait_combo) {
-        $combo_id = $this->service_PhenoCombo->assignPhenoComboToExperiment($trait_combo, $combo_details);
+      foreach ($pheno_combos as $pheno_combo) {
+        $combo_id = $this->service_PhenoCombo
+          ->assignPhenoComboToExperiment($pheno_combo, $pheno_combo_details);
 
-        $pheno_combo = $this->container->get('database')->select(self::PHENO_COMBO_TABLE, 'tbl')
+        $pheno_combo = $this->container->get('database')
+          ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
           ->fields('tbl')
           ->condition('tbl.combo_id', $combo_id, '=')
           ->execute()
           ->fetchAssoc();
 
-        $this->assertGreaterThan(0, $combo_id, 'Failed to assign pheno combo to experiment.');
-        $this->assertEquals($experiment, $pheno_combo['project_id'], 'Failed to assign pheno combo to experiment context.');
+        $this->assertGreaterThan(0, $combo_id, 'Failed to assign PhenoCombo to experiment.');
+        $this->assertEquals(
+          $experiment,
+          $pheno_combo['project_id'],
+          'Failed to assign PhenoCombo to experiment context.'
+        );
 
-        foreach ($combo_details as $key => $value) {
-          $this->assertEquals($value, $pheno_combo[$key], 'Failed to assign pheno combo detail - ' . $key . ' to experiment.');
+        foreach ($pheno_combo_details as $key => $value) {
+          $this->assertEquals(
+            $value,
+            $pheno_combo[$key],
+            'Failed to assign PhenoCombo detail - ' . $key . ' to experiment.'
+          );
         }
       }
     }
@@ -401,33 +435,59 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    */
   public function testGetExperimentPhenoCombo() {
 
-    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
 
     $drupaldb_connection = $this->container->get('database');
 
-    $assigned_combos = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+    $query_pheno_combos = $drupaldb_connection
+      ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
       ->fields('tbl')
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
       ->fetchAllAssoc('combo_id');
 
-    foreach ($assigned_combos as $exp_phenocombo) {
-      $exp_phenocombo = (array) $exp_phenocombo;
+    // Provide combo argument (combo_id, label, and pheno_combo) to method.
+    foreach ($query_pheno_combos as $combo_id => $exp_phenocombo) {
+      $combo_by_id = $this->service_PhenoCombo->getExperimentPhenoCombo($combo_id);
+      $this->assertEquals(
+        $combo_id,
+        $combo_by_id->combo_id,
+        'PhenoCombo does not match combo returned by get combo with combo_id argument.'
+      );
 
-      $combo_by_id = $this->service_PhenoCombo->getExperimentPhenoCombo($exp_phenocombo['combo_id']);
-      $this->assertEquals($exp_phenocombo, $combo_by_id, 'Returned experiment combo does not match combo returned using combo id.');
+      $combo_by_label = $this->service_PhenoCombo->getExperimentPhenoCombo($exp_phenocombo->label);
+      $this->assertEquals(
+        $exp_phenocombo->label,
+        $combo_by_label->label,
+        'PhenoCombo does not match combo returned by get combo with combo label argument.'
+      );
 
-      $combo_by_label = $this->service_PhenoCombo->getExperimentPhenoCombo($exp_phenocombo['label']);
-      $this->assertEquals($exp_phenocombo, $combo_by_label, 'Returned experiment combo does not match combo returned using combo label.');
-
-      $trait_combo = [];
-      foreach (self::PHENO_COMBO_MAP as $alias => $field) {
-        $trait_combo[$alias] = $exp_phenocombo[$field];
+      $pheno_combo = [];
+      foreach ($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP as $alias => $field) {
+        $pheno_combo[$alias] = $exp_phenocombo->{$field};
       }
 
-      $combo_by_trait_combo = $this->service_PhenoCombo->getExperimentPhenoCombo($trait_combo);
-      $this->assertEquals($exp_phenocombo, $combo_by_trait_combo, 'Returned experiment combo does not match combo returned using trait combo.');
+      $combo_by_pheno_combo = $this->service_PhenoCombo->getExperimentPhenoCombo($pheno_combo);
+      foreach ($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP as $field) {
+        $this->assertEquals(
+          $exp_phenocombo->{$field},
+          $combo_by_pheno_combo->{$field},
+          'PhenoCombo does not match combo returned by get combo with pheno_combo argument.'
+        );
+      }
+
+      $this->assertEquals(
+        $combo_by_id,
+        $combo_by_label,
+        'Expected to return the same combo regardless of the argument type [combo_id - label].'
+      );
+
+      $this->assertEquals(
+        $combo_by_id,
+        $combo_by_pheno_combo,
+        'Expected to return the same combo regardless of the argument type [combo_id - pheno_combo].'
+      );
     }
   }
 
@@ -436,18 +496,19 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    */
   public function testGetAllExperimentPhenoCombos() {
 
-    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
 
     $drupaldb_connection = $this->container->get('database');
 
-    $assigned_combos = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+    $query_pheno_combos = $drupaldb_connection
+      ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
       ->fields('tbl')
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
       ->fetchAllAssoc('label');
 
-    // Get pheno combos and using format - full.
+    // Get PhenoCombos with options format equals to full.
     $exp_phenocombos = $this->service_PhenoCombo->getAllExperimentPhenoCombos(options: ['format' => 'full']);
     $exp_phenocombos_clone = $this->service_PhenoCombo->getAllExperimentPhenoCombos();
 
@@ -458,34 +519,34 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     );
 
     $this->assertCount(
-      $combo_count = count($assigned_combos),
+      $row_count = count($query_pheno_combos),
       $exp_phenocombos,
-      'Experiment combos returned does not match expected combo count ' . $combo_count,
+      'Experiment PhenoCombos returned does not match expected record count ' . $row_count,
     );
 
-    foreach ($assigned_combos as $label => $combo_details) {
+    foreach ($query_pheno_combos as $label => $combo_details) {
       // Combos queried match the combos returned by the method.
       foreach ($combo_details as $combo_field => $combo_value) {
         $this->assertEquals(
           $combo_value,
           $exp_phenocombos[$label]->$combo_field,
-          'Experiment pheno combo field value for ' . $label . '/' . $combo_field . ' does not match expected value.',
+          'Experiment PhenoCombo field value for ' . $label . '/' . $combo_field . ' does not match expected value.',
         );
       }
 
       // Check the trait-method-unit resolved to the correct cvterm record.
-      foreach (self::PHENO_COMBO_MAP as $alias => $field) {
+      foreach ($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP as $alias => $field) {
         $this->assertEquals(
           $combo_details->{$field},
           $exp_phenocombos[$label]->{$alias}->cvterm_id,
-          $alias . ' does not contain the expected resolved value for trait combo field ' . $field,
+          $alias . ' does not contain the expected resolved value for PhenoCombo field ' . $field,
         );
       }
     }
 
-    // Get pheno combos and using format - header.
+    // Get PhenoCombos with options format equals to header.
     $exp_phenocombos = $this->service_PhenoCombo->getAllExperimentPhenoCombos(options: ['format' => 'header']);
-    foreach ($assigned_combos as $label => $combo_details) {
+    foreach ($query_pheno_combos as $label => $combo_details) {
       $items = [
         $combo_details->combo_id,
         $exp_phenocombos_clone[$label]->trait->name,
@@ -496,13 +557,13 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       $this->assertEquals(
         array_combine(array_keys($exp_phenocombos[$label]), $items),
         $exp_phenocombos[$label],
-        'Experiment pheno combos by header failed to return expected combo for label ' . $label,
+        'Experiment PhenoCombos by header failed to return expected combo for label ' . $label,
       );
     }
 
-    // Get pheno combos and using format - component.
+    // Get PhenoCombos with options format equals to component.
     $exp_phenocombos = $this->service_PhenoCombo->getAllExperimentPhenoCombos(options: ['format' => 'component']);
-    foreach ($assigned_combos as $label => $combo_details) {
+    foreach ($query_pheno_combos as $label => $combo_details) {
       $items = [
         $combo_details->combo_id,
         $exp_phenocombos_clone[$label]->trait->name,
@@ -519,41 +580,45 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       $this->assertEquals(
         array_combine(array_keys($exp_phenocombos[$label]), $items),
         $exp_phenocombos[$label],
-        'Experiment pheno combos by component failed to return expected combo for label ' . $label,
+        'Experiment PhenoCombos by component failed to return expected combo for label ' . $label,
       );
     }
 
-    // Pull pheno combo using a specific genus.
+    // Pull PhenoCombo using a specific genus.
     $genus = array_keys($this->test_trait_combo)[0];
     $exp_phenocombos = $this->service_PhenoCombo->getAllExperimentPhenoCombos($genus);
-    $this->assertEquals(count($exp_phenocombos), count($this->test_trait_combo[$genus]), 'Incorrect number of pheno combos returned.');
+    $this->assertEquals(
+      count($exp_phenocombos),
+      count($this->test_trait_combo[$genus]),
+      'Incorrect number of PhenoCombos returned.'
+    );
 
     foreach ($exp_phenocombos as $label => $combo_details) {
       $this->assertContains(
         $combo_details->attr_id,
         array_column($this->test_trait_pheno_combo_ids[$genus], 'trait'),
-        'Experiment pheno combos contains unexpected combo for genus ' . $genus,
+        'Experiment PhenoCombos contain unexpected combo for genus ' . $genus,
       );
     }
 
-    // Genus has not combos yet.
+    // Genus has no PhenoCombos yet.
     $genus = array_keys($this->test_trait_combo)[1];
     $exp_phenocombos = $this->service_PhenoCombo->getAllExperimentPhenoCombos($genus);
-    $this->assertEmpty($exp_phenocombos, 'Incorrect number of pheno combos returned by genus ' . $genus);
+    $this->assertEmpty($exp_phenocombos, 'Incorrect number of PhenoCombos returned by genus ' . $genus);
   }
 
   /**
-   * Test setExperimentPhenoComboStatus().
+   * Test setExperimentPhenoComboStatusFlags().
    */
-  public function testSetExperimentPhenoComboStatus() {
+  public function testSetExperimentPhenoComboStatusFlags() {
 
-    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
 
-    $status_flags = array_values($this->service_PhenoCombo::PHENO_COMBO_STATUS_FLAG_MAP);
+    $status_flags = array_values($this->service_PhenoCombo::PHENOCOMBO_STATUS_FLAG_FIELD_MAP);
 
     $drupaldb_connection = $this->container->get('database');
-    $a_pheno_combo = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+    $a_pheno_combo = $drupaldb_connection->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
       ->fields('tbl')
       ->condition('tbl.project_id', $experiment, '=')
       ->orderRandom()
@@ -567,30 +632,37 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       array_filter($a_pheno_combo, function ($i) use ($status_flags) {
         return in_array($i, $status_flags);
       }, ARRAY_FILTER_USE_KEY),
-      'The status flags are expected to all be set to no (0).',
+      'The status flags are expected to all be set to 0 (No).',
     );
 
-    $trait_combo = [];
-    foreach (self::PHENO_COMBO_MAP as $alias => $field) {
-      $trait_combo[$alias] = $a_pheno_combo[$field];
+    $pheno_combo = [];
+    foreach ($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP as $alias => $field) {
+      $pheno_combo[$alias] = $a_pheno_combo[$field];
     }
 
     // Set status flags by combo input types.
-    foreach (['combo_id', 'label', 'trait_combo'] as $combo_args) {
+    foreach (['combo_id', 'label', 'pheno_combo'] as $combo_args) {
       foreach ($status_flags as $flag) {
         $status_flags_val[$flag] = mt_rand(0, 1);
       }
-      $this->service_PhenoCombo->setExperimentPhenoComboStatus(
-        ($combo_args == 'trait_combo') ? $trait_combo : $a_pheno_combo[$combo_args],
+
+      $this->service_PhenoCombo->setExperimentPhenoComboStatusFlags(
+        ($combo_args == 'pheno_combo') ? $pheno_combo : $a_pheno_combo[$combo_args],
         $status_flags_val
       );
 
-      $updated_flags = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+      $updated_flags = $drupaldb_connection
+        ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
         ->fields('tbl', $status_flags)
         ->condition('tbl.combo_id', $a_pheno_combo['combo_id'], '=')
         ->execute()
         ->fetchAssoc();
-      $this->assertEquals($status_flags_val, $updated_flags, 'Failed to set the correct status flags for combo: ' . $combo_args);
+
+      $this->assertEquals(
+        $status_flags_val,
+        $updated_flags,
+        'Failed to set the correct status flags for combo: ' . $combo_args
+      );
     }
   }
 
@@ -599,11 +671,13 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    */
   public function testRemovePhenoComboFromExperiment() {
 
-    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
 
     $drupaldb_connection = $this->container->get('database');
-    $pheno_combos = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
+
+    $query_pheno_combos = $drupaldb_connection
+      ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
       ->fields('tbl')
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
@@ -611,12 +685,12 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
 
     $this->assertGreaterThanOrEqual(
       $exp_rows = count($this->test_trait_pheno_combo_ids['Lens']),
-      count($pheno_combos),
-      'To test the remove combo functionality, at least ' . $exp_rows . ' pheno combo rows are expected.'
+      count($query_pheno_combos),
+      'To test the remove PhenoCombo functionality, at least ' . $exp_rows . ' PhenoCombo rows are expected.'
     );
 
-    // If combo has phenotypic records.
-    $combo = current($pheno_combos);
+    // If PhenoCombo has phenotypic records.
+    $combo = current($query_pheno_combos);
     $this->chado_connection->insert($tbl_pheno = '1:phenotype')
       ->fields([
         'uniquename' => $this->randomString(),
@@ -632,43 +706,44 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       $this->service_PhenoCombo->removePhenoComboFromExperiment($combo->combo_id);
     }
     catch (\Exception $e) {
-      $this->assertEquals(
-        'Failed to remove trait combo. The trait combo has associated phenotypic records.',
-        $e->getMessage(),
-        'Trait combos with associated phenotypic are protected from remove operation.',
+      $this->assertStringContainsString(
+        'PhenoCombo has Phenotypes error',
+        $e->getMessage(), 'PhenoCombos
+        with associated phenotypic are protected from remove operation.'
       );
     }
 
     $this->chado_connection->delete($tbl_pheno)->execute();
 
-    foreach (['combo_id', 'label', 'trait_combo'] as $i => $combo_args) {
-      if ($combo_args == 'trait_combo') {
-        foreach (self::PHENO_COMBO_MAP as $alias => $field) {
-          $combo[$alias] = $pheno_combos[$i]->$field;
+    foreach (['combo_id', 'label', 'pheno_combo'] as $i => $combo_args) {
+      if ($combo_args == 'pheno_combo') {
+        foreach ($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP as $alias => $field) {
+          $combo[$alias] = $query_pheno_combos[$i]->{$field};
         }
       }
       else {
-        $combo = $pheno_combos[$i]->$combo_args;
+        $combo = $query_pheno_combos[$i]->{$combo_args};
       }
 
       $this->service_PhenoCombo->removePhenoComboFromExperiment($combo);
       unset($combo);
 
-      $find_combo_id = $drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tbl')
-        ->condition('tbl.combo_id', $pheno_combos[$i]->combo_id, '=')
-        ->countQuery()
+      $find_combo_id = $drupaldb_connection
+        ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
+        ->condition('tbl.combo_id', $query_pheno_combos[$i]->combo_id, '=')
         ->execute()
         ->fetchField();
-      $this->assertEquals(0, $find_combo_id, 'Failed to remove combo ' . $i);
+
+      $this->assertFalse($find_combo_id, 'Failed to remove PhenoCombo #' . $i);
     }
   }
 
   /**
-   * Test sanitizeTraitCombo().
+   * Test sanitizePhenoCombo().
    */
-  public function testSanitizeTraitCombo() {
+  public function testSanitizePhenoCombo() {
 
-    $trait_combo_alias = array_keys(self::PHENO_COMBO_MAP);
+    $trait_combo_alias = array_keys($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP);
 
     // Missing alias key.
     foreach ($trait_combo_alias as $i => $alias) {
@@ -676,69 +751,72 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       unset($arr_tmp[$i]);
 
       try {
-        $this->service_PhenoCombo->sanitizeTraitCombo(array_fill_keys($arr_tmp, $this->randomString()));
+        $this->service_PhenoCombo->sanitizePhenoCombo(array_fill_keys($arr_tmp, $this->randomString()));
       }
       catch (\Exception $e) {
-        $this->assertEquals(
-          'Failed to sanitize trait combo. Trait combo must have keys [' . implode(', ', $trait_combo_alias) . ']. You provided [' . implode(', ', $arr_tmp) . '].',
+        $this->assertStringContainsString(
+          'Missing PhenoCombo item key error',
           $e->getMessage(),
-          'A missing key in trait combo is expected to throw an exception.',
+          'A missing key ' . $alias . ' is expected to throw an exception.'
         );
       }
     }
 
-    // Unexpected value - not integer or string.
+    // Unexpected value - non integer or string value provided.
     foreach ($trait_combo_alias as $i => $alias) {
       $arr_tmp = $trait_combo_alias;
 
       try {
-        $this->service_PhenoCombo->sanitizeTraitCombo(array_fill_keys($arr_tmp, (($i % 2) ? [] : NULL)));
+        $this->service_PhenoCombo->sanitizePhenoCombo(array_fill_keys($arr_tmp, (($i % 2) ? [] : NULL)));
       }
       catch (\Exception $e) {
-        $this->assertEquals(
-          'Failed to sanitize trait combo. Trait combo has invalid data type in key(s) - [' . implode(', ', $arr_tmp) . ']. Use integer or string value.',
+        $this->assertStringContainsString(
+          'Unexpected PhenoCombo item value type error',
           $e->getMessage(),
-          'Unexpected data type in trait combo is expected to throw an exception.',
+          'Unexpected data type in PhenoCombo is expected to throw an exception.'
         );
       }
     }
 
     // trait-method-unit not found.
     try {
-      $this->service_PhenoCombo->sanitizeTraitCombo(
+      $this->service_PhenoCombo->sanitizePhenoCombo(
         ['trait' => 'Spurious Trait', 'method' => 'Not so methodical', 'unit' => 'unity']
       );
     }
     catch (\Exception $e) {
-      $this->assertEquals(
-        'Failed to sanitize trait combo. The trait combo does not exist.', $e->getMessage(), 'Trait combo not found is expected to throw an exception.'
+      $this->assertStringContainsString(
+        'Missing PhenoCombo error',
+        $e->getMessage(),
+        'PhenoCombo not found is expected to throw an exception.'
       );
     }
 
-    // Using test traits profile as trait combo, sanitize the trait combo - the
+    // Using triat ids inserted as PhenoCombo, sanitize pheno_combo - the
     // sanitized array will have all values resolved to id form (cvterm id),
     // regardless of whether combo-key values provided were purely ids, name, or
     // a combination of both.
     $service_trait = $this->container->get('trpcultivate_phenotypes.traits');
 
-    foreach ($this->test_trait_pheno_combo_ids as $genus => $traits) {
+    foreach ($this->test_trait_pheno_combo_ids as $genus => $trait_ids) {
       $service_trait->setTraitGenus($genus);
 
-      foreach ($traits as $i => $trait_combo_ids) {
+      foreach ($trait_ids as $i => $trait_combo_ids) {
         foreach ($trait_combo_alias as $alias) {
           ${$alias} = $trait_combo_ids[$alias];
         }
+
         $trait_method_unit = $service_trait->getTraitMethodUnitCombo($trait, $method, $unit);
 
-        $trait_combo_payload = [];
+        $pheno_combo_payload = [];
         foreach ($trait_combo_alias as $alias) {
-          $trait_combo_payload['by id'][$alias] = $trait_method_unit[$alias]->cvterm_id;
-          $trait_combo_payload['by name'][$alias] = $trait_method_unit[$alias]->name;
-          $trait_combo_payload['mix'][$alias] = $trait_method_unit[$alias]->{(mt_rand(0, 1)) ? 'cvterm_id' : 'name'};
+          $pheno_combo_payload['by id'][$alias] = $trait_method_unit[$alias]->cvterm_id;
+          $pheno_combo_payload['by name'][$alias] = $trait_method_unit[$alias]->name;
+          $pheno_combo_payload['mix'][$alias] = $trait_method_unit[$alias]->{(mt_rand(0, 1)) ? 'cvterm_id' : 'name'};
         }
 
-        foreach ($trait_combo_payload as $type => $trait_combo) {
-          $sanitized_trait_combo = $this->service_PhenoCombo->sanitizeTraitCombo($trait_combo);
+        foreach ($pheno_combo_payload as $type => $pheno_combo) {
+          $sanitized_trait_combo = $this->service_PhenoCombo->sanitizePhenoCombo($pheno_combo);
           $this->assertEquals(
             $trait_combo_ids, $sanitized_trait_combo, 'Failed to sanitize trait combo in genus ' . $genus . ' - ' . $type
           );
@@ -752,13 +830,13 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
    */
   public function testSanitizePhenoComboDetails() {
 
-    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO);
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
 
     $combo_details = [];
     $combo_details['label'] = $this->randomString();
 
-    foreach ($this->service_PhenoCombo::PHENO_COMBO_STATUS_FLAG_MAP as $field) {
+    foreach ($this->service_PhenoCombo::PHENOCOMBO_STATUS_FLAG_FIELD_MAP as $field) {
       $combo_details[$field] = mt_rand(0, 1);
     }
 
@@ -772,24 +850,25 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       }
       catch (\Exception $e) {
         if ($key == 'label') {
-          $this->assertEquals(
-            'Failed to sanitize pheno-combo \'label\' detail. Label provided must be a unique entry within the experiment and not an empty string.',
+          $this->assertStringContainsString(
+            'Invalid PhenoCombo label error',
             $e->getMessage(),
-            'Invalid label in combo details is expected to throw an exception.',
+            'Invalid label in combo details is expected to throw an exception.'
           );
         }
         else {
-          $this->assertEquals(
-            'Failed to sanitize pheno-combo details. The following status flag(s) contains invalid value in key(s) [' . $key . '].',
+          $this->assertStringContainsString(
+            'Unexpected PhenoCombo status flag value type error',
             $e->getMessage(),
-            'Unexpected status flag value combo details is expected to throw an exception.',
+            'Unexpected status flag value combo details is expected to throw an exception.'
           );
         }
       }
     }
 
     // Test labels already in use.
-    $all_labels = $this->container->get('database')->select(self::PHENO_COMBO_TABLE, 'tbl')
+    $all_labels = $this->container->get('database')
+      ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
       ->fields('tbl', ['label'])
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
@@ -802,17 +881,17 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
         $this->service_PhenoCombo->sanitizePhenoComboDetails($combo_details);
       }
       catch (\Exception $e) {
-        $this->assertEquals(
-          'Failed to sanitize pheno-combo \'label\' detail. Label provided must be a unique entry within the experiment and not an empty string.',
+        $this->assertStringContainsString(
+          'Invalid PhenoCombo label error',
           $e->getMessage(),
-          'Reusing label in combo details is expected to throw an exception.',
+          'Reusing label in combo details is expected to throw an exception.'
         );
       }
     }
 
     $combo_details['label'] = 'A Unique Label';
     $sanitized_combo_details = $this->service_PhenoCombo->sanitizePhenoComboDetails($combo_details);
-    $this->assertEquals($combo_details, $sanitized_combo_details, 'Failed to sanitize pheno-combo details.');
+    $this->assertEquals($combo_details, $sanitized_combo_details, 'Failed to sanitize PhenoCombo details.');
   }
 
   /**
@@ -821,17 +900,17 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   public function testExperimentHasPhenoCombo() {
 
     $this->assertTrue(
-      ExperimentPhenoTraitComboService::experimentHasPhenoCombo(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENO_COMBO),
-      'Experiment with pheno combo is expected to return FALSE using the experimentHasPhenoCombo() method.',
+      ExperimentPhenoComboService::experimentHasPhenoCombo(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO),
+      'Experiment with pheno combo is expected to return TRUE using the experimentHasPhenoCombo() method.',
     );
 
     $this->assertTrue(
-      ExperimentPhenoTraitComboService::experimentHasPhenoCombo($this->exp_entity),
-      'Experiment with pheno combo is expected to return FALSE using the experimentHasPhenoCombo() method.',
+      ExperimentPhenoComboService::experimentHasPhenoCombo($this->exp_entity),
+      'Experiment with pheno combo is expected to return TRUE using the experimentHasPhenoCombo() method.',
     );
 
     $this->assertFalse(
-      ExperimentPhenoTraitComboService::experimentHasPhenoCombo(self::EXPERIMENT_NAME_CONTEXT_NO_PHENO_COMBO),
+      ExperimentPhenoComboService::experimentHasPhenoCombo(self::EXPERIMENT_NAME_CONTEXT_NO_PHENOCOMBO),
       'Experiment without pheno combo is expected to return FALSE using the experimentHasPhenoCombo() method.',
     );
   }
