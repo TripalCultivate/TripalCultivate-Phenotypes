@@ -74,7 +74,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    */
   public function validate($tripal_entity, Constraint $constraint): void {
 
-    // Determine the feild entity with the required term properties.
+    // Determine the field entity with the required term properties.
     $constraint_fieldname = '';
 
     foreach ($tripal_entity->getFields() as $field) {
