@@ -283,6 +283,23 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test ensureExperimentIsSet().
+   */
+  public function testEnsureExperimentIsSet() {
+
+    try {
+      $this->service_PhenoCombo->getAllExperimentPhenoCombos();
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        'Experiment context not set error',
+        $e->getMessage(),
+        'Experiment context must be set before performing any operation.'
+      );
+    }
+  }
+
+  /**
    * Provides experiment context test cases.
    *
    * Each test experiment context in an array with the following values:
@@ -834,6 +851,12 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     $this->service_PhenoCombo->setExperiment($experiment);
 
     $combo_details = [];
+
+    $this->assertEmpty(
+      $this->service_PhenoCombo->sanitizePhenoComboDetails($combo_details),
+      'An empty array is returned when no PheoCombo details provided to sanitize.'
+    );
+
     $combo_details['label'] = $this->randomString();
 
     foreach ($this->service_PhenoCombo::PHENOCOMBO_STATUS_FLAG_FIELD_MAP as $field) {
@@ -913,6 +936,140 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       ExperimentPhenoComboService::experimentHasPhenoCombo(self::EXPERIMENT_NAME_CONTEXT_NO_PHENOCOMBO),
       'Experiment without pheno combo is expected to return FALSE using the experimentHasPhenoCombo() method.',
     );
+  }
+
+  /**
+   * Provide invalid arguments to getAllExperimentPhenoCombos().
+   *
+   * Each test argument is an array with the following values:
+   * - The genus used as a filter to restrict PhenoCombo returned.
+   * - The options array containing format that will be applied to the result.
+   * - The expected exception message.
+   */
+  public static function provideInvalidArgumentsToGetAllPhenoCombos() {
+
+    $genus_lens = 'Lens';
+
+    return [
+      [
+        'Spurious Genus',
+        ['format' => 'header'],
+        'The genus provided is not a configured genus of the experiment',
+      ],
+      [
+        $genus_lens,
+        ['formatized' => 'full'],
+        'Unsupported options key provided [formatized]',
+      ],
+      [
+        $genus_lens,
+        ['format' => 'italicized'],
+        'The options format value provided italicized is not a valid format',
+      ],
+    ];
+  }
+
+  /**
+   * Test getAllExperimentPhenoCombos() invalid genus and options arguments.
+   *
+   * @param string $genus
+   *   Genus argument.
+   * @param array $options
+   *   Options argument.
+   * @param string $expected_message
+   *   The expected exception message thrown.
+   *
+   * @dataProvider provideInvalidArgumentsToGetAllPhenoCombos
+   */
+  #[DataProvider('provideInvalidArgumentsToGetAllPhenoCombos')]
+  public function testGetAllExperimentPhenoCombosInvaildArguments(string $genus, array $options, string $expected_message) {
+
+    $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+
+    try {
+      $this->service_PhenoCombo->getAllExperimentPhenoCombos($genus, $options);
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString($expected_message, $e->getMessage(), 'The invalid arguments failed to return expected message.');
+    }
+  }
+
+  /**
+   * Provide invalid combo arguments.
+   *
+   * Each test argument is an array with the following values:
+   * - combo argument - PhenoCombo (array), combo_id (int) and label (string).
+   * - The expected exception message.
+   */
+  public static function provideInvalidComboArgument() {
+
+    $error = [
+      'missing key' => 'Missing PhenoCombo item key error',
+      'invalid id' => 'Invalid combo_id error',
+      'invalid label' => 'Invalid label error',
+      'unresolved' => 'Missing PhenoCombo error',
+    ];
+
+    return [
+      [['method' => 1, 'unit' => 1], $error['missing key']],
+      [['trait' => 1, 'unit' => 1], $error['missing key']],
+      [['trait' => 1, 'method' => 1], $error['missing key']],
+      [0, $error['invalid id']],
+      [-1, $error['invalid id']],
+      ['', $error['invalid label']],
+      ['   ', $error['invalid label']],
+      [['trait' => 1, 'method' => 1, 'unit' => 1], $error['unresolved']],
+      [111, $error['unresolved']],
+      ['Spurious Label', $error['unresolved']],
+    ];
+  }
+
+  /**
+   * Test invalid combo argument.
+   *
+   * @param array|int|string $combo
+   *   - combo argument - PhenoCombo (array), combo_id (int) and label (string).
+   * @param string $expected_message
+   *   - The expected exception message.
+   *
+   * @dataProvider provideInvalidComboArgument
+   */
+  #[DataProvider('provideInvalidComboArgument')]
+  public function testResolveComboInvalidArgument(array|int|string $combo, string $expected_message) {
+
+    $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+
+    try {
+      $this->service_PhenoCombo->getExperimentPhenoCombo($combo);
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        $expected_message,
+        $e->getMessage(),
+        'The invalid arguments failed to return expected message.'
+      );
+    }
+  }
+
+  /**
+   * Test hosted phenotypes module without a configured genus.
+   */
+  public function testHostPhenoHasNoGenus() {
+
+    // Reset the genus configuration values to 0 (not configured).
+    $this->container->get('trpcultivate_phenotypes.genus_ontology')
+      ->loadGenusOntology();
+
+    try {
+      $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        'The Phenotypes module is not configured with a genus',
+        $e->getMessage(),
+        'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
+      );
+    }
   }
 
 }

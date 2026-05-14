@@ -805,7 +805,7 @@ class ExperimentPhenoComboService {
 
       if ($combo_id <= 0) {
         throw new \InvalidArgumentException(
-          'Failed to resolve combo id. The combo id must be a number greater than 0.'
+          'Invalid combo_id error. The combo id must be a number greater than 0.'
         );
       }
 
@@ -816,7 +816,7 @@ class ExperimentPhenoComboService {
 
       if ($label === '') {
         throw new \InvalidArgumentException(
-          'Failed to resolve combo label. The label must be a string value and not empty.'
+          'Invalid label error. The label must be a string value and not empty.'
         );
       }
 
@@ -831,7 +831,7 @@ class ExperimentPhenoComboService {
     $combo_id = $query->range(0, 1)->execute()->fetchField();
     if ($combo_id === FALSE) {
       throw new \InvalidArgumentException(
-        'Failed to resolve combo. The pheno combo, combo id, or combo label does not exist.'
+        'Missing PhenoCombo error. The PhenoCombo, combo id, or combo label does not exist.'
       );
     }
 
