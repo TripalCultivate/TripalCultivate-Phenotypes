@@ -80,6 +80,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     foreach ($tripal_entity->getFields() as $field) {
       $field_settings = $field->getSettings();
 
+      // If the base table is not set, this field is not ready to have
+      // the constraint added.
       $base_table = $field_settings['storage_plugin_settings']['base_table'] ?? NULL;
       if ($base_table != self::CONSTRAINT_FIELD_BASETABLE) {
         continue;
