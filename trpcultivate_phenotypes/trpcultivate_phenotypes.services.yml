@@ -32,4 +32,7 @@ services:
 
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@current_route_match', '@tripal_chado.database']
+    arguments: ['@database', '@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.genus_ontology']
+
+  trpcultivate_phenotypes.setup_module_service:
+    class: 'Drupal\trpcultivate_phenotypes\Service\SetupModuleService'
