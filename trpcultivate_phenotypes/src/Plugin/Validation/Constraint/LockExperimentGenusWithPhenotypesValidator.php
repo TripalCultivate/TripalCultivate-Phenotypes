@@ -92,7 +92,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
 
       if ($idspace == self::CONSTRAINT_TERM_REQUIREMENT['idspace'] && $accession == self::CONSTRAINT_TERM_REQUIREMENT['accession']) {
         // Field name with all constraint requirements met.
-        $constraint_fieldname = $field->getName();
+        $constraint_fieldname = $field_name;
 
         break;
       }
