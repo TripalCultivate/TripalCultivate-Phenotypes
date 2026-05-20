@@ -8,6 +8,7 @@ use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -18,27 +19,16 @@ use Symfony\Component\Validator\ConstraintValidator;
 class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator implements ContainerInjectionInterface {
 
   /**
-   * Constraint field property term setting requirements.
+   * The term referenced by a field that would qualify constraint application.
    *
-   * The constraint is applied at the entity level. Any field on the entity type
-   * configured with the term definition below will trigger the constraint
-   * validator during the value validation.
-   *
-   * @var array
-   *
-   * @see TripalCultivate Base/config/install/tripal.tripalfield_collection.trpcultivate_experiments.yml (genus)
-   */
-  private const CONSTRAINT_TERM_REQUIREMENT = [
-    'idspace' => 'TAXRANK',
-    'accession' => '0000005',
-  ];
-
-  /**
-   * Constraint field property base table setting requirement.
+   * This value acts as an indentifier that field definitions can use to
+   * determine whether genu-experiment constraint should be applied.
+   * Currently set to - genus (TAXRANK:0000005) and resolved to the cvterm id
+   * configured in Phenotypes module.
    *
    * @var string
    */
-  private const CONSTRAINT_FIELD_BASETABLE = 'project';
+  private const CONSTRAINT_TERM_KEY = 'genus';
 
   /**
    * Constructor.
@@ -47,10 +37,13 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *   The connection to the Chado database.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
+   * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService $service_PhenoTerms
+   *   The terms service.
    */
   public function __construct(
     protected ChadoConnection $chado_connection,
     protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
+    protected TripalCultivatePhenotypesTermsService $service_PhenoTerms,
   ) {
 
   }
@@ -63,6 +56,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     return new static(
       $container->get('tripal_chado.database'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
+      $container->get('trpcultivate_phenotypes.terms'),
     );
   }
 
@@ -74,81 +68,118 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    */
   public function validate($tripal_entity, Constraint $constraint): void {
 
-    // Determine the field entity with the required term properties.
-    $constraint_fieldname = '';
+    $config_genus_cvterm_id = $this->service_PhenoTerms
+      ->getTermId(self::CONSTRAINT_TERM_KEY);
 
-    foreach ($tripal_entity->getFieldDefinitions() as $field_name => $field) {
-      $field_settings = $field->getSettings();
+    $pheno_configgenus = $this->service_PhenoGenusOntology
+      ->getConfiguredGenusList();
 
-      // If the base table is not set, this field is not ready to have
-      // the constraint added.
-      $base_table = $field_settings['storage_plugin_settings']['base_table'] ?? NULL;
-      if ($base_table != self::CONSTRAINT_FIELD_BASETABLE) {
-        continue;
-      }
+    // Skip field-constraint check if system has no genus configured, or if the
+    // term genus does not have a cvterm_id.
+    if (!$config_genus_cvterm_id || !$pheno_configgenus) {
+      return;
+    }
 
-      $idspace = $field_settings['termIdSpace'] ?? NULL;
-      $accession = $field_settings['termAccession'] ?? NULL;
+    // Loop through all chado fields looking for those with a path including the
+    // projectprop.type_id. This variable is a list of fields describing a
+    // property and whose property has the same type_id as
+    // `genus (TAXRANK:0000005)`. The value is the table alias in this property
+    // for the projectprop table.
+    $genus_property_fields = [];
+    $chado_fields = $tripal_entity->getTripalStorageFields('chado_storage');
 
-      if ($idspace == self::CONSTRAINT_TERM_REQUIREMENT['idspace'] && $accession == self::CONSTRAINT_TERM_REQUIREMENT['accession']) {
-        // Field name with all constraint requirements met.
-        $constraint_fieldname = $field_name;
+    foreach ($chado_fields as $field_name) {
+      foreach ($tripal_entity->getTripalFieldPropertyKeys($field_name) as $property_key) {
 
-        break;
+        // Get the unaliased path for this property.
+        $path = $tripal_entity->getTripalFieldPropertyPath($field_name, $property_key);
+
+        // If this property type defines the path...
+        if ($path !== NULL && str_contains($path, 'projectprop.project_id;type_id')) {
+          // Check the value of this property with the known cvterm_id of the
+          // genus term and if it matches then this is a field we are interested
+          // in! Save the field name and the alias for the table.
+          $field_values = $tripal_entity->get($field_name);
+          foreach ($field_values as $item) {
+            if ($item->get($property_key)->getValue() == $config_genus_cvterm_id) {
+              // Not all property types include a table_mapping, check if it
+              // does and if not then just use projectprop.
+              $genus_property_fields[$field_name] = array_search(
+                'projectprop',
+                $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping')
+              ) ?: 'projectprop';
+            }
+          }
+        }
       }
     }
 
-    // Validate the value of the field entity identified.
-    if ($constraint_fieldname !== '') {
-      $pheno_configgenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
+    if ($genus_property_fields == []) {
+      return;
+    }
 
+    // Get the property in each of the genus_property_fields that looks at the
+    // projectprop.value column where the same alias is used as was for
+    // the type_id.
+    $field_properties_to_validate = [];
+    foreach ($genus_property_fields as $field_name => $projectprop_alias) {
+      foreach ($tripal_entity->getTripalFieldPropertyKeys($field_name) as $property_key) {
+
+        $aliased_path = $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'path');
+        if ($aliased_path !== NULL && str_contains($aliased_path, $projectprop_alias . '.project_id;value')) {
+          $field_properties_to_validate[] = $field_name;
+        }
+      }
+    }
+
+    if ($field_properties_to_validate == []) {
+      return;
+    }
+
+    foreach ($field_properties_to_validate as $constraint_fieldname) {
       $field_values = array_filter(
         array_column($tripal_entity->get($constraint_fieldname)->getValue(), 'value')
       );
 
-      // Skip this step whenever system has zero configured genus or the field
-      // entity has no genus value.
-      if (count($pheno_configgenus) > 0 || $field_values) {
-        $count_bygenus = array_count_values($field_values);
+      $count_bygenus = array_count_values($field_values);
 
-        $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
-        $query->join('1:cvterm', 't', 'tp.attr_id = t.cvterm_id');
-        $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
+      // @todo replace with phenocombo service.
+      $query = $this->chado_connection->select('trpcultivate_phenocombo', 'combo');
+      $query->join('1:cvterm', 'term', 'combo.attr_id = term.cvterm_id');
+      $query->join('1:cv', 'vocab', 'term.cv_id = vocab.cv_id');
 
-        foreach ($pheno_configgenus as $genus) {
-          $genus_config = $this->service_PhenoGenusOntology
-            ->getGenusOntologyConfigValues($genus);
+      foreach ($pheno_configgenus as $genus) {
+        $genus_config = $this->service_PhenoGenusOntology
+          ->getGenusOntologyConfigValues($genus);
 
-          if (!$genus_config) {
-            continue;
-          }
+        if (!$genus_config) {
+          continue;
+        }
 
-          // A phenotype to a genus would suffice enforcement check.
-          $has_pheno = $query
-            ->fields('tp', ['combo_id'])
-            ->condition('tp.project_id', $tripal_entity->getBackendRecordId('chado_storage'), '=')
-            ->condition('v.cv_id', $genus_config['trait'], '=')
-            ->range(0, 1)
-            ->execute()
-            ->fetchField();
+        // A phenotype to a genus would suffice enforcement check.
+        $has_pheno = $query
+          ->condition('combo.project_id', $tripal_entity->getBackendRecordId('chado_storage'), '=')
+          ->condition('vocab.cv_id', $genus_config['trait'], '=')
+          ->countQuery()
+          ->execute()
+          ->fetchField();
 
-          // Genus has phenotypes and is missing/altered/has duplicates from the
-          // list of germplasm genus of the research experiment entity.
-          $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
+        // Genus has phenotypes and is missing/altered/has duplicates from the
+        // list of germplasm genus of the research experiment entity.
+        $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
 
-          if ($has_pheno > 0 && (!in_array($genus, $field_values) || $not_unique)) {
-            $this->context
-              ->buildViolation(
-                Markup::create(strtr($constraint->genus_failed, [
-                  '%genus' => $genus,
-                  '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-                ]))
-              )
-              ->atPath($constraint_fieldname)
-              ->addViolation();
+        if ($has_pheno > 0 && (!in_array($genus, $field_values) || $not_unique)) {
+          $this->context
+            ->buildViolation(
+              Markup::create(strtr($constraint->genus_failed, [
+                '%genus' => $genus,
+                '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+              ]))
+            )
+            ->atPath($constraint_fieldname)
+            ->addViolation();
 
-            break;
-          }
+          break;
         }
       }
     }
