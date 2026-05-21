@@ -118,12 +118,11 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->container->get('trpcultivate.setup_module_service')
       ->importContenttypes();
 
-    $config_terms = $this->setTermConfig();
+    $this->setTermConfig();
 
     // Create test records - A research experiment entity with genus set to
     // Lens and a trait-method-unit combo added.
     $exp_name = 'Awesome Research Experiment';
-    $exp_entity_id = 1;
     $genus = 'Lens';
 
     // Create research experiment content.
@@ -153,6 +152,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       ],
       'exp_germgenus' => [
         'value' => $genus,
+        'type_id' => $this->container->get('trpcultivate_phenotypes.terms')->getTermId('genus'),
       ],
     ]);
 
@@ -272,6 +272,7 @@ class HookAlterTest extends ChadoTestKernelBase {
     $constraint_validator = new LockExperimentGenusWithPhenotypesValidator(
       $this->container->get('tripal_chado.database'),
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
+      $this->container->get('trpcultivate_phenotypes.terms'),
     );
 
     // Genus-experiemnt is maintained.
@@ -293,9 +294,16 @@ class HookAlterTest extends ChadoTestKernelBase {
       '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
     ]);
 
+    // The cverm_id of the configuration term - genus.
+    $type_id = $this->container->get('trpcultivate_phenotypes.terms')->getTermId('genus');
+
     // Altered.
     $this->exp_entity->get($entity_field)->first()
-      ->setValue(['value' => $exp_genus . 'IS ALTERED']);
+      ->setValue([
+        'value' => $exp_genus . 'IS ALTERED',
+        'type_id' => $type_id,
+      ]);
+
     $this->exp_entity->save();
 
     $constraint_validator->initialize($this->constraint_execontext);
@@ -307,12 +315,16 @@ class HookAlterTest extends ChadoTestKernelBase {
       'Altered: The validation error does not match expected error message text',
     );
 
-    // Removed.
+    // Removed all.
     $this->exp_entity->get($entity_field)->first()->setValue([]);
     $this->exp_entity->save();
 
     $constraint_validator->initialize($this->constraint_execontext);
     $constraint_validator->validate($this->exp_entity, $constraint);
+
+    $constraint_message = strtr($constraint->all_genus_failed, [
+      '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+    ]);
 
     $this->assertStringContainsString(
       $constraint_message,
@@ -322,7 +334,16 @@ class HookAlterTest extends ChadoTestKernelBase {
 
     // Duplicate.
     $this->exp_entity->get($entity_field)
-      ->setValue(['value' => $exp_genus], ['value' => $exp_genus]);
+      ->setValue(
+        [
+          'value' => $exp_genus,
+          'type_id' => $type_id,
+        ],
+        [
+          'value' => $exp_genus,
+          'type_id' => $type_id,
+        ]
+      );
     $this->exp_entity->save();
 
     $constraint_validator->initialize($this->constraint_execontext);

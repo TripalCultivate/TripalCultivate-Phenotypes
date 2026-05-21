@@ -104,17 +104,44 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
             if ($item->get($property_key)->getValue() == $config_genus_cvterm_id) {
               // Not all property types include a table_mapping, check if it
               // does and if not then just use projectprop.
-              $genus_property_fields[$field_name] = array_search(
-                'projectprop',
-                $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping')
-              ) ?: 'projectprop';
+              $table_mapping = $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping');
+
+              if (is_array($table_mapping)) {
+                $genus_property_fields[$field_name] = array_search(
+                  'projectprop',
+                  $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping')
+                );
+              }
+              else {
+                $genus_property_fields[$field_name] = 'projectprop';
+              }
             }
           }
         }
       }
     }
 
+    // None of the genus/organism target fields contain a value.
+    // Trigger the constraint if an experiment has no remaining genus values
+    // while still containing phenocombo records.
     if ($genus_property_fields == []) {
+      // @todo replace with phenocombo service.
+      $exp_has_phenocombo = $this->chado_connection->select('trpcultivate_phenocombo', 'combo')
+        ->condition('combo.project_id', $tripal_entity->getBackendRecordId('chado_storage'), '=')
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+
+      if ($exp_has_phenocombo) {
+        $this->context
+          ->buildViolation(
+            Markup::create(strtr($constraint->all_genus_failed, [
+              '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+            ]))
+          )
+          ->addViolation();
+      }
+
       return;
     }
 
@@ -136,11 +163,14 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
       return;
     }
 
+    // Validate genus/organism field values.
     foreach ($field_properties_to_validate as $constraint_fieldname) {
-      $field_values = array_filter(
-        array_column($tripal_entity->get($constraint_fieldname)->getValue(), 'value')
-      );
+      // Find the key that corresponds to the field value and create summary
+      // count of each unique value.
+      $field_values = $tripal_entity->get($constraint_fieldname)->getValue();
+      $value_key = array_key_exists('value', reset($field_values)) ? 'value' : 'genus_value';
 
+      $field_values = array_filter(array_column($field_values, $value_key));
       $count_bygenus = array_count_values($field_values);
 
       // @todo replace with phenocombo service.
