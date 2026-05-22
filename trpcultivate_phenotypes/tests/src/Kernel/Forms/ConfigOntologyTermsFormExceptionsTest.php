@@ -7,6 +7,7 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm;
 use Drupal\Core\Form\FormState;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -14,30 +15,27 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  */
 #[RunTestsInSeparateProcesses]
 class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
+
   /**
    * Modules to enable.
    *
    * @var array
    */
   protected static $modules = [
+    'field',
+    'field_ui',
+    'field_group',
+    'path',
+    'path_alias',
+    'system',
+    'user',
+    'views',
     'tripal',
     'tripal_chado',
+    'tripal_layout',
+    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
-
-  /**
-   * Class instance of ontology settings form.
-   *
-   * @var \Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm
-   */
-  protected $ontology_form;
-
-  /**
-   * Configuration.
-   *
-   * @var \Drupal\Core\Config\Config
-   */
-  private $config;
 
   /**
    * A Database query interface for querying Chado using Tripal DBX.
@@ -57,17 +55,13 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
 
     // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
+    $this->prepareEnvironment(['TripalEntity', 'TripalTerm']);
 
-    // Insert a genus to the database.
-    $this->chado_connection->insert('1:organism')
-      ->fields(['genus', 'species'])
-      ->values([
-        'genus' => 'Lens',
-        'species' => 'databasica',
-      ])
-      ->execute();
-
-    $this->container = \Drupal::getContainer();
+    $this->installConfig([
+      'tripal_chado',
+      'trpcultivate_phenotypes',
+      'trpcultivate',
+    ]);
 
     // Mock the getGenusOntologyConfigValues method on genus ontology service
     // so it will return a string instead of null or an array.
@@ -80,44 +74,76 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
       ->getMock();
 
     $mock_ontology_service->method('getGenusOntologyConfigValues')
-      ->willReturn('someValue');
+      ->willReturn('some_values');
 
     $this->container->set('trpcultivate_phenotypes.genus_ontology', $mock_ontology_service);
 
-    // Install module configuration.
-    $this->installConfig(['trpcultivate_phenotypes']);
+    // Mock the defineTerms method of terms service so that it can determine if
+    // genus term has been configured.
+    $mock_terms_service = $this->getMockBuilder(TripalCultivatePhenotypesTermsService::class)
+      ->setConstructorArgs([$this->container->get('config.factory'),
+        $this->container->get('tripal_chado.chado_buddy'),
+        $this->container->get('tripal.logger'),
+      ])
+      ->onlyMethods(['defineTerms'])
+      ->getMock();
 
-    // Create new instance of the TripalCultivatePhenotypesOntologySettingsForm.
-    $this->ontology_form = TripalCultivatePhenotypesOntologySettingsForm::create($this->container);
+    $mock_terms_service->method('defineTerms')
+      ->willReturn(['genus' => ['config_map' => 'genus']]);
+
+    $this->container->set('trpcultivate_phenotypes.terms', $mock_terms_service);
   }
 
   /**
    * Tests the buildForm method for the exception cases.
    */
   public function testBuildFormWithExceptions() {
+
+    $messenger_service = $this->container->get('messenger');
+
     $form = [];
     $form_state = new FormState();
 
-    $service_terms = $this->container->get('trpcultivate_phenotypes.terms');
-    $service_terms->loadTerms();
+    // Test for the case where the config value is not an array or null since
+    // the host Phenotypes module does not have an genus record.
+    TripalCultivatePhenotypesOntologySettingsForm::create($this->container)
+      ->buildForm($form, $form_state);
 
-    // Test for the case where the config value is not an array or null.
-    $this->ontology_form->buildForm($form, $form_state);
+    $warnings = $messenger_service->messagesByType('warning');
+    $this->assertCount(1, $warnings,
+      'We expect a warning message when config value for a genus is not an array, but it was not thrown.');
 
-    $errors = \Drupal::messenger()->messagesByType('error');
-    $this->assertCount(1, $errors,
-      'We expect an error message when config value for a genus is not an array, but it was not thrown.');
+    $this->assertEquals(
+      'Your Tripal site instance contains 0 organism records in Chado organism table.
+        Please create/insert an organism.',
+      reset($warnings)->__toString(),
+      'The warning message does not match expected message for 0 genus record.',
+    );
 
-    // Test the case with no genus set.
-    $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->container->set('tripal_chado.database', $this->chado_connection);
-    $this->container = \Drupal::getContainer();
-    $this->ontology_form = TripalCultivatePhenotypesOntologySettingsForm::create($this->container);
-    $this->ontology_form->buildForm($form, $form_state);
+    $messenger_service->deleteAll();
 
-    $warnings = \Drupal::messenger()->messagesByType('warning');
-    $this->assertCount(2, $warnings,
-      'We expect a warning when no genus is set but it was not given.');
+    // Test case if with organism but terms are not configured error.
+    $this->chado_connection->insert('1:organism')
+      ->fields(['genus', 'species'])
+      ->values([
+        'genus' => 'Lens',
+        'species' => 'databasica',
+      ])
+      ->execute();
+
+    TripalCultivatePhenotypesOntologySettingsForm::create($this->container)
+      ->buildForm($form, $form_state);
+
+    $warnings = $messenger_service->messagesByType('warning');
+    $this->assertCount(1, $warnings,
+      'We expect a warning message when no genus record but it was not given.');
+
+    $this->assertStringContainsString(
+      'Tripal Cultivate Phenotypes module requires controlled vocabulary terms and genus records
+          used for creating terms and genus-ontology module configuration',
+      reset($warnings)->__toString(),
+      'The warning message does not match expected message for terms not configured.',
+    );
   }
 
 }
