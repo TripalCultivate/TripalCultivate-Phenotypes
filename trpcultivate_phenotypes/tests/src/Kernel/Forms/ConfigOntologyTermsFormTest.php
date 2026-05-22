@@ -112,7 +112,6 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
       ->onlyMethods(['getGenusOntologyConfigValues'])
       ->getMock();
 
-
     $genus_ontology = ['trait', 'method', 'unit', 'database', 'crop_ontology'];
     $mock_ontology_service->method('getGenusOntologyConfigValues')
       ->willReturn(array_combine($genus_ontology, range(1, count($genus_ontology))));
@@ -328,9 +327,6 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
     $this->ontology_form->submitForm($form, $form_state);
 
     // Test if the Config values are saved properly.
-
-
-
     $config_values = $service_genusontology->getGenusOntologyConfigValues('Lens');
     $this->assertNotNull($config_values, "The genus Ontology Config values are not set properly and returned null");
     $k = 1;

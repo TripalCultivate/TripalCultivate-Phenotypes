@@ -14,6 +14,8 @@ use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -128,6 +130,34 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
 
     $config_terms = $this->setTermConfig();
 
+    $default_terms = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
+      ->get('trpcultivate.default_terms.term_set');
+
+    $terms = [];
+    foreach ($default_terms as $cv) {
+      foreach ($cv['terms'] as $term_set) {
+        $term_set['cv'] = ['name' => $cv['name'], 'definition' => $cv['definition']];
+        $terms[$term_set['config_map']] = $term_set;
+      }
+    }
+
+    $mock_terms_service = $this->getMockBuilder(TripalCultivatePhenotypesTermsService::class)
+      ->setConstructorArgs([
+        $this->container->get('config.factory'),
+        $this->container->get('tripal_chado.chado_buddy'),
+        $this->container->get('tripal.logger'),
+      ])
+      ->onlyMethods(['defineTerms', 'getTermId'])
+      ->getMock();
+
+    $mock_terms_service->method('defineTerms')
+      ->willReturn($terms);
+
+    $mock_terms_service->method('getTermId')
+      ->willReturn(1);
+
+    $this->container->set('trpcultivate_phenotypes.terms', $mock_terms_service);
+
     // Create test records.
     $trait_keys = [
       'Trait Name',
@@ -193,6 +223,16 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ],
     ];
 
+    $mock_ontology_service = $this->getMockBuilder(TripalCultivatePhenotypesGenusOntologyService::class)
+      ->setConstructorArgs([
+        $this->container->get('config.factory'),
+        $this->container->get('tripal_chado.database'),
+        $this->container->get('tripal.logger'),
+      ])
+      ->onlyMethods(['getGenusOntologyConfigValues'])
+      ->getMock();
+
+    $mock_return_map = [];
     foreach ($experiments as $exp_name => $exp_values) {
       // Create Research Experiment Tripal content.
       $project_id = $this->chado_connection->insert('1:project')
@@ -222,7 +262,14 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
             ->execute();
 
           if ($exp_values['configure_genus']) {
-            $this->setOntologyConfig($genus);
+            $config_genus = $this->setOntologyConfig($genus);
+
+            $genus_config = [];
+            foreach ($config_genus as $config => $config_value) {
+              $genus_config[$config] = ($config == 'database') ? $config_value['db_id'] : $config_value['cv_id'];
+            }
+
+            $mock_return_map[$genus] = $genus_config;
           }
 
           $this->chado_connection->insert('1:projectprop')
@@ -246,6 +293,14 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         $this->exp_entity = $entity;
       }
     }
+
+    $mock_ontology_service->method('getGenusOntologyConfigValues')
+      ->willReturnMap([
+        ['Lens', $mock_return_map['Lens']],
+        ['Triticum', $mock_return_map['Triticum']],
+      ]);
+
+    $this->container->set('trpcultivate_phenotypes.genus_ontology', $mock_ontology_service);
 
     // Install trait combos to good research experiment.
     $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
