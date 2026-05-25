@@ -8,6 +8,9 @@ services:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
 
+  Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService:
+    alias: 'trpcultivate_phenotypes.genus_ontology'
+
   trpcultivate_phenotypes.genus_project:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
@@ -32,7 +35,7 @@ services:
 
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.genus_ontology', '@trpcultivate_phenotypes.terms']
+    arguments: ['@current_route_match', '@tripal_chado.database']
 
   trpcultivate_phenotypes.setup_module_service:
     class: 'Drupal\trpcultivate_phenotypes\Service\SetupModuleService'
