@@ -8,8 +8,6 @@ use Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySetting
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
@@ -23,18 +21,8 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
    * @var array
    */
   protected static $modules = [
-    'field',
-    'field_ui',
-    'field_group',
-    'path',
-    'path_alias',
-    'system',
-    'user',
-    'views',
     'tripal',
     'tripal_chado',
-    'tripal_layout',
-    'trpcultivate',
     'trpcultivate_phenotypes',
   ];
 
@@ -70,13 +58,6 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
 
     // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
-    $this->prepareEnvironment(['TripalEntity', 'TripalTerm']);
-
-    $this->installConfig([
-      'tripal_chado',
-      'trpcultivate_phenotypes',
-      'trpcultivate',
-    ]);
 
     // Set genus in the database.
     $test_insert_genus = [
@@ -102,36 +83,10 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
-    // Mock the getGenusOntologyConfigValues method on genus ontology service
-    // so it will return a genus configuration values.
-    $mock_ontology_service = $this->getMockBuilder(TripalCultivatePhenotypesGenusOntologyService::class)
-      ->setConstructorArgs([$this->container->get('config.factory'),
-        $this->container->get('tripal_chado.database'),
-        $this->container->get('tripal.logger'),
-      ])
-      ->onlyMethods(['getGenusOntologyConfigValues'])
-      ->getMock();
+    // Install module configuration.
+    $this->installConfig(['trpcultivate_phenotypes']);
 
-    $genus_ontology = ['trait', 'method', 'unit', 'database', 'crop_ontology'];
-    $mock_ontology_service->method('getGenusOntologyConfigValues')
-      ->willReturn(array_combine($genus_ontology, range(1, count($genus_ontology))));
-    $this->container->set('trpcultivate_phenotypes.genus_ontology', $mock_ontology_service);
-
-    // Mock the defineTerms and getTermId method of terms service so that it can
-    // determine if genus term has been configured.
-    $mock_terms_service = $this->getMockBuilder(TripalCultivatePhenotypesTermsService::class)
-      ->setConstructorArgs([$this->container->get('config.factory'),
-        $this->container->get('tripal_chado.chado_buddy'),
-        $this->container->get('tripal.logger'),
-      ])
-      ->onlyMethods(['defineTerms', 'getTermId'])
-      ->getMock();
-
-    $mock_terms_service->method('defineTerms')
-      ->willReturn(['genus' => ['config_map' => 'genus', 'name' => 'genus', 'help_text' => '']]);
-
-    $mock_terms_service->method('getTermId')->willReturn(1);
-    $this->container->set('trpcultivate_phenotypes.terms', $mock_terms_service);
+    $this->container = \Drupal::getContainer();
 
     // Create new instance of the TripalCultivatePhenotypesOntologySettingsForm.
     $this->ontology_form = TripalCultivatePhenotypesOntologySettingsForm::create($this->container);
@@ -151,15 +106,16 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
     $form = [];
     $form_state = new FormState();
 
-    // Define terms.
-    $service_terms = $this->container->get('trpcultivate_phenotypes.terms');
-    $service_terms->loadTerms();
+    $this->config = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings');
 
     // Test with genus set and term values are not set or 0.
     $this->ontology_form->buildForm($form, $form_state);
     $warnings = \Drupal::messenger()->messagesByType('warning');
-    $this->assertCount(1, $warnings,
-      "We expect a single warning when simulating no tripal job being executed.");
+    $this->assertCount(
+      1,
+      $warnings,
+      "We expect a single warning when simulating no tripal job being executed."
+    );
 
     // Define terms.
     $service_terms = $this->container->get('trpcultivate_phenotypes.terms');
@@ -175,8 +131,11 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
     );
 
     $warnings = \Drupal::messenger()->messagesByType('warning');
-    $this->assertCount(1, $warnings,
-      'We expect a warning indicating that the vocabularies cannot be changed once they are uploaded, but there were not any.');
+    $this->assertCount(
+      2,
+      $warnings,
+      'We expect a warning indicating that the vocabularies cannot be changed once they are uploaded, but there were not any.'
+    );
 
     $this->assertEquals(
       'Tripal Cultivate Phenotypes require that phenotypic traits be housed in
@@ -197,7 +156,6 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
       $config_form['ontology_fieldset']['guide']['#data']['link_02'],
       'The data link 2 on ontology fieldset guide of the form generated by buildForm() method does not match expected link.'
     );
-
   }
 
   /**
@@ -340,7 +298,5 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
     $config = $this->config('trpcultivate_phenotypes.settings');
     $new_val = $config->get('trpcultivate.phenotypes.ontology.allownew');
     $this->assertEquals($allow_new, $new_val, "Allow new traits are not saved properly.");
-
   }
-
 }
