@@ -126,4 +126,5 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
       'We expect a warning when no genus is set but it was not given.'
     );
   }
+
 }

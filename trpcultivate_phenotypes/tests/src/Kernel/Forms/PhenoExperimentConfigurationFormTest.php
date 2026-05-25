@@ -585,7 +585,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
               $method_markup,
               'The trait combo is expected to have the icon status CSS class name ' . $status_class[$j] . ' in table row #' . $i
             );
-          } else {
+          }
+          else {
             $this->assertStringNotContainsString(
               $status_class[$j],
               $method_markup,
@@ -1036,7 +1037,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         $this->log_message,
         'The exception message does not match expected message in scenario: ' . $scenario
       );
-    } else {
+    }
+    else {
       $this->assertStringContainsString(
         $expected['message'],
         (string) $page,
@@ -1044,4 +1046,5 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
     }
   }
+
 }

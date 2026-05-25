@@ -299,4 +299,5 @@ class ConfigOntologyTermsFormTest extends ChadoTestKernelBase {
     $new_val = $config->get('trpcultivate.phenotypes.ontology.allownew');
     $this->assertEquals($allow_new, $new_val, "Allow new traits are not saved properly.");
   }
+
 }

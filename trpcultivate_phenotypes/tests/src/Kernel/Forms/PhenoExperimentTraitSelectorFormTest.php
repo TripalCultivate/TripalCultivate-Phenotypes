@@ -888,7 +888,8 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         $this->log_message,
         'The exception message does not match expected message in scenario: ' . $scenario
       );
-    } else {
+    }
+    else {
       $this->assertStringContainsString(
         $expected['message'],
         (string) $page,
@@ -896,4 +897,5 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       );
     }
   }
+
 }
