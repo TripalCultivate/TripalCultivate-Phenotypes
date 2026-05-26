@@ -110,9 +110,16 @@ class TripalCultivatePhenotypesAlterHooks {
    * and preventing modifications or removal of the genus entry once phenotypic
    * data has been associated.
    *
-   * NOTE: this is adding constraint to Entity Type not defined by Phenotypes at
-   * the entity level. The constraint validator rebuilds the violations to
-   * target a specific field entity to apply field-highlighting on failure.
+   * We use this hook to alter the Tripal Core tripal_entity type
+   * research_experiment bundle. We are adding an entity-level constraint which
+   * will in turn target a specific field and apply field-highlighting on error.
+   *
+   * NOTE: We are not adding a field level constraint for a couple of reasons:
+   * 1. We do not want to make any assumptions regarding the name or type of
+   *   the field targeting the projectprop type > genus.
+   * 2. We need to ensure this constraint targets the field after the field
+   *   collections have been added which prevents us from doing this in
+   *   the module install phase.
    *
    * @see src/Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypesValidator.php
    */
