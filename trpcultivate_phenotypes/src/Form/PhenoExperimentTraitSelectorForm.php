@@ -438,6 +438,8 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
                 'timestamp' => time(),
               ])
               ->execute();
+
+            $transaction->commitOrRelease();
           }
           catch (Exception $e) {
             $transaction->rollback();

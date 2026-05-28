@@ -554,6 +554,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ->delete(self::PHENO_COMBO_TABLE)
             ->condition('combo_id', $combo->combo_id, '=')
             ->execute();
+
+          $transaction->commitOrRelease();
         }
         catch (\Exception $e) {
           $transaction->rollback();
@@ -588,6 +590,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ->condition('combo_id', $combo->combo_id, '=')
             ->condition($field_map[$action], $status, '<>')
             ->execute();
+
+          $transaction->commitOrRelease();
         }
         catch (\Exception $e) {
           $transaction->rollback();
