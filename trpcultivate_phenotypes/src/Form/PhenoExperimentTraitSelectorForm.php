@@ -439,7 +439,9 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
               ])
               ->execute();
 
-            $transaction->commitOrRelease();
+            if (method_exists($transaction, 'commitOrRelease')) {
+              $transaction->commitOrRelease();
+            }
           }
           catch (Exception $e) {
             $transaction->rollback();

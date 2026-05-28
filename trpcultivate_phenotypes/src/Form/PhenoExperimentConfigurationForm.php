@@ -555,7 +555,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ->condition('combo_id', $combo->combo_id, '=')
             ->execute();
 
-          $transaction->commitOrRelease();
+          if (method_exists($transaction, 'commitOrRelease')) {
+            $transaction->commitOrRelease();
+          }
         }
         catch (\Exception $e) {
           $transaction->rollback();
@@ -591,7 +593,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
             ->condition($field_map[$action], $status, '<>')
             ->execute();
 
-          $transaction->commitOrRelease();
+          if (method_exists($transaction, 'commitOrRelease')) {
+            $transaction->commitOrRelease();
+          }
         }
         catch (\Exception $e) {
           $transaction->rollback();
