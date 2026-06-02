@@ -338,7 +338,7 @@ class ExperimentPhenoComboService {
    *
    *   - header: the format used for data loader headers. This format includes
    *   combo_id, name (trait cvterm.name), description (trait cvterm.definition)
-   *   and type(Required or Optional).
+   *   and type (Required or Optional).
    *   @see TripalCultivatePhenoTraitImporter::$headers
    *
    *   - full:
