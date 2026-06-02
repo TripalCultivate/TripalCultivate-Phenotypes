@@ -713,7 +713,7 @@ class ExperimentPhenoComboService {
    *   values are guaranteed 0 or 1 value and label trimmed and is a unique
    *   label within experiment context.
    *
-   * @throws InvalidArgumentException
+   * @throws \InvalidArgumentException
    *   - If label is an empty string and is not unique label in the experiment.
    *   - If any of the status flag has unexpected or non-integer value.
    */
