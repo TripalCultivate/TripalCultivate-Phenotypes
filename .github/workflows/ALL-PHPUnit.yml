@@ -55,7 +55,14 @@ jobs:
             drupal-version: "11.2.x-dev"
           - php-version: "8.2"
             drupal-version: "11.3.x-dev"
+          # Only run 11.x on the bleeding edge.
           - php-version: "8.2"
+            drupal-version: "11.x-dev"
+          - php-version: "8.3"
+            drupal-version: "11.x-dev"
+          - php-version: "8.4"
+            drupal-version: "11.x-dev"
+          - postgresql-version: "14"
             drupal-version: "11.x-dev"
 
     steps:
