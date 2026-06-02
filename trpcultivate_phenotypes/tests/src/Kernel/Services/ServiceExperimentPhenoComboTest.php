@@ -808,7 +808,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       );
     }
 
-    // Using triat ids inserted as PhenoCombo, sanitize pheno_combo - the
+    // Using trait ids inserted as PhenoCombo, sanitize pheno_combo - the
     // sanitized array will have all values resolved to id form (cvterm id),
     // regardless of whether combo-key values provided were purely ids, name, or
     // a combination of both.
