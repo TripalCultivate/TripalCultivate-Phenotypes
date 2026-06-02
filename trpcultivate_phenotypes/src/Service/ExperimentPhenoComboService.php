@@ -765,7 +765,7 @@ class ExperimentPhenoComboService {
     if ($unexpected_values != []) {
       throw new \InvalidArgumentException(
         sprintf(
-          'Unexpected PhenoCombo status flag value type error. Status flag(s) contains invalid value in status flags(s) [%s].',
+          'Unexpected PhenoCombo status flag value type error. Status flag(s) contains invalid value(s): [%s].',
           implode(', ', $unexpected_values)
         )
       );
