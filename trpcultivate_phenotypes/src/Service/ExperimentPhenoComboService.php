@@ -487,13 +487,13 @@ class ExperimentPhenoComboService {
    *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::getExperimentPhenoCombo()
    * @param array $status_flags
    *   The status array key-value pair where the value is 0 or 1
-   *   (yes or no, respectively) and the keys are the following status flags.
-   *   - is_archived: indicates experiment PhenoCombo is archived.
-   *   - is_required: indicates experiment PhenoCombo is a required trait and
+   *   (yes or no, respectively) and the keys are the following status flags:
+   *   - 'is_archived': indicates experiment PhenoCombo is archived.
+   *   - 'is_required': indicates experiment PhenoCombo is a required trait and
    *     must contain a value in the data file for this column.
-   *   - was_shared: indicates experiment PhenoCombo was used in
+   *   - 'was_shared': indicates experiment PhenoCombo was used in
    *     Phenotypes Share module.
-   *   - was_collected: indicates experiment PhenoCombo was used in
+   *   - 'was_collected': indicates experiment PhenoCombo was used in
    *     Phenotypes Collect module.
    *
    * @throws \Exception
