@@ -784,7 +784,7 @@ class ExperimentPhenoComboService {
    * @return int
    *   The combo unique identifier id (combo_id).
    *
-   * @throws InvalidArgumentException
+   * @throws \InvalidArgumentException
    *   - If combo as an integer combo id and number equal or less than 0.
    *   - If combo as a string label and value is an empty string.
    *   - Unsupported combo input type.
