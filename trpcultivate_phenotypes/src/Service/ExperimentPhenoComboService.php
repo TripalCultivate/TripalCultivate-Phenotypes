@@ -136,7 +136,7 @@ class ExperimentPhenoComboService {
    *   Both int and string forms reference a field from the same Chado
    *   'projects' table.
    *
-   * @throws Exception
+   * @throws \Exception
    *   - If Phenotypes module hosted has not been configured with a genus.
    *   - If experiment is not configured with a genus in Phenotypes module.
    */
