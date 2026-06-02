@@ -320,9 +320,9 @@ class ExperimentPhenoComboService {
    * @param array $options
    *   Options to customize the query result by restricting the fields returned.
    *   The following options are supported:
-   *     - format: one of 'full' (default), 'component', or 'header' depending
-   *       on the format of the return value desired. See the return value
-   *       below for more details.
+   *   - 'format': one of 'full' (default), 'component', or 'header' depending
+   *     on the format of the return value desired. See the return value
+   *     below for more details.
    *
    * @return array|null
    *   All experiment PhenoCombos associated to an experiment (plus genus) in an
