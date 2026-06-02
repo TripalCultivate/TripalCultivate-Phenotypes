@@ -585,7 +585,7 @@ class ExperimentPhenoComboService {
   /**
    * Ensures that experiment context has been set.
    *
-   * @throws Exception
+   * @throws \Exception
    *   - If performing combo operation where experiment context is required but
    *     is not set prior to use.
    */
