@@ -615,7 +615,7 @@ class ExperimentPhenoComboService {
    *   cvterm_id number (NOT THE CVTERM RECORD).
    *   ie. [trait => TRAIT ID, method => METHOD ID, unit => UNIT ID].
    *
-   * @throws InvalidArgumentException
+   * @throws \InvalidArgumentException
    *   - If host site with Phenotypes module has no genus configured.
    *   - If PhenoCombo is missing any of the key(s) trait, method, and unit.
    */
