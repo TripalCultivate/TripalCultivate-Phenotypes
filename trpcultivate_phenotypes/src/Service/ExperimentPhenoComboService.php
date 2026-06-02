@@ -535,7 +535,7 @@ class ExperimentPhenoComboService {
    *   The experiment PhenoCombo previously assigned to the experiment.
    *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::getExperimentPhenoCombo()
    *
-   * @throws InvalidArgumentException
+   * @throws \InvalidArgumentException
    *   - If the PhenoCombo has associated phenotypic records.
    *   - If failed to remove a PhenoCombo (database error).
    */
