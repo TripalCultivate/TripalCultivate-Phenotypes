@@ -713,8 +713,8 @@ class ExperimentPhenoComboService {
    *
    * @return array
    *   A validated and sanitized experiment PhenoCombo details where status flag
-   *   values are guaranteed 0 or 1 value and label trimmed and is a unique
-   *   label within experiment context.
+   *   values are guaranteed to be 0 or 1 in value and label is trimmed and is a 
+   *   unique label within experiment context.
    *
    * @throws \InvalidArgumentException
    *   - If label is an empty string and is not unique label in the experiment.
