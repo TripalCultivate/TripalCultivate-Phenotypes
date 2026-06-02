@@ -564,7 +564,7 @@ class ExperimentPhenoComboService {
 
     if ($combo_phenotypes_count) {
       throw new \InvalidArgumentException(
-        'PhenoCombo has Phenotypes error. The PhenoCombo has associated phenotypic records.'
+        'Failed to remove PhenoCombo from this experiment. The PhenoCombo has associated phenotypic records.'
       );
     }
 
