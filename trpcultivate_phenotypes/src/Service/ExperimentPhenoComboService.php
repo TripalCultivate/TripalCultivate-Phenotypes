@@ -347,8 +347,8 @@ class ExperimentPhenoComboService {
    *
    * @throws \InvalidArgumentException
    *   - If a genus is not a configured genus of the experiment.
-   *   - If not a valid options key provided in $options parameter.
-   *   - If not a valid fetch format value provided in the $options parameter.
+   *   - If an invalid valid options key is provided to the $options parameter.
+   *   - If an invalid value is provided for 'format' in the $options parameter.
    */
   public function getAllExperimentPhenoCombos(string|null $genus = NULL, array $options = []):array|null {
 
