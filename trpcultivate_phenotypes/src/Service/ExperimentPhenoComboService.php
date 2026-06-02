@@ -330,7 +330,7 @@ class ExperimentPhenoComboService {
    *   value defines a single PhenoCombo according to the format chosen in
    *   'options'. Specifically,
    *
-   *   $options = ['format' => 'component' | 'header' | 'full']
+   *   $options = ['format' => 'component' | 'header' | 'full' (default)]
    *
    *   - component: the component format is suitable of use with trait_combo
    *   component as value to the key #props.
@@ -341,9 +341,12 @@ class ExperimentPhenoComboService {
    *   and type (Required or Optional).
    *   @see TripalCultivatePhenoTraitImporter::$headers
    *
-   *   - full:
+   *   - full (DEFAULT):
    *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::getExperimentPhenoCombo()
    *     The return value of this method.
+   *
+   *   Return value format will default to 'full' if not specified in the
+   *   '$options' parameter.
    *
    * @throws \InvalidArgumentException
    *   - If a genus is not a configured genus of the experiment.
