@@ -672,7 +672,7 @@ class ExperimentPhenoComboService {
       ${$alias} = $sanitized_pheno_combo[$alias];
     }
 
-    // Find the combination in each config-genus.
+    // Look for this combination in each configured genus.
     foreach ($config_genus as $genus) {
       $this->service_PhenoTraits->setTraitGenus($genus);
 
