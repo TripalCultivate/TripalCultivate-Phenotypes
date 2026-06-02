@@ -178,7 +178,7 @@ class ExperimentPhenoComboService {
    *     an integer value is the method id (a value to phenotype.observable_id).
    *   - 'unit' (integer|string): a string value is the trait unit, whereas an
    *     integer value is the unit id (a value to phenotype.unit_id).
-   * @param array $experiment_pheno_combo_details
+   * @param array $phenocombo_details
    *   An associative array describing the label and status flags to assign to
    *   to this PhenoCombo within an experiment.
    *   The following keys are supported:
@@ -204,24 +204,24 @@ class ExperimentPhenoComboService {
    *   - If the PhenoCombo already exists within the experiment.
    *   - If failed to insert a PhenoCombo (database error).
    */
-  public function assignPhenoComboToExperiment(array $pheno_combo, array $experiment_pheno_combo_details): int {
+  public function assignPhenoComboToExperiment(array $pheno_combo, array $phenocombo_details): int {
 
     $this->ensureExperimentIsSet();
 
-    if (!isset($experiment_pheno_combo_details['label'])) {
+    if (!isset($phenocombo_details['label'])) {
       throw new \InvalidArgumentException(
-        'Missing label key error. The key \'label\' must exist in the \'$experiment_pheno_combo_details\' parameter.'
+        'Missing label key error. The key \'label\' must exist in the \'$phenocombo_details\' parameter.'
       );
     }
 
     $sanitized_pheno_combo = $this->sanitizePhenoCombo($pheno_combo);
-    $sanitized_experiment_pheno_combo_details = $this->sanitizePhenoComboDetails($experiment_pheno_combo_details);
+    $sanitized_phenocombo_details = $this->sanitizePhenoComboDetails($phenocombo_details);
 
     // Metadata fields.
     $field_metadata = [
       'project_id' => $this->experiment_context,
       'uid' => $this->current_user->id(),
-      'label' => $sanitized_experiment_pheno_combo_details['label'],
+      'label' => $sanitized_phenocombo_details['label'],
       'timestamp' => time(),
     ];
 
@@ -229,7 +229,7 @@ class ExperimentPhenoComboService {
     // default value of 0 (no).
     $field_status_flags = [];
     foreach (self::PHENOCOMBO_STATUS_FLAG_FIELD_MAP as $field) {
-      $field_status_flags[$field] = $sanitized_experiment_pheno_combo_details[$field] ?? 0;
+      $field_status_flags[$field] = $sanitized_phenocombo_details[$field] ?? 0;
     }
 
     // PhenoCombo fields.
@@ -703,7 +703,7 @@ class ExperimentPhenoComboService {
   /**
    * Sanitize experiment PhenoCombo details.
    *
-   * @param array $experiment_pheno_combo_details
+   * @param array $phenocombo_details
    *   An associative array containing label and combo status flags. Any of the
    *   following optional keys may be provided and will be validated:
    *   - label (string) uniquely identifying this trait-method-unit combo in
@@ -720,20 +720,20 @@ class ExperimentPhenoComboService {
    *   - If label is an empty string and is not unique label in the experiment.
    *   - If any of the status flag has unexpected or non-integer value.
    */
-  public function sanitizePhenoComboDetails(array $experiment_pheno_combo_details): array {
+  public function sanitizePhenoComboDetails(array $phenocombo_details): array {
 
-    if ($experiment_pheno_combo_details === []) {
+    if ($phenocombo_details === []) {
       return [];
     }
 
-    $sanitized_experiment_pheno_combo_details = [];
+    $sanitized_phenocombo_details = [];
 
     // If label is provided, ensure it is not an empty string and is a unique
     // entry within the experiment context.
     $field_label = 'label';
 
-    if (isset($experiment_pheno_combo_details[$field_label])) {
-      $label = trim($experiment_pheno_combo_details[$field_label] ?? '');
+    if (isset($phenocombo_details[$field_label])) {
+      $label = trim($phenocombo_details[$field_label] ?? '');
 
       if (empty($label) || (!empty($label) && !$this->labelIsUniqueInExperiment($label))) {
         throw new \InvalidArgumentException(
@@ -744,7 +744,7 @@ class ExperimentPhenoComboService {
         );
       }
 
-      $sanitized_experiment_pheno_combo_details[$field_label] = $label;
+      $sanitized_phenocombo_details[$field_label] = $label;
     }
 
     // Sanitize only the status flags provided. No fill in of missing flags.
