@@ -725,8 +725,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     catch (\Exception $e) {
       $this->assertStringContainsString(
         'Failed to remove PhenoCombo from this experiment',
-        $e->getMessage(), 'PhenoCombos
-        with associated phenotypic are protected from remove operation.'
+        $e->getMessage(), 'PhenoCombos with associated phenotypic records are protected from the remove operation.'
       );
     }
 
