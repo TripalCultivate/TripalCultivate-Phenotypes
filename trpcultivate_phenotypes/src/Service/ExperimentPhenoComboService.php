@@ -506,7 +506,7 @@ class ExperimentPhenoComboService {
     $combo_id = $this->resolvePhenoCombo($combo);
     $sanitized_status_flags = $this->sanitizePhenoComboDetails($status_flags);
 
-    // Nothing to set if not one status was provided.
+    // Nothing to set if status was not provided.
     if ($sanitized_status_flags === []) {
       return;
     }
