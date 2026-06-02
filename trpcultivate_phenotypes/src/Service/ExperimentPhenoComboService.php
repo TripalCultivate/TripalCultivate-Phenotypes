@@ -688,7 +688,7 @@ class ExperimentPhenoComboService {
 
     if (is_null($pheno_combo)) {
       throw new \InvalidArgumentException(
-        'Missing PhenoCombo error. The trait-method-unit combinations does not exist.'
+        'Missing PhenoCombo error. The trait-method-unit combination does not exist for any configured genus.'
       );
     }
 
