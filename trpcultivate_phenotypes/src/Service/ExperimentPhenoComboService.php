@@ -827,9 +827,6 @@ class ExperimentPhenoComboService {
         ->condition('tbl.project_id', $this->experiment_context, '=')
         ->condition('tbl.label', $label, '=');
     }
-    else {
-      throw new \InvalidArgumentException('Unsupported combo input type');
-    }
 
     $combo_id = $query->range(0, 1)->execute()->fetchField();
     if ($combo_id === FALSE) {
