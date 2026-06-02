@@ -649,7 +649,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       array_filter($a_pheno_combo, function ($i) use ($status_flags) {
         return in_array($i, $status_flags);
       }, ARRAY_FILTER_USE_KEY),
-      'The status flags are expected to all be set to 0 (No).',
+      'All the status flags are expected to be set to 0 (No).',
     );
 
     $pheno_combo = [];
