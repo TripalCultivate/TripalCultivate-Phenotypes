@@ -621,7 +621,7 @@ class ExperimentPhenoComboService {
    */
   public function sanitizePhenoCombo(array $pheno_combo): array {
 
-    // Phenotypes module hosted has no genus configured.
+    // Check if the Phenotypes module has genus configured.
     $config_genus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
     if ($config_genus === []) {
       throw new \Exception(
