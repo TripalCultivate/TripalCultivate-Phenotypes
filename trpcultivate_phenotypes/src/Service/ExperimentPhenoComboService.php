@@ -357,7 +357,7 @@ class ExperimentPhenoComboService {
 
     $this->ensureExperimentIsSet();
 
-    if ($genus !== NULL && $genus !== '') {
+    if (!empty($genus)) {
       if (!in_array($genus, $this->service_PhenoGenusProject->getGenusOfProject($this->experiment_context))) {
         throw new \InvalidArgumentException(
           'Failed to get experiment PhenoCombos. The genus provided is not a configured genus of the experiment.'
