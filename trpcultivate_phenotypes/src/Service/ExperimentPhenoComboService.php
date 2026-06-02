@@ -632,7 +632,7 @@ class ExperimentPhenoComboService {
       );
     }
 
-    // PhenoCombo is missing an alias.
+    // Check if PhenoCombo is missing an alias.
     $pheno_combo_alias = array_keys(self::PHENOCOMBO_FIELD_MAP);
     if (array_diff($pheno_combo_alias, $input_keys = array_keys($pheno_combo))) {
       throw new \InvalidArgumentException(
