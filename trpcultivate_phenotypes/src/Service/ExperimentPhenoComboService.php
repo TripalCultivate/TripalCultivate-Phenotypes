@@ -171,7 +171,7 @@ class ExperimentPhenoComboService {
    *
    * @param array $pheno_combo
    *   An associative array describing the TRAIT-METHOD-UNIT combination.
-   *   This MUST ALREADY EXISTS in Chado. The following keys are expected:
+   *   This MUST ALREADY EXIST in Chado. The following keys are expected:
    *   - 'trait' (integer|string): a string value is the trait name, whereas an
    *     integer value is the trait id (a value to phenotype.attr_id).
    *   - 'method' (integer|string): a string value is the method name, whereas
