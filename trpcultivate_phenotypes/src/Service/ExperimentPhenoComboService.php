@@ -750,15 +750,15 @@ class ExperimentPhenoComboService {
     // Sanitize only the status flags provided. No fill in of missing flags.
     $unexpected_values = [];
     foreach (self::PHENOCOMBO_STATUS_FLAG_FIELD_MAP as $field) {
-      if (isset($experiment_pheno_combo_details[$field])) {
-        $status_flag_val = $experiment_pheno_combo_details[$field];
+      if (isset($phenocombo_details[$field])) {
+        $status_flag_val = $pheno_combodetails[$field];
 
         if ($status_flag_val != 0 && $status_flag_val != 1) {
           array_push($unexpected_values, $field);
           continue;
         }
 
-        $sanitized_experiment_pheno_combo_details[$field] = $status_flag_val;
+        $sanitized_phenocombo_details[$field] = $status_flag_val;
       }
     }
 
@@ -771,7 +771,7 @@ class ExperimentPhenoComboService {
       );
     }
 
-    return $sanitized_experiment_pheno_combo_details;
+    return $sanitized_phenocombo_details;
   }
 
   /**
