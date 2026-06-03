@@ -522,7 +522,7 @@ class ExperimentPhenoComboService {
       $db_transaction->rollBack();
 
       $this->tripal_logger->error($e->getMessage());
-      throw new Exception($e->getMessage());
+      throw new \Exception($e->getMessage());
     }
   }
 
@@ -578,7 +578,7 @@ class ExperimentPhenoComboService {
       $db_transaction->rollBack();
 
       $this->tripal_logger->error($e->getMessage());
-      throw new Exception($e->getMessage());
+      throw new \Exception($e->getMessage());
     }
   }
 
