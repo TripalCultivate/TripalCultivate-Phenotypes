@@ -1,13 +1,34 @@
 # Menu - Configuring Tripal Cultivate Phenotypes.
 # Group in admin/tripal/extension
-
-trpcultivate_phenotypes.rrules:
+trpcultivate_phenotypes.main_settings:
+  title: 'Configure Tripal Cultivate Phenotypes Module'
+  description: 'Manage all Tripal Cultivate phenotype-related processing rules and metadata.'
   route_name: trpcultivate_phenotypes.settings
-  title: 'Tripal Cultivate Phenotypes Configuration'
-  description: 'Core administration menu for Tripal Cultivate Phenotypes'
   parent: tripal.extension
+  weight: 0
 
+trpcultivate_phenotypes.settings_ontology:
+  title: 'Ontology Configuration'
+  description: 'Configure Tripal Cultivate Phenotypes - Ontology Settings'
+  route_name: trpcultivate_phenotypes.settings_ontology
+  parent: trpcultivate_phenotypes.main_settings
+  weight: 1
 
+trpcultivate_phenotypes.settings_watermark:
+  title: 'Watermark Configuration'
+  description: 'Configure Tripal Cultivate Phenotypes - Watermark Settings'
+  route_name: trpcultivate_phenotypes.settings_watermark
+  parent: trpcultivate_phenotypes.main_settings
+  weight: 2
+
+trpcultivate_phenotypes.settings_r:
+  title: 'R Configuration'
+  description: 'Configure Tripal Cultivate Phenotypes - R Settings'
+  route_name: trpcultivate_phenotypes.settings_r
+  parent: trpcultivate_phenotypes.main_settings
+  weight: 3
+
+# Phenotype data file backups
 entity.phenodata_backup.overview:
   title: Phenotypic Data Backups
   parent: system.admin_structure

@@ -1,10 +1,10 @@
 # Routes for configuring Tripal Cultivate Phenotypes.
 # Configuration dashboard.
 trpcultivate_phenotypes.settings:
-  path: 'admin/tripal/extension/tripal-cultivate/phenotypes'
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes'
   defaults:
     _title: 'Configure Tripal Cultivate Phenotypes'
-    _controller: '\Drupal\trpcultivate_phenotypes\Controller\TripalCultivatePhenotypesSettingsController:loadPage'
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
   requirements:
     _permission: 'administer tripal'
 
