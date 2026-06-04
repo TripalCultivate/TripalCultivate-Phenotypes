@@ -3,34 +3,34 @@
 trpcultivate_phenotypes.main_settings:
   title: 'Configure Tripal Cultivate Phenotypes Module'
   description: 'Manage all Tripal Cultivate phenotype-related processing rules and metadata.'
-  route_name: trpcultivate_phenotypes.settings
-  parent: tripal.extension
+  route_name: 'trpcultivate_phenotypes.settings'
+  parent: 'tripal.extension'
   weight: 0
 
 trpcultivate_phenotypes.settings_ontology:
   title: 'Ontology Configuration'
   description: 'Manage and configure genus configuration settings and define the terms used to process phenotypic data.'
-  route_name: trpcultivate_phenotypes.settings_ontology
-  parent: trpcultivate_phenotypes.main_settings
-  weight: 1
+  route_name: 'trpcultivate_phenotypes.settings_ontology'
+  parent: 'trpcultivate_phenotypes.main_settings'
+  weight: 0
 
 trpcultivate_phenotypes.settings_watermark:
   title: 'Watermark Configuration'
   description: 'Define how all module-generated illustrations, histograms, and charts are watermarked during output.'
-  route_name: trpcultivate_phenotypes.settings_watermark
-  parent: trpcultivate_phenotypes.main_settings
-  weight: 2
+  route_name: 'trpcultivate_phenotypes.settings_watermark'
+  parent: 'trpcultivate_phenotypes.main_settings'
+  weight: 1
 
 trpcultivate_phenotypes.settings_r:
   title: 'R Configuration'
   description: 'Set trait transformation rules for R-base application data processing.'
-  route_name: trpcultivate_phenotypes.settings_r
-  parent: trpcultivate_phenotypes.main_settings
-  weight: 3
+  route_name: 'trpcultivate_phenotypes.settings_r'
+  parent: 'trpcultivate_phenotypes.main_settings'
+  weight: 2
 
 # Phenotype data file backups
 entity.phenodata_backup.overview:
   title: Phenotypic Data Backups
-  parent: system.admin_structure
   description: 'The collection of phenotypic data backups available in this site that you have permission to access.'
-  route_name: entity.phenodata_backup.collection
+  route_name: 'entity.phenodata_backup.collection'
+  parent: 'system.admin_structure'
