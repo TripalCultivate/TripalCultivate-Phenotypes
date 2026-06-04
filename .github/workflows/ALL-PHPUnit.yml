@@ -33,6 +33,7 @@ jobs:
           - "10.6.x-dev"
           - "11.2.x-dev"
           - "11.3.x-dev"
+          - "11.x-dev"
         exclude:
           # Only Drupal 11.3+ supports PHP 8.5.
           - php-version: "8.5"
@@ -54,6 +55,15 @@ jobs:
             drupal-version: "11.2.x-dev"
           - php-version: "8.2"
             drupal-version: "11.3.x-dev"
+          # Only run 11.x on the bleeding edge.
+          - php-version: "8.2"
+            drupal-version: "11.x-dev"
+          - php-version: "8.3"
+            drupal-version: "11.x-dev"
+          - php-version: "8.4"
+            drupal-version: "11.x-dev"
+          - pgsql-version: "14"
+            drupal-version: "11.x-dev"
 
     steps:
       # Check out the repo
