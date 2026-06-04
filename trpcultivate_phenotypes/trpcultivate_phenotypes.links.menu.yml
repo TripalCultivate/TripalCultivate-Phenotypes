@@ -9,21 +9,21 @@ trpcultivate_phenotypes.main_settings:
 
 trpcultivate_phenotypes.settings_ontology:
   title: 'Ontology Configuration'
-  description: 'Configure Tripal Cultivate Phenotypes - Ontology Settings'
+  description: 'Manage and configure genus configuration settings and define the terms used to process phenotypic data.'
   route_name: trpcultivate_phenotypes.settings_ontology
   parent: trpcultivate_phenotypes.main_settings
   weight: 1
 
 trpcultivate_phenotypes.settings_watermark:
   title: 'Watermark Configuration'
-  description: 'Configure Tripal Cultivate Phenotypes - Watermark Settings'
+  description: 'Define how all module-generated illustrations, histograms, and charts are watermarked during output.'
   route_name: trpcultivate_phenotypes.settings_watermark
   parent: trpcultivate_phenotypes.main_settings
   weight: 2
 
 trpcultivate_phenotypes.settings_r:
   title: 'R Configuration'
-  description: 'Configure Tripal Cultivate Phenotypes - R Settings'
+  description: 'Set trait transformation rules for R-base application data processing.'
   route_name: trpcultivate_phenotypes.settings_r
   parent: trpcultivate_phenotypes.main_settings
   weight: 3
