@@ -10,7 +10,7 @@ trpcultivate_phenotypes.settings:
 
 # Configuration: R Transformation Rules.
 trpcultivate_phenotypes.settings_r:
-  path: 'admin/tripal/extension/tripal-cultivate/phenotypes/r-rules'
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/r-rules'
   defaults:
     _title: 'Configure Tripal Cultivate Phenotypes: R Transformation Rules'
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm'
@@ -19,7 +19,7 @@ trpcultivate_phenotypes.settings_r:
 
 # Configuration: Watermark Charts.
 trpcultivate_phenotypes.settings_watermark:
-  path: 'admin/tripal/extension/tripal-cultivate/phenotypes/watermark'
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/watermark'
   defaults:
     _title: 'Configure Tripal Cultivate Phenotypes: Watermark Chart'
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesWatermarkSettingsForm'
@@ -28,7 +28,7 @@ trpcultivate_phenotypes.settings_watermark:
 
 # Configuration: Vocabulary, DB and Terms.
 trpcultivate_phenotypes.settings_ontology:
-  path: 'admin/tripal/extension/tripal-cultivate/phenotypes/ontology'
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/ontology'
   defaults:
     _title: 'Configure Tripal Cultivate Phenotypes: Ontology Terms'
     _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm'
