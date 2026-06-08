@@ -39,3 +39,7 @@ services:
 
   trpcultivate_phenotypes.setup_module_service:
     class: 'Drupal\trpcultivate_phenotypes\Service\SetupModuleService'
+
+  trpcultivate_phenotypes.pheno_integration:
+    class: 'Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings'
+    arguments: ['@config.factory', '@tripal.tripal_entity.lookup']

@@ -179,3 +179,9 @@ trpcultivate:
             name: additionalType
             definition: 'Supplemental data type attached to a unit (ie. quantitative or qualitative).'
             help_text: 'Metadata tagged with this term indicates the data type of a unit of measurement.'
+
+  pheno_backup_support:
+    - research_experiment
+
+  pheno_combo_support:
+    - research_experiment

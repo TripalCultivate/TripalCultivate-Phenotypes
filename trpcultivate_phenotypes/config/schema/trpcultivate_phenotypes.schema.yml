@@ -210,3 +210,15 @@ trpcultivate_phenotypes.phenodata_backup.*:
     user_id:
       type: string
       label: 'The user id of the user who uploaded the data file.'
+
+pheno_backup_support:
+  type: sequence
+  label: 'A list of bundle names that support Phenotypes data file backup'
+  sequence:
+    type: string
+
+pheno_combo_support:
+  type: sequence
+  label: 'A list of bundle names that support setup of Phenotypes traits'
+  sequence:
+    type: string
