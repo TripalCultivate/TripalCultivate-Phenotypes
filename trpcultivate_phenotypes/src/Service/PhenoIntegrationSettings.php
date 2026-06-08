@@ -4,6 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Core\Config\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\tripal\Services\TripalEntityLookup;
 
 /**
  * Handles configuration for phenotypes integration support.
