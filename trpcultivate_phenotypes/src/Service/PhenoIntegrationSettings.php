@@ -2,7 +2,6 @@
 
 namespace Drupal\trpcultivate_phenotypes\Service;
 
-use Drupal\Core\Config\Config;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\tripal\Services\TripalEntityLookup;
 
@@ -13,6 +12,13 @@ use Drupal\tripal\Services\TripalEntityLookup;
  * integrations such as backup and setting up of trait combos.
  */
 class PhenoIntegrationSettings {
+
+  /**
+   * Phenotypes module configuration.
+   *
+   * @var string
+   */
+  public const PHENO_CONFIG = 'trpcultivate_phenotypes.settings';
 
   /**
    * Base configuration namespace for phenotype-related settings.
@@ -56,25 +62,27 @@ class PhenoIntegrationSettings {
    *   - pheno_combo: configure trait-method-unit combinations with a
    *     a project-based content type (e.g. experiment).
    * @param array $content_types
-   *   A list of the content_types which support the given integration.
-   *
-   * @throws \InvalidArgumentException
-   *   - If a content type provided is not supported.
+   *   A list of the content types which support the given integration.
    */
   public function setPhenoIntegratedContentTypes(string $integration, array $content_types): void {
 
-    $invalid_types = array_diff($content_types, $bundles = $this->getProjectBasedContentTypes());
-    if (!empty($invalid_types)) {
+    $this->validateIntegration($integration);
+
+    $invalid_content_types = array_diff(
+      $content_types, $valid_content_types = $this->getProjectBasedContentTypes()
+    );
+
+    if (!empty($invalid_content_types)) {
       throw new \InvalidArgumentException(
         sprintf(
           'Invalid content type error. The content type provided [%s], is not supported. Use one or more of [%s].',
-          implode(', ', $invalid_types),
-          implode(', ', $bundles)
+          implode(', ', $invalid_content_types),
+          implode(', ', $valid_content_types)
         )
       );
     }
 
-    $this->getPhenoIntegrationEditableConfig($integration)
+    $this->config_factory->getEditable(self::PHENO_CONFIG)
       ->set(self::BASE_CONFIG . '.' . self::INTEGRATION_CONFIG[$integration], $content_types)
       ->save();
   }
@@ -95,6 +103,8 @@ class PhenoIntegrationSettings {
    */
   public function getPhenoIntegratedContentTypes(string|null $integration = NULL): array {
 
+    $this->validateIntegration($integration);
+
     $content_types = [];
 
     foreach (self::INTEGRATION_CONFIG as $integration_key => $integration_config) {
@@ -102,7 +112,7 @@ class PhenoIntegrationSettings {
         continue;
       }
 
-      $content_types[$integration_config] = $this->getPhenoIntegrationEditableConfig($integration_key)
+      $content_types[$integration_config] = $this->config_factory->get(self::PHENO_CONFIG)
         ->get(self::BASE_CONFIG . '.' . self::INTEGRATION_CONFIG[$integration_key]) ?? [];
     }
 
@@ -123,42 +133,45 @@ class PhenoIntegrationSettings {
    */
   public function isBundleNamePhenoSupported(string $integration, string $content_type): bool {
 
+    $this->validateIntegration($integration);
+
     return in_array($content_type, $this->getPhenoIntegratedContentTypes($integration));
   }
 
   /**
-   * Get project-base Tripal entity content types.
+   * Get project-base Tripal entity content types bundle names.
    *
    * @return array
    *   Tripal entity bundle names with Chado.project as the base table.
+   *   @see Drupal\tripal\Services\TripalEntityLookup::getBundles()
    */
   public function getProjectBasedContentTypes(): array {
 
-    $base_table_name = 'project';
-    return $this->tripal_entity_lookup->getBundles($base_table_name);
+    // NOTE: bundle name results are from cache.
+    return $this->tripal_entity_lookup->getBundles(
+      $base_table_name = 'project'
+    );
   }
 
   /**
-   * Get configuration.
+   * Validate integration.
    *
-   * @param string $integration
-   *   The integration configuration to reference.
-   *
-   * @return \Drupal\Core\Config\Config
-   *   Drupal configuration object.
+   * @param string|null $integration
+   *   @see Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings::setPhenoIntegratedContentTypes()
    *
    * @throws \InvalidArgumentException
-   *   - If integration requested is invalid.
+   *   - If integration requested is unsupported.
    */
-  protected function getPhenoIntegrationEditableConfig(string $integration): Config {
+  protected function validateIntegration(string|null $integration): void {
 
-    if (!array_key_exists($integration, self::INTEGRATION_CONFIG)) {
+    if (!is_null($integration) && (trim($integration) == '' || !array_key_exists($integration, self::INTEGRATION_CONFIG))) {
       throw new \InvalidArgumentException(
-        'Unsupported integration error. Use ' . implode(', ', array_keys(self::INTEGRATION_CONFIG))
+        sprintf(
+          'Unsupported integration string value error. Use one of [%s] as integration value.',
+          implode(', ', array_keys(self::INTEGRATION_CONFIG))
+        )
       );
     }
-
-    return $this->config_factory->getEditable('trpcultivate_phenotypes.settings');
   }
 
 }
