@@ -84,11 +84,10 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
       array_unique(array_merge($this->config_set['backup'], $this->config_set['pheno_combo']))
     );
 
-    $this->container->set('trpcultivate_phenotypes.pheno_integration', $getcontent_mock);
+    $this->container->set($service = 'trpcultivate_phenotypes.pheno_integration', $getcontent_mock);
+    $this->pheno_integration = $this->container->get($service);
 
-    $this->pheno_integration = $this->container
-      ->get('trpcultivate_phenotypes.pheno_integration');
-
+    // Set test configuration values for every integration.
     $this->config_factory = $this->container->get('config.factory')
       ->getEditable('trpcultivate_phenotypes.settings');
 
@@ -107,31 +106,30 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
    */
   public function testGetPhenoIntegratedContentTypes() {
 
-    // Get all configuration.
-    $all_configs = $this->pheno_integration->getPhenoIntegratedContentTypes();
+    // Get all content types for every integration keyed by configuration name.
+    $integration_content_types = $this->pheno_integration->getPhenoIntegratedContentTypes();
 
     foreach ($this->pheno_integration::INTEGRATION_CONFIG as $integration => $config_name) {
       $this->assertArrayHasKey(
         $config_name,
-        $all_configs,
-        'Failed to return config name ' . $config_name,
+        $integration_content_types,
+        'The content types returned by getPhenoIntegratedContentTypes() method failed to contain the configuration key ' . $config_name,
       );
 
       $this->assertEquals(
         $this->config_set[$integration],
-        $all_configs[$config_name],
-        'Failed to return the expected content types for ' . $integration . ' integration.',
+        $integration_content_types[$config_name],
+        'The content types returned by getPhenoIntegratedContentTypes() method failed to contain the expected content types.',
       );
     }
 
-    // Get configuration for specific integration.
-    $integrations = array_keys($this->pheno_integration::INTEGRATION_CONFIG);
+    // Get content types in a specific integration.
+    foreach (array_keys($this->pheno_integration::INTEGRATION_CONFIG) as $integration) {
+      $integration_content_types = $this->pheno_integration->getPhenoIntegratedContentTypes($integration);
 
-    foreach ($integrations as $integration) {
-      $config = $this->pheno_integration->getPhenoIntegratedContentTypes($integration);
       $this->assertEquals(
         $this->config_set[$integration],
-        $config,
+        $integration_content_types,
         'Failed to return the expected content types for ' . $integration . ' integration.',
       );
     }
@@ -142,9 +140,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
    */
   public function testSetPhenoIntegratedContentTypes() {
 
-    $all_content_types = array_unique(
-      array_merge($this->config_set['backup'], $this->config_set['pheno_combo'])
-    );
+    $all_content_types = $this->pheno_integration->getProjectBasedContentTypes();
 
     $integrations = array_keys($this->pheno_integration::INTEGRATION_CONFIG);
     foreach ($integrations as $integration) {
@@ -156,12 +152,11 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
       );
 
       $this->pheno_integration->setPhenoIntegratedContentTypes($integration, $test_content_types);
-      $updated_integration = $this->pheno_integration->getPhenoIntegratedContentTypes($integration);
 
       $this->assertEquals(
         $test_content_types,
-        $updated_integration,
-        'Failed to set the correct content types for integration ' . $integration
+        $this->pheno_integration->getPhenoIntegratedContentTypes($integration),
+        'Failed to set the expected content types for integration ' . $integration,
       );
     }
   }
@@ -176,10 +171,14 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
       'Unsupported content types is expected to return FALSE by isBundleNamePhenoSupported() method.',
     );
 
-    $this->assertTrue(
-      $this->pheno_integration->isBundleNamePhenoSupported('backup', 'research_experiment'),
-      'Supported content types is expected to return TRUE by isBundleNamePhenoSupported() method.',
-    );
+    foreach ($this->config_set as $integration => $content_types) {
+      foreach ($content_types as $test_content_type) {
+        $this->assertTrue(
+          $this->pheno_integration->isBundleNamePhenoSupported($integration, $test_content_type),
+          'Supported content types is expected to return TRUE by isBundleNamePhenoSupported() method.',
+        );
+      }
+    }
   }
 
   /**
@@ -194,7 +193,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test exceptions.
+   * Test with exceptions.
    */
   public function testWithExceptions() {
 
