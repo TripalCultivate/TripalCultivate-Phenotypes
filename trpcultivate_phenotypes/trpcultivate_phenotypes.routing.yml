@@ -26,6 +26,15 @@ trpcultivate_phenotypes.settings_watermark:
   requirements:
     _permission: 'administer tripal'
 
+# Configuration: Phenotypes Integration.
+trpcultivate_phenotypes.pheno_integration:
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/integration'
+  defaults:
+    _title: 'Configure Tripal Cultivate Phenotypes: Phenotypes Integration'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoIntegrationSettingsForm'
+  requirements:
+    _permission: 'administer tripal'
+
 # Configuration: Vocabulary, DB and Terms.
 trpcultivate_phenotypes.settings_ontology:
   path: 'admin/tripal/extension/tripal-cultivate/phenotypes/ontology'
