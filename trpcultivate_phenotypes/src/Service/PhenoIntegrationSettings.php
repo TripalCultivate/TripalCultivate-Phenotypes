@@ -142,15 +142,23 @@ class PhenoIntegrationSettings {
    * Get project-base Tripal entity content types bundle names.
    *
    * @return array
-   *   Tripal entity bundle names with Chado.project as the base table.
+   *   Tripal entity bundle names with Chado.project as the base table. Each
+   *   bundle name in the array is keyed by the unique bundle machine name and
+   *   the value is a the name transformed into a human-readable label.
    *   @see Drupal\tripal\Services\TripalEntityLookup::getBundles()
    */
   public function getProjectBasedContentTypes(): array {
 
-    // NOTE: bundle name results are from cache.
-    return $this->tripal_entity_lookup->getBundles(
+    $bundle_names = $this->tripal_entity_lookup->getBundles(
       $base_table_name = 'project'
     );
+
+    $project_based_bundles = [];
+    foreach ($bundle_names as $bundle_name) {
+      $project_based_bundles[$bundle_name] = ucwords(str_replace('_', ' ', $bundle_name));
+    }
+
+    return $project_based_bundles;
   }
 
   /**

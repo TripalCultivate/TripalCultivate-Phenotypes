@@ -85,10 +85,10 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
         '#description' => $integration_metadata[$integration]['description'],
         '#required' => TRUE,
         '#options' => $test_options,
+        '#default_value' => $content_types,
         '#empty_option' => 'Please select content types',
         '#empty_value' => 0,
         '#multiple' => TRUE,
-        '#default_value' => 0,
         '#size' => 10,
       ];
     }
@@ -99,6 +99,28 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
     ];
 
     return parent::buildForm($form, $form_state);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+
+    // Validate that bundle has no associated phenotypes if selection has
+    // been modified into a new set of content types.
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+
+    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG as $integration => $config_name) {
+      $this->service_PhenoIntegration->setPhenoIntegratedContentTypes(
+        $integration,
+        $form_state->get($config_name)
+      );
+    }
   }
 
 }
