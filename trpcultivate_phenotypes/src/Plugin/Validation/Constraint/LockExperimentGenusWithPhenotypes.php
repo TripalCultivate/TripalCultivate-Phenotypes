@@ -19,8 +19,10 @@ class LockExperimentGenusWithPhenotypes extends Constraint {
   /**
    * The message that will be shown if the genus has failed validation.
    *
-   * Placeholder %genus and @reload are interpolated at runtime, with the user
-   * entered genus value and the reload link, respectively.
+   * Placeholders will be interpolated at runtime. Specifically, 
+   * - %genus: genus failing validation.
+   * - %content-type: the label of the content type being validated.
+   * - @reload: a link to force reloading of the form.
    *
    * @var string
    *
