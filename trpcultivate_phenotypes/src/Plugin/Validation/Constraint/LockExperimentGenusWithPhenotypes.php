@@ -33,8 +33,9 @@ class LockExperimentGenusWithPhenotypes extends Constraint {
   /**
    * The message that will be shown if all genus have been removed.
    *
-   * Placeholder @reload are interpolated at runtime, with the user entered and
-   * the reload link.
+   * Placeholders will be interpolated at runtime. Specifically, 
+   * - %content-type: the label of the content type being validated.  
+   * - @reload: a link to force reloading of the form.  
    *
    * @var string
    *
