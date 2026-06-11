@@ -26,7 +26,7 @@ class LockExperimentGenusWithPhenotypes extends Constraint {
    *
    * @see src/Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypesValidator.php
    */
-  public string $genus_failed = 'Update failed: Genus "%genus" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.';
+  public string $genus_failed = 'Update failed: Genus "%genus" of this %content-type is linked to phenotypic data and must remain present and unique. Click @reload to restore form values if you tried to remove or change the genus.';
 
   /**
    * The message that will be shown if all genus have been removed.
