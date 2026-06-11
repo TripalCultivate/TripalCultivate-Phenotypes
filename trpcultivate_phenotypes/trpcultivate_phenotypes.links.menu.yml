@@ -23,7 +23,7 @@ trpcultivate_phenotypes.settings_watermark:
 
 trpcultivate_phenotypes.settings_r:
   title: 'R Configuration'
-  description: 'Set trait transformation rules for R-base application data processing.'
+  description: 'Set trait transformation rules for use in downstream data processing using R.'
   route_name: 'trpcultivate_phenotypes.settings_r'
   parent: 'trpcultivate_phenotypes.main_settings'
   weight: 2
