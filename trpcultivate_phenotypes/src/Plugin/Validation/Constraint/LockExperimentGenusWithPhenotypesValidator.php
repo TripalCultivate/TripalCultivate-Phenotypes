@@ -115,7 +115,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     // genus cvterm as it's type_id.
     // Note: If a field has no value, then it cannot be found via this helper
     // method. See the method documentation for more details on why.
-    $genus_property_fields = $this->findGenusFieldProperty($tripal_entity);
+    $genus_property_fields = $this->findFieldsWithGenusProperty($tripal_entity);
 
     // Trigger the constraint if an experiment has no remaining genus values
     // but still has configured experiment-trait-method-unit combinations
@@ -160,7 +160,14 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
   }
 
   /**
-   * Find Tripal field(s) that reference project.project_id;type_id property.
+   * This method compiles a list of all fields that store a chado projectprop
+   * record with the type_id referencing the genus cvterm. This is done by
+   * looking for a TripalPropertyValue for the projectprop.type_id specifically
+   * and checking it's value matches the cvterm_id of the genus cvterm.
+   *
+   * Note: Since we need to look at the value of projectprop.type_id property
+   * and Drupal only includes values for a field if it is not empty, we cannot
+   * detect genus property fields without a genus being assigned.
    *
    * @param \Drupal\tripal\Entity\TripalEntity $tripal_entity
    *   Tripal Entity @see \Drupal\tripal\Entity\TripalEntity.
@@ -168,7 +175,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * @return array
    *   The field names that implement the path property string.
    */
-  protected function findGenusFieldProperty(TripalEntity $tripal_entity): array {
+  protected function findFieldsWithGenusProperty(TripalEntity $tripal_entity): array {
 
     $genus_property_fields = [];
     $chado_fields = $tripal_entity->getTripalStorageFields('chado_storage');
