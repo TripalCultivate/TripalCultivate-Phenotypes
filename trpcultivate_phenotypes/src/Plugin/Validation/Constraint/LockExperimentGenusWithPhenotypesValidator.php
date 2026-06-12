@@ -86,10 +86,16 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
   /**
    * {@inheritdoc}
    *
-   * NOTE: the constraint is attached at entity level and parameter #1 is
-   * a tripal_entity entity type.
+   * NOTE: the constraint is attached at entity level in order to validate
+   * all fields that reference genus values.
+   *
+   * @param \Drupal\tripal\Entity\TripalEntity $tripal_entity
+   *   The Tripal Entity being validated containing the field(s) being
+   *   checked for genus values.
+   * @param \Symfony\Component\Validator\Constraint $constraint
+   *   The constraint definition which includes messages.
    */
-  public function validate($tripal_entity, Constraint $constraint): void {
+  public function validate(TripalEntity $tripal_entity, Constraint $constraint): void {
 
     $this->project_id = $tripal_entity->getBackendRecordId('chado_storage');
 
