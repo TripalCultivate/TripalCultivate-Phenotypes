@@ -131,7 +131,10 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
       return;
     }
 
-    // Find the value property of fields that implement path property string.
+    // Find the TripalPropertyType key storing the genus for all fields found
+    // using findGenusFieldProperty(). This TripalPropertyType should store the
+    // chado projectprop.value column where the projectprop.type_id of the same
+    // record references the genus cvterm.
     $field_properties_to_validate = $this->findGenusFieldValue($genus_property_fields, $tripal_entity);
     if ($field_properties_to_validate == []) {
       return;
