@@ -152,10 +152,9 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     }
 
     // Validate genus fields.
-    $bundle_label = $tripal_entity->getBundle()->label();
-    foreach ($field_properties_to_validate as $constraint_fieldname) {
-      $field_values = $tripal_entity->get($constraint_fieldname)->getValue();
-      $this->validateGenusField($bundle_label, $constraint_fieldname, $field_values, $constraint);
+    foreach ($field_properties_to_validate as $constraint_field) {
+      $field_values = $tripal_entity->get($constraint_field['field_name'])->getValue();
+      $this->validateGenusField($constraint_field, $field_values, $constraint);
     }
   }
 
@@ -245,7 +244,11 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
 
         $aliased_path = $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'path');
         if ($aliased_path !== NULL && str_contains($aliased_path, $projectprop_alias . '.project_id;value')) {
-          $field_properties_to_validate[] = $field_name;
+          $field_properties_to_validate[] = [
+            'field_name' => $field_name,
+            'property_key' => $property_key,
+            'content_type' => $tripal_entity->getBundle()->label(),
+          ];
         }
       }
     }
@@ -258,10 +261,12 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *
    * The genus value is validated within the context of the experiment.
    *
-   * @param string $content_type
-   *   The content type entity label.
-   * @param string $field_name
-   *   The field name that contains the genus values.
+   * @param array $field
+   *   An associative array of fields containing genus. Each field element
+   *   contains the following keys:
+   *   - 'field_name': the name of the field.
+   *   - 'property_key': the property key used to reference field value.
+   *   - 'content_type': the label of the content type the field belongs to.
    * @param array $field_values
    *   The array of genus values of the field. The value is an array keyed by
    *   either the string 'value' or 'genus_value'.
@@ -269,13 +274,10 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * @param \Symfony\Component\Validator\Constraint $constraint
    *   Constraint definition.
    */
-  protected function validateGenusField(string $content_type, string $field_name, array $field_values, Constraint $constraint): void {
+  protected function validateGenusField(array $field, array $field_values, Constraint $constraint): void {
 
-    // Find the key that corresponds to the field value and create summary
-    // Count of each unique value.
-    $value_key = array_key_exists('value', reset($field_values)) ? 'value' : 'genus_value';
-
-    $field_values = array_filter(array_column($field_values, $value_key));
+    // Create summary count of each unique genus value.
+    $field_values = array_filter(array_column($field_values, $field['property_key']));
     $count_bygenus = array_count_values($field_values);
 
     // @todo replace with phenocombo service.
@@ -308,11 +310,11 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
           ->buildViolation(
             Markup::create(strtr($constraint->genus_failed, [
               '%genus' => $genus,
-              '%content-type' => $content_type,
+              '%content-type' => $field['content_type'],
               '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
             ]))
           )
-          ->atPath($field_name)
+          ->atPath($field['field_name'])
           ->addViolation();
 
         break;
