@@ -132,7 +132,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
         $this->context
           ->buildViolation(
             Markup::create(strtr($constraint->all_genus_failed, [
-              '%content-type' => $tripal_entity->label(),
+              '%content-type' => $tripal_entity->getBundle()->label(),
               '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
             ]))
           )
@@ -152,9 +152,10 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     }
 
     // Validate genus fields.
+    $bundle_label = $tripal_entity->getBundle()->label();
     foreach ($field_properties_to_validate as $constraint_fieldname) {
       $field_values = $tripal_entity->get($constraint_fieldname)->getValue();
-      $this->validateGenusField($tripal_entity->label(), $constraint_fieldname, $field_values, $constraint);
+      $this->validateGenusField($bundle_label, $constraint_fieldname, $field_values, $constraint);
     }
   }
 
