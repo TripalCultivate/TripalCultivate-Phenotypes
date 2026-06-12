@@ -121,6 +121,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
         $this->context
           ->buildViolation(
             Markup::create(strtr($constraint->all_genus_failed, [
+              '%content-type' => $tripal_entity->label(),
               '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
             ]))
           )
@@ -139,7 +140,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     // Validate genus fields.
     foreach ($field_properties_to_validate as $constraint_fieldname) {
       $field_values = $tripal_entity->get($constraint_fieldname)->getValue();
-      $this->validateGenusField($constraint_fieldname, $field_values, $constraint);
+      $this->validateGenusField($tripal_entity->label(), $constraint_fieldname, $field_values, $constraint);
     }
   }
 
@@ -235,6 +236,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *
    * The genus value is validated within the context of the experiment.
    *
+   * @param string $content_type
+   *   The content type entity label.
    * @param string $field_name
    *   The field name that contains the genus values.
    * @param array $field_values
@@ -244,7 +247,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * @param \Symfony\Component\Validator\Constraint $constraint
    *   Constraint definition.
    */
-  protected function validateGenusField(string $field_name, array $field_values, Constraint $constraint): void {
+  protected function validateGenusField(string $content_type, string $field_name, array $field_values, Constraint $constraint): void {
 
     // Find the key that corresponds to the field value and create summary
     // Count of each unique value.
@@ -283,6 +286,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
           ->buildViolation(
             Markup::create(strtr($constraint->genus_failed, [
               '%genus' => $genus,
+              '%content-type' => $content_type,
               '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
             ]))
           )
