@@ -67,7 +67,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     protected TripalCultivatePhenotypesTermsService $service_PhenoTerms,
   ) {
-
+    // Parameters are assigned to protected properties via constructor
+    // property promotion.
   }
 
   /**
