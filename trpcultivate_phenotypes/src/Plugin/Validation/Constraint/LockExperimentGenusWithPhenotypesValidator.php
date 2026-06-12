@@ -118,7 +118,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     $genus_property_fields = $this->findGenusFieldProperty($tripal_entity);
 
     // Trigger the constraint if an experiment has no remaining genus values
-    // while still containing phenocombo records.
+    // but still has configured experiment-trait-method-unit combinations
+    // which by definition are genus-specific.
     if ($genus_property_fields == []) {
       // @todo replace with phenocombo service.
       $exp_has_phenocombo = $this->chado_connection->select('trpcultivate_phenocombo', 'combo')
