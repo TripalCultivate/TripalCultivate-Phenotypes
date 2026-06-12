@@ -111,7 +111,10 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
       return;
     }
 
-    // Find fields that implement path property string.
+    // Find fields that manage a chado project.projectprop record using the
+    // genus cvterm as it's type_id.
+    // Note: If a field has no value, then it cannot be found via this helper
+    // method. See the method documentation for more details on why.
     $genus_property_fields = $this->findGenusFieldProperty($tripal_entity);
 
     // Trigger the constraint if an experiment has no remaining genus values
