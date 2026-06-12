@@ -343,7 +343,7 @@ class HookAlterTest extends ChadoTestKernelBase {
 
     $constraint_message = strtr($constraint->genus_failed, [
       '%genus' => $exp_genus,
-      '%content-type' => $this->exp_entity->label(),
+      '%content-type' => $this->exp_entity->getBundle()->label(),
       '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
     ]);
 
@@ -376,7 +376,7 @@ class HookAlterTest extends ChadoTestKernelBase {
     $constraint_validator->validate($this->exp_entity, $constraint);
 
     $constraint_message = strtr($constraint->all_genus_failed, [
-      '%content-type' => $this->exp_entity->label(),
+      '%content-type' => $this->exp_entity->getBundle()->label(),
       '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
     ]);
 
