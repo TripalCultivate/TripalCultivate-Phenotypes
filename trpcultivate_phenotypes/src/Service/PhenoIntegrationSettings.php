@@ -69,7 +69,7 @@ class PhenoIntegrationSettings {
     $this->validateIntegration($integration);
 
     $invalid_content_types = array_diff(
-      $content_types, $valid_content_types = $this->getProjectBasedContentTypes()
+      $content_types, $valid_content_types = array_keys($this->getProjectBasedContentTypes())
     );
 
     if (!empty($invalid_content_types)) {

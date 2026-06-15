@@ -186,8 +186,10 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
    */
   public function testGetProjectBasedContentTypes() {
 
+    $project_bundles = $this->pheno_integration->getProjectBasedContentTypes();
+
     $this->assertEquals(
-      $this->pheno_integration->getProjectBasedContentTypes(),
+      $project_bundles,
       array_unique(array_merge($this->config_set['backup'], $this->config_set['pheno_combo']))
     );
   }
