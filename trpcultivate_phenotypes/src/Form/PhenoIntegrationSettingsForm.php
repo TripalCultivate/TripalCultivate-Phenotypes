@@ -101,11 +101,14 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
 
     foreach ($exp_with_pheno as $project_id) {
       foreach ($project_bundles as $bundle) {
-        if ($project_backups_storage->loadByProperties(['project_id' => $project_id])) {
+
+        $has_entity = $this->tripal_entity_lookup->getEntityIdFromRecordId($project_id, $bundle, 'tripal_entity');
+
+        if ($has_entity && $project_backups_storage->loadByProperties(['project_id' => $project_id])) {
           array_push($protected_in_backups, $bundle);
         }
 
-        if ($this->tripal_entity_lookup->getEntityIdFromRecordId($project_id, $bundle, 'tripal_entity')) {
+        if ($has_entity) {
           array_push($protected_in_phenocombo, $bundle);
         }
       }
@@ -120,9 +123,10 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
     $backup_config = $this->service_PhenoIntegration::INTEGRATION_CONFIG['backup'];
 
     // Mark protected content types with asterisk.
-    array_walk($project_content_types, function(&$name, $config) use ($protected_in_backups) {
+    $backup_options = $project_content_types;
+    array_walk($backup_options, function(&$name, $config) use ($protected_in_backups) {
       if (in_array($config, $protected_in_backups)) {
-        $name .= ' *';
+        $name = '*' . $name;
       }
     });
 
@@ -132,7 +136,7 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
       '#description' => 'Choose the Content Types you would like to support phenotypic data file backups.
         This will add a tab beside Edit on pages of this type that links to the Phenotypic Data Backup page.',
       '#required' => TRUE,
-      '#options' => $project_content_types,
+      '#options' => $backup_options,
       '#default_value' => $content_type_integrations[$backup_config],
       '#empty_option' => 'Please select content types',
       '#empty_value' => 0,
@@ -143,9 +147,10 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
     $pheno_combo_config = $this->service_PhenoIntegration::INTEGRATION_CONFIG['pheno_combo'];
 
     // Mark protected content types with asterisk.
-    array_walk($project_content_types, function(&$name, $config) use ($protected_in_phenocombo) {
+    $phenocombo_options = $project_content_types;
+    array_walk($phenocombo_options, function(&$name, $config) use ($protected_in_phenocombo) {
       if (in_array($config, $protected_in_phenocombo)) {
-        $name .= ' *';
+        $name = '*' . $name;
       }
     });
 
@@ -155,7 +160,7 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
       '#description' => 'Choose the Content Types you would like to suppor phenotypic data import.
         This will add a tab beside Edit on pages of this type allowing you to indicate what type of phenotypic data will be collected for this project.',
       '#required' => TRUE,
-      '#options' => $project_content_types,
+      '#options' => $phenocombo_options,
       '#default_value' => $content_type_integrations[$pheno_combo_config],
       '#empty_option' => 'Please select content types',
       '#empty_value' => 0,
@@ -182,7 +187,7 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
 
     $project_bundles = array_keys($this->service_PhenoIntegration->getProjectBasedContentTypes());
 
-    $protected_content_types = $form_state->get('protected_content_types');
+    $protected_content_types = $form_state->get('protected_in_phenocombo');
     foreach ($protected_content_types as $content_type) {
       if (!in_array($content_type, $pheno_combo_values)) {
         $form_state->setErrorByName(
