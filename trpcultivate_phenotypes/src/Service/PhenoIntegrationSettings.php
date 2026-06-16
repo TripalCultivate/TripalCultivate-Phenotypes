@@ -2,6 +2,7 @@
 
 namespace Drupal\trpcultivate_phenotypes\Service;
 
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\tripal\Services\TripalEntityLookup;
 
@@ -28,11 +29,12 @@ class PhenoIntegrationSettings {
   public const BASE_CONFIG = 'trpcultivate.phenotypes';
 
   /**
-   * Integrations to configuration name mapping.
+   * Maps integration keys to configuration names.
    *
    * @var array
+   * @see config/install/schema/trpcultivate_phenotypes.schema.yml
    */
-  public const INTEGRATION_CONFIG = [
+  public const INTEGRATION_CONFIG_MAP = [
     'backup' => 'pheno_backup_support',
     'pheno_combo' => 'pheno_combo_support',
   ];
@@ -67,23 +69,10 @@ class PhenoIntegrationSettings {
   public function setPhenoIntegratedContentTypes(string $integration, array $content_types): void {
 
     $this->validateIntegration($integration);
-
-    $invalid_content_types = array_diff(
-      $content_types, $valid_content_types = array_keys($this->getProjectBasedContentTypes())
-    );
-
-    if (!empty($invalid_content_types)) {
-      throw new \InvalidArgumentException(
-        sprintf(
-          'Invalid content type error. The content type provided [%s], is not supported. Use one or more of [%s].',
-          implode(', ', $invalid_content_types),
-          implode(', ', $valid_content_types)
-        )
-      );
-    }
+    $this->validateContentType($content_types);
 
     $this->config_factory->getEditable(self::PHENO_CONFIG)
-      ->set(self::BASE_CONFIG . '.' . self::INTEGRATION_CONFIG[$integration], $content_types)
+      ->set(self::BASE_CONFIG . '.' . self::INTEGRATION_CONFIG_MAP[$integration], $content_types)
       ->save();
   }
 
@@ -92,31 +81,16 @@ class PhenoIntegrationSettings {
    *
    * @param string|null $integration
    *   @see Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings::setPhenoIntegratedContentTypes()
-   *   Default to NULL - return all phenotypes integration configuration values.
    *
    * @return array
-   *   List of the content types which support the given integration.
-   *   - If a specific integration is provided, the retuned array contains only
-   *     the content types that support that integration.
-   *   - If the integration not provided (NULL), all integrations are returned,
-   *     keyed by their configuration entity names.
+   *   A list of the content types which support the given integration.
    */
-  public function getPhenoIntegratedContentTypes(string|null $integration = NULL): array {
+  public function getPhenoIntegratedContentTypes(string $integration): array {
 
     $this->validateIntegration($integration);
 
-    $content_types = [];
-
-    foreach (self::INTEGRATION_CONFIG as $integration_key => $integration_config) {
-      if (!is_null($integration) && $integration_key != $integration) {
-        continue;
-      }
-
-      $content_types[$integration_config] = $this->config_factory->get(self::PHENO_CONFIG)
-        ->get(self::BASE_CONFIG . '.' . self::INTEGRATION_CONFIG[$integration_key]) ?? [];
-    }
-
-    return is_null($integration) ? $content_types : reset($content_types);
+    return $this->config_factory->get(self::PHENO_CONFIG)
+      ->get(self::BASE_CONFIG . '.' . self::INTEGRATION_CONFIG_MAP[$integration]);
   }
 
   /**
@@ -134,6 +108,7 @@ class PhenoIntegrationSettings {
   public function isBundleNamePhenoSupported(string $integration, string $content_type): bool {
 
     $this->validateIntegration($integration);
+    $this->validateContentType($content_type);
 
     return in_array($content_type, $this->getPhenoIntegratedContentTypes($integration));
   }
@@ -144,21 +119,25 @@ class PhenoIntegrationSettings {
    * @return array
    *   Tripal entity bundle names with Chado.project as the base table. Each
    *   bundle name in the array is keyed by the unique bundle machine name and
-   *   the value is a the name transformed into a human-readable label.
+   *   the value is a the same name transformed into a human-readable string.
    *   @see Drupal\tripal\Services\TripalEntityLookup::getBundles()
    */
   public function getProjectBasedContentTypes(): array {
 
-    $bundle_names = $this->tripal_entity_lookup->getBundles(
+    $project_bundles = $this->tripal_entity_lookup->getBundles(
       $base_table_name = 'project'
     );
 
-    $project_based_bundles = [];
-    foreach ($bundle_names as $bundle_name) {
-      $project_based_bundles[$bundle_name] = ucwords(str_replace('_', ' ', $bundle_name));
+    if (empty($project_bundles)) {
+      return [];
     }
 
-    return $project_based_bundles;
+    $supported_bundles = [];
+    foreach ($project_bundles as $bundle_name) {
+      $supported_bundles[$bundle_name] = Unicode::ucwords(str_replace('_', ' ', $bundle_name));
+    }
+
+    return $supported_bundles;
   }
 
   /**
@@ -170,13 +149,41 @@ class PhenoIntegrationSettings {
    * @throws \InvalidArgumentException
    *   - If integration requested is unsupported.
    */
-  protected function validateIntegration(string|null $integration): void {
+  public function validateIntegration(string $integration): void {
 
-    if (!is_null($integration) && (trim($integration) == '' || !array_key_exists($integration, self::INTEGRATION_CONFIG))) {
+    if (!isset(self::INTEGRATION_CONFIG_MAP[$integration])) {
       throw new \InvalidArgumentException(
         sprintf(
-          'Unsupported integration string value error. Use one of [%s] as integration value.',
-          implode(', ', array_keys(self::INTEGRATION_CONFIG))
+          'Unsupported integration error. Use one of [%s] as integration value.',
+          implode(', ', array_keys(self::INTEGRATION_CONFIG_MAP))
+        )
+      );
+    }
+  }
+
+  /**
+   * Validate content type.
+   *
+   * Checks that content types provided is project-based.
+   *
+   * @param array|string $content_type
+   *   An list of content types (array) or a single content type to
+   *   validate (string).
+   *
+   * @throws \InvalidArgumentException
+   *   - If content type provided is not project-based.
+   */
+  public function validateContentType(array|string $content_type): void {
+
+    $valid_content_types = array_keys($this->getProjectBasedContentTypes());
+    $invalid_content_types = array_diff((array) $content_type, $valid_content_types);
+
+    if (!empty($invalid_content_types)) {
+      throw new \InvalidArgumentException(
+        sprintf(
+          'Invalid content type error. The content type provided [%s], is not supported. Use one or more of [%s].',
+          implode(', ', $invalid_content_types),
+          implode(', ', $valid_content_types)
         )
       );
     }
