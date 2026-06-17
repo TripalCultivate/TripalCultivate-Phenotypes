@@ -42,4 +42,4 @@ services:
 
   trpcultivate_phenotypes.pheno_integration:
     class: 'Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings'
-    arguments: ['@config.factory', '@tripal.tripal_entity.lookup']
+    arguments: ['@config.factory', '@entity_type.manager', '@tripal.tripal_entity.lookup']

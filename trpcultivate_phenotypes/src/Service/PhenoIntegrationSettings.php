@@ -4,13 +4,14 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\tripal\Services\TripalEntityLookup;
 
 /**
  * Handles configuration for phenotypes integration support.
  *
- * This service manages which Tripal entity bundles are enabled for phenotype
- * integrations such as backup and setting up of trait combos.
+ * This service manages which content types are enabled for phenotype
+ * data file backup and setting up of trait-combo integrations.
  */
 class PhenoIntegrationSettings {
 
@@ -44,11 +45,14 @@ class PhenoIntegrationSettings {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Drupal config factory interface.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $service_EntityTypeManager
+   *   Drupal Entity Type Manager service.
    * @param \Drupal\tripal\Services\TripalEntityLookup $tripal_entity_lookup
    *   Tripal entity lookup service.
    */
   public function __construct(
     protected ConfigFactoryInterface $config_factory,
+    protected EntityTypeManagerInterface $service_EntityTypeManager,
     protected TripalEntityLookup $tripal_entity_lookup,
   ) {
   }
@@ -105,7 +109,7 @@ class PhenoIntegrationSettings {
    * @return bool
    *   TRUE if the content type supports this integration and FALSE otherwise.
    */
-  public function isBundleNamePhenoSupported(string $integration, string $content_type): bool {
+  public function isContentTypePhenoSupported(string $integration, string $content_type): bool {
 
     $this->validateIntegration($integration);
     $this->validateContentType($content_type);
@@ -114,30 +118,29 @@ class PhenoIntegrationSettings {
   }
 
   /**
-   * Get project-base Tripal entity content types bundle names.
+   * Get project-base content types.
    *
    * @return array
-   *   Tripal entity bundle names with Chado.project as the base table. Each
-   *   bundle name in the array is keyed by the unique bundle machine name and
-   *   the value is a the same name transformed into a human-readable string.
-   *   @see Drupal\tripal\Services\TripalEntityLookup::getBundles()
+   *   A list of content types with Chado.project as the base table. Each type
+   *   in the array is keyed by the unique machine name and the value is a
+   *   human-readable text (the machine name converted from snake_case).
    */
   public function getProjectBasedContentTypes(): array {
 
-    $project_bundles = $this->tripal_entity_lookup->getBundles(
+    $project_content_types = $this->tripal_entity_lookup->getBundles(
       $base_table_name = 'project'
     );
 
-    if (empty($project_bundles)) {
+    if (empty($project_content_types)) {
       return [];
     }
 
-    $supported_bundles = [];
-    foreach ($project_bundles as $bundle_name) {
-      $supported_bundles[$bundle_name] = Unicode::ucwords(str_replace('_', ' ', $bundle_name));
+    $supported_content_types = [];
+    foreach ($project_content_types as $content_type) {
+      $supported_content_types[$content_type] = Unicode::ucwords(str_replace('_', ' ', $content_type));
     }
 
-    return $supported_bundles;
+    return $supported_content_types;
   }
 
   /**

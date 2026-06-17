@@ -163,23 +163,23 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test isIsBundleNamePhenoSupported() method.
+   * Test isIsContentTypePhenoSupported() method.
    */
-  public function testIsBundleNamePhenoSupported() {
+  public function testIsContentTypePhenoSupported() {
 
     foreach ($this->integration_test_values as $integration => $content_types) {
       foreach ($content_types as $test_content_type) {
         $this->assertTrue(
-          $this->pheno_integration->isBundleNamePhenoSupported($integration, $test_content_type),
-          'Supported content types is expected to return TRUE by isBundleNamePhenoSupported() method.',
+          $this->pheno_integration->isContentTypePhenoSupported($integration, $test_content_type),
+          'Supported content types is expected to return TRUE by isContentTypePhenoSupported() method.',
         );
       }
     }
 
     // Bundle name research_study is not in the list of backup integrations.
     $this->assertFalse(
-      $this->pheno_integration->isBundleNamePhenoSupported('backup', 'research_study'),
-      'Unsupported content types is expected to return FALSE by isBundleNamePhenoSupported() method.',
+      $this->pheno_integration->isContentTypePhenoSupported('backup', 'research_study'),
+      'Unsupported content types is expected to return FALSE by isContentTypePhenoSupported() method.',
     );
   }
 
@@ -188,28 +188,28 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
    */
   public function testGetProjectBasedContentTypes() {
 
-    $project_bundles = $this->container->get('tripal.tripal_entity.lookup')
+    $project_content_types = $this->container->get('tripal.tripal_entity.lookup')
       ->getBundles('project');
 
-    $service_project_bundles = $this->pheno_integration->getProjectBasedContentTypes();
+    $service_content_types = $this->pheno_integration->getProjectBasedContentTypes();
 
     $this->assertEquals(
-      $project_bundles,
-      array_keys($service_project_bundles),
+      $project_content_types,
+      array_keys($service_content_types),
       'The list of project-based bundles returned by getProjectBasedContentTypes() does not match expected list of content types',
     );
 
-    foreach ($project_bundles as $bundle) {
+    foreach ($project_content_types as $content_type) {
       $this->assertNotContains(
-        $bundle,
-        $service_project_bundles,
-        'The return value of the method getProjectBasedContentTypes() is expected to contain the content type ' . $bundle
+        $content_type,
+        $service_content_types,
+        'The return value of the method getProjectBasedContentTypes() is expected to contain the content type ' . $content_type
       );
 
       $this->assertStringNotContainsString(
         '_',
-        $service_project_bundles[$bundle],
-        'The human-readable string does not match expected string of content type ' . $bundle,
+        $service_content_types[$content_type],
+        'The human-readable string does not match expected string of content type ' . $content_type,
       );
     }
   }
