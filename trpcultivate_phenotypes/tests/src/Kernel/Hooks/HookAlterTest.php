@@ -267,7 +267,8 @@ class HookAlterTest extends ChadoTestKernelBase {
       $this->container->get('database'),
       $this->container->get('current_route_match'),
       $this->chado_connection,
-      $this->container->get('trpcultivate_phenotypes.genus_ontology')
+      $this->container->get('trpcultivate_phenotypes.genus_ontology'),
+      $this->container->get('trpcultivate_phenotypes.pheno_integration')
     );
 
     $form_validator->phenoGenusExperimentEditFormValidate($form, $form_state);
