@@ -131,10 +131,6 @@ class PhenoIntegrationSettings {
       $base_table_name = 'project'
     );
 
-    if (empty($project_content_types)) {
-      return [];
-    }
-
     $supported_content_types = [];
     foreach ($project_content_types as $content_type) {
       $supported_content_types[$content_type] = Unicode::ucwords(str_replace('_', ' ', $content_type));
