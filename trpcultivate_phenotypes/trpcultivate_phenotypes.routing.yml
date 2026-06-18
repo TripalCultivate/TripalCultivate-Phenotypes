@@ -45,6 +45,7 @@ trpcultivate_phenotypes.settings_ontology:
     _permission: 'administer tripal'
 
 # Experiment Configuration Page.
+# Phenotypes integration set to pheno_combo.
 trpcultivate_phenotypes.experiment_configuration:
   path: '/bio_data/{tripal_entity}/phenotypes/{genus}'
   defaults:
@@ -54,13 +55,12 @@ trpcultivate_phenotypes.experiment_configuration:
   requirements:
     _permission: 'administer tripal content'
     _pheno_experiment_configuration_access_check: true
+    integration: 'pheno_combo'
   options:
     _admin_route: true
     parameters:
       tripal_entity:
         type: 'entity:tripal_entity'
-        bundle:
-          - research_experiment
 
 trpcultivate_phenotypes.experiment_traitselector:
   path: '/bio_data/{tripal_entity}/phenotypes/select/{genus}'
@@ -71,15 +71,15 @@ trpcultivate_phenotypes.experiment_traitselector:
   requirements:
     _permission: 'administer tripal content'
     _pheno_experiment_configuration_access_check: true
+    integration: 'pheno_combo'
   options:
     _admin_route: true
     parameters:
       tripal_entity:
         type: 'entity:tripal_entity'
-        bundle:
-          - research_experiment
 
 # Experiment Phenotypes Backup.
+# Phenotypes integration set to backup.
 trpcultivate_phenotypes.experiment_phenobackup:
   path: '/bio_data/{tripal_entity}/phenobackup'
   defaults:
@@ -88,13 +88,12 @@ trpcultivate_phenotypes.experiment_phenobackup:
   requirements:
     _permission: 'administer tripal content'
     _pheno_experiment_configuration_access_check: true
+    integration: 'backup'
   options:
     _admin_route: true
     parameters:
       tripal_entity:
         type: 'entity:tripal_entity'
-        bundle:
-          - research_experiment
 
 # Phenodata Backup Config Entity Routes:
 entity.phenodata_backup.collection:

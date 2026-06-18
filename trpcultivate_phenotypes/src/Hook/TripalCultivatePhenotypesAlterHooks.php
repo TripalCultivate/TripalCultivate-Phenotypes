@@ -12,6 +12,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\field\Entity\FieldStorageConfig;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 
 /**
@@ -66,6 +67,7 @@ class TripalCultivatePhenotypesAlterHooks {
     RouteMatchInterface $current_routematch,
     ChadoConnection $chado_connection,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
+    PhenoIntegrationSettings $service_PhenoIntegration,
   ) {
 
     $this->chado_connection = $chado_connection;
@@ -75,8 +77,20 @@ class TripalCultivatePhenotypesAlterHooks {
 
     // If a research experiment Tripal entity, determine if it has a phenotypes.
     // Only one row would suffice the requirement of 'has_phenotypes'.
+
+    $supported_content_types = [];
+
+    foreach ($service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+      $content_types = $service_PhenoIntegration
+        ->getPhenoIntegratedContentTypes($integration);
+
+      array_push($supported_content_types, ...$content_types);
+    }
+
     if ($tripal_entity = $page_params->get('tripal_entity')) {
-      if (method_exists($tripal_entity, 'bundle') && $tripal_entity->bundle() == 'research_experiment') {
+      if (method_exists($tripal_entity, 'bundle')
+         && in_array($tripal_entity->bundle(), array_unique($supported_content_types))
+        ) {
 
         $this->experiment_id = $tripal_entity->get('exp_name')
           ->getValue()[0]['record_id'];

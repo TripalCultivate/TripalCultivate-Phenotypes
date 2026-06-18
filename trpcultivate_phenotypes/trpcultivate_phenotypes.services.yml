@@ -18,7 +18,7 @@ services:
 
   trpcultivate_phenotypes.pheno_experiment_configuration_access_check:
     class: 'Drupal\trpcultivate_phenotypes\Access\PhenoExperimentConfigurationAccessCheck'
-    arguments: []
+    arguments: ['@trpcultivate_phenotypes.pheno_integration']
     tags:
       - { name: 'access_check', applies_to: '_pheno_experiment_configuration_access_check' }
 
@@ -30,12 +30,20 @@ services:
   Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService:
     alias: 'trpcultivate_phenotypes.genus_ontology'
 
+  Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings:
+    alias: 'trpcultivate_phenotypes.pheno_integration'
+
   Drupal\tripal_chado\Database\ChadoConnection:
     alias: 'tripal_chado.database'
 
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@database', '@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.genus_ontology']
+    arguments:
+      - '@database'
+      - '@current_route_match'
+      - '@tripal_chado.database'
+      - '@trpcultivate_phenotypes.genus_ontology'
+      - '@trpcultivate_phenotypes.pheno_integration'
 
   trpcultivate_phenotypes.setup_module_service:
     class: 'Drupal\trpcultivate_phenotypes\Service\SetupModuleService'
