@@ -34,7 +34,6 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
    */
   const PROTECTED_CONTENT_TYPE = 'research_experiment';
 
-
   /**
    * Modules to enable.
    *

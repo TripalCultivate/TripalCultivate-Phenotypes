@@ -55,15 +55,13 @@ class PhenoExperimentConfigurationAccessCheck implements AccessInterface {
    *
    * @param \Drupal\tripal\Entity\TripalEntity $tripal_entity
    *   Tripal entity.
-   * @param \Drupal\Core\Session\AccountInterface $account
-   *   Run access checks for this account. This is the user requesting access.
    * @param \Symfony\Component\Routing\Route $route
    *   The routing definition.
    *
    * @return \Drupal\Core\Access\AccessResultInterface
    *   The access result.
    */
-  public function access(TripalEntity $tripal_entity, AccountInterface $account, Route $route) {
+  public function access(TripalEntity $tripal_entity, Route $route) {
 
     // Reference the integtation key in the route requirements property.
     $route_integration = $route->getRequirement('integration');
