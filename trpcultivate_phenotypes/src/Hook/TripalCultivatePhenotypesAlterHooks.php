@@ -92,8 +92,7 @@ class TripalCultivatePhenotypesAlterHooks {
          && in_array($tripal_entity->bundle(), array_unique($supported_content_types))
         ) {
 
-        $this->experiment_id = $tripal_entity->get('exp_name')
-          ->getValue()[0]['record_id'];
+        $this->experiment_id = $tripal_entity->getBackendRecordId('chado_storage');
 
         $has_pheno = $drupaldb_connection
           ->select('trpcultivate_phenocombo', 'tc')

@@ -72,12 +72,8 @@ class PhenoExperimentConfigurationAccessCheck implements AccessInterface {
       return AccessResult::forbidden();
     }
 
-    // Get the integration configured supported content types.
-    $integration_content_types = $this->service_PhenoIntegration
-      ->getPhenoIntegratedContentTypes($route_integration);
-
     // The entity content type is not configured for phentypes functionality.
-    if (!in_array($tripal_entity->bundle(), $integration_content_types)) {
+    if (!$this->service_PhenoIntegration->isContentTypePhenoSupported($route_integration, $tripal_entity->bundle())) {
       return AccessResult::forbidden();
     }
 
