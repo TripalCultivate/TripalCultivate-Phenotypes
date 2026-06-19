@@ -83,7 +83,7 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
     $this->container->get('trpcultivate.setup_module_service')
       ->importContenttypes();
 
-    // Creaate research experiment entity and assign trait-combo and data file.
+    // Creaate research experiment entity.
     $project = 'Project Awesome';
     $project_id = $this->chado_connection->insert('1:project')
       ->fields(['name'])
@@ -117,12 +117,15 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
       ]
     );
 
+    $access_check = $access->access($this->exp_entity, $route);
+
+    $this->assertFalse($access_check->isAllowed(), 'Allowed check is false with failed access check.');
     $this->assertTrue(
-      $access->access($this->exp_entity, $route)->isForbidden(),
+      $access_check->isForbidden(),
       'Page access check with unsupported integration results in Forbidden access.',
     );
 
-    // Test access with integrations content types.
+    // Test access with integration content types.
     $pheno_integration = $this->container->get('trpcultivate_phenotypes.pheno_integration');
 
     foreach ($pheno_integration::INTEGRATION_CONFIG_MAP as $integration => $_) {
@@ -138,19 +141,25 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
         ]
       );
 
+      $access_check = $access->access($this->exp_entity, $route);
+
+      $this->assertFalse($access_check->isAllowed(), 'Allowed check is false with failed access check.');
       $this->assertTrue(
-        $access->access($this->exp_entity, $route)->isForbidden(),
+        $access_check->isForbidden(),
         'Page access check with unsupported integration content type results in Forbidden access.',
       );
 
-      // Allow the contetnt type.
+      // Allow the contetnt type in the integration.
       $pheno_integration
         ->setPhenoIntegratedContentTypes($integration, ['research_study', $this->exp_entity->bundle()]);
 
+      $access_check = $access->access($this->exp_entity, $route);
+
       $this->assertTrue(
-        $access->access($this->exp_entity, $route)->isAllowed(),
+        $access_check->isAllowed(),
         'Page access check with supported integration content type results in Allowed access.',
       );
+      $this->assertFalse($access_check->isForbidden(), 'Allowed check is false with failed access check.');
     }
   }
 
