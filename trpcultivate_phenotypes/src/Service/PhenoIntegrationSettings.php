@@ -87,7 +87,8 @@ class PhenoIntegrationSettings {
    *   @see Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings::setPhenoIntegratedContentTypes()
    *
    * @return array
-   *   A list of the content types which support the given integration.
+   *   A list of the content types which support the given integration. An empty
+   *   array if integration has no content type.
    */
   public function getPhenoIntegratedContentTypes(string $integration): array {
 
