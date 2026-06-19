@@ -8,16 +8,22 @@ trpcultivate_phenotypes.tab1:
   weight: 1
 
 trpcultivate_phenotypes.tab2:
-  title: 'Watermark Configuration'
-  route_name: 'trpcultivate_phenotypes.settings_watermark'
+  title: 'Integraion Configuration'
+  route_name: 'trpcultivate_phenotypes.settings_integration'
   base_route: 'trpcultivate_phenotypes.settings_ontology'
   weight: 2
 
 trpcultivate_phenotypes.tab3:
+  title: 'Watermark Configuration'
+  route_name: 'trpcultivate_phenotypes.settings_watermark'
+  base_route: 'trpcultivate_phenotypes.settings_ontology'
+  weight: 3
+
+trpcultivate_phenotypes.tab4:
   title: 'R Configuration'
   route_name: 'trpcultivate_phenotypes.settings_r'
   base_route: 'trpcultivate_phenotypes.settings_ontology'
-  weight: 3
+  weight: 4
 
 # Create a tab titled Phenotypes in a Research Experiment content type.
 trpcultivate_phenotypes.tab_phenotypes:

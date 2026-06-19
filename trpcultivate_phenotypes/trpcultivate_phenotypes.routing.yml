@@ -8,12 +8,21 @@ trpcultivate_phenotypes.settings:
   requirements:
     _permission: 'administer tripal'
 
-# Configuration: R Transformation Rules.
-trpcultivate_phenotypes.settings_r:
-  path: 'admin/tripal/extension/tripalcultivate-phenotypes/r-rules'
+# Configuration: Vocabulary, DB and Terms.
+trpcultivate_phenotypes.settings_ontology:
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/ontology'
   defaults:
-    _title: 'Configure Tripal Cultivate Phenotypes: R Transformation Rules'
-    _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm'
+    _title: 'Configure Tripal Cultivate Phenotypes: Ontology Terms'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm'
+  requirements:
+    _permission: 'administer tripal'
+
+# Configuration: Phenotypes Integration.
+trpcultivate_phenotypes.settings_integration:
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/integration'
+  defaults:
+    _title: 'Configure Tripal Cultivate Phenotypes: Phenotypes Integration'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoIntegrationSettingsForm'
   requirements:
     _permission: 'administer tripal'
 
@@ -26,21 +35,12 @@ trpcultivate_phenotypes.settings_watermark:
   requirements:
     _permission: 'administer tripal'
 
-# Configuration: Phenotypes Integration.
-trpcultivate_phenotypes.pheno_integration:
-  path: 'admin/tripal/extension/tripalcultivate-phenotypes/integration'
+# Configuration: R Transformation Rules.
+trpcultivate_phenotypes.settings_r:
+  path: 'admin/tripal/extension/tripalcultivate-phenotypes/r-rules'
   defaults:
-    _title: 'Configure Tripal Cultivate Phenotypes: Phenotypes Integration'
-    _form: '\Drupal\trpcultivate_phenotypes\Form\PhenoIntegrationSettingsForm'
-  requirements:
-    _permission: 'administer tripal'
-
-# Configuration: Vocabulary, DB and Terms.
-trpcultivate_phenotypes.settings_ontology:
-  path: 'admin/tripal/extension/tripalcultivate-phenotypes/ontology'
-  defaults:
-    _title: 'Configure Tripal Cultivate Phenotypes: Ontology Terms'
-    _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesOntologySettingsForm'
+    _title: 'Configure Tripal Cultivate Phenotypes: R Transformation Rules'
+    _form: '\Drupal\trpcultivate_phenotypes\Form\TripalCultivatePhenotypesRSettingsForm'
   requirements:
     _permission: 'administer tripal'
 
