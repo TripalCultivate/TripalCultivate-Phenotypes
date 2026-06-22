@@ -1060,7 +1060,9 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       ->loadGenusOntology();
 
     try {
-      $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+      $this->service_PhenoCombo->sanitizePhenoCombo(
+        $this->test_trait_pheno_combo_ids['Lens'][0]
+      );
     }
     catch (\Exception $e) {
       $this->assertStringContainsString(
