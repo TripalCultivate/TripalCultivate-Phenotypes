@@ -1064,7 +1064,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     }
     catch (\Exception $e) {
       $this->assertStringContainsString(
-        'The Phenotypes module is not configured with a genus',
+        'Failed to set experiment: The Phenotypes module is not configured with a genus',
         $e->getMessage(),
         'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
       );
@@ -1077,7 +1077,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     }
     catch (\Exception $e) {
       $this->assertStringContainsString(
-        'The Phenotypes module is not configured with a genus',
+        'Failed to sanitize phenocombo: The Phenotypes module is not configured with a genus',
         $e->getMessage(),
         'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
       );

@@ -145,7 +145,7 @@ class ExperimentPhenoComboService {
     if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList())) {
       throw new \Exception(
         sprintf(
-          'The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
+          'Failed to set experiment: The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
           Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()
         )
       );
@@ -626,7 +626,7 @@ class ExperimentPhenoComboService {
     if ($config_genus === []) {
       throw new \Exception(
         sprintf(
-          'The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
+          'Failed to sanitize phenocombo: The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
           Url::fromRoute('trpcultivate_phenotypes.settings_ontology')->toString()
         )
       );
