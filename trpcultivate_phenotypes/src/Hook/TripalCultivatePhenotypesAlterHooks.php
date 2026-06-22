@@ -23,6 +23,13 @@ class TripalCultivatePhenotypesAlterHooks {
   use StringTranslationTrait;
 
   /**
+   * The integration this hook applies to.
+   *
+   * @var string
+   */
+  const PHENO_COMBO_INTEGRATION = 'pheno_combo';
+
+  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConneciton
@@ -73,24 +80,15 @@ class TripalCultivatePhenotypesAlterHooks {
     $this->chado_connection = $chado_connection;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
 
-    $page_params = $current_routematch->getParameters();
+    // This entity page is not backup-related and is treated as pheno_combo
+    // integration. This check determinse whether the content type has any
+    // pheno-combo records, if it does, the delete button is disabled to prevent
+    // removing this entity that still has dependent records.
+    $tripal_entity = $current_routematch->getParameters()->get('tripal_entity');
 
-    // If a research experiment Tripal entity, determine if it has a phenotypes.
-    // Only one row would suffice the requirement of 'has_phenotypes'.
-
-    $supported_content_types = [];
-
-    foreach ($service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
-      $content_types = $service_PhenoIntegration
-        ->getPhenoIntegratedContentTypes($integration);
-
-      array_push($supported_content_types, ...$content_types);
-    }
-
-    if ($tripal_entity = $page_params->get('tripal_entity')) {
-      if (method_exists($tripal_entity, 'bundle')
-         && in_array($tripal_entity->bundle(), array_unique($supported_content_types))
-        ) {
+    if ($tripal_entity
+        && method_exists($tripal_entity, 'bundle')
+        && $service_PhenoIntegration->isContentTypePhenoSupported(self::PHENO_COMBO_INTEGRATION, $tripal_entity->bundle())) {
 
         $this->experiment_id = $tripal_entity->getBackendRecordId('chado_storage');
 
@@ -103,7 +101,6 @@ class TripalCultivatePhenotypesAlterHooks {
           ->fetchField();
 
         $this->has_pheno = ($has_pheno) ? TRUE : FALSE;
-      }
     }
   }
 
@@ -139,15 +136,14 @@ class TripalCultivatePhenotypesAlterHooks {
   #[Hook('form_alter')]
   public function formAlter(&$form, FormStateInterface $form_state, $form_id) {
 
-    if ($form_id == 'tripal_entity_research_experiment_edit_form') {
-      if (isset($form['actions']['delete']) && $this->experiment_id && $this->has_pheno) {
-        $form['actions']['delete']['#attributes'] = [
-          'class' => ['visually-hidden'],
-        ];
-      }
-
-      $form['#validate'][] = [$this, 'phenoGenusExperimentEditFormValidate'];
+    if (isset($form['actions']['delete']) && $this->experiment_id && $this->has_pheno) {
+      $form['actions']['delete']['#attributes'] = [
+        'class' => ['visually-hidden'],
+      ];
     }
+
+    $form['#validate'][] = [$this, 'phenoGenusExperimentEditFormValidate'];
+
   }
 
   /**

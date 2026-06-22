@@ -21,6 +21,10 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 /**
  * Tests associated with PhenoExperimentTraitSelectorForm class.
  *
+ * NOTE: this form supports Phenotypes Integration and is set to 'pheno_combo'
+ * integration in the route definition.
+ * @see trpcultivate_phenotypes.routing.yml
+ *
  * @group trpcultivate_phenotypes
  * @group configuration
  */

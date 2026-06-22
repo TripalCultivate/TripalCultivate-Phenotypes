@@ -68,7 +68,8 @@ class PhenoIntegrationSettings {
    *   - pheno_combo: configure trait-method-unit combinations with a
    *     a project-based content type (e.g. experiment).
    * @param array $content_types
-   *   A list of the content types which support the given integration.
+   *   A list of the project-based content types which support the
+   *   given integration.
    */
   public function setPhenoIntegratedContentTypes(string $integration, array $content_types): void {
 
@@ -83,7 +84,7 @@ class PhenoIntegrationSettings {
   /**
    * Gets the content types supporting a given integration.
    *
-   * @param string|null $integration
+   * @param string $integration
    *   @see Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings::setPhenoIntegratedContentTypes()
    *
    * @return array
@@ -143,7 +144,7 @@ class PhenoIntegrationSettings {
   /**
    * Validate integration.
    *
-   * @param string|null $integration
+   * @param string $integration
    *   @see Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings::setPhenoIntegratedContentTypes()
    *
    * @throws \InvalidArgumentException
@@ -187,6 +188,17 @@ class PhenoIntegrationSettings {
         )
       );
     }
+  }
+
+  /**
+   * Get supported integrations.
+   *
+   * @return array
+   *   List of supported integrations defined by this service.
+   */
+  public function getPhenoIntegrations(): array {
+
+    return array_keys(self::INTEGRATION_CONFIG_MAP);
   }
 
 }

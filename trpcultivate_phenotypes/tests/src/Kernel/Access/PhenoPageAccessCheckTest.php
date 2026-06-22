@@ -119,7 +119,7 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
 
     $access_check = $access->access($this->exp_entity, $route);
 
-    $this->assertFalse($access_check->isAllowed(), 'Allowed check is false with failed access check.');
+    $this->assertFalse($access_check->isAllowed(), 'isAllowed() check is FALSE with failed access check.');
     $this->assertTrue(
       $access_check->isForbidden(),
       'Page access check with unsupported integration results in Forbidden access.',
@@ -143,7 +143,7 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
 
       $access_check = $access->access($this->exp_entity, $route);
 
-      $this->assertFalse($access_check->isAllowed(), 'Allowed check is false with failed access check.');
+      $this->assertFalse($access_check->isAllowed(), 'isAllowed() check is FALSE with failed access check.');
       $this->assertTrue(
         $access_check->isForbidden(),
         'Page access check with unsupported integration content type results in Forbidden access.',
@@ -159,7 +159,7 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
         $access_check->isAllowed(),
         'Page access check with supported integration content type results in Allowed access.',
       );
-      $this->assertFalse($access_check->isForbidden(), 'Allowed check is false with failed access check.');
+      $this->assertFalse($access_check->isForbidden(), 'isForbidden() check is FALSE with allowed access check.');
     }
   }
 

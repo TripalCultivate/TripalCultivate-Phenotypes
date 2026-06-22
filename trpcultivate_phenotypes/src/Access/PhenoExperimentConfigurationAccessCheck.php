@@ -38,7 +38,7 @@ class PhenoExperimentConfigurationAccessCheck implements AccessInterface {
    *   1. The route defines _pheno_experiment_configuration_access_check: true
    *   2. The route indicates an integration of either 'backup' or 'pheno_combo'
    *      using the 'integration' custom key in route 'requirements' property.
-   *   3. Tripal entity bundle is a supported content type of an integration.
+   *   3. Tripal entity type is a supported content type of an integration.
    *
    * For example, the route configuration below invokes permission check and
    * verifies the page entity content type against 'backup' integration
@@ -66,9 +66,8 @@ class PhenoExperimentConfigurationAccessCheck implements AccessInterface {
     // Reference the integtation key in the route requirements property.
     $route_integration = $route->getRequirement('integration');
 
-    $valid_integrations = array_keys($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP);
     // The integration defined in the route requirements is not supported.
-    if (!in_array($route_integration, $valid_integrations)) {
+    if (!in_array($route_integration, $this->service_PhenoIntegration->getPhenoIntegrations())) {
       return AccessResult::forbidden();
     }
 

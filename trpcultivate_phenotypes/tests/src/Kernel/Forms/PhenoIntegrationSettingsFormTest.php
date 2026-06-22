@@ -244,7 +244,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
     $this->assertArrayHasKey(
       $field_detail,
       $config_form,
-      'The config form is expected to contain a field named ' . $field_detail
+      'The config form is expected to contain a field named ' . $field_detail,
     );
 
     $field_container = $config_form[$field_detail];
@@ -257,7 +257,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
     });
 
     // Assertions pertaining to the integration multi-select fields.
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    foreach ($this->service_PhenoIntegration->getPhenoIntegrations() as $integration) {
       $this->assertArrayHasKey(
         $integration,
         $field_container,
@@ -267,11 +267,12 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
       $this->assertEquals(
         'select',
         $field_container[$integration]['#type'],
-       'Form is expected to contain a select field in ' . $integration);
+       'Form is expected to contain a select field in ' . $integration,
+      );
 
       $this->assertTrue(
         $field_container[$integration]['#multiple'],
-        'Select field is configured as a multi-select field in ' . $integration
+        'Select field is configured as a multi-select field in ' . $integration,
       );
 
       $this->assertEquals(
@@ -281,7 +282,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
       );
 
       $this->assertEquals(
-        [self::PROTECTED_CONTENT_TYPE],
+        $this->service_PhenoIntegration->getPhenoIntegratedContentTypes($integration),
         $field_container[$integration]['#default_value'],
         'Multi-select field defaults to Research Experiment in ' . $integration,
       );
@@ -318,26 +319,28 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
       self::PROTECTED_CONTENT_TYPE => self::PROTECTED_CONTENT_TYPE,
     ];
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    $pheno_integrations = $this->service_PhenoIntegration->getPhenoIntegrations();
+
+    foreach ($pheno_integrations as $integration) {
       $form_state->setValue($integration, $new_selections);
     }
 
     $this->integration_form->validateForm($form, $form_state);
     $this->assertFalse(
       $form_state->hasAnyErrors(),
-      'No errors when protected content type is maintained.'
+      'No errors when protected content type is maintained.',
     );
 
     // Excluding protected content type.
     array_pop($new_selections);
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    foreach ($pheno_integrations as $integration) {
       $form_state->setValue($integration, $new_selections);
     }
 
     $this->integration_form->validateForm($form, $form_state);
     $this->assertTrue(
       $form_state->hasAnyErrors(),
-      'Unselecting protected content types is expected to trigger an error.'
+      'Unselecting protected content types is expected to trigger an error.',
     );
 
     $validation_error = $form_state->getErrors();
@@ -361,7 +364,9 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
       self::PROTECTED_CONTENT_TYPE => self::PROTECTED_CONTENT_TYPE,
     ];
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    $pheno_integrations = $this->service_PhenoIntegration->getPhenoIntegrations();
+
+    foreach ($pheno_integrations as $integration) {
       // Before update.
       $this->assertEquals(
         $this->service_PhenoIntegration->getPhenoIntegratedContentTypes($integration),
@@ -375,7 +380,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
     // After update.
     $this->integration_form->submitForm($form, $form_state);
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    foreach ($pheno_integrations as $integration) {
       $this->assertEquals(
         $this->service_PhenoIntegration->getPhenoIntegratedContentTypes($integration),
         array_keys($new_selections),
@@ -395,7 +400,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
     // Build protected content type listing.
     $this->integration_form->buildForm($form, $form_state);
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    foreach ($this->service_PhenoIntegration->getPhenoIntegrations() as $integration) {
       $this->assertEquals(
         $form_state->get('protected_content_types')[$integration],
         [self::PROTECTED_CONTENT_TYPE],

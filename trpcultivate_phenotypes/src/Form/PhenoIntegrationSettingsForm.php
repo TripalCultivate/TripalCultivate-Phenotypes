@@ -18,6 +18,20 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
   const SETTINGS = 'trpcultivate_phenotypes.settings';
 
   /**
+   * Pheno backup integration.
+   *
+   * @var string
+   */
+  const PHENO_BACKUP_INTEGRATION = 'backup';
+
+  /**
+   * Pheno combo integration.
+   *
+   * @var string
+   */
+  const PHENO_COMBO_INTEGRATION = 'pheno_combo';
+
+  /**
    * Class constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $service_EntityTypeManager
@@ -84,22 +98,23 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
 
      // Integration multi-select field metadata.
      $integration_field_metadata = [
-      'backup' => [
+      self::PHENO_BACKUP_INTEGRATION => [
         'title' => 'Phenotypic Data File Backup',
         'description' => 'Choose the Content Types you would like to support phenotypic data file backups. This will add a tab beside Edit on pages of this type that links to the Phenotypic Data Backup page.',
       ],
-      'pheno_combo' => [
+      self::PHENO_COMBO_INTEGRATION => [
         'title' => 'Configure trait-method-unit Combinations for Data Import',
         'description' => 'Choose the Content Types you would like to support phenotypic data import. This will add a tab beside Edit on pages of this type allowing you to indicate what type of phenotypic data will be collected for this project.',
       ],
     ];
 
     $project_content_types = $this->service_PhenoIntegration->getProjectBasedContentTypes();
-    $protected_content_types = $this->getProtectedContentTypes();
+
     // Save protected content type results for use in other stage.
+    $protected_content_types = $this->getProtectedContentTypes();
     $form_state->set('protected_content_types', $protected_content_types);
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $config_name) {
+    foreach ($this->service_PhenoIntegration->getPhenoIntegrations() as $integration) {
       $field_options = $project_content_types;
       $marked_types = $protected_content_types[$integration] ?? [];
 
@@ -114,10 +129,10 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
         '#title' => $integration_field_metadata[$integration]['title'],
         '#description' => $integration_field_metadata[$integration]['description'],
         '#options' => $field_options,
-        '#default_value' => $this->service_PhenoIntegration->getPhenoIntegratedContentTypes($integration),
         '#required' => TRUE,
         '#multiple' => TRUE,
         '#size' => min(10, count($field_options)),
+        '#default_value' => $this->service_PhenoIntegration->getPhenoIntegratedContentTypes($integration),
       ];
     }
 
@@ -137,7 +152,7 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
     // Ensure protected content types remain selected.
     $protected_content_types = $form_state->get('protected_content_types');
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $config_name) {
+    foreach ($this->service_PhenoIntegration->getPhenoIntegrations() as $integration) {
       $marked_types = $protected_content_types[$integration] ?? [];
 
       if (array_diff($marked_types, array_keys($form_state->getValue($integration)))) {
@@ -156,7 +171,7 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    foreach ($this->service_PhenoIntegration::INTEGRATION_CONFIG_MAP as $integration => $_) {
+    foreach ($this->service_PhenoIntegration->getPhenoIntegrations() as $integration) {
       $this->service_PhenoIntegration->setPhenoIntegratedContentTypes(
         $integration,
         array_values($form_state->getValue($integration))
@@ -173,8 +188,7 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
    */
   protected function getProtectedContentTypes(): array {
 
-    // Based on project that has pheno-combo/backup records, inspect the content
-    // type of each unique project.
+    // Get experiments with associated backup data file or pheno-combo records.
     $backup_entities = $this->service_EntityTypeManager
       ->getStorage('phenodata_backup')
       ->loadMultiple();
@@ -192,12 +206,17 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
       ->execute()
       ->fetchCol();
 
-    $exp_with_data = array_merge($exp_with_backup, $exp_with_pheno);
+    // All unique project_ids with data associated.
+    $exp_with_data = array_unique(
+      array_merge($exp_with_backup, $exp_with_pheno)
+    );
 
-    $content_type_names = array_keys($this->service_PhenoIntegration->getProjectBasedContentTypes());
     $protected_content_types = [];
+    $content_type_names = array_keys(
+      $this->service_PhenoIntegration->getProjectBasedContentTypes()
+    );
 
-    foreach (array_unique($exp_with_data) as $project_id) {
+    foreach ($exp_with_data as $project_id) {
       foreach ($content_type_names as $content_type) {
 
         if (!$this->tripal_entity_lookup->getEntityIdFromRecordId($project_id, $content_type, 'tripal_entity')) {
@@ -207,11 +226,11 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
         // If the project_id record (that has phenotypes) has entity object
         // and/or has backup data file, then save/protect the content type.
         if (in_array($project_id, $exp_with_backup)) {
-          $protected_content_types['backup'][] = $content_type;
+          $protected_content_types[self::PHENO_BACKUP_INTEGRATION][] = $content_type;
         }
 
         if (in_array($project_id, $exp_with_pheno)) {
-          $protected_content_types['pheno_combo'][] = $content_type;
+          $protected_content_types[self::PHENO_COMBO_INTEGRATION][] = $content_type;
         }
       }
     }

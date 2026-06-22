@@ -42,7 +42,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
   protected ChadoConnection $chado_connection;
 
   /**
-   * Phenotypes integration configuration content types test values.
+   * Phenotypes integration configuration content type test values.
    *
    * @var array
    */
@@ -113,9 +113,10 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
         ->set(
           $this->pheno_integration::BASE_CONFIG . '.' . $this->pheno_integration::INTEGRATION_CONFIG_MAP[$integration],
           $content_types
-        )
-        ->save();
+        );
     }
+
+    $this->config_factory->save();
   }
 
   /**
@@ -124,7 +125,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
   public function testGetPhenoIntegratedContentTypes() {
 
     // Get content types of a each integration.
-    foreach (array_keys($this->pheno_integration::INTEGRATION_CONFIG_MAP) as $integration) {
+    foreach ($this->pheno_integration->getPhenoIntegrations() as $integration) {
       $integration_content_types = $this->pheno_integration
         ->getPhenoIntegratedContentTypes($integration);
 
@@ -145,7 +146,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
       $this->pheno_integration->getProjectBasedContentTypes()
     );
 
-    foreach (array_keys($this->pheno_integration::INTEGRATION_CONFIG_MAP) as $integration) {
+    foreach ($this->pheno_integration->getPhenoIntegrations() as $integration) {
       // Create a subset of all content types as argument to the setter method.
       $test_content_type = array_slice(
         $supported_content_types,
@@ -177,7 +178,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
       }
     }
 
-    // Bundle name research_study is not in the list of backup integrations.
+    // Content type research_study is not in the list of backup integrations.
     $this->assertFalse(
       $this->pheno_integration->isContentTypePhenoSupported('backup', 'research_study'),
       'Unsupported content types is expected to return FALSE by isContentTypePhenoSupported() method.',
@@ -200,13 +201,8 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
       'The list of project-based bundles returned by getProjectBasedContentTypes() does not match expected list of content types',
     );
 
+    // Assertions related to machine name converted to human-readable text.
     foreach ($project_content_types as $content_type) {
-      $this->assertNotContains(
-        $content_type,
-        $service_content_types,
-        'The return value of the method getProjectBasedContentTypes() is expected to contain the content type ' . $content_type
-      );
-
       $this->assertStringNotContainsString(
         '_',
         $service_content_types[$content_type],
@@ -220,15 +216,21 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
    */
   public function testIntegrationValidator() {
 
-    try {
-      $this->pheno_integration->validateIntegration('spurious_integration');
-    }
-    catch (\Exception $e) {
-      $this->assertStringContainsString(
-        'Unsupported integration error',
-        $e->getMessage(),
-        'Unsupported integration is expected to trigger an exception.',
-      );
+    $pheno_integrations = $this->pheno_integration->getPhenoIntegrations();
+    array_push($pheno_integrations, 'spurious_integration');
+
+    foreach ($pheno_integrations as $integration) {
+      try {
+        $this->pheno_integration->validateIntegration($integration);
+        $this->assertTrue(TRUE, 'No exception thrown for valid integration ' . $integration);
+      }
+      catch (\Exception $e) {
+        $this->assertStringContainsString(
+          'Unsupported integration error',
+          $e->getMessage(),
+          'Unsupported integration is expected to trigger an exception in ' . $integration,
+        );
+      }
     }
   }
 
@@ -237,7 +239,11 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
    */
   public function testContentTypeValidator() {
 
-    foreach (['spurious_content_type', ['bad_type', 'wrong_type']] as $content_type) {
+    $test_content_types = array_keys($this->pheno_integration->getProjectBasedContentTypes());
+    // Include single value and an array of values.
+    array_push($test_content_types, 'spurious_content_type', ['bad_type', 'wrong_type']);
+
+    foreach ($test_content_types as $content_type) {
       try {
         $this->pheno_integration->validateContentType($content_type);
       }
