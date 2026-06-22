@@ -136,14 +136,15 @@ class TripalCultivatePhenotypesAlterHooks {
   #[Hook('form_alter')]
   public function formAlter(&$form, FormStateInterface $form_state, $form_id) {
 
-    if (isset($form['actions']['delete']) && $this->experiment_id && $this->has_pheno) {
-      $form['actions']['delete']['#attributes'] = [
-        'class' => ['visually-hidden'],
-      ];
+    if ($form_id == 'tripal_entity_research_experiment_edit_form') {
+      if (isset($form['actions']['delete']) && $this->experiment_id && $this->has_pheno) {
+        $form['actions']['delete']['#attributes'] = [
+          'class' => ['visually-hidden'],
+        ];
+      }
+
+      $form['#validate'][] = [$this, 'phenoGenusExperimentEditFormValidate'];
     }
-
-    $form['#validate'][] = [$this, 'phenoGenusExperimentEditFormValidate'];
-
   }
 
   /**
