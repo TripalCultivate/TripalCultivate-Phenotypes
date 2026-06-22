@@ -673,6 +673,12 @@ class ExperimentPhenoComboService {
     }
 
     // Look for this combination in each configured genus.
+    // For each configured genus, check whether this trait-method-unit combo
+    // exists. Use the Trait service getTraitMethodUnitCombo() method, which
+    // validates the combination in the context of a genus. A non-null result
+    // returned confirms that the combo is defined (previously imported via the
+    // Trait importer) and immediately stops further checks of other genus by
+    // existing the loop.
     foreach ($config_genus as $genus) {
       $this->service_PhenoTraits->setTraitGenus($genus);
 
@@ -713,7 +719,7 @@ class ExperimentPhenoComboService {
    *
    * @return array
    *   A validated and sanitized experiment PhenoCombo details where status flag
-   *   values are guaranteed to be 0 or 1 in value and label is trimmed and is a 
+   *   values are guaranteed to be 0 or 1 in value and label is trimmed and is a
    *   unique label within experiment context.
    *
    * @throws \InvalidArgumentException
