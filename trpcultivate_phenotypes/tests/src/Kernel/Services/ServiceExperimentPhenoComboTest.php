@@ -1060,6 +1060,17 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       ->loadGenusOntology();
 
     try {
+      $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        'The Phenotypes module is not configured with a genus',
+        $e->getMessage(),
+        'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
+      );
+    }
+
+    try {
       $this->service_PhenoCombo->sanitizePhenoCombo(
         $this->test_trait_pheno_combo_ids['Lens'][0]
       );
