@@ -114,7 +114,6 @@ class PhenoIntegrationSettings {
   public function isContentTypePhenoSupported(string $integration, string $content_type): bool {
 
     $this->validateIntegration($integration);
-    $this->validateContentType($content_type);
 
     return in_array($content_type, $this->getPhenoIntegratedContentTypes($integration));
   }
