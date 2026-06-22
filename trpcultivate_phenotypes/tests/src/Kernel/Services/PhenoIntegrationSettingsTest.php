@@ -257,4 +257,16 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
     }
   }
 
+  /**
+   * Test getPhenoIntegrations() method.
+   */
+  public function testGetPhenoIntegrations() {
+
+    $this->assertEquals(
+      array_keys($this->pheno_integration::INTEGRATION_CONFIG_MAP),
+      $this->pheno_integration->getPhenoIntegrations(),
+      'getPhenoIntegrations() failed to return the expected list of phenotypes integrations.',
+    );
+  }
+
 }
