@@ -142,6 +142,7 @@ class ExperimentPhenoComboService {
    */
   public function setExperiment(TripalEntity|int|string $experiment): void {
 
+    // First lets confirm that we have genus configured in the first place.
     if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList())) {
       throw new \Exception(
         sprintf(
