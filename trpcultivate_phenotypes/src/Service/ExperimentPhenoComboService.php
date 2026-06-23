@@ -648,9 +648,10 @@ class ExperimentPhenoComboService {
       );
     }
 
-    // Check if PhenoCombo is missing an alias.
+    // Ensure all the required keys are present (e.g. 'trait', 'method', 'unit').
     $pheno_combo_alias = array_keys(self::PHENOCOMBO_FIELD_MAP);
-    if (array_diff($pheno_combo_alias, $input_keys = array_keys($pheno_combo))) {
+    $input_keys = array_keys($pheno_combo);
+    if (array_diff($pheno_combo_alias, $input_keys)) {
       throw new \InvalidArgumentException(
         sprintf(
           'Missing PhenoCombo item key error. PhenoCombo must have keys [%s]. You provided [%s].',
