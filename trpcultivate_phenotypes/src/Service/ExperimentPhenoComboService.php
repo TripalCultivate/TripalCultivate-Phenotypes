@@ -152,6 +152,9 @@ class ExperimentPhenoComboService {
       );
     }
 
+    // Now let's resolve the project_id regardless of the context we were given. 
+    // If this method is not able to resolve the project_id then it will throw an 
+    // exception so there's no need to check it again here.
     $project_id = self::resolveExperimentToProjectId($experiment);
 
     if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
