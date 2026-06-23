@@ -45,6 +45,13 @@ class ExperimentPhenoComboService {
   protected int|null $experiment_context = NULL;
 
   /**
+   * A list of configured genus.
+   *
+   * @var array
+   */
+  protected array $configured_genus = [];
+
+  /**
    * The table name that contains experiment PhenoCombos.
    *
    * @var string
@@ -119,6 +126,9 @@ class ExperimentPhenoComboService {
 
     $this->chado_connection = $chado_connection;
     $this->tripal_logger = $tripal_logger;
+
+    // Retrieve all genus configured in Phenotypes.
+    $this->configured_genus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
   }
 
   /**
@@ -144,7 +154,7 @@ class ExperimentPhenoComboService {
   public function setExperiment(TripalEntity|int|string $experiment): void {
 
     // Verify that Phenotypes has at least one genus that is configured.
-    if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList())) {
+    if (empty($this->configured_genus)) {
       throw new \Exception(
         sprintf(
           'The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
@@ -629,8 +639,7 @@ class ExperimentPhenoComboService {
   public function sanitizePhenoCombo(array $pheno_combo): array {
 
     // Check if the Phenotypes module has genus configured.
-    $config_genus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
-    if ($config_genus === []) {
+    if (empty($this->configured_genus)) {
       throw new \Exception(
         sprintf(
           'The Phenotypes module is not configured with a genus. Please navigate to %s to configure a genus.',
@@ -686,7 +695,7 @@ class ExperimentPhenoComboService {
     // returned confirms that the combo is defined (previously imported via the
     // Trait importer) and immediately stops further checks of other genus by
     // existing the loop.
-    foreach ($config_genus as $genus) {
+    foreach ($this->configured_genus as $genus) {
       $this->service_PhenoTraits->setTraitGenus($genus);
 
       try {

@@ -1064,6 +1064,9 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     $this->container->get('trpcultivate_phenotypes.genus_ontology')
       ->loadGenusOntology();
 
+    $this->container->set($service = 'trpcultivate_phenotypes.pheno_combo', NULL);
+    $this->service_PhenoCombo = $this->container->get($service);
+
     $test_exceptions = [
       'setExperiment' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO,
       'sanitizePhenoCombo' => $this->test_trait_pheno_combo_ids['Lens'][0],
