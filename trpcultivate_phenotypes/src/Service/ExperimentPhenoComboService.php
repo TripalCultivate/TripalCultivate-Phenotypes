@@ -858,7 +858,7 @@ class ExperimentPhenoComboService {
    *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::setExperiment()
    *
    * @return int
-   *   The project id (Chado.project: project_id) of the experiment context.
+   *   The project id (Chado project.project_id) of the experiment context.
    *
    * @throws InvalidArgumentException
    *   - If experiment context could not resolve to an existing project_id.
