@@ -153,10 +153,13 @@ class ExperimentPhenoComboService {
       );
     }
 
-    // This service class operates on project_id, therefore the experiment has
-    // to be normalized into project_id.
+    // Now let's resolve the project_id regardless of the context we were given.
+    // If this method is not able to resolve the project_id then it will throw an
+    // exception so there's no need to check it again here.
     $project_id = self::resolveExperimentToProjectId($experiment);
 
+    // Now that we have a project, let's ensure it has genus' assigned
+    // as we expect for use with phenotypes.
     if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
       $this->tripal_logger->error(
         $failed_error = sprintf(
@@ -856,7 +859,7 @@ class ExperimentPhenoComboService {
    *   @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::setExperiment()
    *
    * @return int
-   *   The project id (Chado.project: project_id) of the experiment context.
+   *   The project id (Chado project.project_id) of the experiment context.
    *
    * @throws InvalidArgumentException
    *   - If experiment context could not resolve to an existing project_id.
