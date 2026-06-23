@@ -130,7 +130,8 @@ class ExperimentPhenoComboService {
    *
    * @param \Drupal\tripal\Entity\TripalEntity|int|string $experiment
    *   The experiment identifier, either:
-   *   - Experiment entity (Tripal Entity) the experiment entity object.
+   *   - Experiment entity (Tripal Entity) the experiment entity object where
+   *     the backend base table property is Chado 'project' table.
    *   - An integer (int) value corresponding to the project_id number.
    *   - A string (string) value corresponding to the project name.
    *   Both int and string forms reference a field from the same Chado
@@ -142,7 +143,7 @@ class ExperimentPhenoComboService {
    */
   public function setExperiment(TripalEntity|int|string $experiment): void {
 
-    // First lets confirm that we have genus configured in the first place.
+    // Verify that Phenotypes has at least one genus that is configured.
     if (empty($this->service_PhenoGenusOntology->getConfiguredGenusList())) {
       throw new \Exception(
         sprintf(
@@ -152,6 +153,8 @@ class ExperimentPhenoComboService {
       );
     }
 
+    // This service class operates on project_id, therefore the experiment has
+    // to be normalized into project_id.
     $project_id = self::resolveExperimentToProjectId($experiment);
 
     if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
@@ -862,7 +865,11 @@ class ExperimentPhenoComboService {
 
     $project_id = 0;
 
-    if ($experiment instanceof TripalEntity) {
+    if ($experiment instanceof TripalEntity
+      && $experiment->getBundle()->getThirdPartySetting('tripal', 'chado_base_table') == 'project') {
+      // Only entity that is setup as project-based type and project_id is
+      // readily accessible.
+
       $project_id = $experiment->getBackendRecordId('chado_storage');
     }
     elseif (is_numeric($experiment)) {
