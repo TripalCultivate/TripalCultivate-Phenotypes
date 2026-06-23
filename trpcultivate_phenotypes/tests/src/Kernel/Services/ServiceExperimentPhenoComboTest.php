@@ -681,6 +681,11 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
         'Failed to set the correct status flags for combo: ' . $combo_args
       );
     }
+
+    $this->assertEmpty(
+      $this->service_PhenoCombo->setExperimentPhenoComboStatusFlags(1, []),
+      'No combo status to set is expected to return void.',
+    );
   }
 
   /**
