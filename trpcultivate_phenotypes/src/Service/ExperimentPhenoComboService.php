@@ -883,7 +883,7 @@ class ExperimentPhenoComboService {
       $project_id = ChadoProjectAutocompleteController::getProjectId($experiment);
     }
 
-    if (is_null($project_id) || $project_id === 0 || $project_id === '') {
+    if (empty($project_id)) {
       throw new \InvalidArgumentException(
         sprintf(
           'Missing experiment error. The specified experiment entity/id/name: %s does not exist.',
