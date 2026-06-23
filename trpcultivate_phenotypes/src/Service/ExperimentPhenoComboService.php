@@ -157,6 +157,8 @@ class ExperimentPhenoComboService {
     // exception so there's no need to check it again here.
     $project_id = self::resolveExperimentToProjectId($experiment);
 
+    // Now that we have a project, let's ensure it has genus' assigned
+    // as we expect for use with phenotypes.
     if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
       $this->tripal_logger->error(
         $failed_error = sprintf(
