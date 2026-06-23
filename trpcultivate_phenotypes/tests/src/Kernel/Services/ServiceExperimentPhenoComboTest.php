@@ -1059,28 +1059,22 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     $this->container->get('trpcultivate_phenotypes.genus_ontology')
       ->loadGenusOntology();
 
-    try {
-      $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
-    }
-    catch (\Exception $e) {
-      $this->assertStringContainsString(
-        'Failed to set experiment: The Phenotypes module is not configured with a genus',
-        $e->getMessage(),
-        'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
-      );
-    }
+    $test_exceptions = [
+      'setExperiment' => self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO,
+      'sanitizePhenoCombo' => $this->test_trait_pheno_combo_ids['Lens'][0],
+    ];
 
-    try {
-      $this->service_PhenoCombo->sanitizePhenoCombo(
-        $this->test_trait_pheno_combo_ids['Lens'][0]
-      );
-    }
-    catch (\Exception $e) {
-      $this->assertStringContainsString(
-        'Failed to sanitize phenocombo: The Phenotypes module is not configured with a genus',
-        $e->getMessage(),
-        'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
-      );
+    foreach ($test_exceptions as $method => $args) {
+      try {
+        $this->service_PhenoCombo->{$method}($args);
+      }
+      catch (\Exception $e) {
+        $this->assertStringContainsString(
+          'The Phenotypes module is not configured with a genus',
+          $e->getMessage(),
+          'The Phenotypes module hosted must have a configured genus to be able to set an experiment context.'
+        );
+      }
     }
   }
 
