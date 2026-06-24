@@ -620,7 +620,7 @@ class ExperimentPhenoComboService {
   }
 
   /**
-   * Sanitize PhenoCombo array.
+   * Ensure PhenoCombo array only contains valid cvterm IDs.
    *
    * @param array $pheno_combo
    *   An associative array describing the TRAIT-METHOD-UNIT combination.
