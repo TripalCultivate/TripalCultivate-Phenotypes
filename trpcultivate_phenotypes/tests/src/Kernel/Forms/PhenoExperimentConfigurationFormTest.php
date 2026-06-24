@@ -234,8 +234,10 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
             ])
             ->execute();
 
-          $entity
-            ->set('exp_germgenus', ['record_id' => $project_id, 'value' => $genus]);
+          if ($entity->hasField('exp_germgenus')) {
+            $entity
+              ->set('exp_germgenus', ['record_id' => $project_id, 'value' => $genus]);
+          }
         }
       }
 
