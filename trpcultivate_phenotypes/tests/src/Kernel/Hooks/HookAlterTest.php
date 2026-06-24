@@ -75,6 +75,13 @@ class HookAlterTest extends ChadoTestKernelBase {
   private TripalEntity $exp_entity;
 
   /**
+   * The name of the field that contains the genus.
+   *
+   * @var string
+   */
+  const FIELD_ORGANISM = 'exp_organism';
+
+  /**
    * {@inheritDoc}
    */
   public function setUp(): void {
@@ -148,7 +155,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       ->execute();
 
     $entity
-      ->set('exp_germgenus', ['record_id' => $project_id, 'value' => $genus]);
+      ->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $genus]);
 
     $entity->save();
     $this->exp_entity = $entity;
@@ -247,21 +254,15 @@ class HookAlterTest extends ChadoTestKernelBase {
     $request->attributes->set('tripal_entity', $this->exp_entity);
     $this->container->set('current_route_match', RouteMatch::createFromRequest($request));
 
-    $entity_field = 'exp_germgenus';
-
     $form_state = new FormState();
     $form = [];
 
-    $exp_genus = $this->exp_entity->get($entity_field)[0]
-      ->getValue()['value'];
+    $exp_genus = $this->exp_entity->get(self::FIELD_ORGANISM)
+      ->getValue()[0]['genus_value'];
 
     // The entity has Lens genus and with phenotypes. Omitting said genus will
     // trigger the validation error.
-    $form_state->setValue($entity_field, [
-      0 => ['value' => 'Lenz'],
-      1 => ['value' => 'Triticum'],
-      2 => ['value' => ''],
-    ]);
+    $form_state->setValue([self::FIELD_ORGANISM, 0, 'organism_id'], 'Lenz culinaris');
 
     $form_validator = new TripalCultivatePhenotypesAlterHooks(
       $this->container->get('database'),
@@ -278,20 +279,20 @@ class HookAlterTest extends ChadoTestKernelBase {
 
     // Error emanates form exp_germgenus field.
     $this->assertEquals(
-      $entity_field,
+      self::FIELD_ORGANISM,
       array_keys($errors)[0],
-      'The error is epected to be triggered by field ' . $entity_field,
+      'The error is epected to be triggered by field ' . self::FIELD_ORGANISM,
     );
 
     $this->assertStringContainsString(
       'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field.',
-      $errors[$entity_field],
+      $errors[self::FIELD_ORGANISM],
       'The validation error does not match expected error message text',
     );
 
     $this->assertStringContainsString(
       Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-      $errors[$entity_field],
+      $errors[self::FIELD_ORGANISM],
       'The validation does not contain the expected link to restore form values.',
     );
   }

@@ -30,6 +30,13 @@ class TripalCultivatePhenotypesAlterHooks {
   const PHENO_COMBO_INTEGRATION = 'pheno_combo';
 
   /**
+   * The name of the field that contains the genus.
+   *
+   * @var string
+   */
+  public const FIELD_ORGANISM = 'exp_organism';
+
+  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConneciton
@@ -158,13 +165,13 @@ class TripalCultivatePhenotypesAlterHooks {
 
     // All genus configured in Phenotypes.
     $pheno_configgenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
-    $germgenus_field = FieldStorageConfig::loadByName('tripal_entity', 'exp_germgenus');
+    $germgenus_field = FieldStorageConfig::loadByName('tripal_entity', self::FIELD_ORGANISM);
 
     if (count($pheno_configgenus) > 0 && $this->has_pheno && $germgenus_field) {
       // Genus as provided in the Design/Germplasm/Germplasm Genus field.
       // Removes the trailing genus field value set to empty string.
       $exp_germgenus = array_filter(
-        array_column($form_state->getValue('exp_germgenus'), 'value')
+        array_column($form_state->getValue(self::FIELD_ORGANISM), 'value')
       );
 
       $count_bygenus = array_count_values($exp_germgenus);
@@ -196,7 +203,7 @@ class TripalCultivatePhenotypesAlterHooks {
 
         if ($has_pheno > 0 && (!in_array($genus, $exp_germgenus) || $not_unique)) {
           $form_state->setErrorByName(
-            'exp_germgenus',
+            self::FIELD_ORGANISM,
             $this->t('Update failed: Genus "@genus" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.', [
               '@genus' => $genus,
               '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),

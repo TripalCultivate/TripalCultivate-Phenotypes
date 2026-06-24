@@ -138,6 +138,13 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   const FORM_WRAPPER = 'form_wrapper';
 
   /**
+   * The name of the field that contains the genus.
+   *
+   * @var string
+   */
+  const FIELD_ORGANISM = 'exp_organism';
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -210,7 +217,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
         ])
         ->execute();
 
-      $entity->set('exp_germgenus', ['record_id' => $project_id, 'value' => $ins_genus]);
+      $entity->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $ins_genus]);
     }
 
     $entity->save();

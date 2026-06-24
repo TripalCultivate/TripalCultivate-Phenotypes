@@ -35,6 +35,13 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
   const PROTECTED_CONTENT_TYPE = 'research_experiment';
 
   /**
+   * The name of the field that contains the genus.
+   *
+   * @var string
+   */
+  const FIELD_ORGANISM = 'exp_organism';
+
+  /**
    * Modules to enable.
    *
    * @var array
@@ -142,8 +149,8 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
         'record_id' => $project_id,
         'name' => $project,
       ],
-      'exp_germgenus' => [
-        'value' => $genus,
+      self::FIELD_ORGANISM => [
+        'genus_value' => $genus,
         'type_id' => $config_terms['genus'],
       ],
     ]);
