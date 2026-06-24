@@ -668,6 +668,7 @@ class ExperimentPhenoComboService {
     foreach ($pheno_combo_alias as $alias) {
       if (!is_int($pheno_combo[$alias]) && !is_string($pheno_combo[$alias])) {
         array_push($unexpected_values, $alias);
+        continue;
       }
 
       $sanitized_pheno_combo[$alias] = $pheno_combo[$alias];
