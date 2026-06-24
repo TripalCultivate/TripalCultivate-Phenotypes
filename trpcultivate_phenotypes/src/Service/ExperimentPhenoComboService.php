@@ -789,7 +789,7 @@ class ExperimentPhenoComboService {
 
       // Throw an exception if label is provided but is an empty string or
       // not a unique label within the experiment.
-      if (empty($label) || (!empty($label) && !$this->labelIsUniqueInExperiment($label))) {
+      if (empty($label) || !$this->labelIsUniqueInExperiment($label)) {
         throw new \InvalidArgumentException(
           sprintf(
             'Invalid PhenoCombo label error. %s provided must be a unique entry within the experiment and not an empty string.',
