@@ -812,7 +812,7 @@ class ExperimentPhenoComboService {
           continue;
         }
 
-        $sanitized_phenocombo_details[$field] = $status_flag_val;
+        $sanitized_phenocombo_details[$field] = (int) $status_flag_val;
       }
     }
 
