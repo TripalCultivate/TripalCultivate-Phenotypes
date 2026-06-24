@@ -136,11 +136,6 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
       ];
     }
 
-    $form['save_configuration'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Save Configuration'),
-    ];
-
     return parent::buildForm($form, $form_state);
   }
 

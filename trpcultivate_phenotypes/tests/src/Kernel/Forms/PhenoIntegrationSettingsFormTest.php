@@ -294,12 +294,6 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
         'Field has protected content types defined in form_state variable.',
       );
     }
-
-    $this->assertEquals(
-      'Save Configuration',
-      $config_form['save_configuration']['#value'],
-      'Integration form is expected to contain a submit button to save configuration values.',
-    );
   }
 
   /**
