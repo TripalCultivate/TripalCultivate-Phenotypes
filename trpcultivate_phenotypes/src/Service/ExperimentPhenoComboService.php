@@ -761,6 +761,8 @@ class ExperimentPhenoComboService {
     if (isset($phenocombo_details[$field_label])) {
       $label = trim($phenocombo_details[$field_label] ?? '');
 
+      // Throw an exception if label is provided but is an empty string or
+      // not a unique label within the experiment.
       if (empty($label) || (!empty($label) && !$this->labelIsUniqueInExperiment($label))) {
         throw new \InvalidArgumentException(
           sprintf(

@@ -893,13 +893,15 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       }
     }
 
-    // Test labels already in use.
+    // Test empty labels and labels already in use.
     $all_labels = $this->container->get('database')
       ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
       ->fields('tbl', ['label'])
       ->condition('tbl.project_id', $experiment, '=')
       ->execute()
       ->fetchCol(0);
+
+    array_push($all_labels, ' ');
 
     foreach ($all_labels as $label) {
       $combo_details['label'] = $label;
@@ -915,6 +917,8 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
         );
       }
     }
+
+
 
     $combo_details['label'] = 'A Unique Label';
     $sanitized_combo_details = $this->service_PhenoCombo->sanitizePhenoComboDetails($combo_details);
