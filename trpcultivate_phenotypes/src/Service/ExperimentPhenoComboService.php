@@ -725,7 +725,9 @@ class ExperimentPhenoComboService {
   }
 
   /**
-   * Sanitize experiment PhenoCombo details.
+   * Validate and sanitize label and status flags.
+   *
+   * Note: default values are not filled in.
    *
    * @param array $phenocombo_details
    *   An associative array containing label and combo status flags. Any of the
