@@ -737,6 +737,32 @@ class ExperimentPhenoComboService {
    *   - Status Flags
    *     @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::setExperimentPhenoComboStatus()
    *
+   * For example, the following arguments are valid, and label and/or status
+   * flags will checked and sanitized as they are encountered.
+   *
+   * @code
+   *
+   * // Only label is provided.
+   * $phenocombo_details = [
+   *   'label' => 'Days to flower',
+   * ];
+   *
+   * // Label and status flags are provided.
+   * $phenocombo_details = [
+   *   'label' => 'Days to flower',
+   *   'is_required => 1,
+   *   ...
+   * ];
+   *
+   * // Purely status flags.
+   * $phenocombo_details = [
+   *   'was_collected' => 1,
+   *   'was_shared' => 1,
+   *  ...
+   * ];
+   *
+   * @endcode
+   *
    * @return array
    *   A validated and sanitized experiment PhenoCombo details where status flag
    *   values are guaranteed to be 0 or 1 in value and label is trimmed and is a
