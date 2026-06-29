@@ -2,21 +2,21 @@
 # Order as they appear.
 
 trpcultivate_phenotypes.tab1:
-  title: 'R Transformation Rules'
-  route_name: 'trpcultivate_phenotypes.settings_r'
-  base_route: 'trpcultivate_phenotypes.settings_r'
+  title: 'Ontology Configuration'
+  route_name: 'trpcultivate_phenotypes.settings_ontology'
+  base_route: 'trpcultivate_phenotypes.settings_ontology'
   weight: 1
 
 trpcultivate_phenotypes.tab2:
-  title: 'Watermark Chart'
+  title: 'Watermark Configuration'
   route_name: 'trpcultivate_phenotypes.settings_watermark'
-  base_route: 'trpcultivate_phenotypes.settings_r'
+  base_route: 'trpcultivate_phenotypes.settings_ontology'
   weight: 2
 
 trpcultivate_phenotypes.tab3:
-  title: 'Ontology Terms'
-  route_name: 'trpcultivate_phenotypes.settings_ontology'
-  base_route: 'trpcultivate_phenotypes.settings_r'
+  title: 'R Configuration'
+  route_name: 'trpcultivate_phenotypes.settings_r'
+  base_route: 'trpcultivate_phenotypes.settings_ontology'
   weight: 3
 
 # Create a tab titled Phenotypes in a Research Experiment content type.
