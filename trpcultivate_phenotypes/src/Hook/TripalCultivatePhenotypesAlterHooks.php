@@ -161,7 +161,7 @@ class TripalCultivatePhenotypesAlterHooks {
       // Genus as provided in the Design/Germplasm/Germplasm Genus field.
       // Removes the trailing genus field value set to empty string.
       $exp_germgenus = array_filter(
-        array_column($form_state->getValue(self::FIELD_ORGANISM), 'value')
+        array_column($form_state->getValue(self::FIELD_ORGANISM), 'genus_value')
       );
 
       $count_bygenus = array_count_values($exp_germgenus);
