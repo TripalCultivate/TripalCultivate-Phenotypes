@@ -23,6 +23,13 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class PhenoExperimentConfigurationForm extends FormBase {
 
   /**
+   * The name of the field that contains the genus.
+   *
+   * @var string
+   */
+  public const FIELD_ORGANISM = 'exp_organism';
+
+  /**
    * Drupal database connection.
    *
    * @var \Drupal\Core\Database\Connection
@@ -154,12 +161,12 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // If the /genus slug is not provided, show all trait for all genus.
     $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-    if ($tripal_entity->hasField('exp_germgenus')) {
+    if ($tripal_entity->hasField(self::FIELD_ORGANISM)) {
       $invalid_genus = 0;
-      $exp_germgenus = $tripal_entity->get('exp_germgenus')->getValue();
+      $exp_germgenus = $tripal_entity->get(self::FIELD_ORGANISM)->getValue();
 
       foreach ($exp_germgenus as $germgenus) {
-        if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['value'])) {
+        if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['genus_value'])) {
           $invalid_genus++;
         }
       }
