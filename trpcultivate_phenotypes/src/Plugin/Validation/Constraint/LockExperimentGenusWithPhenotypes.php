@@ -41,6 +41,6 @@ class LockExperimentGenusWithPhenotypes extends Constraint {
    *
    * @see src/Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypesValidator.php
    */
-  public string $all_genus_failed = 'Update failed: %content-type has phenotypic data registered and and, thus, linked genus must remain present. Click @reload to restore form values if you have removed all genus.';
+  public string $all_genus_failed = 'Update failed: %content-type has phenotypic data registered, thus, linked genus must remain present. Click @reload to restore form values if you have removed all genus.';
 
 }

@@ -23,7 +23,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * The term referenced by a field that would qualify constraint application.
    *
    * This value acts as an indentifier that field definitions can use to
-   * determine whether genu-experiment constraint should be applied.
+   * determine whether genus-experiment constraint should be applied.
    * Currently set to - genus (TAXRANK:0000005) and resolved to the cvterm id
    * configured in Phenotypes module.
    *
