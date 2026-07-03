@@ -97,17 +97,17 @@ class TripalCultivatePhenotypesAlterHooks {
         && method_exists($tripal_entity, 'bundle')
         && $service_PhenoIntegration->isContentTypePhenoSupported(self::PHENO_COMBO_INTEGRATION, $tripal_entity->bundle())) {
 
-        $this->experiment_id = $tripal_entity->getBackendRecordId('chado_storage');
+      $this->experiment_id = $tripal_entity->getBackendRecordId('chado_storage');
 
-        $has_pheno = $drupaldb_connection
-          ->select('trpcultivate_phenocombo', 'tc')
-          ->fields('tc', ['combo_id'])
-          ->condition('tc.project_id', $this->experiment_id, '=')
-          ->range(0, 1)
-          ->execute()
-          ->fetchField();
+      $has_pheno = $drupaldb_connection
+        ->select('trpcultivate_phenocombo', 'tc')
+        ->fields('tc', ['combo_id'])
+        ->condition('tc.project_id', $this->experiment_id, '=')
+        ->range(0, 1)
+        ->execute()
+        ->fetchField();
 
-        $this->has_pheno = ($has_pheno) ? TRUE : FALSE;
+      $this->has_pheno = ($has_pheno) ? TRUE : FALSE;
     }
   }
 
