@@ -4,7 +4,6 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\tripal\Services\TripalEntityLookup;
 
 /**
@@ -45,14 +44,11 @@ class PhenoIntegrationSettings {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Drupal config factory interface.
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $service_EntityTypeManager
-   *   Drupal Entity Type Manager service.
    * @param \Drupal\tripal\Services\TripalEntityLookup $tripal_entity_lookup
    *   Tripal entity lookup service.
    */
   public function __construct(
     protected ConfigFactoryInterface $config_factory,
-    protected EntityTypeManagerInterface $service_EntityTypeManager,
     protected TripalEntityLookup $tripal_entity_lookup,
   ) {
   }
