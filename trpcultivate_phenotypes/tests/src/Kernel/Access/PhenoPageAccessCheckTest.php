@@ -50,7 +50,7 @@ class PhenoPageAccessCheckTest extends ChadoTestKernelBase {
   /**
    * Test Tripal entity.
    *
-   * @var TripalEntity
+   * @var \Drupal\tripal\Entity\TripalEntity
    */
   protected TripalEntity $exp_entity;
 
