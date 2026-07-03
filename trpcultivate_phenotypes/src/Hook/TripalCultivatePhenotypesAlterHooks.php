@@ -88,7 +88,7 @@ class TripalCultivatePhenotypesAlterHooks {
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
 
     // This entity page is not backup-related and is treated as pheno_combo
-    // integration. This check determinse whether the content type has any
+    // integration. This check determines whether the content type has any
     // pheno-combo records, if it does, the delete button is disabled to prevent
     // removing this entity that still has dependent records.
     $tripal_entity = $current_routematch->getParameters()->get('tripal_entity');
