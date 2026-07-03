@@ -5,7 +5,6 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\Config;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
-use Drupal\tripal\Services\TripalEntityLookup;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings;
 use PHPUnit\Framework\Attributes\Group;
