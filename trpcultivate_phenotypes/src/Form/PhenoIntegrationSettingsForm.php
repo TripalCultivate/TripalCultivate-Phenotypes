@@ -96,8 +96,8 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
       '#open' => TRUE,
     ];
 
-     // Integration multi-select field metadata.
-     $integration_field_metadata = [
+    // Integration multi-select field metadata.
+    $integration_field_metadata = [
       self::PHENO_BACKUP_INTEGRATION => [
         'title' => 'Phenotypic Data File Backup',
         'description' => 'Choose the Content Types you would like to support phenotypic data file backups. This will add a tab beside Edit on pages of this type that links to the Phenotypic Data Backup page.',
