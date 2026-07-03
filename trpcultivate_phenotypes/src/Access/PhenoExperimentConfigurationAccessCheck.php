@@ -4,7 +4,6 @@ namespace Drupal\trpcultivate_phenotypes\Access;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Routing\Access\AccessInterface;
-use Drupal\Core\Session\AccountInterface;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings;
 use Symfony\Component\Routing\Route;
