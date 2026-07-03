@@ -22,6 +22,7 @@ use Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings;
  * NOTE: this form supports Phenotypes Integration and is set to 'backup'
  * integration. Experiment selection is limited to content types configured for
  * backup integration.
+ *
  * @see PhenoBackupForm::form().
  */
 final class PhenodataBackupForm extends EntityForm {
