@@ -14,6 +14,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *
  * NOTE: this controller supports Phenotypes Integration and is set to 'backup'
  * integration in the route definition.
+ *
  * @see trpcultivate_phenotypes.routing.yml
  */
 class PhenoExperimentPhenoBackupController extends ControllerBase {
