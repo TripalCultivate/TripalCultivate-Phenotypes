@@ -172,6 +172,8 @@ class PhenoIntegrationSettingsForm extends ConfigFormBase {
         array_values($form_state->getValue($integration))
       );
     }
+
+    return parent::submitForm($form, $form_state);
   }
 
   /**
