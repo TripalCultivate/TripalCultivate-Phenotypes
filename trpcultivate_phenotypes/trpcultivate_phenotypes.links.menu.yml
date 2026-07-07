@@ -16,7 +16,7 @@ trpcultivate_phenotypes.settings_ontology:
 
 trpcultivate_phenotypes.settings_integration:
   title: 'Phenotypes Integration Configuration'
-  description: 'Manage and configure project-based content types for Phenotypes data backup and trait combo integration.'
+  description: 'Manage and configure project-based content types for Phenotypes data backup and trait integration.'
   route_name: 'trpcultivate_phenotypes.settings_integration'
   parent: 'trpcultivate_phenotypes.main_settings'
   weight: 2
