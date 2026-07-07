@@ -115,7 +115,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
 
     $config_terms = $this->setTermConfig();
 
-    // Creaate research experiment entity and assign trait-combo and data file.
+    // Create research experiment entity and assign trait-combo and data file.
     $project = 'Project Awesome';
     $project_id = $this->chado_connection->insert('1:project')
       ->fields(['name'])
