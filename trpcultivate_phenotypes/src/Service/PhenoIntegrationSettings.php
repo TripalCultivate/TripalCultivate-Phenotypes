@@ -160,7 +160,7 @@ class PhenoIntegrationSettings {
   /**
    * Validate content type.
    *
-   * Checks that content types provided is project-based.
+   * Checks that content types provided are project-based.
    *
    * @param array|string $content_type
    *   An list of content types (array) or a single content type to
