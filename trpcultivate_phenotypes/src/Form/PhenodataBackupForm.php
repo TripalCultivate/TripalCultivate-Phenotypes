@@ -78,7 +78,7 @@ final class PhenodataBackupForm extends EntityForm {
   /**
    * Phenotypes integration service.
    *
-   * @var \Drupal\trpcultivate_phenotypes\Service\PhenoIntegraionSettings
+   * @var \Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings
    */
   protected PhenoIntegrationSettings $service_PhenoIntegration;
 
