@@ -227,7 +227,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
     $this->assertEquals(
       'trpcultivate_phenotypes_pheno_integration_form',
       $this->integration_form->getFormId(),
-      'Integraion settings form failed to return the expected form id.',
+      'Integration settings form failed to return the expected form id.',
     );
   }
 
