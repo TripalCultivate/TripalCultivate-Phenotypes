@@ -163,7 +163,7 @@ class PhenoIntegrationSettingsTest extends ChadoTestKernelBase {
   }
 
   /**
-   * Test isIsContentTypePhenoSupported() method.
+   * Test isContentTypePhenoSupported() method.
    */
   public function testIsContentTypePhenoSupported() {
 
