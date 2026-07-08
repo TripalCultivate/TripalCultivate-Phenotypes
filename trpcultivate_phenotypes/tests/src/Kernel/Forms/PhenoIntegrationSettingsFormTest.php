@@ -76,7 +76,7 @@ class PhenoIntegrationSettingsFormTest extends ChadoTestKernelBase {
    */
   protected PhenoIntegrationSettingsForm $integration_form;
 
-   /**
+  /**
    * Phenotypes integration service.
    *
    * @var \Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings
