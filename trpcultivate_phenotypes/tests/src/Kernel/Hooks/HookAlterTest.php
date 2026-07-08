@@ -120,7 +120,7 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->container->get('trpcultivate.setup_module_service')
       ->importContenttypes();
 
-    $this->setTermConfig();
+    $terms_config = $this->setTermConfig();
 
     $default_terms = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
       ->get('trpcultivate.default_terms.term_set');
@@ -204,7 +204,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       ],
       'exp_germgenus' => [
         'value' => $genus,
-        'type_id' => $this->container->get('trpcultivate_phenotypes.terms')->getTermId('genus'),
+        'type_id' => $terms_config['genus'],
       ],
     ]);
 
