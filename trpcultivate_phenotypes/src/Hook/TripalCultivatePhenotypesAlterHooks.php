@@ -13,6 +13,29 @@ use Drupal\tripal_chado\Database\ChadoConnection;
  */
 class TripalCultivatePhenotypesAlterHooks {
 
+  use StringTranslationTrait;
+
+  /**
+   * The name of the field that contains the genus.
+   *
+   * @var string
+   */
+  public const FIELD_ORGANISM = 'exp_organism';
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var \Drupal\tripal_chado\Database\ChadoConneciton
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
+   * Phenotypes genus ontology service.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
+   */
+  protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology;
+
   /**
    * Determine if the research experiment entity has phenotypes.
    *
@@ -123,16 +146,55 @@ class TripalCultivatePhenotypesAlterHooks {
    *
    * @see src/Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypesValidator.php
    */
-  #[Hook('entity_type_alter')]
-  public function entityTypeAlter(array &$entity_types) {
+  public function phenoGenusExperimentEditFormValidate($form, FormStateInterface $form_state) {
 
-    $tripal_entity = self::TRIPAL_ENTITY['type'];
+    // All genus configured in Phenotypes.
+    $pheno_configgenus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
+    $germgenus_field = FieldStorageConfig::loadByName('tripal_entity', self::FIELD_ORGANISM);
 
-    if (isset($entity_types[$tripal_entity])) {
-      if ($entity_types[$tripal_entity]->id() == $tripal_entity) {
+    if (count($pheno_configgenus) > 0 && $this->has_pheno && $germgenus_field) {
+      // Genus as provided in the Design/Germplasm/Germplasm Genus field.
+      // Removes the trailing genus field value set to empty string.
+      $exp_germgenus = array_filter(
+        array_column($form_state->getValue(self::FIELD_ORGANISM), 'genus_value')
+      );
 
-        $entity_types[$tripal_entity]
-          ->addConstraint('LockExperimentGenusWithPhenotypes', []);
+      $count_bygenus = array_count_values($exp_germgenus);
+
+      foreach ($pheno_configgenus as $genus) {
+        $genus_config = $this->service_PhenoGenusOntology
+          ->getGenusOntologyConfigValues($genus);
+
+        if (!$genus_config) {
+          continue;
+        }
+
+        $query = $this->chado_connection->select('trpcultivate_phenocombo', 'tp');
+        $query->join('1:cvterm', 't', 'tp.attr_id = t.cvterm_id');
+        $query->join('1:cv', 'v', 't.cv_id = v.cv_id');
+
+        // A phenotype to a genus would suffice enforcement check.
+        $has_pheno = $query
+          ->fields('tp', ['combo_id'])
+          ->condition('tp.project_id', $this->experiment_id, '=')
+          ->condition('v.cv_id', $genus_config['trait'], '=')
+          ->range(0, 1)
+          ->execute()
+          ->fetchField();
+
+        // Genus has phenotypes and is missing/has duplicates from the list of
+        // germplasm genus of the research experiment entity.
+        $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
+
+        if ($has_pheno > 0 && (!in_array($genus, $exp_germgenus) || $not_unique)) {
+          $form_state->setErrorByName(
+            self::FIELD_ORGANISM,
+            $this->t('Update failed: Genus "@genus" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field. Click @reload to restore form values if you have removed or altered a genus.', [
+              '@genus' => $genus,
+              '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+            ])
+          );
+        }
       }
     }
   }

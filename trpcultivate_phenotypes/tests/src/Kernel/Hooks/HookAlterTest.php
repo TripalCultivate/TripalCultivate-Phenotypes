@@ -76,18 +76,11 @@ class HookAlterTest extends ChadoTestKernelBase {
   private TripalEntity $exp_entity;
 
   /**
-   * Field constraint violation message.
+   * The name of the field that contains the genus.
    *
    * @var string
    */
-  private string $violation_message = '';
-
-  /**
-   * Constraint execution context.
-   *
-   * @var object
-   */
-  private $constraint_execontext;
+  public const FIELD_ORGANISM = 'exp_organism';
 
   /**
    * {@inheritDoc}
@@ -181,7 +174,8 @@ class HookAlterTest extends ChadoTestKernelBase {
       ->onlyMethods(['getGenusOntologyConfigValues'])
       ->getMock();
 
-    $mock_return_map = [];
+    $entity
+      ->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $genus]);
 
     $config_genus = $this->setOntologyConfig($genus);
 
@@ -336,16 +330,15 @@ class HookAlterTest extends ChadoTestKernelBase {
       'No field constraint violation is expected if genus-experiment with phenotypes is maintained.'
     );
 
-    // Modify genus - alter, remove or duplicate value.
-    $entity_field = 'exp_germgenus';
-    $exp_genus = $this->exp_entity->get($entity_field)->first()
-      ->getValue()['value'];
+    $form_state = new FormState();
+    $form = [];
 
-    $constraint_message = strtr($constraint->genus_failed, [
-      '%genus' => $exp_genus,
-      '%content-type' => $this->exp_entity->getBundle()->label(),
-      '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-    ]);
+    $exp_genus = $this->exp_entity->get(self::FIELD_ORGANISM)
+      ->getValue()[0]['genus_value'];
+
+    // The entity has Lens genus and with phenotypes. Omitting said genus will
+    // trigger the validation error.
+    $form_state->setValue([self::FIELD_ORGANISM, 0, 'organism_id'], 'Lenz culinaris');
 
     // The cverm_id of the configuration term - genus.
     $type_id = $this->container->get('trpcultivate_phenotypes.terms')->getTermId('genus');
@@ -381,9 +374,9 @@ class HookAlterTest extends ChadoTestKernelBase {
     ]);
 
     $this->assertStringContainsString(
-      $constraint_message,
-      $this->violation_message,
-      'Missing: The validation error does not match expected error message text',
+      'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field.',
+      $errors[self::FIELD_ORGANISM],
+      'The validation error does not match expected error message text',
     );
 
     // Duplicate.
@@ -404,9 +397,9 @@ class HookAlterTest extends ChadoTestKernelBase {
     $constraint_validator->validate($this->exp_entity, $constraint);
 
     $this->assertStringContainsString(
-      $constraint_message,
-      $this->violation_message,
-      'Duplicate: The validation error does not match expected error message text',
+      Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+      $errors[self::FIELD_ORGANISM],
+      'The validation does not contain the expected link to restore form values.',
     );
   }
 
