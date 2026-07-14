@@ -142,7 +142,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  const FIELD_ORGANISM = 'exp_organism';
+  public const FIELD_ORGANISM = 'exp_organism';
 
   /**
    * {@inheritdoc}

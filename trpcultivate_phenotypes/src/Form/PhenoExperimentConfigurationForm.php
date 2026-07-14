@@ -163,8 +163,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     if ($tripal_entity->hasField(self::FIELD_ORGANISM)) {
       $invalid_genus = 0;
-      $exp_germgenus = $tripal_entity->get(self::FIELD_ORGANISM)
-        ->getValue();
+      $exp_germgenus = $tripal_entity->get(self::FIELD_ORGANISM)->getValue();
 
       foreach ($exp_germgenus as $germgenus) {
         if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['genus_value'])) {
