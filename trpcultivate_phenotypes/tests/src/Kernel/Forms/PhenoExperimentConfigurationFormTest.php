@@ -94,7 +94,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  const FIELD_ORGANISM = 'exp_organism';
+  public const FIELD_ORGANISM = 'exp_organism';
 
   /**
    * Test genus with a set of test traits.

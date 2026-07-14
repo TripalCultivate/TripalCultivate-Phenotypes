@@ -79,7 +79,7 @@ class HookAlterTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  const FIELD_ORGANISM = 'exp_organism';
+  public const FIELD_ORGANISM = 'exp_organism';
 
   /**
    * {@inheritDoc}
