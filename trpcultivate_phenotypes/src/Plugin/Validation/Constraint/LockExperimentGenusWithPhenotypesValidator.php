@@ -176,8 +176,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    */
   protected function findFieldsWithGenusProperty(TripalEntity $tripal_entity): array {
 
-    // This variable is a list of fields describing a property and whose 
-    // property has the same type_id as `genus (TAXRANK:0000005)`. The value 
+    // This variable is a list of fields describing a property and whose
+    // property has the same type_id as `genus (TAXRANK:0000005)`. The value
     // is the table alias in this property for the projectprop table.
     $genus_property_fields = [];
     $chado_fields = $tripal_entity->getTripalStorageFields('chado_storage');
@@ -199,6 +199,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
           // genus term and if it matches then this is a field we are interested
           // in! Save the field name and the alias for the table.
           $field_values = $tripal_entity->get($field_name);
+
           foreach ($field_values as $item) {
             if ($item->get($property_key)->getValue() == $this->config_genus_cvterm_id) {
               // Not all property types include a table_mapping, check if it

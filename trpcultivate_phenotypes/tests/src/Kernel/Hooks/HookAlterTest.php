@@ -83,6 +83,20 @@ class HookAlterTest extends ChadoTestKernelBase {
   public const FIELD_ORGANISM = 'exp_organism';
 
   /**
+   * Field constraint violation message.
+   *
+   * @var string
+   */
+  private string $violation_message = '';
+
+  /**
+   * Constraint execution context.
+   *
+   * @var object
+   */
+  private $constraint_execontext;
+
+  /**
    * {@inheritDoc}
    */
   public function setUp(): void {
@@ -165,30 +179,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       ])
       ->execute();
 
-    $mock_ontology_service = $this->getMockBuilder(TripalCultivatePhenotypesGenusOntologyService::class)
-      ->setConstructorArgs([
-        $this->container->get('config.factory'),
-        $this->container->get('tripal_chado.database'),
-        $this->container->get('tripal.logger'),
-      ])
-      ->onlyMethods(['getGenusOntologyConfigValues'])
-      ->getMock();
-
-    $entity
-      ->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $genus]);
-
     $config_genus = $this->setOntologyConfig($genus);
-
-    $genus_config = [];
-    foreach ($config_genus as $config => $config_value) {
-      $genus_config[$config] = ($config == 'database') ? $config_value['db_id'] : $config_value['cv_id'];
-    }
-
-    $mock_return_map[$genus] = $genus_config;
-    $mock_ontology_service->method('getGenusOntologyConfigValues')
-      ->willReturnMap([[$genus, $mock_return_map[$genus]]]);
-
-    $this->container->set('trpcultivate_phenotypes.genus_ontology', $mock_ontology_service);
 
     $this->exp_entity = TripalEntity::create([
       'type' => 'research_experiment',
@@ -196,8 +187,8 @@ class HookAlterTest extends ChadoTestKernelBase {
         'record_id' => $project_id,
         'value' => $exp_name,
       ],
-      'exp_germgenus' => [
-        'value' => $genus,
+      'exp_organism' => [
+        'genus_value' => $genus,
         'type_id' => $terms_config['genus'],
       ],
     ]);

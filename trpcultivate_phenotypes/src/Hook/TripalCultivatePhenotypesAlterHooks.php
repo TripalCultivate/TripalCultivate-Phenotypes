@@ -8,12 +8,11 @@ use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
 
+
 /**
  * Phenotypes module alter hooks.
  */
 class TripalCultivatePhenotypesAlterHooks {
-
-  use StringTranslationTrait;
 
   /**
    * The name of the field that contains the genus.
@@ -73,7 +72,7 @@ class TripalCultivatePhenotypesAlterHooks {
       if (method_exists($tripal_entity, 'bundle') && $tripal_entity->bundle() == self::TRIPAL_ENTITY['bundle']) {
 
         $has_pheno = $chado_connection
-          ->select('0:trpcultivate_phenocombo', 'tc')
+          ->select('trpcultivate_phenocombo', 'tc')
           ->fields('tc', ['combo_id'])
           ->condition('tc.project_id', $tripal_entity->getBackendRecordId('chado_storage'), '=')
           ->range(0, 1)
