@@ -144,13 +144,14 @@ class HookAlterTest extends ChadoTestKernelBase {
     // Create test research experiment entity with phenotypes.
     $exp_name = 'Awesome Research Experiment';
     $genus = self::GENUS;
+    $species = 'databasica';
 
     $project_id = $this->chado_connection->insert('1:project')
       ->fields(['name' => $exp_name])
       ->execute();
 
     $organism_id = $this->chado_connection->insert('1:organism')
-      ->fields(['genus' => $genus, 'species' => 'databasica', 'type_id' => 1])
+      ->fields(['genus' => $genus, 'species' => $species, 'type_id' => 1])
       ->execute();
 
     // Configure the genus and link to project.
@@ -179,7 +180,7 @@ class HookAlterTest extends ChadoTestKernelBase {
         'genus_prop_id' => $org_prj_prop,
         'genus_prop_fkey' => $project_id,
         'genus_rank' => 1,
-        'sciname_value' => $genus . ' culinaris',
+        'sciname_value' => $genus . ' ' . $species,
       ],
     ]);
 
