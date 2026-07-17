@@ -1044,4 +1044,33 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
     }
   }
 
+  /**
+   * Test content entity that has no configured genus.
+   */
+  public function testExpHasNoPhenoGenus() {
+
+    // Removes all genus-experiment relationships.
+    $this->chado_connection->truncate('1:projectprop')->execute();
+
+    // Setup an admin user.
+    $this->setCurrentUser($this->createUser(['administer tripal']));
+
+    $request = Request::create(
+      Url::fromRoute(
+        self::ROUTE_NAME,
+        [
+          'tripal_entity' => $this->exp_entity->id(),
+        ],
+        []
+      )->toString()
+    );
+
+    $this->assertStringContainsString(
+      'The Research Experiment has no configured genus set.',
+      $this->container->get('http_kernel')->handle($request)->getContent(),
+      'An error message is expected when a content type has no configured genus.',
+    );
+  }
+
+
 }
