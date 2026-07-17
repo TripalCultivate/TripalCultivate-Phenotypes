@@ -212,8 +212,6 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
           'rank' => $i + 1,
         ])
         ->execute();
-
-      $entity->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $ins_genus]);
     }
 
     $entity->save();

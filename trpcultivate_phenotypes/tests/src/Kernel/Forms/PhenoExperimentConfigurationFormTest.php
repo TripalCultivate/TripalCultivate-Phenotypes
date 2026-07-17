@@ -90,13 +90,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
-   * The name of the field that contains the genus.
-   *
-   * @var string
-   */
-  public const FIELD_ORGANISM = 'exp_organism';
-
-  /**
    * Test genus with a set of test traits.
    *
    * @var array
@@ -240,9 +233,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
               'rank' => $i + 1,
             ])
             ->execute();
-
-          $entity
-            ->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $genus]);
         }
       }
 
