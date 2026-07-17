@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Hooks;
 
+use Drupal\Core\Form\FormState;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
@@ -11,8 +12,6 @@ use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGenusWithPhenotypes;
 use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGenusWithPhenotypesValidator;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
@@ -66,14 +65,7 @@ class HookAlterTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
-
-  /**
-   * Research experiment entity.
-   *
-   * @var \Drupal\tripal\Entity\TripalEntity
-   */
-  private TripalEntity $exp_entity;
+  public const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
    * The name of the field that contains the genus.
@@ -83,18 +75,37 @@ class HookAlterTest extends ChadoTestKernelBase {
   public const FIELD_ORGANISM = 'exp_organism';
 
   /**
-   * Field constraint violation message.
+   * The test genus name.
+   *
+   * @var string
+   */
+  public const GENUS = 'Tripalus';
+
+  /**
+   * Research experiment entity.
+   *
+   * @var \Drupal\tripal\Entity\TripalEntity
+   */
+  private TripalEntity $exp_entity;
+
+  /**
+   * Stores recent field constraint violation message.
+   *
+   * Used to capture the validation failure message for either an invalid genus
+   * value or removal of all genus.
+   *
+   * @see Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypes
    *
    * @var string
    */
   private string $violation_message = '';
 
   /**
-   * Constraint execution context.
+   * Mock execution context used by the field constraint validator.
    *
-   * @var object
+   * @var \Symfony\Component\Validator\Context\ExecutionContextInterface
    */
-  private $constraint_execontext;
+  private ExecutionContextInterface $constraint_execution_context;
 
   /**
    * {@inheritDoc}
@@ -127,69 +138,48 @@ class HookAlterTest extends ChadoTestKernelBase {
     $this->container->get('trpcultivate.setup_module_service')
       ->importContenttypes();
 
-    $terms_config = $this->setTermConfig();
+    $config_terms = $this->setTermConfig();
+    $genus_term = $config_terms['genus'];
 
-    $default_terms = \Drupal::configFactory()->getEditable('trpcultivate_phenotypes.settings')
-      ->get('trpcultivate.default_terms.term_set');
-
-    $terms = [];
-    foreach ($default_terms as $cv) {
-      foreach ($cv['terms'] as $term_set) {
-        $term_set['cv'] = ['name' => $cv['name'], 'definition' => $cv['definition']];
-        $terms[$term_set['config_map']] = $term_set;
-      }
-    }
-
-    $mock_terms_service = $this->getMockBuilder(TripalCultivatePhenotypesTermsService::class)
-      ->setConstructorArgs([
-        $this->container->get('config.factory'),
-        $this->container->get('tripal_chado.chado_buddy'),
-        $this->container->get('tripal.logger'),
-      ])
-      ->onlyMethods(['defineTerms', 'getTermId'])
-      ->getMock();
-
-    $mock_terms_service->method('defineTerms')
-      ->willReturn($terms);
-
-    $mock_terms_service->method('getTermId')
-      ->willReturn(1);
-
-    $this->container->set('trpcultivate_phenotypes.terms', $mock_terms_service);
-
-    // Create test records - A research experiment entity with genus set to
-    // Lens and a trait-method-unit combo added.
+    // Create test research experiment entity with phenotypes.
     $exp_name = 'Awesome Research Experiment';
-    $genus = 'Lens';
+    $genus = self::GENUS;
 
-    // Create research experiment content.
-    $exp_name = 'Test Research Experiment';
     $project_id = $this->chado_connection->insert('1:project')
-      ->fields(['name'])
-      ->values(['name' => $exp_name])
+      ->fields(['name' => $exp_name])
       ->execute();
 
-    $genus = 'Lens';
-    $this->chado_connection->insert('1:organism')
-      ->fields(['genus', 'species', 'type_id'])
-      ->values([
-        'genus' => $genus,
-        'species' => 'Culinaris',
-        'type_id' => 1,
+    $organism_id = $this->chado_connection->insert('1:organism')
+      ->fields(['genus' => $genus, 'species' => 'databasica', 'type_id' => 1])
+      ->execute();
+
+    // Configure the genus and link to project.
+    $this->setOntologyConfig($genus);
+    $org_prj_prop = $this->chado_connection->insert('1:projectprop')
+      ->fields([
+        'project_id' => $project_id,
+        'type_id' => $genus_term,
+        'value' => $genus,
+        'rank' => 1,
       ])
       ->execute();
 
-    $config_genus = $this->setOntologyConfig($genus);
-
+    // The research experiment Tripal entity used for these tests.
     $this->exp_entity = TripalEntity::create([
       'type' => 'research_experiment',
       'exp_name' => [
         'record_id' => $project_id,
         'value' => $exp_name,
       ],
-      'exp_organism' => [
+      self::FIELD_ORGANISM => [
+        'record_id' => $project_id,
+        'organism_id' => $organism_id,
+        'genus_type_id' => $genus_term,
         'genus_value' => $genus,
-        'type_id' => $terms_config['genus'],
+        'genus_prop_id' => $org_prj_prop,
+        'genus_prop_fkey' => $project_id,
+        'genus_rank' => 1,
+        'sciname_value' => $genus . ' culinaris',
       ],
     ]);
 
@@ -252,11 +242,11 @@ class HookAlterTest extends ChadoTestKernelBase {
         return NULL;
       });
 
-    $this->constraint_execontext = $this->getMockBuilder(ExecutionContextInterface::class)
+    $this->constraint_execution_context = $this->getMockBuilder(ExecutionContextInterface::class)
       ->disableOriginalConstructor()
       ->getMock();
 
-    $this->constraint_execontext
+    $this->constraint_execution_context
       ->method('buildViolation')
       ->willReturnCallback(function ($message) use ($builder) {
         $this->violation_message = $message;
@@ -312,8 +302,8 @@ class HookAlterTest extends ChadoTestKernelBase {
       $this->container->get('trpcultivate_phenotypes.terms'),
     );
 
-    // Genus-experiemnt is maintained.
-    $constraint_validator->initialize($this->constraint_execontext);
+    // Genus-experiemnt relationship is maintained.
+    $constraint_validator->initialize($this->constraint_execution_context);
     $constraint_validator->validate($this->exp_entity, $constraint);
 
     $this->assertEmpty(
@@ -321,77 +311,37 @@ class HookAlterTest extends ChadoTestKernelBase {
       'No field constraint violation is expected if genus-experiment with phenotypes is maintained.'
     );
 
-    $form_state = new FormState();
-    $form = [];
+    // Genus in genus-experiment has been altered (specific genus) and
+    // removed (all genus).
+    foreach (['genus_failed', 'all_genus_failed'] as $i => $failed_key) {
+      $organism_value = $this->exp_entity->get(self::FIELD_ORGANISM);
 
-    $exp_genus = $this->exp_entity->get(self::FIELD_ORGANISM)
-      ->getValue()[0]['genus_value'];
+      if ($i > 0) {
+        // Remove all genus.
+        $organism_value->setValue([]);
+      }
+      else {
+        // Alter the genus.
+        $organism_value->first()->set('genus_value', 'Not Lens');
+      }
 
-    // The entity has Lens genus and with phenotypes. Omitting said genus will
-    // trigger the validation error.
-    $form_state->setValue([self::FIELD_ORGANISM, 0, 'organism_id'], 'Lenz culinaris');
+      $this->exp_entity->save();
 
-    // The cverm_id of the configuration term - genus.
-    $type_id = $this->container->get('trpcultivate_phenotypes.terms')->getTermId('genus');
+      $constraint_validator->initialize($this->constraint_execution_context);
+      $constraint_validator->validate($this->exp_entity, $constraint);
 
-    // Altered.
-    $this->exp_entity->get($entity_field)->first()
-      ->setValue([
-        'value' => $exp_genus . 'IS ALTERED',
-        'type_id' => $type_id,
+      $constraint_failed_message = strtr($constraint->{$failed_key}, [
+        '%genus' => self::GENUS,
+        '%content-type' => $this->exp_entity->getBundle()->label(),
+        '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
       ]);
 
-    $this->exp_entity->save();
-
-    $constraint_validator->initialize($this->constraint_execontext);
-    $constraint_validator->validate($this->exp_entity, $constraint);
-
-    $this->assertStringContainsString(
-      $constraint_message,
-      $this->violation_message,
-      'Altered: The validation error does not match expected error message text',
-    );
-
-    // Removed all.
-    $this->exp_entity->get($entity_field)->first()->setValue([]);
-    $this->exp_entity->save();
-
-    $constraint_validator->initialize($this->constraint_execontext);
-    $constraint_validator->validate($this->exp_entity, $constraint);
-
-    $constraint_message = strtr($constraint->all_genus_failed, [
-      '%content-type' => $this->exp_entity->getBundle()->label(),
-      '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-    ]);
-
-    $this->assertStringContainsString(
-      'Update failed: Genus "' . $exp_genus . '" of this research experiment is linked to the Phenotypes module and must be a unique entry in the Germplasm Genus field.',
-      $errors[self::FIELD_ORGANISM],
-      'The validation error does not match expected error message text',
-    );
-
-    // Duplicate.
-    $this->exp_entity->get($entity_field)
-      ->setValue(
-        [
-          'value' => $exp_genus,
-          'type_id' => $type_id,
-        ],
-        [
-          'value' => $exp_genus,
-          'type_id' => $type_id,
-        ]
+      $this->assertSame(
+        $constraint_failed_message,
+        $this->violation_message,
+        'The validation field constraint error message does not match expected error message text with key ' . $failed_key,
       );
-    $this->exp_entity->save();
-
-    $constraint_validator->initialize($this->constraint_execontext);
-    $constraint_validator->validate($this->exp_entity, $constraint);
-
-    $this->assertStringContainsString(
-      Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-      $errors[self::FIELD_ORGANISM],
-      'The validation does not contain the expected link to restore form values.',
-    );
+    }
   }
 
 }
