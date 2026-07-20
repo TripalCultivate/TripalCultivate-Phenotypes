@@ -22,7 +22,7 @@ props:
       title: Method - Unit combo.
       description: Method, unit, type and colleciton method information.
     status:
-      type: array
+      type: object
       title: Trait status
       description: The status (is required, was shared, was collected and is archived) of a trait in an experiment.
     trait_id:
