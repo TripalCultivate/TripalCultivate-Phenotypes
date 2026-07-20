@@ -111,6 +111,11 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
       return;
     }
 
+    // This variable is a list of fields describing a property and whose
+    // property has the same type_id as `genus (TAXRANK:0000005)`. The value
+    // is the table alias in this property for the projectprop table.
+    $genus_property_fields = [];
+
     // Find fields that manage a chado project.projectprop record using the
     // genus cvterm as it's type_id.
     // Note: If a field has no value, then it cannot be found via this helper
@@ -146,7 +151,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     // using findGenusFieldProperty(). This TripalPropertyType should store the
     // chado projectprop.value column where the projectprop.type_id of the same
     // record references the genus cvterm.
-    $field_properties_to_validate = $this->findGenusFieldValue($genus_property_fields, $tripal_entity);
+    $field_properties_to_validate = $this->findFieldPropertyWithGenusValue($genus_property_fields, $tripal_entity);
     if ($field_properties_to_validate == []) {
       return;
     }
@@ -234,9 +239,13 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *   Tripal Entity @see \Drupal\tripal\Entity\TripalEntity.
    *
    * @return array
-   *   An array of field names that contains the genus value.
+   *   An array of field names that contains the genus value. Each item is keyed
+   *   with the following keys:
+   *   - 'field_name': the field machine name.
+   *   - 'property_key': the key used to reference the field values.
+   *   - 'content_type': the field content type.
    */
-  protected function findGenusFieldValue($genus_property_fields, TripalEntity $tripal_entity): array {
+  protected function findFieldPropertyWithGenusValue($genus_property_fields, TripalEntity $tripal_entity): array {
 
     $field_properties_to_validate = [];
 
