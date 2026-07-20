@@ -343,6 +343,18 @@ class HookAlterTest extends ChadoTestKernelBase {
         'The validation field constraint error message does not match expected error message text with key ' . $failed_key,
       );
     }
+
+    // Reset project genus and ontology configuration of the test genus to test
+    // validator will skip if no configured genus.
+    $this->chado_connection->truncate('1:projectprop')->execute();
+    $this->container->get('trpcultivate_phenotypes.genus_ontology')
+      ->loadGenusOntology();
+
+    $constraint_validator->initialize($this->constraint_execution_context);
+    $this->assertNull(
+      $constraint_validator->validate($this->exp_entity, $constraint),
+      'Validation is expected to exit when no configured genus in the system.',
+    );
   }
 
 }
