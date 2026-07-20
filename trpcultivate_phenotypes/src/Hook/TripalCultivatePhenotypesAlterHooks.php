@@ -68,6 +68,8 @@ class TripalCultivatePhenotypesAlterHooks {
     $page_params = $current_routematch->getParameters();
 
     // Operate on Tripal Entities.
+    // @todo Update to use PhenoCombo service to identify if project has pheno.
+    // Update test to cover this block.
     if ($tripal_entity = $page_params->get(self::TRIPAL_ENTITY['type'])) {
       if (method_exists($tripal_entity, 'bundle') && $tripal_entity->bundle() == self::TRIPAL_ENTITY['bundle']) {
 
