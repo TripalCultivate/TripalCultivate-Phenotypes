@@ -293,10 +293,6 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
       $genus_config = $this->service_PhenoGenusOntology
         ->getGenusOntologyConfigValues($genus);
 
-      if (!$genus_config) {
-        continue;
-      }
-
       // A phenotype to a genus would suffice enforcement check.
       $has_pheno = $query
         ->condition('combo.project_id', $this->project_id, '=')
