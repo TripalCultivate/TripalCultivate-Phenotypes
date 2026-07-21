@@ -170,6 +170,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
   }
 
   /**
+   * Find fields with projectprop.type_id property of Genus (TAXRANK:0000005).
+   *
    * This method compiles a list of all fields that store a chado projectprop
    * record with the type_id referencing the genus cvterm. This is done by
    * looking for a TripalPropertyValue for the projectprop.type_id specifically
