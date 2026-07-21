@@ -288,8 +288,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * The genus value is validated within the context of the experiment.
    *
    * @param array $field
-   *   An associative array of fields containing genus. Each field element
-   *   contains the following keys:
+   *   An associative array describing the field property to validate.
+   *   Keys include:
    *   - 'field_name': the name of the field.
    *   - 'property_key': the property key used to reference field value.
    *   - 'content_type': the label of the content type the field belongs to.
