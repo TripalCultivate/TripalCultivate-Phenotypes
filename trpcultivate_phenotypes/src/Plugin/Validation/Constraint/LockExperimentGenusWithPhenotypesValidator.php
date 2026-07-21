@@ -236,11 +236,18 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
   }
 
   /**
-   * Find the value property of fields that implement the path property string.
+   * Find the projectprop.value property with the indicated table alias.
+   *
+   * This method is meant to be paired with findFieldsWithGenusProperty().
+   * Where that method identifies the fields with a projectprop.type_id
+   * referencing the genus cvterm, this method takes the table alias for
+   * that property and finds the matching projectprop.value property.
    *
    * @param array $genus_property_fields
-   *   An array of field names that have been identified to implement the path
-   *   property string.
+   *   An array of field names that have been identified to have a 
+   *   projectprop.type_id property referencing the genus cvterm.
+   *   The key is the field name and the value is the table alias
+   *   for the projectprop record storing the genus.
    * @param \Drupal\tripal\Entity\TripalEntity $tripal_entity
    *   Tripal Entity @see \Drupal\tripal\Entity\TripalEntity.
    *
