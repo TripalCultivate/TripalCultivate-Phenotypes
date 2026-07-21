@@ -216,14 +216,15 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
               // does and if not then just use projectprop.
               $table_mapping = $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping');
 
+              $genus_property_fields[$field_name] = 'projectprop';
               if (is_array($table_mapping)) {
-                $genus_property_fields[$field_name] = array_search(
+                $alias = array_search(
                   'projectprop',
-                  $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping')
+                  $table_mapping
                 );
-              }
-              else {
-                $genus_property_fields[$field_name] = 'projectprop';
+                if ($alias) {
+                  $genus_property_fields[$field_name] = $alias;
+                }
               }
             }
           }
