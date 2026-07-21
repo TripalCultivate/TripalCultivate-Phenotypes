@@ -355,6 +355,18 @@ class HookAlterTest extends ChadoTestKernelBase {
       $constraint_validator->validate($this->exp_entity, $constraint),
       'Validation is expected to exit when no configured genus in the system.',
     );
+
+    // Verify that constraint is bypassed for entity with chado_base_table not
+    // set to project table.
+    $this->exp_entity->getBundle()
+      ->setThirdPartySetting('tripal', 'chado_base_table', 'chado.organism')
+      ->save();
+
+    $constraint_validator->initialize($this->constraint_execution_context);
+    $this->assertNull(
+      $constraint_validator->validate($this->exp_entity, $constraint),
+      'Validation is expected to exit when content type is non-project-based.',
+    );
   }
 
 }

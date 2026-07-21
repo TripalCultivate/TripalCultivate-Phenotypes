@@ -87,7 +87,9 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * {@inheritdoc}
    *
    * NOTE: the constraint is attached at entity level in order to validate
-   * all fields that reference genus values.
+   * all fields that reference genus values. In addition, only entities whose
+   * base base table property is set to Chado project table will have the field
+   * constraint applied.
    *
    * @param mixed $tripal_entity
    *   The Tripal Entity being validated containing the field(s) being
@@ -96,6 +98,10 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *   The constraint definition which includes messages.
    */
   public function validate(mixed $tripal_entity, Constraint $constraint): void {
+
+    if ($tripal_entity->getBundle()->getThirdPartySetting('tripal', 'chado_base_table') != 'project') {
+      return;
+    }
 
     $this->project_id = $tripal_entity->getBackendRecordId('chado_storage');
 
