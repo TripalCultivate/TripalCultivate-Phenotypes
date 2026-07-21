@@ -84,26 +84,3 @@ function trpcultivate_phenotypes_entity_type_alter(array &$entity_types) {
   return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
     ->entityTypeAlter($entity_types);
 }
-
-/**
- * Tripal Job callback.
- *
- * Job registered during install to insert terms used by configuration
- * page default field values.
- *
- * @see config/trpcultivate_phenotypes.settings
- */
-function trpcultivate_phenotypes_install_ontologyterms() {
-
-  // We need the schema to ensure we are inserting into the right one.
-  $connection = \Drupal::service('tripal_chado.database');
-  $schema = $connection->getSchemaName();
-
-  // Create terms defined in config entity.
-  \Drupal::service('trpcultivate_phenotypes.terms')
-    ->loadTerms($schema);
-
-  // Create genus-ontology configuration.
-  \Drupal::service('trpcultivate_phenotypes.genus_ontology')
-    ->loadGenusOntology();
-}

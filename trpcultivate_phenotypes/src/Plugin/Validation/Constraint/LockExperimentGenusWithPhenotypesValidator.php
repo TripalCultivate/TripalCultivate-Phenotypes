@@ -88,7 +88,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *
    * NOTE: the constraint is attached at entity level in order to validate
    * all fields that reference genus values. In addition, only entities whose
-   * base base table property is set to Chado project table will have the field
+   * base table property is set to Chado project table will have the field
    * constraint applied.
    *
    * @param mixed $tripal_entity
