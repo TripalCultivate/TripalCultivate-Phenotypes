@@ -211,21 +211,18 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
           $field_values = $tripal_entity->get($field_name);
 
           foreach ($field_values as $item) {
-            if ($item->get($property_key)->getValue() == $this->config_genus_cvterm_id) {
-              // Not all property types include a table_mapping, check if it
-              // does and if not then just use projectprop.
-              $table_mapping = $tripal_entity->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping');
+            if ($item->get($property_key)->getValue() != $this->config_genus_cvterm_id) {
+              continue;
+            }
 
-              $genus_property_fields[$field_name] = 'projectprop';
-              if (is_array($table_mapping)) {
-                $alias = array_search(
-                  'projectprop',
-                  $table_mapping
-                );
-                if ($alias) {
-                  $genus_property_fields[$field_name] = $alias;
-                }
-              }
+            // Not all property types include a table _mapping, check if it
+            // does and if not then just use projectprop.
+            $table_mapping = $tripal_entity
+              ->getTripalFieldPropertyInfo($field_name, $property_key, 'table_alias_mapping');
+
+            $genus_property_fields[$field_name] = 'projectprop';
+            if (is_array($table_mapping) && ($alias = array_search('projectprop', $table_mapping)) !== FALSE) {
+              $genus_property_fields[$field_name] = $alias;
             }
           }
         }
