@@ -294,9 +294,9 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *   - 'property_key': the property key used to reference field value.
    *   - 'content_type': the label of the content type the field belongs to.
    * @param array $field_values
-   *   The array of genus values of the field. The value is an array keyed by
-   *   either the string 'value' or 'genus_value'.
-   *   ie. [genus_value => Lens] or [value => Triticum].
+   *   An array of field values for this field where the keys are the property 
+   *   names. Note: This contains more than just the genus values so make sure 
+   *   to use with the genus property key.
    * @param \Symfony\Component\Validator\Constraint $constraint
    *   Constraint definition.
    */
