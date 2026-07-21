@@ -196,10 +196,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     $chado_fields = $tripal_entity->getTripalStorageFields('chado_storage');
 
     // Loop through all chado fields looking for those with a path including the
-    // projectprop.type_id. This variable is a list of fields describing a
-    // property and whose property has the same type_id as
-    // `genus (TAXRANK:0000005)`. The value is the table alias in this property
-    // for the projectprop table.
+    // projectprop.type_id.
     foreach ($chado_fields as $field_name) {
       foreach ($tripal_entity->getTripalFieldPropertyKeys($field_name) as $property_key) {
 
