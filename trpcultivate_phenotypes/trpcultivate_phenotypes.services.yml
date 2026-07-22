@@ -2,11 +2,14 @@
 services:
   trpcultivate_phenotypes.terms:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService'
-    arguments: ['@config.factory', '@tripal.logger', '@tripal_chado.chado_buddy']
+    arguments: ['@config.factory', '@tripal_chado.chado_buddy', '@tripal.logger']
 
   trpcultivate_phenotypes.genus_ontology:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService'
     arguments: ['@config.factory', '@tripal_chado.database', '@tripal.logger']
+
+  Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService:
+    alias: 'trpcultivate_phenotypes.genus_ontology'
 
   trpcultivate_phenotypes.genus_project:
     class: 'Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService'
@@ -27,15 +30,12 @@ services:
   trpcultivate_phenotypes.theme_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesThemeHooks'
 
-  Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService:
-    alias: 'trpcultivate_phenotypes.genus_ontology'
-
   Drupal\tripal_chado\Database\ChadoConnection:
     alias: 'tripal_chado.database'
 
   trpcultivate_phenotypes.alter_hooks:
     class: 'Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks'
-    arguments: ['@database', '@current_route_match', '@tripal_chado.database', '@trpcultivate_phenotypes.genus_ontology']
+    arguments: ['@current_route_match', '@tripal_chado.database']
 
   trpcultivate_phenotypes.setup_module_service:
     class: 'Drupal\trpcultivate_phenotypes\Service\SetupModuleService'

@@ -90,13 +90,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   const PHENO_COMBO_TABLE = 'trpcultivate_phenocombo';
 
   /**
-   * The name of the field that contains the genus.
-   *
-   * @var string
-   */
-  public const FIELD_ORGANISM = 'exp_organism';
-
-  /**
    * Test genus with a set of test traits.
    *
    * @var array
@@ -240,9 +233,6 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
               'rank' => $i + 1,
             ])
             ->execute();
-
-          $entity
-            ->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $genus]);
         }
       }
 
@@ -304,11 +294,12 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       ->getMock();
 
     $mock_logger->method('error')
-      ->willReturnCallback(function ($message) {
-        $this->log_message = $message;
-        return NULL;
-      }
-    );
+      ->willReturnCallback(
+        function ($message) {
+          $this->log_message = $message;
+          return NULL;
+        }
+      );
 
     $this->container->set('tripal.logger', $mock_logger);
   }
@@ -487,7 +478,8 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
         'is_required', tc.is_required,
         'was_shared', tc.was_shared,
         'was_collected', tc.was_collected
-      ) ORDER BY tc.label ASC)", 'combos'
+      ) ORDER BY tc.label ASC)",
+      'combos'
     );
 
     $query
@@ -1051,5 +1043,34 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
     }
   }
+
+  /**
+   * Test content entity that has no configured genus.
+   */
+  public function testExpHasNoPhenoGenus() {
+
+    // Removes all genus-experiment relationships.
+    $this->chado_connection->truncate('1:projectprop')->execute();
+
+    // Setup an admin user.
+    $this->setCurrentUser($this->createUser(['administer tripal']));
+
+    $request = Request::create(
+      Url::fromRoute(
+        self::ROUTE_NAME,
+        [
+          'tripal_entity' => $this->exp_entity->id(),
+        ],
+        []
+      )->toString()
+    );
+
+    $this->assertStringContainsString(
+      'The Research Experiment has no configured genus set.',
+      $this->container->get('http_kernel')->handle($request)->getContent(),
+      'An error message is expected when a content type has no configured genus.',
+    );
+  }
+
 
 }
