@@ -235,10 +235,16 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
   /**
    * Find the projectprop.value property with the indicated table alias.
    *
-   * This method is meant to be paired with findFieldsWithGenusProperty().
-   * Where that method identifies the fields with a projectprop.type_id
-   * referencing the genus cvterm, this method takes the table alias for
-   * that property and finds the matching projectprop.value property.
+   * This method looks up the TripalPropertyType key storing the genus value
+   * for each field looked up by findFieldsWithGenusProperty(). It uses the
+   * chado projectprop table alias returned for that field to ensure the chado
+   * projectprop.value is from the same record in the projectprop table as the
+   * type_id referencing the genus term. This is needed because a single field
+   * can manage more then one projectprop record (i.e. a scientific name
+   * property and a genus property).
+   *
+   * Note: this method does not return the actual genus value, just the name of
+   * the field and property that will contain that value.
    *
    * @param array $genus_property_fields
    *   An array of field names that have been identified to have a
