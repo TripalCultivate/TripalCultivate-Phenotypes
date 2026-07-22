@@ -344,35 +344,6 @@ class HookAlterTest extends ChadoTestKernelBase {
       );
     }
 
-    // Test duplicate genus values. At least one configured genus must be set
-    // for constraint validation to run.
-    $organism_field->setValue(['genus_value' => self::GENUS]);
-    $this->exp_entity->save();
-
-    foreach ([self::GENUS, 'NOT_CONFIGURED_GENUS'] as $duplicate_genus) {
-      // Create duplicate copies of each test genus.
-      $organism_field->appendItem(
-        array_fill(0, 10, ['genus_value' => $duplicate_genus])
-      );
-
-      $this->exp_entity->save();
-
-      $constraint_validator->initialize($this->constraint_execution_context);
-      $constraint_validator->validate($this->exp_entity, $constraint);
-
-      $constraint_failed_message = strtr($constraint->{$failed_key}, [
-        '%genus' => $duplicate_genus,
-        '%content-type' => $this->exp_entity->getBundle()->label(),
-        '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-      ]);
-
-      $this->assertSame(
-        $constraint_failed_message,
-        $this->violation_message,
-        'The validation field constraint error message does not match expected error message text with duplicated genus ' . $duplicate_genus,
-      );
-    }
-
     // Reset project genus and ontology configuration of the test genus to test
     // validator will skip if no configured genus.
     $this->chado_connection->truncate('1:projectprop')->execute();

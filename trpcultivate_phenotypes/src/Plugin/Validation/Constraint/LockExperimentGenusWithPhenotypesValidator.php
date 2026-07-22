@@ -299,29 +299,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    */
   protected function validateGenusField(array $field, array $field_values, Constraint $constraint): void {
 
-    // Create summary count of each unique genus value.
+    // Create list of each unique genus value.
     $field_values = array_filter(array_column($field_values, $field['property_key']));
-    $count_bygenus = array_count_values($field_values);
-
-    // If a genus registered more than once, report the first duplicate.
-    if (max($count_bygenus) > 1) {
-      foreach ($count_bygenus as $genus => $count) {
-        if ($count > 1) {
-          $this->context
-          ->buildViolation(
-            Markup::create(strtr($constraint->genus_failed, [
-              '%genus' => $genus,
-              '%content-type' => $field['content_type'],
-              '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
-            ]))
-          )
-          ->atPath($field['field_name'])
-          ->addViolation();
-
-          break;
-        }
-      }
-    }
 
     // @todo replace with phenocombo service.
     $query = $this->chado_connection->select('trpcultivate_phenocombo', 'combo');
