@@ -312,18 +312,18 @@ class HookAlterTest extends ChadoTestKernelBase {
       'No field constraint violation is expected if genus-experiment with phenotypes is maintained.'
     );
 
+    $organism_field = $this->exp_entity->get(self::FIELD_ORGANISM);
+
     // Genus in genus-experiment has been altered (specific genus) and
     // removed (all genus).
     foreach (['genus_failed', 'all_genus_failed'] as $i => $failed_key) {
-      $organism_value = $this->exp_entity->get(self::FIELD_ORGANISM);
-
       if ($i > 0) {
         // Remove all genus.
-        $organism_value->setValue([]);
+        $organism_field->setValue([]);
       }
       else {
         // Alter the genus.
-        $organism_value->first()->set('genus_value', 'Not Lens');
+        $organism_field->first()->set('genus_value', 'Not Lens');
       }
 
       $this->exp_entity->save();
@@ -341,6 +341,35 @@ class HookAlterTest extends ChadoTestKernelBase {
         $constraint_failed_message,
         $this->violation_message,
         'The validation field constraint error message does not match expected error message text with key ' . $failed_key,
+      );
+    }
+
+    // Test duplicate genus values. At least one configured genus must be set
+    // for constraint validation to run.
+    $organism_field->setValue(['genus_value' => self::GENUS]);
+    $this->exp_entity->save();
+
+    foreach ([self::GENUS, 'NOT_CONFIGURED_GENUS'] as $duplicate_genus) {
+      // Create duplicate copies of each test genus.
+      $organism_field->appendItem(
+        array_fill(0, 10, ['genus_value' => $duplicate_genus])
+      );
+
+      $this->exp_entity->save();
+
+      $constraint_validator->initialize($this->constraint_execution_context);
+      $constraint_validator->validate($this->exp_entity, $constraint);
+
+      $constraint_failed_message = strtr($constraint->{$failed_key}, [
+        '%genus' => $duplicate_genus,
+        '%content-type' => $this->exp_entity->getBundle()->label(),
+        '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+      ]);
+
+      $this->assertSame(
+        $constraint_failed_message,
+        $this->violation_message,
+        'The validation field constraint error message does not match expected error message text with duplicated genus ' . $duplicate_genus,
       );
     }
 

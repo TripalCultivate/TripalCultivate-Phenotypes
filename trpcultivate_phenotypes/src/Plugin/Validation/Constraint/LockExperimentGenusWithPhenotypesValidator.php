@@ -241,7 +241,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    * that property and finds the matching projectprop.value property.
    *
    * @param array $genus_property_fields
-   *   An array of field names that have been identified to have a 
+   *   An array of field names that have been identified to have a
    *   projectprop.type_id property referencing the genus cvterm.
    *   The key is the field name and the value is the table alias
    *   for the projectprop record storing the genus.
@@ -291,8 +291,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *   - 'property_key': the property key used to reference field value.
    *   - 'content_type': the label of the content type the field belongs to.
    * @param array $field_values
-   *   An array of field values for this field where the keys are the property 
-   *   names. Note: This contains more than just the genus values so make sure 
+   *   An array of field values for this field where the keys are the property
+   *   names. Note: This contains more than just the genus values so make sure
    *   to use with the genus property key.
    * @param \Symfony\Component\Validator\Constraint $constraint
    *   Constraint definition.
@@ -302,6 +302,26 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     // Create summary count of each unique genus value.
     $field_values = array_filter(array_column($field_values, $field['property_key']));
     $count_bygenus = array_count_values($field_values);
+
+    // If a genus registered more than once, report the first duplicate.
+    if (max($count_bygenus) > 1) {
+      foreach ($count_bygenus as $genus => $count) {
+        if ($count > 1) {
+          $this->context
+          ->buildViolation(
+            Markup::create(strtr($constraint->genus_failed, [
+              '%genus' => $genus,
+              '%content-type' => $field['content_type'],
+              '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+            ]))
+          )
+          ->atPath($field['field_name'])
+          ->addViolation();
+
+          break;
+        }
+      }
+    }
 
     // @todo replace with phenocombo service.
     $query = $this->chado_connection->select('trpcultivate_phenocombo', 'combo');
@@ -320,11 +340,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
         ->execute()
         ->fetchField();
 
-      // Genus has phenotypes and is missing/altered/has duplicates from the
-      // list of germplasm genus of the research experiment entity.
-      $not_unique = (isset($count_bygenus[$genus]) && $count_bygenus[$genus] > 1) ? 1 : 0;
-
-      if ($has_pheno > 0 && (!in_array($genus, $field_values) || $not_unique)) {
+      if ($has_pheno > 0 && !in_array($genus, $field_values)) {
         $this->context
           ->buildViolation(
             Markup::create(strtr($constraint->genus_failed, [
