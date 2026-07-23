@@ -164,8 +164,8 @@ class ExperimentPhenoComboService {
     }
 
     // Now let's resolve the project_id regardless of the context we were given.
-    // If this method is not able to resolve the project_id then it will throw an
-    // exception so there's no need to check it again here.
+    // If this method is not able to resolve the project_id then it will throw
+    // an exception so there's no need to check it again here.
     $project_id = self::resolveExperimentToProjectId($experiment);
 
     // Now that we have a project, let's ensure it has genus' assigned
@@ -648,7 +648,7 @@ class ExperimentPhenoComboService {
       );
     }
 
-    // Ensure all the required keys are present (e.g. 'trait', 'method', 'unit').
+    // Ensure the required keys are present (e.g. 'trait', 'method', 'unit').
     $pheno_combo_alias = array_keys(self::PHENOCOMBO_FIELD_MAP);
     $input_keys = array_keys($pheno_combo);
     if (array_diff($pheno_combo_alias, $input_keys)) {
@@ -737,31 +737,29 @@ class ExperimentPhenoComboService {
    *   - Status Flags
    *     @see Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService::setExperimentPhenoComboStatus()
    *
-   * For example, the following arguments are valid, and label and/or status
-   * flags will checked and sanitized as they are encountered.
+   *   For example, the following arguments are valid, and label and/or status
+   *   flags will checked and sanitized as they are encountered.
    *
-   * @code
+   *   @code phpcs:disable
+   *     // Only label is provided.
+   *     $phenocombo_details = [
+   *       'label' => 'Days to flower',
+   *     ];
    *
-   * // Only label is provided.
-   * $phenocombo_details = [
-   *   'label' => 'Days to flower',
-   * ];
+   *     // Label and status flags are provided.
+   *     $phenocombo_details = [
+   *       'label' => 'Days to flower',
+   *       'is_required => 1,
+   *       ...
+   *     ];
    *
-   * // Label and status flags are provided.
-   * $phenocombo_details = [
-   *   'label' => 'Days to flower',
-   *   'is_required => 1,
-   *   ...
-   * ];
-   *
-   * // Purely status flags.
-   * $phenocombo_details = [
-   *   'was_collected' => 1,
-   *   'was_shared' => 1,
-   *  ...
-   * ];
-   *
-   * @endcode
+   *     // Purely status flags.
+   *     $phenocombo_details = [
+   *       'was_collected' => 1,
+   *       'was_shared' => 1,
+   *       ...
+   *     ];
+   *   @endcode phpcs:enable
    *
    * @return array
    *   A validated and sanitized experiment PhenoCombo details where status flag
@@ -909,17 +907,20 @@ class ExperimentPhenoComboService {
 
     $project_id = 0;
 
+    // Only get the chado primary key if this TripalEntity uses the chado
+    // project table as it's base.
     if ($experiment instanceof TripalEntity
       && $experiment->getBundle()->getThirdPartySetting('tripal', 'chado_base_table') == 'project') {
-      // Only entity that is setup as project-based type and project_id is
-      // readily accessible.
-
       $project_id = $experiment->getBackendRecordId('chado_storage');
     }
+    // Alternatively, if we are given an integer, then check if it is a
+    // valid chado project_id.
     elseif (is_numeric($experiment)) {
       $project_id = ChadoProjectAutocompleteController::getProjectName((int) $experiment)
         ? $experiment : $project_id;
     }
+    // Finally, if given a string then attempt to lookup the chado project
+    // with this string as the name.
     elseif (is_string($experiment)) {
       $project_id = ChadoProjectAutocompleteController::getProjectId($experiment);
     }
