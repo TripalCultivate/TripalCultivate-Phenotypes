@@ -161,27 +161,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // If the /genus slug is not provided, show all trait for all genus.
     $genus = $this->getRouteMatch()->getParameter('genus') ?: 0;
 
-    if ($tripal_entity->hasField(self::FIELD_ORGANISM)) {
-      $invalid_genus = 0;
-      $exp_germgenus = $tripal_entity->get(self::FIELD_ORGANISM)->getValue();
+    $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
+    if (empty($exp_phenogenus)) {
+      $this->messenger()->addError('The Research Experiment has no configured genus set.');
 
-      foreach ($exp_germgenus as $germgenus) {
-        if (!$this->service_PhenoGenusOntology->getGenusOntologyConfigValues($germgenus['genus_value'])) {
-          $invalid_genus++;
-        }
-      }
-
-      if ($invalid_genus == count($exp_germgenus)) {
-        $this->messenger()->addError('The Research Experiment has no configured genus set.');
-
-        return $form;
-      }
+      return $form;
     }
 
-    $exp_phenogenus = $this->service_PhenoGenusProject->getGenusOfProject((int) $experiment_id);
     if ($genus && !in_array($genus, $exp_phenogenus)) {
       // Genus does not exist.
       $this->tripal_logger->error('The genus is not supported by the experiment.');
+
       throw new NotFoundHttpException();
     }
 

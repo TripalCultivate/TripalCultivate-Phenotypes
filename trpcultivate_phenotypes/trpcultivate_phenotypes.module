@@ -60,8 +60,6 @@ function trpcultivate_phenotypes_menu_local_tasks_alter(&$data, $route_name, Ref
 /**
  * Implements hook_form_alter().
  *
- * Attach a custom form validation callback to edit form of research entity.
- *
  * This legacy hook is only run for Drupal < 11, and is replaced by class
  * Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks in
  * trpcultivate_phenotypes/src/Hook/TripalCultivatePhenotypesAlterHooks.php.
@@ -71,4 +69,18 @@ function trpcultivate_phenotypes_form_alter(&$form, FormStateInterface $form_sta
 
   return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
     ->formAlter($form, $form_state, $form_id);
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ *
+ * This legacy hook is only run for Drupal < 11, and is replaced by class
+ * Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks in
+ * trpcultivate_phenotypes/src/Hook/TripalCultivatePhenotypesAlterHooks.php.
+ */
+#[LegacyHook]
+function trpcultivate_phenotypes_entity_type_alter(array &$entity_types) {
+
+  return \Drupal::service('trpcultivate_phenotypes.alter_hooks')
+    ->entityTypeAlter($entity_types);
 }
