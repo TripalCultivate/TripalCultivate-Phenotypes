@@ -72,7 +72,8 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
     // Mock the getGenusOntologyConfigValues method on genus ontology service
     // so it will return a string instead of null or an array.
     $mock_ontology_service = $this->getMockBuilder(TripalCultivatePhenotypesGenusOntologyService::class)
-      ->setConstructorArgs([$this->container->get('config.factory'),
+      ->setConstructorArgs([
+        $this->container->get('config.factory'),
         $this->container->get('tripal_chado.database'),
         $this->container->get('tripal.logger'),
       ])
@@ -105,8 +106,11 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
     $this->ontology_form->buildForm($form, $form_state);
 
     $errors = \Drupal::messenger()->messagesByType('error');
-    $this->assertCount(1, $errors,
-      'We expect an error message when config value for a genus is not an array, but it was not thrown.');
+    $this->assertCount(
+      1,
+      $errors,
+      'We expect an error message when config value for a genus is not an array, but it was not thrown.'
+    );
 
     // Test the case with no genus set.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
@@ -116,8 +120,11 @@ class ConfigOntologyTermsFormExceptionsTest extends ChadoTestKernelBase {
     $this->ontology_form->buildForm($form, $form_state);
 
     $warnings = \Drupal::messenger()->messagesByType('warning');
-    $this->assertCount(2, $warnings,
-      'We expect a warning when no genus is set but it was not given.');
+    $this->assertCount(
+      2,
+      $warnings,
+      'We expect a warning when no genus is set but it was not given.'
+    );
   }
 
 }

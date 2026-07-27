@@ -138,7 +138,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
    *
    * @var string
    */
-  const FIELD_ORGANISM = 'exp_organism';
+  public const FIELD_ORGANISM = 'exp_organism';
 
   /**
    * {@inheritdoc}
@@ -212,8 +212,6 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
           'rank' => $i + 1,
         ])
         ->execute();
-
-      $entity->set(self::FIELD_ORGANISM, ['record_id' => $project_id, 'genus_value' => $ins_genus]);
     }
 
     $entity->save();
@@ -236,11 +234,12 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       ->getMock();
 
     $mock_logger->method('error')
-      ->willReturnCallback(function ($message) {
-        $this->log_message = $message;
-        return NULL;
-      }
-    );
+      ->willReturnCallback(
+        function ($message) {
+          $this->log_message = $message;
+          return NULL;
+        }
+      );
 
     $this->container->set('tripal.logger', $mock_logger);
   }

@@ -59,8 +59,8 @@ class TripalCultivatePhenotypesTermsService {
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
-    TripalLogger $logger,
     ChadoBuddyPluginManager $buddy_manager,
+    TripalLogger $logger,
   ) {
     // Configuration terms.
     $this->sysvar_terms = 'trpcultivate.phenotypes.ontology.terms';
