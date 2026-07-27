@@ -88,7 +88,8 @@ class TripalCultivatePhenotypesAlterHooks {
           ->execute()
           ->fetchField();
 
-      $this->has_pheno = ($has_pheno) ? TRUE : FALSE;
+        $this->has_pheno = ($has_pheno) ? TRUE : FALSE;
+      }
     }
   }
 
