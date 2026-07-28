@@ -119,9 +119,9 @@ class SetupModuleService {
 
       // We don't have a specific foreign key method right now in TripalDBX
       // so lets add the constraint separately here.
-      // Note: If this column should not be a foreign key then referencing
+      // Note: If this column should not be a foreign key then references
       // is expected to be FALSE.
-      if (!$schema->foreignKeyConstraintExists($spec['table'], $spec['column']) && is_array($spec['referencing'])) {
+      if (!$schema->foreignKeyConstraintExists($spec['table'], $spec['column']) && is_array($spec['references'])) {
         $connection->query('ALTER TABLE {1:' . $spec['table'] . '}
           ADD CONSTRAINT ' . $spec['table'] . '_' . $spec['column'] . '_fkey
           FOREIGN key(' . $spec['column'] . ')
