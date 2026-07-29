@@ -24,7 +24,7 @@ class SetupModuleService {
       'table' => 'phenotype',
       'column' => 'project_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The project or experiment associated with this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -38,7 +38,7 @@ class SetupModuleService {
       'table' => 'phenotype',
       'column' => 'stock_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The germplasm associated with this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -52,7 +52,7 @@ class SetupModuleService {
       'table' => 'phenotype',
       'column' => 'unit_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The unit of measurement used in this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -66,7 +66,7 @@ class SetupModuleService {
       'table' => 'phenotypeprop',
       'column' => 'cvalue_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The scale values used in this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -115,10 +115,12 @@ class SetupModuleService {
     foreach (self::CHADO_COLUMNS as $spec) {
 
       // Add the column.
-      $schema->addField($spec['table'], $spec['column'], $spec['schema']);
+      if (!$schema->fieldExists($spec['table'], $spec['column'])) {
+        $schema->addField($spec['table'], $spec['column'], $spec['schema']);
+      }      
 
       // We don't have a specific foreign key method right now in TripalDBX
-      // so lets add the constraint separately here.
+      // so let's add the constraint separately here.
       // Note: If this column should not be a foreign key then references
       // is expected to be FALSE.
       if (!$schema->foreignKeyConstraintExists($spec['table'], $spec['column']) && is_array($spec['references'])) {
