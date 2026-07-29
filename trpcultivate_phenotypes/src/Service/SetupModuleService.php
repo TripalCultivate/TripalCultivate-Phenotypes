@@ -24,7 +24,7 @@ class SetupModuleService {
       'table' => 'phenotype',
       'column' => 'project_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The project or experiment associated with this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -38,7 +38,7 @@ class SetupModuleService {
       'table' => 'phenotype',
       'column' => 'stock_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The germplasm associated with this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -52,7 +52,7 @@ class SetupModuleService {
       'table' => 'phenotype',
       'column' => 'unit_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The unit of measurement used in this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
@@ -66,7 +66,7 @@ class SetupModuleService {
       'table' => 'phenotypeprop',
       'column' => 'cvalue_id',
       'schema' => [
-        'description' => '',
+        'description' => 'The scale values used in this measurement.',
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => FALSE,
