@@ -115,10 +115,12 @@ class SetupModuleService {
     foreach (self::$chado_columns as $spec) {
 
       // Add the column.
-      $schema->addField($spec['table'], $spec['column'], $spec['schema']);
+      if (!$schema->fieldExists($spec['table'], $spec['column'])) {
+        $schema->addField($spec['table'], $spec['column'], $spec['schema']);
+      }      
 
       // We don't have a specific foreign key method right now in TripalDBX
-      // so lets add the constraint separately here.
+      // so let's add the constraint separately here.
       // Note: If this column should not be a foreign key then references
       // is expected to be FALSE.
       if (!$schema->foreignKeyConstraintExists($spec['table'], $spec['column']) && is_array($spec['references'])) {

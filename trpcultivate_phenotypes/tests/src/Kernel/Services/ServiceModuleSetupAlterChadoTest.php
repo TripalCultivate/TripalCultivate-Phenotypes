@@ -140,11 +140,13 @@ class ServiceModuleSetupAlterChadoTest extends ChadoTestKernelBase {
       ->alterChadoTables();
 
     // Confirm that all the columns the service should have added are there.
+
+    $schema = $this->chado_connection->schema();
     foreach (self::$expected_chado_columns as $label => $spec) {
-      $field_exists = $this->chado_connection->schema()->fieldExists($spec['table'], $spec['column']);
+      $field_exists = $schema->fieldExists($spec['table'], $spec['column']);
       $this->assertTrue($field_exists, "The $label column should exist after running the setup module.");
 
-      $fkexists = $this->chado_connection->schema()->foreignKeyConstraintExists($spec['table'], $spec['column']);
+      $fkexists = $schema->foreignKeyConstraintExists($spec['table'], $spec['column']);
       $this->assertTrue($fkexists, "The foreign key constraint for $label should exist after running the setup module.");
     }
   }
