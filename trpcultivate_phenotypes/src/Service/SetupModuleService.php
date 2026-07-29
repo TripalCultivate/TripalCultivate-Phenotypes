@@ -19,7 +19,7 @@ class SetupModuleService {
    *      with table/column keys. If this column is not a foreign key then
    *      this should be FALSE.
    */
-  public static $chado_columns = [
+  public const CHADO_COLUMNS = [
     'phenotype.project_id' => [
       'table' => 'phenotype',
       'column' => 'project_id',
@@ -112,7 +112,7 @@ class SetupModuleService {
 
     $connection = \Drupal::service('tripal_chado.database');
     $schema = $connection->schema();
-    foreach (self::$chado_columns as $spec) {
+    foreach (self::CHADO_COLUMNS as $spec) {
 
       // Add the column.
       $schema->addField($spec['table'], $spec['column'], $spec['schema']);
