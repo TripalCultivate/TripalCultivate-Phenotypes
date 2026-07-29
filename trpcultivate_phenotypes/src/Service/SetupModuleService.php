@@ -117,7 +117,7 @@ class SetupModuleService {
       // Add the column.
       if (!$schema->fieldExists($spec['table'], $spec['column'])) {
         $schema->addField($spec['table'], $spec['column'], $spec['schema']);
-      }      
+      }
 
       // We don't have a specific foreign key method right now in TripalDBX
       // so let's add the constraint separately here.

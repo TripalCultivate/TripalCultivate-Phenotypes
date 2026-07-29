@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services;
 
+use Drupal\trpcultivate_phenotypes\Service\SetupModuleService;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use PHPUnit\Framework\Attributes\Group;
@@ -58,64 +59,7 @@ class ServiceModuleSetupAlterChadoTest extends ChadoTestKernelBase {
    *
    * @see Drupal\trpcultivate_phenotypes\Service\SetupModuleService::chado_columns
    */
-  public static $expected_chado_columns = [
-    'phenotype.project_id' => [
-      'table' => 'phenotype',
-      'column' => 'project_id',
-      'schema' => [
-        'description' => '',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ],
-      'references' => [
-        'table' => 'project',
-        'column' => 'project_id',
-      ],
-    ],
-    'phenotype.stock_id' => [
-      'table' => 'phenotype',
-      'column' => 'stock_id',
-      'schema' => [
-        'description' => '',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ],
-      'references' => [
-        'table' => 'stock',
-        'column' => 'stock_id',
-      ],
-    ],
-    'phenotype.unit_id' => [
-      'table' => 'phenotype',
-      'column' => 'unit_id',
-      'schema' => [
-        'description' => '',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ],
-      'references' => [
-        'table' => 'cvterm',
-        'column' => 'cvterm_id',
-      ],
-    ],
-    'phenotypeprop.cvalue_id' => [
-      'table' => 'phenotypeprop',
-      'column' => 'cvalue_id',
-      'schema' => [
-        'description' => '',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
-      ],
-      'references' => [
-        'table' => 'cvterm',
-        'column' => 'cvterm_id',
-      ],
-    ],
-  ];
+  protected array $expected_chado_columns;
 
   /**
    * {@inheritdoc}
@@ -129,6 +73,8 @@ class ServiceModuleSetupAlterChadoTest extends ChadoTestKernelBase {
     // Create a test chado instance as needed by our service.
     $this->chado_connection = $this->createTestSchema(ChadoTestKernelBase::PREPARE_TEST_CHADO);
 
+    // Set the expectations based on the service definition.
+    $this->expected_chado_columns = SetupModuleService::CHADO_COLUMNS;
   }
 
   /**
@@ -140,9 +86,8 @@ class ServiceModuleSetupAlterChadoTest extends ChadoTestKernelBase {
       ->alterChadoTables();
 
     // Confirm that all the columns the service should have added are there.
-
     $schema = $this->chado_connection->schema();
-    foreach (self::$expected_chado_columns as $label => $spec) {
+    foreach ($this->expected_chado_columns as $label => $spec) {
       $field_exists = $schema->fieldExists($spec['table'], $spec['column']);
       $this->assertTrue($field_exists, "The $label column should exist after running the setup module.");
 
