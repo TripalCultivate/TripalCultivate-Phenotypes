@@ -278,7 +278,9 @@ class ExperimentPhenoComboService {
         ->fields($field_metadata + $field_status_flags + $field_pheno_combo)
         ->execute();
 
-      $db_transaction->commitOrRelease();
+      if (method_exists($db_transaction, 'commitOrRelease')) {
+        $db_transaction->commitOrRelease();
+      }
     }
     catch (\Exception $e) {
       $db_transaction->rollBack();
@@ -537,7 +539,9 @@ class ExperimentPhenoComboService {
         ->condition('combo_id', $combo_id, '=')
         ->execute();
 
-      $db_transaction->commitOrRelease();
+      if (method_exists($db_transaction, 'commitOrRelease')) {
+        $db_transaction->commitOrRelease();
+      }
     }
     catch (\Exception $e) {
       $db_transaction->rollBack();
@@ -591,7 +595,9 @@ class ExperimentPhenoComboService {
         ->condition('combo_id', $combo_id, '=')
         ->execute();
 
-      $db_transaction->commitOrRelease();
+      if (method_exists($db_transaction, 'commitOrRelease')) {
+        $db_transaction->commitOrRelease();
+      }
     }
     catch (\Exception $e) {
       $db_transaction->rollBack();
