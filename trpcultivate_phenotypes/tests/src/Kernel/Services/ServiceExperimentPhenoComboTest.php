@@ -280,6 +280,11 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
           ->execute();
       }
     }
+
+    // Invoke the alter table service to append phenotypes table with additional
+    // require fields.
+    $this->container->get('trpcultivate_phenotypes.setup_module_service')
+      ->alterChadoTables();
   }
 
   /**
@@ -711,10 +716,23 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       'To test the remove PhenoCombo functionality, at least ' . $exp_rows . ' PhenoCombo rows are expected.'
     );
 
+    $stock_id = $this->chado_connection->insert('1:stock')
+      ->fields([
+        'name' => $this->randomString(),
+        'uniquename' => $this->randomMachineName(),
+        'organism_id' => 1,
+        'type_id' => 1,
+      ])
+      ->execute();
+
     // If PhenoCombo has phenotypic records.
     $combo = current($query_pheno_combos);
     $this->chado_connection->insert($tbl_pheno = '1:phenotype')
       ->fields([
+        'project_id' => $experiment,
+        'stock_id' => $stock_id,
+        'unit_id' => $combo->unit_id,
+        'cvalue_id' => 0,
         'uniquename' => $this->randomString(),
         'name' => $this->randomString(),
         'observable_id' => $combo->observable_id,

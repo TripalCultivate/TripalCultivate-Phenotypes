@@ -277,6 +277,8 @@ class ExperimentPhenoComboService {
         ->insert(self::PHENOCOMBO_TABLE)
         ->fields($field_metadata + $field_status_flags + $field_pheno_combo)
         ->execute();
+
+      $db_transaction->commitOrRelease();
     }
     catch (\Exception $e) {
       $db_transaction->rollBack();
@@ -534,6 +536,8 @@ class ExperimentPhenoComboService {
         ->fields($sanitized_status_flags)
         ->condition('combo_id', $combo_id, '=')
         ->execute();
+
+      $db_transaction->commitOrRelease();
     }
     catch (\Exception $e) {
       $db_transaction->rollBack();
@@ -566,12 +570,8 @@ class ExperimentPhenoComboService {
     // Chado phenotype table.
     $pheno_combo = $this->getExperimentPhenoCombo($combo_id);
 
-    $query = $this->chado_connection->select('1:phenotype', 'tbl');
-    if ($this->chado_connection->schema()->fieldExists('phenotype', 'project_id')) {
-      $query->condition('tbl.project_id', $this->experiment_context, '=');
-    }
-
-    $combo_phenotypes_count = $query
+    $combo_phenotypes_count = $this->chado_connection->select('1:phenotype', 'tbl')
+      ->condition('tbl.project_id', $this->experiment_context, '=')
       ->condition('tbl.attr_id', $pheno_combo->attr_id, '=')
       ->condition('tbl.observable_id', $pheno_combo->observable_id, '=')
       ->condition('tbl.assay_id', $pheno_combo->unit_id, '=')
@@ -590,6 +590,8 @@ class ExperimentPhenoComboService {
       $this->drupaldb_connection->delete(self::PHENOCOMBO_TABLE)
         ->condition('combo_id', $combo_id, '=')
         ->execute();
+
+      $db_transaction->commitOrRelease();
     }
     catch (\Exception $e) {
       $db_transaction->rollBack();
