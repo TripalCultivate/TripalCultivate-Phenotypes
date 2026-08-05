@@ -4,6 +4,7 @@ namespace Drupal\Tests\trpcultivate_phenoshare\Functional;
 
 use Drupal\Core\Routing\RouteMatch;
 use Drupal\Core\Url;
+use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Functional\ChadoTestBrowserBase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -33,7 +34,6 @@ class InstallTest extends ChadoTestBrowserBase {
    */
   protected static $modules = [
     'help',
-    'trpcultivate_phenoshare',
   ];
 
   /**
@@ -56,6 +56,24 @@ class InstallTest extends ChadoTestBrowserBase {
    * @var string
    */
   protected static $help_text_excerpt = 'Provides trait pages, downloads and visualization tools to facillitate sharing published phenotypic data with';
+
+  /**
+   * A Database query interface for querying Chado using Tripal DBX.
+   *
+   * @var \Drupal\tripal_chado\Database\ChadoConnection
+   */
+  protected ChadoConnection $chado_connection;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() :void {
+    parent::setUp();
+    $this->chado_connection = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+
+    // Manually install the module now that chado is available.
+    $this->container->get('module_installer')->install(['trpcultivate_phenotypes', 'trpcultivate_phenoshare']);
+  }
 
   /**
    * Tests that a specific set of pages load with a 200 response.

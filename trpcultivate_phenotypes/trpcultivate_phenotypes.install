@@ -40,6 +40,10 @@ function trpcultivate_phenotypes_install() {
   // set term configuration variable.
   $user = \Drupal::currentUser();
 
+  // Alter the chado tables needed for use with this module.
+  // This is a backwards compatible change!
+  Drupal\trpcultivate_phenotypes\Service\SetupModuleService::alterChadoTables();
+
   try {
     \Drupal::service('tripal.job')->create([
       'job_name'   => t('Tripal Cultivate Phenotypes: Install Ontology and Terms'),

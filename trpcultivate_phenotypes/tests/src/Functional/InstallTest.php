@@ -34,7 +34,6 @@ class InstallTest extends ChadoTestBrowserBase {
    */
   protected static $modules = [
     'help',
-    'trpcultivate_phenotypes',
   ];
 
   /**
@@ -71,6 +70,9 @@ class InstallTest extends ChadoTestBrowserBase {
   protected function setUp() :void {
     parent::setUp();
     $this->chado_connection = $this->createTestSchema(ChadoTestBrowserBase::PREPARE_TEST_CHADO);
+
+    // Manually install the module now that chado is available.
+    $this->container->get('module_installer')->install(['trpcultivate_phenotypes']);
   }
 
   /**
