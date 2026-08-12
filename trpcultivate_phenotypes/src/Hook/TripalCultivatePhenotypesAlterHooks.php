@@ -15,20 +15,6 @@ use Drupal\tripal_chado\Database\ChadoConnection;
 class TripalCultivatePhenotypesAlterHooks {
 
   /**
-   * The integration this hook applies to.
-   *
-   * @var string
-   */
-  const PHENO_COMBO_INTEGRATION = 'pheno_combo';
-
-  /**
-   * The name of the field that contains the genus.
-   *
-   * @var string
-   */
-  public const FIELD_ORGANISM = 'exp_organism';
-
-  /**
    * A Database query interface for querying Chado using Tripal DBX.
    *
    * @var \Drupal\tripal_chado\Database\ChadoConneciton

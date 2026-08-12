@@ -23,13 +23,6 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class PhenoExperimentConfigurationForm extends FormBase {
 
   /**
-   * The name of the field that contains the genus.
-   *
-   * @var string
-   */
-  public const FIELD_ORGANISM = 'exp_organism';
-
-  /**
    * Drupal database connection.
    *
    * @var \Drupal\Core\Database\Connection

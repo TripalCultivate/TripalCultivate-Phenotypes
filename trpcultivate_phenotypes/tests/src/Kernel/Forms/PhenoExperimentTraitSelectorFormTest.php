@@ -138,13 +138,6 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   const FORM_WRAPPER = 'form_wrapper';
 
   /**
-   * The name of the field that contains the genus.
-   *
-   * @var string
-   */
-  public const FIELD_ORGANISM = 'exp_organism';
-
-  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
