@@ -4,6 +4,7 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\tripal\Services\TripalEntityLookup;
 
 /**
@@ -46,10 +47,13 @@ class PhenoIntegrationSettings {
    *   Drupal config factory interface.
    * @param \Drupal\tripal\Services\TripalEntityLookup $tripal_entity_lookup
    *   Tripal entity lookup service.
+   * @param \Drupal\Core\Entity\EntityTypeBundleInfoInterface $entity_type_bundle_info
+   *   The entity type bundle service.
    */
   public function __construct(
     protected ConfigFactoryInterface $config_factory,
     protected TripalEntityLookup $tripal_entity_lookup,
+    protected EntityTypeBundleInfoInterface $entity_type_bundle_info,
   ) {
   }
 
@@ -128,9 +132,12 @@ class PhenoIntegrationSettings {
       $base_table_name = 'project'
     );
 
+    $bundle_info = $this->entity_type_bundle_info->getBundleInfo('tripal_entity');
+
     $supported_content_types = [];
     foreach ($project_content_types as $content_type) {
-      $supported_content_types[$content_type] = Unicode::ucwords(str_replace('_', ' ', $content_type));
+      $supported_content_types[$content_type] = $bundle_info[$content_type]['label']
+        ?: Unicode::ucwords(str_replace('_', ' ', $content_type));
     }
 
     return $supported_content_types;
