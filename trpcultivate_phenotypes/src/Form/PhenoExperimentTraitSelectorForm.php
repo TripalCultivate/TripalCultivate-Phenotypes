@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
@@ -65,6 +66,13 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
+   * PhenoCombo service.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService
+   */
+  protected ExperimentPhenoComboService $service_PhenoCombo;
+
+  /**
    * The form element name attribute that wraps all fields.
    *
    * @var string
@@ -93,6 +101,8 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
    *   TripalCultivate Phenotypes Genus-Project service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   TripalCultivate Phenotypes Traits service.
+   * @param \Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService $service_PhenoCombo
+   *   TripalCultivate Phenotypes PhenoCombo service.
    */
   public function __construct(
     Connection $drupaldb_connection,
@@ -101,14 +111,17 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
+    ExperimentPhenoComboService $service_PhenoCombo,
   ) {
 
     $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
     $this->tripal_logger = $tripal_logger;
+
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
     $this->service_PhenoTraits = $service_PhenoTraits;
+    $this->service_PhenoCombo = $service_PhenoCombo;
   }
 
   /**
@@ -123,6 +136,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('trpcultivate_phenotypes.traits'),
+      $container->get('trpcultivate_phenotypes.pheno_combo'),
     );
   }
 
@@ -148,6 +162,9 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       $this->tripal_logger->error('The research experiment entity does not contain backend storage values or it cannot be found.');
       throw new NotFoundHttpException();
     }
+
+    // Set the PhenoCombo service experiment context to the current experiment.
+    $this->service_PhenoCombo->setExperiment($experiment_id);
 
     // Update the title to show which research experiment is being configured.
     $form['#title'] = 'Add traits to ' . $tripal_entity->label();
@@ -420,48 +437,25 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
         else {
           [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
 
-          $transaction = $this->drupaldb_connection->startTransaction();
-          try {
-            $this->drupaldb_connection
-              ->insert(self::PHENO_COMBO_TABLE)
-              ->fields([
-                'project_id' => $experiment_id,
-                'attr_id' => $attr_id,
-                'observable_id' => $observable_id,
-                'unit_id' => $unit_id,
-                'label' => $label,
-                'is_archived' => 0,
-                'is_required' => $values[$item_key . '_required'],
-                'was_shared' => 0,
-                'was_collected' => 0,
-                'uid' => $this->currentUser()->id(),
-                'timestamp' => time(),
-              ])
-              ->execute();
-
-            if (method_exists($transaction, 'commitOrRelease')) {
-              $transaction->commitOrRelease();
-            }
-          }
-          catch (Exception $e) {
-            $transaction->rollback();
-          }
+          $this->service_PhenoCombo->assignPhenoComboToExperiment(
+            [
+              'trait' => $attr_id,
+              'method' => $observable_id,
+              'unit' => $unit_id,
+            ],
+            [
+              'label' => $label,
+              'is_required' => $values[$item_key . '_required'],
+            ]
+          );
         }
       }
-
-      // List genus traits.
-      $query = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc');
-      $query
-        ->addExpression('CONCAT(tc.attr_id, \':\', tc.observable_id, \':\', tc.unit_id)', 'combo');
-      $exp_traits = $query
-        ->condition('tc.project_id', $experiment_id, '=')
-        ->execute()
-        ->fetchCol();
 
       // Exclude trait term properties construct (in parenthesis) returned by
       // the trait autocomplete field.
       $search_key = preg_replace('/\s*\(.*?\)/', '', $trait_name);
 
+      // List genus traits.
       $query = $this->chado_connection
         ->select('1:cvterm', 'tc')
         ->fields('tc', ['cvterm_id', 'name', 'definition'])
@@ -487,6 +481,10 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
       $this->service_PhenoTraits->setTraitGenus($genus);
 
+      // The current experiment context list of combos. This list will be used
+      // to exclude combo that have already been assigned, regardless of genus.
+      $exp_all_combos = $this->service_PhenoCombo->getAllExperimentPhenoCombos();
+
       foreach ($query_result as $trait_index => $trait) {
         $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
 
@@ -499,10 +497,13 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
         foreach ($trait_methods as $method) {
           $method_unit = $this->service_PhenoTraits->getMethodUnit($method->cvterm_id)[0];
+          $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
 
           // Exclude from list - trait-method-unit combo already in experiment.
-          $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
-          if (in_array($combo_ids, $exp_traits)) {
+          if (array_filter($exp_all_combos, function ($combo) use($combo_ids) {
+            return $combo_ids == implode(':', [$combo->attr_id, $combo->observable_id, $combo->unit_id]);
+          })) {
+
             continue;
           }
 
