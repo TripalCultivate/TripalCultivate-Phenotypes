@@ -483,7 +483,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
       // The current experiment context list of combos. This list will be used
       // to exclude combo that have already been assigned, regardless of genus.
-      $exp_all_combos = $this->service_PhenoCombo->getAllExperimentPhenoCombos();
+      $exp_all_combos = $this->service_PhenoCombo->getAllExperimentPhenoCombos() ?? [];
 
       foreach ($query_result as $trait_index => $trait) {
         $trait_methods = $this->service_PhenoTraits->getTraitMethod($trait->cvterm_id);
