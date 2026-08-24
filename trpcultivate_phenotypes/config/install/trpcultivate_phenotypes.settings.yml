@@ -75,6 +75,18 @@ trpcultivate:
       cvdbon:
       allownew: true
 
+    # trpcultivate.phenotypes.pheno_backup_support:
+    # List of bundle entity names that support phenotypes backup functionality.
+    # Default entry: research_experiment
+    pheno_backup_support:
+      - 'research_experiment'
+
+    # trpcultivate.phenotypes.pheno_backup_support:
+    # List of bundle entity names that support setting up of phenotypes trait combinations.
+    # Default entry: research_experiment
+    pheno_combo_support:
+      - 'research_experiment'
+
   phenoshare: null
   phenocollect: null
 

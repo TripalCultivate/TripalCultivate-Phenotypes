@@ -141,6 +141,17 @@ trpcultivate_phenotypes.settings:
                 allownew:
                   type: boolean
                   label: 'Allow new traits added during upload'
+            pheno_backup_support:
+              type: sequence
+              label: 'A list of bundle names that support Phenotypes data file backup'
+              sequence:
+                type: string
+            pheno_combo_support:
+              type: sequence
+              label: 'A list of bundle names that support setup of Phenotypes traits'
+              sequence:
+                type: string
+
         phenoshare:
           type: string
           label: 'Phenotypes Share (Analyzed) Configuration'

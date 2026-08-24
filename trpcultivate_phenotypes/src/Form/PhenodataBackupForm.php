@@ -14,11 +14,25 @@ use Drupal\Core\StringTranslation\ByteSizeMarkup;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
+use Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings;
 
 /**
  * Phenotypic Data Backup form.
+ *
+ * NOTE: this form supports Phenotypes Integration and is set to 'backup'
+ * integration. Experiment selection is limited to content types configured for
+ * backup integration.
+ *
+ * @see PhenoBackupForm::form().
  */
 final class PhenodataBackupForm extends EntityForm {
+
+  /**
+   * The phenotypes integration this form is specific to.
+   *
+   * @var string
+   */
+  const PHENO_BACKUP_INTEGRATION = 'backup';
 
   /**
    * File types supported.
@@ -62,11 +76,11 @@ final class PhenodataBackupForm extends EntityForm {
   protected AccountInterface $user;
 
   /**
-   * Form mode.
+   * Phenotypes integration service.
    *
-   * @var string
+   * @var \Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings
    */
-  private string $form_mode;
+  protected PhenoIntegrationSettings $service_PhenoIntegration;
 
   /**
    * Constructor.
@@ -77,16 +91,20 @@ final class PhenodataBackupForm extends EntityForm {
    *   Configuration factory service.
    * @param \Drupal\Core\Session\AccountInterface $user
    *   Drupal users.
+   * @param \Drupal\trpcultivate_phenotypes\Service\PhenoIntegrationSettings $service_PhenoIntegration
+   *   Phenotypes integration service.
    */
   public function __construct(
     EntityTypeManagerInterface $entity_type_manager,
     ConfigFactoryInterface $config_factory,
     AccountInterface $user,
+    PhenoIntegrationSettings $service_PhenoIntegration,
   ) {
 
     $this->service_EntityTypeManager = $entity_type_manager;
     $this->service_ConfigFactory = $config_factory;
     $this->user = $user;
+    $this->service_PhenoIntegration = $service_PhenoIntegration;
   }
 
   /**
@@ -98,6 +116,7 @@ final class PhenodataBackupForm extends EntityForm {
       $container->get('entity_type.manager'),
       $container->get('config.factory'),
       $container->get('current_user'),
+      $container->get('trpcultivate_phenotypes.pheno_integration'),
     );
   }
 
@@ -171,20 +190,23 @@ final class PhenodataBackupForm extends EntityForm {
       $form['backup_file']['#disabled'] = TRUE;
     }
 
-    // Restrict project autocomplete suggestions to project used as
-    // research_experiment Tripal content type.
-    $entity_type = $this->service_EntityTypeManager
-      ->getStorage('tripal_entity_type')
-      ->load('research_experiment');
+    // Restrict project autocomplete suggestions to projects of content type
+    // that match one of content types in backup integration.
+    $supported_content_types = $this->service_PhenoIntegration
+      ->getPhenoIntegratedContentTypes(self::PHENO_BACKUP_INTEGRATION);
 
-    $type_id = 0;
-    if ($entity_type) {
-      $entity_type_term_internalid = $entity_type->getTerm()
+    $entity_type_storage = $this->service_EntityTypeManager
+      ->getStorage('tripal_entity_type');
+
+    $content_type_ids = [];
+    foreach ($supported_content_types as $content_type) {
+      $content_type_ids[] = $entity_type_storage
+        ->load($content_type)
+        ->getTerm()
         ->getInternalId();
-
-      // 0 value will suggest all projects.
-      $type_id = $entity_type_term_internalid;
     }
+
+    $content_type_ids = implode(',', $content_type_ids);
 
     $project_id = (int) $entity->get('project_id');
     $project_name = ($project_id) ? ChadoProjectAutocompleteController::getProjectName($project_id) : '';
@@ -197,7 +219,7 @@ final class PhenodataBackupForm extends EntityForm {
       '#attributes' => ['placeholder' => 'Experiment Name'],
       '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
       '#autocomplete_route_parameters' => [
-        'type_id' => $type_id,
+        'type_id' => $content_type_ids,
         'match_limit' => 5,
         'base_table' => 'project',
         'column_name' => 'name',
