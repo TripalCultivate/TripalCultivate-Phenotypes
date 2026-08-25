@@ -301,6 +301,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       $this->container->get('tripal_chado.database'),
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.terms'),
+      $this->container->get('trpcultivate_phenotypes.pheno_combo'),
     );
 
     // Genus-experiemnt relationship is maintained.
