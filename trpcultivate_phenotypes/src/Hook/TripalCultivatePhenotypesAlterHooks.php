@@ -7,7 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
-
+use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
 
 /**
  * Phenotypes module alter hooks.
@@ -65,16 +65,7 @@ class TripalCultivatePhenotypesAlterHooks {
     // Update test to cover this block.
     if ($tripal_entity = $page_params->get(self::TRIPAL_ENTITY['type'])) {
       if (method_exists($tripal_entity, 'bundle') && $tripal_entity->bundle() == self::TRIPAL_ENTITY['bundle']) {
-
-        $has_pheno = $chado_connection
-          ->select('trpcultivate_phenocombo', 'tc')
-          ->fields('tc', ['combo_id'])
-          ->condition('tc.project_id', $tripal_entity->getBackendRecordId('chado_storage'), '=')
-          ->range(0, 1)
-          ->execute()
-          ->fetchField();
-
-        $this->has_pheno = ($has_pheno) ? TRUE : FALSE;
+        $this->has_pheno = ExperimentPhenoComboService::experimentHasPhenoCombo($tripal_entity);
       }
     }
   }
