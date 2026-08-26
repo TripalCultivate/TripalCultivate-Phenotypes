@@ -267,10 +267,12 @@ class HookAlterTest extends ChadoTestKernelBase {
    */
   public function testPhenotypeCheck() {
 
-    $property = 'has_pheno';
+    // AlterHook class property name that indicates phenotype exists.
+    $has_pheno_property = 'has_pheno';
+
     $service_alterhook = $this->container->get('trpcultivate_phenotypes.alter_hooks');
     $reflection = new \ReflectionClass($service_alterhook);
-    $property = $reflection->getProperty('has_pheno');
+    $property = $reflection->getProperty($has_pheno_property);
 
     $this->assertFalse(
       $property->getValue($service_alterhook),
@@ -290,11 +292,11 @@ class HookAlterTest extends ChadoTestKernelBase {
     );
 
     $reflection = new \ReflectionClass($service_alterhook);
-    $property = $reflection->getProperty('has_pheno');
+    $property = $reflection->getProperty($has_pheno_property);
 
     $this->assertTrue(
-      $reflection->getValue($service_alterhook),
-      'AlterHook service failed to set a class property that determines if a phenotype exists.',
+      $property->getValue($service_alterhook),
+      'AlterHook service failed to set (TRUE) a class property that determines if a phenotype exists.',
     );
   }
 
