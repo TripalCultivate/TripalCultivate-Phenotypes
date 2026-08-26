@@ -267,6 +267,7 @@ class HookAlterTest extends ChadoTestKernelBase {
    */
   public function testPhenotypeCheck() {
 
+    $property = 'has_pheno';
     $service_alterhook = $this->container->get('trpcultivate_phenotypes.alter_hooks');
     $reflection = new \ReflectionClass($service_alterhook);
     $property = $reflection->getProperty('has_pheno');
@@ -288,8 +289,8 @@ class HookAlterTest extends ChadoTestKernelBase {
       $this->chado_connection
     );
 
-    $reflection = new \ReflectionClass($service_alterhook)
-      ->getProperty('has_pheno');
+    $reflection = new \ReflectionClass($service_alterhook);
+    $property = $reflection->getProperty('has_pheno');
 
     $this->assertTrue(
       $reflection->getValue($service_alterhook),
