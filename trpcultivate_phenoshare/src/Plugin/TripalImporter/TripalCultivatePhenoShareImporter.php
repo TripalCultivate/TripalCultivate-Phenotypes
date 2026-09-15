@@ -3,6 +3,7 @@
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
 use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManager;
@@ -411,7 +412,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $form['#attached']['library'] = [
       'trpcultivate_phenotypes/trpcultivate-phenotypes-style-stage-accordion',
       'trpcultivate_phenotypes/trpcultivate-phenotypes-script-stage-accordion',
-      'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-field',
     ];
 
     // Remind user about the configuration value set for allow new.
@@ -502,47 +502,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $form_state->setStorage($storage);
     }
 
-    $stage1_key = 'accordion_stage1';
-
-    $genus = $form_state->getValue('genus', '');
-    $project = $form_state->getValue('project', '');
-    $project_id = ChadoGenericAutocompleteController::getPkeyId($project);
-
-    if ($project_id > 0) {
-      $project_genus = $this->service_GenusProject->getGenusOfProject($project_id);
-
-      if (!empty($project_genus)) {
-        $genus = $genus ?: array_first($project_genus);
-        $form_state->setValue('genus', $genus);
-
-        $form[$stage1_key]['wrap_genus']['genus']['#options'] = array_combine($project_genus, $project_genus);
-        $form[$stage1_key]['wrap_genus']['genus']['#disabled'] = FALSE;
-        $form[$stage1_key]['wrap_genus']['genus']['#value'] = $genus;
-
-        $this->service_PhenoCombo->setExperiment($project_id);
-        $exp_pheno_combos = $this->service_PhenoCombo
-          ->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
-
-        // Append the configured PhenoCombo (headers) to existing pre-encoded
-        // headers entries.
-        $this->has_all_headers = TRUE;
-        $this->headers = array_merge($this->headers, $exp_pheno_combos);
-        $form[$stage1_key]['file']['upload_description']['#markup'] = $this->describeUploadFileFormat();
-      }
-    }
-
-    if ($genus = $form_state->getValue('genus', '')) {
-      $this->service_PhenoCombo->setExperiment($project_id);
-      $exp_pheno_combos = $this->service_PhenoCombo
-        ->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
-
-      // Append the configured PhenoCombo (headers) to existing pre-encoded
-      // headers entries.
-      $this->has_all_headers = TRUE;
-      $this->headers = array_merge($this->headers, $exp_pheno_combos);
-      $form[$stage1_key]['file']['upload_description']['#markup'] = $this->describeUploadFileFormat();
-    }
-
     return $form;
   }
 
@@ -613,12 +572,15 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // Select experiment, Genus field will reflect the genus project is set to.
     $form[$fld_wrapper]['project'] = [
       '#title' => 'Research Experiment',
+      '#name' => 'project',
       '#type' => 'textfield',
-      '#weight' => -100,
       '#required' => TRUE,
       '#description' => $this->t('Enter the name of the research experiment your data was generated as part of.'),
       '#description_display' => 'after',
-      '#attributes' => ['placeholder' => 'Research Experiment Name', 'class' => ['tcp-autocomplete']],
+      '#attributes' => [
+        'placeholder' => 'Research Experiment Name',
+        'onClick' => 'this.select()',
+      ],
       '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
       '#autocomplete_route_parameters' => [
         'type_id' => 0,
@@ -629,50 +591,46 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'property_table' => 'project',
       ],
       '#ajax' => [
-        'callback' => [$this, 'updateGenusAndNotes'],
-        'wrapper' => 'tcp-wrap-genus',
-        'event' => 'autocompleteclose',
+        'callback' => [$this, 'updateGenusAndHeaders'],
+        'wrapper' => 'tcp-genus-wrapper',
+        'event' => 'autocompleteclose blur',
+        'disable-refocus' => TRUE,
+        'speed' => 'slow',
         'progress' => [
           'type' => 'fullscreen',
           'message' => '',
         ]
       ],
+      '#weight' => -100,
     ];
 
     // Field Genus:
     // Prepare select options with only active genus.
-    $all_genus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
-    $active_genus = array_combine($all_genus, $all_genus);
-
-    $form[$fld_wrapper]['wrap_genus'] = [
-      // Wrap field with AJAX wrapper element.
-      '#prefix' => '<div id="tcp-wrap-genus">',
-      '#suffix' => '</div>',
-      '#weight' => -90,
-    ];
-
-    $form[$fld_wrapper]['wrap_genus']['genus'] = [
+    $form[$fld_wrapper]['genus'] = [
       '#title' => 'Genus',
+      '#name' => 'genus',
+      '#id' => 'tcp-fld-genus',
       '#type' => 'select',
-      '#options' => $active_genus,
+      '#required' => TRUE,
+      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
+      '#description_display' => 'after',
+      '#options' => [],
       '#empty_option' => 'Select a Genus',
       '#empty_value' => 0,
-      '#required' => TRUE,
-      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded.
-        This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
-      '#description_display' => 'after',
-      //'#disabled' => TRUE,
-
-      // AJAX.
       '#ajax' => [
-        'callback' => [$this, 'loadExpGenusHeaders'],
-        'wrapper' => 'tcp-wrap-notes',
+        'callback' => [$this, 'updateGenusAndHeaders'],
+        'wrapper' => 'tcp-header-wrapper',
         'event' => 'change',
+        'disable-refocus' => TRUE,
+        'speed' => 'slow',
         'progress' => [
           'type' => 'fullscreen',
           'message' => '',
         ]
       ],
+      '#prefix' => '<div id="tcp-genus-wrapper">',
+      '#suffix' => '</div>',
+      '#weight' => -90,
     ];
 
     // Apply field stage field wrapper to file upload element.
@@ -692,7 +650,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $form[$fld_wrapper]['file']['file_upload_existing']['#access'] = FALSE;
 
     // Wrap header listing in AJAX wrapper element.
-    $form[$fld_wrapper]['file']['upload_description']['#prefix'] = '<div id="tcp-wrap-notes">';
+    $form[$fld_wrapper]['file']['upload_description']['#prefix'] = '<div id="tcp-header-wrapper">';
     $form[$fld_wrapper]['file']['upload_description']['#suffix'] = '</div>';
 
     // Stage submit button.
@@ -1264,6 +1222,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    * @see TripalCultivate\templates\describe-header-window.html.twig
    */
   public function describeUploadFileFormat() {
+
     if ($this->has_all_headers) {
       // A template file has been generated and is ready for download.
       $importer_id = $this->pluginDefinition['id'];
@@ -1374,33 +1333,58 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   }
 
   /**
-   * AJAX callback: Load experiment genus and/or update notes.
+   * AJAX callback: Load experiment genus and/or update header list.
    */
-  public function updateGenusAndNotes(array &$form, FormStateInterface $form_state) {
+  public function updateGenusAndHeaders(array &$form, FormStateInterface $form_state) {
 
-    $stage1_key = 'accordion_stage1';
     $response = new AjaxResponse();
+    $stage1_key = 'accordion_stage1';
 
-    $response->addCommand(new ReplaceCommand(
-      '#tcp-wrap-genus',
-      $form[$stage1_key]['wrap_genus']
-    ));
+    $project = $form_state->getValue('project', '');
+    $project_id = ChadoGenericAutocompleteController::getPkeyId($project);
+    $project_genus = $this->service_GenusProject->getGenusOfProject($project_id);
 
-    $response->addCommand(new ReplaceCommand(
-      '#tcp-wrap-notes',
-      $form[$stage1_key]['file']['upload_description'],
-    ));
+    $trigger_el = $form_state->getTriggeringElement();
+
+    // Modifying project autocomplete field - update genus options + headers.
+    if (($trigger_el['#name'] ?? '') == 'project') {
+      $set_genus = 0;
+      $genus_options = [$set_genus => 'Select a Genus'];
+
+      if (empty($project_genus)) {
+        // Reset stage 1 form elements.
+        $this->has_all_headers = FALSE;
+      }
+      else {
+        $genus_options = array_combine($project_genus, $project_genus);
+        $set_genus = array_first($genus_options);
+      }
+
+      $form[$stage1_key]['genus']['#options'] = $genus_options;
+      $form_state->setValue('genus', $set_genus);
+
+      $response
+        ->addCommand(new ReplaceCommand('#' . $trigger_el['#ajax']['wrapper'], $form[$stage1_key]['genus']));
+    }
+
+    // Changing value of the genus field - update header list.
+    $genus = $form_state->getValue('genus', '');
+
+    if (!empty($genus) && $project_id > 0) {
+      $this->service_PhenoCombo->setExperiment($project_id);
+      $exp_pheno_combos = $this->service_PhenoCombo
+        ->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
+
+      $this->has_all_headers = TRUE;
+      $this->headers = array_merge($this->headers, $exp_pheno_combos);
+    }
+
+    $form[$stage1_key]['file']['upload_description']['#markup'] = $this->describeUploadFileFormat();
+
+    $response
+      ->addCommand(new ReplaceCommand('#tcp-header-wrapper', $form[$stage1_key]['file']['upload_description']));
 
     return $response;
-  }
-
-  /**
-   * AJAX callback: Load experiment-genus headers.
-   */
-  public static function loadExpGenusHeaders(array &$form, FormStateInterface $form_state) {
-
-    $stage1_key = 'accordion_stage1';
-    return $form[$stage1_key]['file']['upload_description'];
   }
 
 }
