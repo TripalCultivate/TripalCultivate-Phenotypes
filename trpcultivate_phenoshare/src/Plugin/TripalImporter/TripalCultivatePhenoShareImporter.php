@@ -2,8 +2,12 @@
 
 namespace Drupal\trpcultivate_phenoshare\Plugin\TripalImporter;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\Renderer;
@@ -25,6 +29,9 @@ use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal\TripalBackendPublish\PluginManager\TripalBackendPublishManager;
 use Drupal\tripal\TripalImporter\Attribute\TripalImporter;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\tripal_chado\Controller\ChadoGenericAutocompleteController;
+use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -146,11 +153,25 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   protected EntityTypeManager $service_entityTypeManager;
 
   /**
+   * PhenoCombo Service.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService
+   */
+  protected ExperimentPhenoComboService $service_PhenoCombo;
+
+  /**
    * Genus Ontology Service.
    *
    * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService
    */
   protected $service_PhenoGenusOntology;
+
+  /**
+   * Genus-project service
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService
+   */
+  protected $service_GenusProject;
 
   /**
    * The TripalCultivate File Template Service.
@@ -181,6 +202,11 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
   private $expected_columns;
 
   /**
+   * Indicate that upload description has fully loaded all headers.
+   */
+  private bool $has_all_headers = FALSE;
+
+  /**
    * Constructs the Phenotypes Share importer.
    *
    * @param array $configuration
@@ -201,8 +227,12 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   Tripal Backend Publish plugin manager.
    * @param Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   Configuration factory service.
+   * @param Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService $service_PhenoCombo
+   *   PhenoCombo service.
    * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology
    *   The genus ontology service.
+   * @param Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService $service_GenusProject
+   *   The genus-project service.
    * @param Drupal\trpcultivate\TripalCultivateValidator\TripalCultivateValidatorManager $service_validatorPluginManager
    *   The TripalCultivate validator plugin manager.
    * @param Drupal\trpcultivate\Service\TripalCultivateFileTemplateService $service_FileTemplate
@@ -222,7 +252,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     TripalFileRetriever $fileretriever,
     TripalBackendPublishManager $publish_manager,
     ConfigFactoryInterface $config_factory,
+    ExperimentPhenoComboService $service_PhenoCombo,
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
+    TripalCultivatePhenotypesGenusProjectService $service_GenusProject,
     TripalCultivateValidatorManager $service_validatorPluginManager,
     TripalCultivateFileTemplateService $service_FileTemplate,
     EntityTypeManager $service_entityTypeManager,
@@ -240,7 +272,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     );
 
     $this->service_ConfigFactory = $config_factory;
+    $this->service_PhenoCombo = $service_PhenoCombo;
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
+    $this->service_GenusProject = $service_GenusProject;
     $this->service_validatorPluginManager = $service_validatorPluginManager;
     $this->service_FileTemplate = $service_FileTemplate;
     $this->service_entityTypeManager = $service_entityTypeManager;
@@ -262,7 +296,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $container->get('tripal.fileretriever'),
       $container->get('tripal.backend_publish'),
       $container->get('config.factory'),
+      $container->get('trpcultivate_phenotypes.pheno_combo'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
+      $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('plugin.manager.trpcultivate_validator'),
       $container->get('trpcultivate.template_generator'),
       $container->get('entity_type.manager'),
@@ -288,9 +324,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *     order they should be run in.
    */
   public function configureValidators(array $form_values, string $file_mime_type) {
-
-    $validators = [];
-
     // Make the header columns into a simplified array for easy reference:
     // - Keyed by the column header name.
     // - Values are the column header's position in the $headers property (ie.
@@ -379,7 +412,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $form['#attached']['library'] = [
       'trpcultivate_phenotypes/trpcultivate-phenotypes-style-stage-accordion',
       'trpcultivate_phenotypes/trpcultivate-phenotypes-script-stage-accordion',
-      'trpcultivate_phenotypes/trpcultivate-phenotypes-script-autoselect-field',
     ];
 
     // Remind user about the configuration value set for allow new.
@@ -501,6 +533,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   corresponding to a stage - completed, current and upcoming stage.
    */
   public function stage1(&$form, $form_state, $stage_status = '') {
+    // Exclude other messages in the session that AJAX tends to repost.
+    $this->service_Messenger->deleteAll();
+
     // Describe stage by providing the stage number and title of the stage.
     // The status key in the stage description array corresponds to the
     // parameter of the method and is determined by the method call to render
@@ -537,12 +572,15 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // Select experiment, Genus field will reflect the genus project is set to.
     $form[$fld_wrapper]['project'] = [
       '#title' => 'Research Experiment',
+      '#name' => 'project',
       '#type' => 'textfield',
-      '#weight' => -100,
       '#required' => TRUE,
       '#description' => $this->t('Enter the name of the research experiment your data was generated as part of.'),
       '#description_display' => 'after',
-      '#attributes' => ['placeholder' => 'Research Experiment Name', 'class' => ['tcp-autocomplete']],
+      '#attributes' => [
+        'placeholder' => 'Research Experiment Name',
+        'onClick' => 'this.select()',
+      ],
       '#autocomplete_route_name' => 'tripal_chado.generic_autocomplete',
       '#autocomplete_route_parameters' => [
         'type_id' => 0,
@@ -552,36 +590,47 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'type_column' => 'x',
         'property_table' => 'project',
       ],
+      '#ajax' => [
+        'callback' => [$this, 'updateGenusAndHeaders'],
+        'wrapper' => 'tcp-genus-wrapper',
+        'event' => 'autocompleteclose blur',
+        'disable-refocus' => TRUE,
+        'speed' => 'slow',
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ]
+      ],
+      '#weight' => -100,
     ];
 
     // Field Genus:
     // Prepare select options with only active genus.
-    $all_genus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
-    $active_genus = array_combine($all_genus, $all_genus);
-
     $form[$fld_wrapper]['genus'] = [
       '#title' => 'Genus',
+      '#name' => 'genus',
+      '#id' => 'tcp-fld-genus',
       '#type' => 'select',
-      '#options' => $active_genus,
-      '#weight' => -90,
       '#required' => TRUE,
-      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded.
-        This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
+      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
       '#description_display' => 'after',
-
-      // States.
-      '#states' => [
-        'disabled' => [
-          ':input[name="project"]' => ['filled' => FALSE],
-        ],
+      '#options' => [],
+      '#empty_option' => 'Select a Genus',
+      '#empty_value' => 0,
+      '#ajax' => [
+        'callback' => [$this, 'updateGenusAndHeaders'],
+        'wrapper' => 'tcp-header-wrapper',
+        'event' => 'change',
+        'disable-refocus' => TRUE,
+        'speed' => 'slow',
+        'progress' => [
+          'type' => 'fullscreen',
+          'message' => '',
+        ]
       ],
-
-      // Used by script to pre-select when project was supplied.
-      '#id' => 'trpcultivate-fld-genus',
-
-      // AJAX.
-      '#prefix' => '<div id="trpcultivate-field-genus-wrapper">',
+      '#prefix' => '<div id="tcp-genus-wrapper">',
       '#suffix' => '</div>',
+      '#weight' => -90,
     ];
 
     // Apply field stage field wrapper to file upload element.
@@ -599,6 +648,10 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     // the element is not rendered and the user submitted value is not taken
     // into consideration.
     $form[$fld_wrapper]['file']['file_upload_existing']['#access'] = FALSE;
+
+    // Wrap header listing in AJAX wrapper element.
+    $form[$fld_wrapper]['file']['upload_description']['#prefix'] = '<div id="tcp-header-wrapper">';
+    $form[$fld_wrapper]['file']['upload_description']['#suffix'] = '</div>';
 
     // Stage submit button.
     $form[$fld_wrapper]['validate_stage'] = [
@@ -1166,43 +1219,51 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   with the pertinent variables supplied by this method.
    *
    * @see Drupal\tripal\TripalImporter\TripalImporterBase::describeUploadFileFormat()
-   * @see templates\trpcultivate-phenotypes-template-importer-header.html.twig
+   * @see TripalCultivate\templates\describe-header-window.html.twig
    */
   public function describeUploadFileFormat() {
-    // A template file has been generated and is ready for download.
-    $importer_id = $this->pluginDefinition['id'];
 
-    // Only the header names are needed for making the template file, so pull
-    // them out into a new array.
-    $column_headers = array_column($this->headers, 'name');
+    if ($this->has_all_headers) {
+      // A template file has been generated and is ready for download.
+      $importer_id = $this->pluginDefinition['id'];
 
-    // File types 'file_types' annotation definition of this importer.
-    // The first item in the definition list will be used as the primary
-    // file extension of the template file.
-    // File MIME type and delimiter are based on mapping information defined
-    // in the validator base and file types validator trait.
-    $file_extensions = $this->plugin_definition['file_types'];
+      // Only the header names are needed for making the template file, so pull
+      // them out into a new array.
+      $column_headers = array_column($this->headers, 'name');
 
-    $file_link = $this->service_FileTemplate
-      ->generateFile($importer_id, $column_headers, $file_extensions);
+      // File types 'file_types' annotation definition of this importer.
+      // The first item in the definition list will be used as the primary
+      // file extension of the template file.
+      // File MIME type and delimiter are based on mapping information defined
+      // in the validator base and file types validator trait.
+      $file_extensions = $this->plugin_definition['file_types'];
 
-    // Additional notes to the headers.
-    $notes = $this->t('To ensure proper file processing and organization, it is
-    important that your data file includes a header.');
+      $file_link = $this->service_FileTemplate
+        ->generateFile($importer_id, $column_headers, $file_extensions);
 
-    // Render the header and notes/lists in a template and use the file link as
-    // the value to href attribute of the link to download a template file.
-    $supported_file_extensions = implode(', ', $file_extensions);
+      // Additional notes to the headers.
+      $notes = $this->t('To ensure proper file processing and organization, it is
+      important that your data file includes a header.');
 
-    $build = [
-      '#theme' => 'describe_header_window',
-      '#data' => [
-        'headers' => $this->headers,
-        'file_extensions' => $supported_file_extensions,
-        'notes' => $notes,
-        'template_file' => $file_link,
-      ],
-    ];
+      // Render the header and notes/lists in a template and use the file link as
+      // the value to href attribute of the link to download a template file.
+      $supported_file_extensions = implode(', ', $file_extensions);
+
+      $build = [
+        '#theme' => 'describe_header_window',
+        '#data' => [
+          'headers' => $this->headers,
+          'file_extensions' => $supported_file_extensions,
+          'notes' => $notes,
+          'template_file' => $file_link,
+        ],
+      ];
+    }
+    else {
+      $build = [
+        '#markup' => 'Please select a Research Experiment and a genus to load other important instructions about the file upload.',
+      ];
+    }
 
     return $this->service_Renderer->renderInIsolation($build);
   }
@@ -1269,6 +1330,61 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     }
 
     return $has_fail;
+  }
+
+  /**
+   * AJAX callback: Load experiment genus and/or update header list.
+   */
+  public function updateGenusAndHeaders(array &$form, FormStateInterface $form_state) {
+
+    $response = new AjaxResponse();
+    $stage1_key = 'accordion_stage1';
+
+    $project = $form_state->getValue('project', '');
+    $project_id = ChadoGenericAutocompleteController::getPkeyId($project);
+    $project_genus = $this->service_GenusProject->getGenusOfProject($project_id);
+
+    $trigger_el = $form_state->getTriggeringElement();
+
+    // Modifying project autocomplete field - update genus options + headers.
+    if (($trigger_el['#name'] ?? '') == 'project') {
+      $set_genus = 0;
+      $genus_options = [$set_genus => 'Select a Genus'];
+
+      if (empty($project_genus)) {
+        // Reset stage 1 form elements.
+        $this->has_all_headers = FALSE;
+      }
+      else {
+        $genus_options = array_combine($project_genus, $project_genus);
+        $set_genus = array_first($genus_options);
+      }
+
+      $form[$stage1_key]['genus']['#options'] = $genus_options;
+      $form_state->setValue('genus', $set_genus);
+
+      $response
+        ->addCommand(new ReplaceCommand('#' . $trigger_el['#ajax']['wrapper'], $form[$stage1_key]['genus']));
+    }
+
+    // Changing value of the genus field - update header list.
+    $genus = $form_state->getValue('genus', '');
+
+    if (!empty($genus) && $project_id > 0) {
+      $this->service_PhenoCombo->setExperiment($project_id);
+      $exp_pheno_combos = $this->service_PhenoCombo
+        ->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
+
+      $this->has_all_headers = TRUE;
+      $this->headers = array_merge($this->headers, $exp_pheno_combos);
+    }
+
+    $form[$stage1_key]['file']['upload_description']['#markup'] = $this->describeUploadFileFormat();
+
+    $response
+      ->addCommand(new ReplaceCommand('#tcp-header-wrapper', $form[$stage1_key]['file']['upload_description']));
+
+    return $response;
   }
 
 }
