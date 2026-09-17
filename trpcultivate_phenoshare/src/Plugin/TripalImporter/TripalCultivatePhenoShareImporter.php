@@ -596,6 +596,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         'event' => 'autocompleteclose blur',
         'disable-refocus' => TRUE,
         'speed' => 'slow',
+        'effect' => 'none',
         'progress' => [
           'type' => 'fullscreen',
           'message' => '',
@@ -609,7 +610,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $form[$fld_wrapper]['genus'] = [
       '#title' => 'Genus',
       '#name' => 'genus',
-      '#id' => 'tcp-fld-genus',
       '#type' => 'select',
       '#required' => TRUE,
       '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
@@ -617,18 +617,24 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#options' => [],
       '#empty_option' => 'Select a Genus',
       '#empty_value' => 0,
+      '#states' => [
+        'disabled' => [
+          ':input[name="project"]' => ['filled' => FALSE],
+        ],
+      ],
       '#ajax' => [
         'callback' => [$this, 'updateGenusAndHeaders'],
         'wrapper' => 'tcp-header-wrapper',
         'event' => 'change',
         'disable-refocus' => TRUE,
         'speed' => 'slow',
+        'effect' => 'none',
         'progress' => [
           'type' => 'fullscreen',
           'message' => '',
         ]
       ],
-      '#prefix' => '<div id="tcp-genus-wrapper">',
+      '#prefix' => '<div id="' . $form[$fld_wrapper]['project']['#ajax']['wrapper'] . '">',
       '#suffix' => '</div>',
       '#weight' => -90,
     ];
@@ -650,7 +656,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $form[$fld_wrapper]['file']['file_upload_existing']['#access'] = FALSE;
 
     // Wrap header listing in AJAX wrapper element.
-    $form[$fld_wrapper]['file']['upload_description']['#prefix'] = '<div id="tcp-header-wrapper">';
+    $form[$fld_wrapper]['file']['upload_description']['#prefix'] = '<div id="' . $form[$fld_wrapper]['genus']['#ajax']['wrapper'] . '">';
     $form[$fld_wrapper]['file']['upload_description']['#suffix'] = '</div>';
 
     // Stage submit button.
@@ -1334,55 +1340,73 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
   /**
    * AJAX callback: Load experiment genus and/or update header list.
+   *
+   * This callback involves only form elements in the first stage (STAGE #1)
+   * of this Importer. Specifically, it applies to elements Project, Genus and
+   * Upload Description (wrapped in File fieldset element).
    */
   public function updateGenusAndHeaders(array &$form, FormStateInterface $form_state) {
 
     $response = new AjaxResponse();
-    $stage1_key = 'accordion_stage1';
 
-    $project = $form_state->getValue('project', '');
-    $project_id = ChadoGenericAutocompleteController::getPkeyId($project);
-    $project_genus = $this->service_GenusProject->getGenusOfProject($project_id);
+    // Reference by field name form elements in stage #1.
+    $stage = 'accordion_stage1';
+    $project_field = $form[$stage]['project']['#name'];
+    $genus_field = $form[$stage]['genus']['#name'];
+    $header_field = 'upload_description';
 
-    $trigger_el = $form_state->getTriggeringElement();
+    $project_id = ChadoGenericAutocompleteController::getPkeyId(
+      $form_state->getValue($project_field, '')
+    );
 
-    // Modifying project autocomplete field - update genus options + headers.
-    if (($trigger_el['#name'] ?? '') == 'project') {
+    $project_genus = $this->service_GenusProject
+      ->getGenusOfProject($project_id);
+
+    $trigger_element = $form_state->getTriggeringElement();
+
+    // Modifying project autocomplete field - update genus options, select and
+    // set a genus, then update the header list.
+    if (($trigger_element['#name'] ?? '') === $project_field) {
       $set_genus = 0;
       $genus_options = [$set_genus => 'Select a Genus'];
 
       if (empty($project_genus)) {
-        // Reset stage 1 form elements.
+        // Reset all form elements.
+        $this->headers = [];
         $this->has_all_headers = FALSE;
       }
       else {
+        // Select and set a genus regardless of how many genus in a project.
+        $set_genus = $form_state->getValue($genus_field, '') ?: array_first($project_genus);
         $genus_options = array_combine($project_genus, $project_genus);
-        $set_genus = array_first($genus_options);
       }
 
-      $form[$stage1_key]['genus']['#options'] = $genus_options;
-      $form_state->setValue('genus', $set_genus);
+      $form[$stage][$genus_field]['#options'] = $genus_options;
+      $form_state->setValue($genus_field, $set_genus);
 
-      $response
-        ->addCommand(new ReplaceCommand('#' . $trigger_el['#ajax']['wrapper'], $form[$stage1_key]['genus']));
+      $response->addCommand(
+        new ReplaceCommand('#' . $trigger_element['#ajax']['wrapper'], $form[$stage][$genus_field])
+      );
     }
 
-    // Changing value of the genus field - update header list.
-    $genus = $form_state->getValue('genus', '');
+    // A genus has been set or changing the current value of genus field -
+    // update header list with reference to the value provided in project field.
+    $genus = $form_state->getValue($genus_field, '');
 
     if (!empty($genus) && $project_id > 0) {
       $this->service_PhenoCombo->setExperiment($project_id);
       $exp_pheno_combos = $this->service_PhenoCombo
         ->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
 
-      $this->has_all_headers = TRUE;
       $this->headers = array_merge($this->headers, $exp_pheno_combos);
+      $this->has_all_headers = TRUE;
     }
 
-    $form[$stage1_key]['file']['upload_description']['#markup'] = $this->describeUploadFileFormat();
+    $form[$stage]['file'][$header_field]['#markup'] = $this->describeUploadFileFormat();
 
-    $response
-      ->addCommand(new ReplaceCommand('#tcp-header-wrapper', $form[$stage1_key]['file']['upload_description']));
+    $response->addCommand(
+      new ReplaceCommand('#tcp-header-wrapper', $form[$stage]['file'][$header_field])
+    );
 
     return $response;
   }
