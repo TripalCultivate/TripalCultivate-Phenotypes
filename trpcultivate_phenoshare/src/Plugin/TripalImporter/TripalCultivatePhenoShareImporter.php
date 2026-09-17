@@ -6,6 +6,7 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Url;
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\Messenger;
@@ -533,9 +534,6 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    *   corresponding to a stage - completed, current and upcoming stage.
    */
   public function stage1(&$form, $form_state, $stage_status = '') {
-    // Exclude other messages in the session that AJAX tends to repost.
-    $this->service_Messenger->deleteAll();
-
     // Describe stage by providing the stage number and title of the stage.
     // The status key in the stage description array corresponds to the
     // parameter of the method and is determined by the method call to render
@@ -570,7 +568,14 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     // Other relevant fields here.
     // Select experiment, Genus field will reflect the genus project is set to.
-    $form[$fld_wrapper]['project'] = [
+    $fld_project_wrapper = 'project_field_wrapper';
+    $form[$fld_wrapper][$fld_project_wrapper] = [
+      '#type' => 'container',
+      '#id' => 'tcp-project-field',
+      '#weight' => -100,
+    ];
+
+    $form[$fld_wrapper][$fld_project_wrapper]['project'] = [
       '#title' => 'Research Experiment',
       '#name' => 'project',
       '#type' => 'textfield',
@@ -602,7 +607,26 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
           'message' => '',
         ]
       ],
-      '#weight' => -100,
+    ];
+
+    $form[$fld_wrapper][$fld_project_wrapper]['reset'] = [
+      '#type' => 'link',
+      '#title' => [
+        '#type' => 'html_tag',
+        '#tag' => 'i',
+        '#attributes' => [
+          'class' => [
+            'fa-solid',
+            'fa-xmark',
+          ],
+        ],
+      ],
+      '#url' => Url::fromRoute('<current>'),
+      '#attributes' => [
+        'id' => 'tcp-reset-project',
+        'title' => 'Restart importer form',
+        'class' => ['visually-hidden'],
+      ],
     ];
 
     // Field Genus:
@@ -634,7 +658,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
           'message' => '',
         ]
       ],
-      '#prefix' => '<div id="' . $form[$fld_wrapper]['project']['#ajax']['wrapper'] . '">',
+      '#prefix' => '<div id="' . $form[$fld_wrapper][$fld_project_wrapper]['project']['#ajax']['wrapper'] . '">',
       '#suffix' => '</div>',
       '#weight' => -90,
     ];
@@ -1346,12 +1370,14 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
    * Upload Description (wrapped in File fieldset element).
    */
   public function updateGenusAndHeaders(array &$form, FormStateInterface $form_state) {
+    // Exclude other messages in the session that AJAX tends to repost.
+    $this->service_Messenger->deleteAll();
 
     $response = new AjaxResponse();
 
     // Reference by field name form elements in stage #1.
     $stage = 'accordion_stage1';
-    $project_field = $form[$stage]['project']['#name'];
+    $project_field = $form[$stage]['project_field_wrapper']['project']['#name'];
     $genus_field = $form[$stage]['genus']['#name'];
     $header_field = 'upload_description';
 
@@ -1369,6 +1395,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     if (($trigger_element['#name'] ?? '') === $project_field) {
       $set_genus = 0;
       $genus_options = [$set_genus => 'Select a Genus'];
+      $show_reset = FALSE;
 
       if (empty($project_genus)) {
         // Reset all form elements.
@@ -1379,10 +1406,16 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
         // Select and set a genus regardless of how many genus in a project.
         $set_genus = $form_state->getValue($genus_field, '') ?: array_first($project_genus);
         $genus_options = array_combine($project_genus, $project_genus);
+
+        $show_reset = TRUE;
       }
 
       $form[$stage][$genus_field]['#options'] = $genus_options;
       $form_state->setValue($genus_field, $set_genus);
+
+      $response->addCommand(
+        new InvokeCommand('#tcp-reset-project', ($show_reset) ? 'removeClass' : 'addClass', ['visually-hidden'])
+      );
 
       $response->addCommand(
         new ReplaceCommand('#' . $trigger_element['#ajax']['wrapper'], $form[$stage][$genus_field])
@@ -1398,7 +1431,10 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $exp_pheno_combos = $this->service_PhenoCombo
         ->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
 
-      $this->headers = array_merge($this->headers, $exp_pheno_combos);
+      if ($exp_pheno_combos) {
+        $this->headers = array_merge($this->headers, $exp_pheno_combos);
+      }
+
       $this->has_all_headers = TRUE;
     }
 
