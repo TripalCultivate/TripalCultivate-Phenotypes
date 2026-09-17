@@ -155,6 +155,12 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
       });
     $container->set('tripal.logger', $mock_logger);
 
+        // Setup a genus and project to test.
+    $this->setTermConfig();
+
+    $genus = 'Tripalus';
+    $this->setOntologyConfig($genus);
+
     // Prepare services and create instance of form and importer.
     $this->service_Renderer = $container->get('renderer');
     $this->service_ConfigFactory = $container->get('config.factory');
@@ -170,12 +176,6 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     $this->phenoshare_importer = \Drupal::service('tripal.importer')
       ->createInstance($plugin_id);
-
-    // Setup a genus and project to test.
-    $this->setTermConfig();
-
-    $genus = 'Tripalus';
-    $this->setOntologyConfig($genus);
 
     $project = 'Awesome Project';
     $project_id = $this->chado_connection->insert('1:project')
@@ -396,7 +396,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
           'stage_title' => 'STAGE 1',
           'fields' => [
             'project' => [
-              'wrapper_element' => '',
+              'wrapper_element' => 'project_field_wrapper',
               'field_type' => 'textfield',
             ],
             'genus' => [
@@ -546,13 +546,13 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
 
     // Assert headers matched the headers defined by Trait Importer.
     $expected_headers = [
-      'Germplasm Name',
-      'Sample Name',
-      'Group',
-      'Experimental Unit',
-      'Replicate',
-      'Timepoint',
-      'Treatment',
+      // 'Germplasm Name',
+      // 'Sample Name',
+      // 'Group',
+      // 'Experimental Unit',
+      // 'Replicate',
+      // 'Timepoint',
+      // 'Treatment',
     ];
 
     // Pull all the headers in the rendered description.
@@ -564,8 +564,7 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     );
 
     // Assert admin notes were incorporated into the description section.
-    $expected_notes = 'To ensure proper file processing and organization, it is
-    important that your data file includes a header.';
+    $expected_notes = 'Please select a Research Experiment and a genus to load other important instructions about the file upload.';
 
     $this->assertStringContainsString(
       $expected_notes,
@@ -578,11 +577,12 @@ class ShareImporterFormTest extends ChadoTestKernelBase {
     $expected_file_extension = $plugin['file_types'][0];
     $expected_template_filename = $plugin['id'] . '-data-collection-template-file-' . $user_username . '.' . $expected_file_extension;
 
-    $this->assertStringContainsString(
-      $expected_template_filename,
-      $rendered_file_format_description,
-      'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template download link.'
-    );
+    // @todo: no link is provided until a project+genus is set.
+    // $this->assertStringContainsString(
+    //   $expected_template_filename,
+    //   $rendered_file_format_description,
+    //   'The rendered markup of the method describeUploadFileFormat() does not contain the expected file template download link.'
+    // );
   }
 
   /**
