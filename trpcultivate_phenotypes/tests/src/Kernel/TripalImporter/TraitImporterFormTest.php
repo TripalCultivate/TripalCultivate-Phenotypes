@@ -206,7 +206,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     // and numbered column description.
     $this->assertArrayHasKey('upload_description', $form['file'],
       "We expect the upload description to have been added to the form by the TripalImporter base class.");
-    $this->assertStringContainsString('<a href', $form['file']['upload_description']['#markup'],
+    $this->assertStringContainsString('Download a template file</a>', $form['file']['upload_description']['#markup'],
       "We expected the upload description to have a link in it.");
     $this->assertStringContainsString('<ol id="tcp-header-notes">', $form['file']['upload_description']['#markup'],
       "We expected the upload description to have an ordered list in it.");
@@ -328,7 +328,7 @@ class TraitImporterFormTest extends ChadoTestKernelBase {
     // and numbered column description.
     $this->assertArrayHasKey('upload_description', $form['file'],
       "We expect the upload description to have been added to the form by the TripalImporter base class.");
-    $this->assertStringContainsString('<a href', $form['file']['upload_description']['#markup'],
+    $this->assertStringContainsString('Download a template file</a>', $form['file']['upload_description']['#markup'],
       "We expected the upload description to have a link in it.");
     $this->assertStringContainsString('<ol id="tcp-header-notes">', $form['file']['upload_description']['#markup'],
       "We expected the upload description to have an ordered list in it.");
