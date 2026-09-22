@@ -396,6 +396,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       $header_index['Germplasm Name'],
     ];
     $instance->setIndices($indices);
+    $instance->setLogger($this->logger);
     $instance->setGenus($form_values['genus']);
     $validators['data-row']['germplasm_name_exists'] = $instance;
 
@@ -413,6 +414,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
     $form['#attached']['library'] = [
       'trpcultivate_phenotypes/trpcultivate-phenotypes-style-stage-accordion',
       'trpcultivate_phenotypes/trpcultivate-phenotypes-script-stage-accordion',
+      'trpcultivate/describe-header-window',
     ];
 
     // Remind user about the configuration value set for allow new.
@@ -631,6 +633,9 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
 
     // Field Genus:
     // Prepare select options with only active genus.
+    $all_genus = $this->service_PhenoGenusOntology->getConfiguredGenusList();
+    $active_genus = array_combine($all_genus, $all_genus);
+
     $form[$fld_wrapper]['genus'] = [
       '#title' => 'Genus',
       '#name' => 'genus',
@@ -638,7 +643,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#required' => TRUE,
       '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
       '#description_display' => 'after',
-      '#options' => [],
+      '#options' => $active_genus,
       '#empty_option' => 'Select a Genus',
       '#empty_value' => 0,
       '#states' => [
