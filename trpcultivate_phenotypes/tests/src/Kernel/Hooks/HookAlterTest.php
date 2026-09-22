@@ -4,16 +4,19 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Hooks;
 
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Link;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Hook\TripalCultivatePhenotypesAlterHooks;
 use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGenusWithPhenotypes;
 use Drupal\trpcultivate_phenotypes\Plugin\Validation\Constraint\LockExperimentGenusWithPhenotypesValidator;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Violation\ConstraintViolationBuilderInterface;
@@ -260,6 +263,44 @@ class HookAlterTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test alter hook constructor phenotypes check.
+   */
+  public function testPhenotypeCheck() {
+
+    // AlterHook class property name that indicates phenotype exists.
+    $has_pheno_property = 'has_pheno';
+
+    $service_alterhook = $this->container->get('trpcultivate_phenotypes.alter_hooks');
+    $reflection = new \ReflectionClass($service_alterhook);
+    $property = $reflection->getProperty($has_pheno_property);
+
+    $this->assertFalse(
+      $property->getValue($service_alterhook),
+      'AlterHook service class property that determines if a phenotype exists is set to FALSE by default.',
+    );
+
+    $route_match = $this->createMock(RouteMatchInterface::class);
+    $route_match->expects($this->once())
+      ->method('getParameters')
+      ->willReturn(
+        new ParameterBag(['tripal_entity' => $this->exp_entity])
+      );
+
+    $service_alterhook = new TripalCultivatePhenotypesAlterHooks(
+      $route_match,
+      $this->chado_connection
+    );
+
+    $reflection = new \ReflectionClass($service_alterhook);
+    $property = $reflection->getProperty($has_pheno_property);
+
+    $this->assertTrue(
+      $property->getValue($service_alterhook),
+      'AlterHook service failed to set (TRUE) a class property that determines if a phenotype exists.',
+    );
+  }
+
+  /**
    * Test that the delete button is diabled for research entity with phenotypes.
    */
   public function testDisableDeleteButton() {
@@ -301,6 +342,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       $this->container->get('tripal_chado.database'),
       $this->container->get('trpcultivate_phenotypes.genus_ontology'),
       $this->container->get('trpcultivate_phenotypes.terms'),
+      $this->container->get('trpcultivate_phenotypes.pheno_combo'),
     );
 
     // Genus-experiemnt relationship is maintained.
