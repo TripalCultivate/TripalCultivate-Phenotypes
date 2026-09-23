@@ -571,8 +571,8 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     foreach ($query_pheno_combos as $label => $combo_details) {
       $items = [
         $combo_details->combo_id,
-        $exp_phenocombos_clone[$label]->trait->name,
-        $exp_phenocombos_clone[$label]->trait->definition,
+        $exp_phenocombos_clone[$label]->label,
+        $exp_phenocombos_clone[$label]->method->definition,
         $combo_details->is_required == 1 ? 'Required' : 'Optional',
       ];
 
