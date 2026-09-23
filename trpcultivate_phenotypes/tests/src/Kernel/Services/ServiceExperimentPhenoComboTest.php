@@ -571,8 +571,8 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     foreach ($query_pheno_combos as $label => $combo_details) {
       $items = [
         $combo_details->combo_id,
-        $exp_phenocombos_clone[$label]->trait->name,
-        $exp_phenocombos_clone[$label]->trait->definition,
+        $exp_phenocombos_clone[$label]->label,
+        $exp_phenocombos_clone[$label]->method->definition,
         $combo_details->is_required == 1 ? 'Required' : 'Optional',
       ];
 
@@ -936,8 +936,6 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       }
     }
 
-
-
     $combo_details['label'] = 'A Unique Label';
     $sanitized_combo_details = $this->service_PhenoCombo->sanitizePhenoComboDetails($combo_details);
     $this->assertEquals($combo_details, $sanitized_combo_details, 'Failed to sanitize PhenoCombo details.');
@@ -961,6 +959,34 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     $this->assertFalse(
       ExperimentPhenoComboService::experimentHasPhenoCombo(self::EXPERIMENT_NAME_CONTEXT_NO_PHENOCOMBO),
       'Experiment without pheno combo is expected to return FALSE using the experimentHasPhenoCombo() method.',
+    );
+  }
+
+  /**
+   * Test labelIsUniqueInExperiment().
+   */
+  public function testLabelIsUniqueInExperiment() {
+
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    $this->service_PhenoCombo->setExperiment($experiment);
+
+    $this->assertTrue(
+      $this->service_PhenoCombo->labelIsUniqueInExperiment('A novel label'),
+      'Label uniqueness check should return TRUE when the label is not used within the experiment context.',
+    );
+
+    $a_label = $this->container->get('database')
+      ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
+      ->fields('tbl', ['label'])
+      ->condition('tbl.project_id', $experiment, '=')
+      ->orderRandom()
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+
+    $this->assertFalse(
+      $this->service_PhenoCombo->labelIsUniqueInExperiment($a_label),
+      'Label uniqueness check should return FALSE when the label already exists in the experiment context.',
     );
   }
 
