@@ -8,6 +8,7 @@ use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\trpcultivate\Traits\TripalCultivateImporterTestTrait;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\user\LogoutFinalizer;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -557,7 +558,7 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     );
 
     // Request filter to backup with a project user has no permission.
-    user_logout();
+    \Drupal::service(LogoutFinalizer::class)->finalizeLogout();
     $current_user = $this->users['view_own_1']['object'];
     $this->setCurrentUser($current_user);
     $project_a_id = 1;

@@ -14,6 +14,7 @@ use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
+use Drupal\user\LogoutFinalizer;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -910,7 +911,7 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   #[DataProvider('provideTestUser')]
   public function testPageAccess(string $scenario, array $user, array $expected) {
 
-    user_logout();
+    \Drupal::service(LogoutFinalizer::class)->finalizeLogout();
 
     $new_user = $this->createUser(
       $user['permissions'],
@@ -1076,6 +1077,5 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       'An error message is expected when a content type has no configured genus.',
     );
   }
-
 
 }

@@ -14,6 +14,7 @@ use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentTraitSelectorForm;
+use Drupal\user\LogoutFinalizer;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -23,6 +24,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * NOTE: this form supports Phenotypes Integration and is set to 'pheno_combo'
  * integration in the route definition.
+ *
  * @see trpcultivate_phenotypes.routing.yml
  *
  * @group trpcultivate_phenotypes
@@ -761,7 +763,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
   #[DataProvider('provideTestUser')]
   public function testPageAccess(string $scenario, array $user, array $expected) {
 
-    user_logout();
+    \Drupal::service(LogoutFinalizer::class)->finalizeLogout();
 
     $new_user = $this->createUser(
       $user['permissions'],
