@@ -14,7 +14,6 @@ use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\trpcultivate_phenotypes\Form\PhenoExperimentConfigurationForm;
-use Drupal\user\LogoutFinalizer;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -911,7 +910,12 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   #[DataProvider('provideTestUser')]
   public function testPageAccess(string $scenario, array $user, array $expected) {
 
-    \Drupal::service(LogoutFinalizer::class)->finalizeLogout();
+    if (\Drupal::hasService('Drupal\user\LogoutFinalizer')) {
+      \Drupal::service('Drupal\user\LogoutFinalizer')->finalizeLogout();
+    }
+    else {
+      user_logout();
+    }
 
     $new_user = $this->createUser(
       $user['permissions'],
