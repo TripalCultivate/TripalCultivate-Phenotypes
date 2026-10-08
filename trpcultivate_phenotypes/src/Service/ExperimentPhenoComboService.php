@@ -478,8 +478,8 @@ class ExperimentPhenoComboService {
         case 'header':
           $formatted_pheno_combos[$label] = [
             'combo_id' => $combo_details->combo_id,
-            'name' => $trait->name,
-            'description' => $trait->definition,
+            'name' => $label,
+            'description' => $method->definition,
             'type' => $combo_details->is_required == 1 ? 'Required' : 'Optional',
           ];
 
@@ -955,7 +955,9 @@ class ExperimentPhenoComboService {
    * @return bool
    *   TRUE if the label is UNIQUE within the experiment and FALSE, otherwise.
    */
-  protected function labelIsUniqueInExperiment(string $label): bool {
+  public function labelIsUniqueInExperiment(string $label): bool {
+
+    $this->ensureExperimentIsSet();
 
     $label = trim($label);
 
