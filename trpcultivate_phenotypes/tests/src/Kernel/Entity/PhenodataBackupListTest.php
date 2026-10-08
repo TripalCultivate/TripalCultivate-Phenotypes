@@ -557,7 +557,12 @@ class PhenodataBackupListTest extends ChadoTestKernelBase {
     );
 
     // Request filter to backup with a project user has no permission.
-    user_logout();
+    if (\Drupal::hasService('Drupal\user\LogoutFinalizer')) {
+      \Drupal::service('Drupal\user\LogoutFinalizer')->finalizeLogout();
+    }
+    else {
+      user_logout();
+    }
     $current_user = $this->users['view_own_1']['object'];
     $this->setCurrentUser($current_user);
     $project_a_id = 1;
