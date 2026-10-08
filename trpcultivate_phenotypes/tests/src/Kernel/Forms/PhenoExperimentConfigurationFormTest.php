@@ -910,7 +910,12 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
   #[DataProvider('provideTestUser')]
   public function testPageAccess(string $scenario, array $user, array $expected) {
 
-    user_logout();
+    if (\Drupal::hasService('Drupal\user\LogoutFinalizer')) {
+      \Drupal::service('Drupal\user\LogoutFinalizer')->finalizeLogout();
+    }
+    else {
+      user_logout();
+    }
 
     $new_user = $this->createUser(
       $user['permissions'],
@@ -1076,6 +1081,5 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       'An error message is expected when a content type has no configured genus.',
     );
   }
-
 
 }
