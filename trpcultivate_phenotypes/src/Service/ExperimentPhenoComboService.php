@@ -955,7 +955,9 @@ class ExperimentPhenoComboService {
    * @return bool
    *   TRUE if the label is UNIQUE within the experiment and FALSE, otherwise.
    */
-  protected function labelIsUniqueInExperiment(string $label): bool {
+  public function labelIsUniqueInExperiment(string $label): bool {
+
+    $this->ensureExperimentIsSet();
 
     $label = trim($label);
 

@@ -8,6 +8,7 @@ use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
 use Drupal\tripal\Entity\TripalEntity;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -61,11 +62,14 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
    *   The genus ontology service.
    * @param \Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService $service_PhenoTerms
    *   The terms service.
+   * @param \Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService $service_PhenoCombo
+   *   TripalCultivate Phenotypes PhenoCombo service.
    */
   public function __construct(
     protected ChadoConnection $chado_connection,
     protected TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     protected TripalCultivatePhenotypesTermsService $service_PhenoTerms,
+    protected ExperimentPhenoComboService $service_PhenoCombo,
   ) {
     // Parameters are assigned to protected properties via constructor
     // property promotion.
@@ -80,6 +84,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
       $container->get('tripal_chado.database'),
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.terms'),
+      $container->get('trpcultivate_phenotypes.pheno_combo'),
     );
   }
 
@@ -132,14 +137,7 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     // but still has configured experiment-trait-method-unit combinations
     // which by definition are genus-specific.
     if ($genus_property_fields == []) {
-      // @todo replace with phenocombo service.
-      $exp_has_phenocombo = $this->chado_connection->select('trpcultivate_phenocombo', 'combo')
-        ->condition('combo.project_id', $this->project_id, '=')
-        ->countQuery()
-        ->execute()
-        ->fetchField();
-
-      if ($exp_has_phenocombo) {
+      if (ExperimentPhenoComboService::experimentHasPhenoCombo($this->project_id)) {
         $this->context
           ->buildViolation(
             Markup::create(strtr($constraint->all_genus_failed, [
@@ -152,6 +150,9 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
 
       return;
     }
+
+    // Set the PhenoCombo service experiment context to the current experiment.
+    $this->service_PhenoCombo->setExperiment($this->project_id);
 
     // Find the TripalPropertyType key storing the genus for all fields found
     // using findGenusFieldProperty(). This TripalPropertyType should store the
@@ -308,22 +309,8 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     // Create list of each unique genus value.
     $field_values = array_filter(array_column($field_values, $field['property_key']));
 
-    // @todo replace with phenocombo service.
-    $query = $this->chado_connection->select('trpcultivate_phenocombo', 'combo');
-    $query->join('1:cvterm', 'term', 'combo.attr_id = term.cvterm_id');
-    $query->join('1:cv', 'vocab', 'term.cv_id = vocab.cv_id');
-
     foreach ($this->pheno_configgenus as $genus) {
-      $genus_config = $this->service_PhenoGenusOntology
-        ->getGenusOntologyConfigValues($genus);
-
-      // A phenotype to a genus would suffice enforcement check.
-      $has_pheno = $query
-        ->condition('combo.project_id', $this->project_id, '=')
-        ->condition('vocab.cv_id', $genus_config['trait'], '=')
-        ->countQuery()
-        ->execute()
-        ->fetchField();
+      $has_pheno = $this->service_PhenoCombo->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
 
       if ($has_pheno > 0 && !in_array($genus, $field_values)) {
         $this->context
