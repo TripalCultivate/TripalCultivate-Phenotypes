@@ -41,7 +41,7 @@ fields:
             storage_plugin_id: chado_storage
             storage_plugin_settings:
                 base_table: cvterm
-                base_column: name
+                base_column: definition
             max_length: 255
         settings:
             termIdSpace: IAO

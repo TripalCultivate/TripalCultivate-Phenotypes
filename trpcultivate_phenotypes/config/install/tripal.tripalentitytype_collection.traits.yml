@@ -8,7 +8,7 @@ content_types:
         help_text: 'Use the phenotypic trait page for describing observable or measurable variants of an organisms characteristics (e.g. plant height, nutrient composition). These pages should only be created through publishing after importing traits.'
         category: Genetic
         id: trait
-        title_format: "[name]"
-        url_format: "trait/[name]"
+        title_format: "[trait_name]"
+        url_format: "trait/[trait_name]"
         settings:
             chado_base_table: cvterm
