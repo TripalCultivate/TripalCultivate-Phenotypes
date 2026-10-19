@@ -24,7 +24,6 @@ use Drupal\tripal_chado\TripalStorage\ChadoTextStoragePropertyType;
   description: new TranslatableMarkup('Add a mehtod and a unit associated with the trait.'),
   default_widget: 'chado_methodunit_widget_default',
   default_formatter: 'chado_methodunit_formatter_default',
-  cardinality: 1,
 )]
 class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
 
@@ -64,15 +63,6 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
   }
 
   /**
-   * Valid column types to pass to the ChadoFieldItemBase parent class.
-   *
-   * @var array
-   *   Columns of the types listed here will be added to the select list on
-   *   the field configuration form.
-   */
-  protected static $valid_base_column_types = ['character', 'character varying'];
-
-  /**
    * {@inheritdoc}
    */
   public static function defaultFieldSettings() {
@@ -103,22 +93,6 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
    */
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $elements = parent::storageSettingsForm($form, $form_state, $has_data);
-
-    /**
-     * Provides a form element to set the max_length setting.
-     * @code
-     * $elements['max_length'] = [
-     *   '#type' => 'number',
-     *   '#title' => t('Maximum length'),
-     *   '#default_value' => $this->getSetting('max_length'),
-     *   '#required' => TRUE,
-     *   '#description' => t('The maximum length of the field in characters.'),
-     *   '#min' => 1,
-     *   '#disabled' => $has_data,
-     * ];
-     * @endcode
-     */
-
     return $elements;
   }
 
@@ -165,11 +139,18 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
       $base_table,
       $object_pkey_col
     );
+    if ($base_table === 'cvterm') {
+      $linker_table = 'cvterm_relationship';
+      $linker_fkey_column = 'object_id';
+      $linker_left_col = 'subject_id';
+    }
+    else {
+      $linker_left_col = self::getChadoForeignKeyColumn($linker_table, $base_table, $schemaObj);
+    }
     $linker_schema_def = $schemaObj->getTableDef($linker_table, ['format' => 'Drupal']);
     $linker_pkey_col = $linker_schema_def['primary key'];
     $terms['linker_pkey'] = $terms['record_id'];
 
-    $linker_left_col = self::getChadoForeignKeyColumn($linker_table, $base_table, $schemaObj);
     $terms['linker_left'] = $mappingObj->getColumnTermId($linker_table, $linker_left_col)
       ?: self::$record_id_term;
     $terms['linker_right'] = $mappingObj->getColumnTermId($linker_table, $linker_fkey_column)
@@ -216,7 +197,8 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
       'table_alias_mapping' => $table_mapping,
     ]);
 
-    $properties[] = new ChadoIntStoragePropertyType($entity_type_id, self::$id, $linker_fkey_column, $terms['linker_right'], [
+    $object_property = $base_table === 'cvterm' ? 'cvterm_id' : $linker_fkey_column;
+    $properties[] = new ChadoIntStoragePropertyType($entity_type_id, self::$id, $object_property, $terms['linker_right'], [
       'action' => 'store',
       'drupal_store' => TRUE,
       'path' => $table_alias . '.' . $linker_fkey_column,
@@ -233,13 +215,17 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
       'as' => 'linker_type_id',
     ]);
 
-    $properties[] = new ChadoIntStoragePropertyType($entity_type_id, self::$id, 'linker_rank', $terms['linker_rank'], [
-      'action' => 'store',
-      'drupal_store' => FALSE,
-      'path' => $table_alias . '.rank',
-      'table_alias_mapping' => $table_mapping,
-      'as' => 'linker_rank',
-    ]);
+    // cvterm_relationship.rank defaults to 0, so don't include it in the
+    // cvterm-backed method lookup query.
+    if ($base_table !== 'cvterm') {
+      $properties[] = new ChadoIntStoragePropertyType($entity_type_id, self::$id, 'linker_rank', $terms['linker_rank'], [
+        'action' => 'store',
+        'drupal_store' => FALSE,
+        'path' => $table_alias . '.rank',
+        'table_alias_mapping' => $table_mapping,
+        'as' => 'linker_rank',
+      ]);
+    }
 
     $properties[] = new ChadoVarCharStoragePropertyType($entity_type_id, self::$id, 'cvterm_name', $terms['name'], 255, [
       'action' => 'read_value',

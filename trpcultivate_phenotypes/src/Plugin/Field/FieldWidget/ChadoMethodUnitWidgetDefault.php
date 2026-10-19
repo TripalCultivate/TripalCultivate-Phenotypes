@@ -29,9 +29,9 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     // Get the field settings.
     $field_definition = $items[$delta]->getFieldDefinition();
     $storage_settings = $field_definition->getSetting('storage_plugin_settings');
-    $object_column = !empty($storage_settings['object_column'])
-      ? $storage_settings['object_column']
-      : 'cvterm_id';
+    $object_column = ($storage_settings['base_table'] ?? '') === 'cvterm'
+      ? 'cvterm_id'
+      : (!empty($storage_settings['object_column']) ? $storage_settings['object_column'] : 'cvterm_id');
     $property_definitions = $items[$delta]->getFieldDefinition()->getFieldStorageDefinition()->getPropertyDefinitions();
     $field_name = $items->getFieldDefinition()->get('field_name');
 
@@ -39,6 +39,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     $record_id = $item_vals['record_id'] ?? 0;
     $linker_id = $item_vals['linker_id'] ?? 0;
     $link = $item_vals['link'] ?? 0;
+    $method_name = $item_vals['cvterm_name'] ?? '';
     $definition = $item_vals['cvterm_definition'] ?? '';
 
     $elements = [];
@@ -65,12 +66,27 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
       '#default_value' => $field_name,
     ];
 
-    $elements['cvterm_definition'] = $element + [
+    $elements['cvterm_name'] = $element + [
+      '#type' => 'textfield',
+      '#title' => $this->t('Method'),
+      '#default_value' => $method_name,
+      '#maxlength' => 255,
+      '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
+      '#autocomplete_route_parameters' => [
+        'count' => 10,
+        'cv_id' => 0,
+      ],
+      '#description' => $this->t('Select an existing method.'),
+    ];
+    $elements['cvterm_definition'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Method definition'),
       '#default_value' => $definition,
       '#rows' => 4,
-      '#description' => $this->t('Enter the exact definition of an existing method.'),
+      '#attributes' => [
+        'readonly' => 'readonly',
+      ],
+      '#description' => $this->t('Definition from the selected method in Chado.'),
     ];
 
     // If there is a type_id and the value is not already set, then we want to
@@ -124,23 +140,26 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     $connection = \Drupal::service('tripal_chado.database');
 
     foreach ($values as $delta => $value) {
-      $definition = $value['cvterm_definition'] ?? '';
-      if (trim($definition) === '') {
-        $values[$delta][$object_column] = '';
+      $method_name = trim($value['cvterm_name'] ?? '');
+      if ($method_name === '') {
+        $values[$delta][$object_column] = 0;
         continue;
       }
 
+      // Chado autocomplete labels may include additional term details in
+      // parentheses; the cvterm name itself is the part before those details.
+      $method_name = trim(preg_replace('/\s*\(.*?\)/', '', $method_name));
       $method_ids = $connection->select('1:cvterm', 'cvterm')
         ->fields('cvterm', ['cvterm_id'])
-        ->condition('cvterm.definition', $definition, '=')
+        ->condition('cvterm.name', $method_name, '=')
         ->range(0, 2)
         ->execute()
         ->fetchCol();
 
       if (count($method_ids) !== 1) {
         $message = count($method_ids) === 0
-          ? $this->t('No existing method has this exact definition.')
-          : $this->t('More than one method has this exact definition. Enter a definition that uniquely identifies a method.');
+          ? $this->t('No existing method has this name.')
+          : $this->t('More than one method has this name. Select a method with a unique name.');
         $form_state->setErrorByName($field_name, $message);
         $values[$delta][$object_column] = 0;
         continue;
