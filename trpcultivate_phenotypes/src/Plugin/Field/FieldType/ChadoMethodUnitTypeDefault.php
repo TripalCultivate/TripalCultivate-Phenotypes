@@ -254,18 +254,16 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
     $max_length = 100;
 
     // Generate a random value to use as a sample.
-    $random = new Random();
     $values['record_id'] = 0;
     $values['entity_id'] = 0;
     $values['linker_id'] = 0;
     $values['link'] = 0;
-    $values['linker_type_id'] = $random->numberBetween(1, $max_length);
+    $values['linker_type_id'] = mt_rand(1, $max_length);
     $values['linker_rank'] = 0;
     $values['cvterm_name'] = '';
     $values['cvterm_definition'] = '';
-    $values[self::$object_id] = 0;
 
-    return $values;
+    return [$values];
   }
 
   /**
@@ -308,15 +306,34 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
    * @see \Drupal\tripal_chado\TripalField\ChadoFieldItemBase::isCompatible()
    */
   public function isCompatible(TripalEntityType $entity_type) : bool {
-    $compatible = TRUE;
-
     // Get the base table for the content type.
+    $has_linker = FALSE;
     $base_table = $entity_type->getThirdPartySetting('tripal', 'chado_base_table');
-    $table_columns = $this->getTableColumns($base_table, self::$valid_base_column_types);
-    if (count($table_columns) < 1) {
-      $compatible = FALSE;
+    $chado = \Drupal::service('tripal_chado.database');
+    $schema = $chado->schema();
+    $relationship_table = $base_table . '_relationship';
+    $table_exists = $schema->tableExists($relationship_table);
+    if ($table_exists) {
+      $has_linker = TRUE;
     }
-    return $compatible;
+
+    // Ensure that the relationship table has a type_id.
+    $has_type_id = FALSE;
+
+    // Only check for the type_id column if the relationship table exists,
+    // otherwise checking for the field would throw a database exception.
+    if ($has_linker) {
+      $has_type_id = $schema->fieldExists($relationship_table, 'type_id');
+      if (!$has_type_id) {
+        \Drupal::messenger()->addError('The Chado Method Unit Type field requires a type_id in the linking table. This is not present in Chado 1.31 but will likely be added in subsequent versions.');
+      }
+    }
+
+    // Only compatible if there is a linker and it has a type_id.
+    if ($has_linker and $has_type_id) {
+      return TRUE;
+    }
+    return FALSE;
   }
 
 }
