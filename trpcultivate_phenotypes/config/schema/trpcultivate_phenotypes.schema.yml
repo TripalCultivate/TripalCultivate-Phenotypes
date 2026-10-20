@@ -221,3 +221,44 @@ trpcultivate_phenotypes.phenodata_backup.*:
     user_id:
       type: string
       label: 'The user id of the user who uploaded the data file.'
+
+## Chado MethodUnit Field.
+field.field_settings.chado_methodunit_type_default:
+  type: mapping
+  mapping: {}
+
+field.storage_settings.chado_methodunit_type_default:
+  type: tripal_chado.linking_table_storage_settings
+  mapping:
+    storage_plugin_settings:
+      type: mapping
+      label: 'Tripal Storage-specific Settings'
+      mapping:
+        base_table:
+          type: 'string'
+          label: 'The base table of the content type (e.g. cvterm).'
+          nullable: FALSE
+        base_column:
+          type: 'string'
+          label: 'The primary key of the base table (e.g. cvterm_id).'
+          nullable: FALSE
+        linker_table:
+          type: 'string'
+          label: 'The table linking two versions of the base table together (e.g. cvterm_relationship).'
+          nullable: TRUE
+        subject_column:
+          type: 'string'
+          label: 'The column in the cvterm table which is a foreign key for the cvterm subject pointing to the base table.'
+          nullable: TRUE
+        object_column:
+          type: 'string'
+          label: 'The column in the cvterm table which is a foreign key for the cvterm object pointing to the base table.'
+          nullable: TRUE
+
+field.widget.settings.chado_methodunit_widget_default:
+  type: mapping
+  mapping: {}
+
+field.formatter.settings.chado_methodunit_formatter_default:
+  type: mapping
+  mapping: {}
