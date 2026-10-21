@@ -1,0 +1,133 @@
+system-under-test:
+  chado_version: 1.3.3.013
+  bundle:
+    label: Phenotypic Trait
+    termIdSpace: NCIT
+    termAccession: 'C85496'
+    id: traits
+    settings:
+      chado_base_table: cvterm
+  fields:
+    - name: 'trait_name'
+      type: 'chado_string_type_default'
+      type_class: 'Drupal\tripal_chado\Plugin\Field\FieldType\ChadoStringTypeDefault'
+      cardinality: 1
+      widget: 'chado_string_type_widget'
+      formatter: 'chado_string_type_formatter'
+      settings:
+        termIdSpace: 'schema'
+        termAccession: 'name'
+        debug: false
+        storage_plugin_settings:
+          base_column: 'name'
+          base_table: 'cvterm'
+        storage_plugin_id: 'chado_storage'
+    - name: 'trait_definition'
+      type: 'chado_text_type_default'
+      type_class: 'Drupal\tripal_chado\Plugin\Field\FieldType\ChadoTextTypeDefault'
+      cardinality: 1
+      widget: 'chado_text_type_widget'
+      formatter: 'chado_text_type_formatter'
+      settings:
+        termIdSpace: IAO
+        termAccession: '0000115'
+        debug: false
+        storage_plugin_settings:
+          base_column: 'definition'
+          base_table: 'cvterm'
+        storage_plugin_id: 'chado_storage'
+    - name: trait_cv
+      type: 'chado_integer_type_default'
+      type_class: 'Drupal\tripal_chado\Plugin\Field\FieldType\ChadoIntegerTypeDefault'
+      cardinality: 1
+      widget: 'chado_integer_type_widget'
+      formatter: 'chado_integer_type_formatter'
+      settings:
+        termIdSpace: 'NCIT'
+        termAccession: 'C48697'
+        debug: false
+        storage_plugin_settings:
+          base_column: 'cv_id'
+          base_table: 'cvterm'
+        storage_plugin_id: 'chado_storage'
+    - name: trait_method
+      type: 'chado_methodunit_type_default'
+      type_class: 'Drupal\trpcultivate_phenotypes\Plugin\Field\FieldType\ChadoMethodUnitTypeDefault'
+      cardinality: -1
+      widget: 'chado_methodunit_type_widget'
+      formatter: 'chado_methodunit_type_formatter'
+      termIdSpace: 'NCIT'
+      termAccession: 'C71460'
+      settings:
+        termIdSpace: 'NCIT'
+        termAccession: 'C71460'
+        debug: false
+        storage_plugin_settings:
+          base_table: 'cvterm'
+          base_column: 'name'
+          linker_table: 'cvterm_relationship'
+          subject_column: 'subject_id'
+          object_column: 'object_id'
+        storage_plugin_id: 'chado_storage'
+scenarios:
+  - label: 'Default Values Only'
+    description: 'Creates a page using only default values for each field.'
+    create:
+      user_input:
+        trait_name:
+          - record_id: 0
+            value: 'Plant Height'
+        trait_definition:
+          - record_id: 0
+            value: 'A plant height trait is the vertical dimension of a plant service as a significant morphological characteristic'
+        trait_cv:
+          - record_id: 0
+            value: 1
+        trait_method:
+          - record_id: 0
+            linker_id: 0
+            cvterm_name: ''
+            cvterm_definition: ''
+      expected:
+        trait_name:
+          - value: 'Plant Height'
+        trait_definition:
+          - value: 'A plant height trait is the vertical dimension of a plant service as a significant morphological characteristic'
+        trait_cv:
+          - value: 1
+        trait_method:
+          - record_id: 0
+            linker_id: 0
+            cvterm_name: ''
+            cvterm_definition: ''
+    edit:
+      user_input:
+        trait_name:
+          - record_id: 1
+            value: 'Plant Height'
+        trait_definition:
+          - record_id: 1
+            value: 'A plant height trait is the vertical dimension of a plant service as a significant morphological characteristic'
+        trait_cv:
+          - record_id: 1
+            value: 1
+        trait_method:
+          - record_id: 1
+            linker_id: 0
+            cvterm_name: 'PLHT'
+            cvterm_definition: "Place a measuring tape, ruler, or meter stick at the soil surface or the base of the pot and extend it to the highest point of the plant's canopy or apical bud. Record the measurement, along with the date, to track growth over time."
+      expected:
+        trait_name:
+          - record_id: 1
+            value: 'Plant Height'
+        trait_definition:
+          - record_id: 1
+            value: 'A plant height trait is the vertical dimension of a plant service as a significant morphological characteristic'
+        trait_cv:
+          - record_id: 1
+            value: 1
+        trait_method:
+          - record_id: 1
+            linker_id: 0
+            cvterm_name: 'PLHT'
+            cvterm_definition: "Place a measuring tape, ruler, or meter stick at the soil surface or the base of the pot and extend it to the highest point of the plant's canopy or apical bud. Record the measurement, along with the date, to track growth over time."
