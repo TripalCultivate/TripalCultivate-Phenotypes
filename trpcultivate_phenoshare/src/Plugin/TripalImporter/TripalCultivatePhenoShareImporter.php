@@ -641,7 +641,7 @@ class TripalCultivatePhenoShareImporter extends ChadoImporterBase implements Con
       '#name' => 'genus',
       '#type' => 'select',
       '#required' => TRUE,
-      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment. Please contact us if you do not see the intended genus.'),
+      '#description' => $this->t('Select the genus for the germplasm represented within the data being uploaded. This genus must be configured for the selected Research Experiment. Please contact the site administrator if you do not see the intended genus.'),
       '#description_display' => 'after',
       '#options' => $active_genus,
       '#empty_option' => 'Select a Genus',
