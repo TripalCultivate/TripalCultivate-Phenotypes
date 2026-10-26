@@ -500,7 +500,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           $combo_ids = $trait->cvterm_id . ':' . $method->cvterm_id . ':' . $method_unit->cvterm_id;
 
           // Exclude from list - trait-method-unit combo already in experiment.
-          if (array_filter($exp_all_combos, function ($combo) use($combo_ids) {
+          if (array_filter($exp_all_combos, function ($combo) use ($combo_ids) {
             return $combo_ids == implode(':', [$combo->attr_id, $combo->observable_id, $combo->unit_id]);
           })) {
 
