@@ -82,3 +82,107 @@ fields:
             default:
               region: content
               weight: 14
+
+    -   name: trait_dbxref
+        content_type: trait
+        label: Accession
+        type: chado_dbxref_type_default
+        description: "The ID where this record may be available in an external online database."
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: cvterm
+                base_column: dbxref_id
+        settings:
+            termIdSpace: SBO
+            termAccession: "0000554"
+        display:
+            view:
+                default:
+                  region: content
+                  label: above
+                  weight: 70
+            form:
+                default:
+                    region: content
+                    weight: 70
+
+    -   name: trait_is_obsolete
+        content_type: trait
+        label: Is Obsolete
+        type: chado_boolean_type_default
+        description:
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: cvterm
+                base_column: is_obsolete
+        settings:
+            termIdSpace: local
+            termAccession: is_obsolete
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 80
+          form:
+            default:
+              region: content
+              weight: 80
+
+    -   name: trait_is_relationshiptype
+        content_type: trait
+        label: Relationship
+        type: chado_boolean_type_default
+        description:
+        cardinality: 1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: cvterm
+                base_column: is_relationshiptype
+        settings:
+            termIdSpace: local
+            termAccession: relationship
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 90
+          form:
+            default:
+              region: content
+              weight: 90
+
+    -   name: trait_method
+        content_type: trait
+        label: Method
+        type: chado_methodunit_type_default
+        description: "The method used to measure this trait and the unit of measurement."
+        cardinality: -1
+        required: false
+        storage_settings:
+            storage_plugin_id: chado_storage
+            storage_plugin_settings:
+                base_table: cvterm
+                base_column: cvterm_id
+        settings:
+            termIdSpace: NCIT
+            termAccession: C71460
+        display:
+          view:
+            default:
+              region: content
+              label: above
+              weight: 50
+          form:
+            default:
+              region: content
+              weight: 50
