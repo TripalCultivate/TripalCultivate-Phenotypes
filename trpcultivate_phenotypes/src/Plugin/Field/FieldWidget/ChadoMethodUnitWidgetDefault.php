@@ -29,7 +29,8 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     // Get the field settings.
     $field_definition = $items[$delta]->getFieldDefinition();
     $storage_settings = $field_definition->getSetting('storage_plugin_settings');
-    $object_column = ($storage_settings['base_table'] ?? '') === 'cvterm'
+
+    $linker_fkey_column = ($storage_settings['base_table'] ?? '') === 'cvterm'
       ? 'cvterm_id'
       : (!empty($storage_settings['object_column']) ? $storage_settings['object_column'] : 'cvterm_id');
     $property_definitions = $items[$delta]->getFieldDefinition()->getFieldStorageDefinition()->getPropertyDefinitions();
@@ -39,7 +40,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     $record_id = $item_vals['record_id'] ?? 0;
     $linker_id = $item_vals['linker_id'] ?? 0;
     $link = $item_vals['link'] ?? 0;
-    $method_name = $item_vals['cvterm_name'] ?? '';
+    $cvterm_id = $item_vals[$linker_fkey_column] ?? 0;
     $definition = $item_vals['cvterm_definition'] ?? '';
 
     $elements = [];
@@ -58,7 +59,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     // Pass the method column through the form for massageFormValues().
     $elements['linker_fkey_column'] = [
       '#type' => 'value',
-      '#default_value' => $object_column,
+      '#default_value' => $linker_fkey_column,
     ];
     // Pass the field machine name through the form for massageFormValues().
     $elements['field_name'] = [
@@ -66,18 +67,20 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
       '#default_value' => $field_name,
     ];
 
-    $elements['cvterm_name'] = $element + [
-      '#type' => 'textfield',
-      '#title' => $this->t('Method'),
-      '#default_value' => $method_name,
-      '#maxlength' => 255,
-      '#autocomplete_route_name' => 'tripal_chado.cvterm_autocomplete',
-      '#autocomplete_route_parameters' => [
-        'count' => 10,
-        'cv_id' => 0,
-      ],
-      '#description' => $this->t('Select an existing method.'),
+    $options = [
+      'base_table' => 'cvterm',
+      'column_name' => 'name',
+      'type_column' => 'x',
+      'property_table' => 'cvtermprop',
     ];
+
+    $select_element = $this->genericSelectElement('cvterm_id', $cvterm_id, $options);
+    $elements[$linker_fkey_column] = $element + $select_element;
+
+    // Insert the select element, either a select or an autocomplete depending
+    // on the number of options.
+    $elements[$linker_fkey_column] = $element + $select_element;
+
     $elements['cvterm_definition'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Method definition'),
@@ -130,45 +133,29 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
    * {@inheritDoc}
    */
   public function massageFormValues(array $values, array $form, FormStateInterface $form_state) {
-    if (!$values) {
-      return $values;
-    }
+    $values = $this->genericSelectMassageFormValues('cvterm_id', $values);
+    return $this->massageLinkingFormValues('cvterm_id', $values, $form_state);
+  }
 
-    $first_delta = array_key_first($values);
-    $object_column = $values[$first_delta]['linker_fkey_column'] ?? 'cvterm_id';
-    $field_name = $values[$first_delta]['field_name'] ?? 'method';
-    $connection = \Drupal::service('tripal_chado.database');
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultSettings() {
+    return self::defaultSelectSettings() + parent::defaultSettings();
+  }
 
-    foreach ($values as $delta => $value) {
-      $method_name = trim($value['cvterm_name'] ?? '');
-      if ($method_name === '') {
-        $values[$delta][$object_column] = 0;
-        continue;
-      }
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsForm(array $form, FormStateInterface $form_state) {
+    return $this->selectSettingsForm($form, $form_state) + parent::settingsForm($form, $form_state);
+  }
 
-      // Chado autocomplete labels may include additional term details in
-      // parentheses; the cvterm name itself is the part before those details.
-      $method_name = trim(preg_replace('/\s*\(.*?\)/', '', $method_name));
-      $method_ids = $connection->select('1:cvterm', 'cvterm')
-        ->fields('cvterm', ['cvterm_id'])
-        ->condition('cvterm.name', $method_name, '=')
-        ->range(0, 2)
-        ->execute()
-        ->fetchCol();
-
-      if (count($method_ids) !== 1) {
-        $message = count($method_ids) === 0
-          ? $this->t('No existing method has this name.')
-          : $this->t('More than one method has this name. Select a method with a unique name.');
-        $form_state->setErrorByName($field_name, $message);
-        $values[$delta][$object_column] = 0;
-        continue;
-      }
-
-      $values[$delta][$object_column] = (int) $method_ids[0];
-    }
-
-    return $this->massageLinkingFormValues($object_column, $values, $form_state);
+  /**
+   * {@inheritdoc}
+   */
+  public function settingsSummary() {
+    return $this->selectSettingsSummary() + parent::settingsSummary();
   }
 
 }

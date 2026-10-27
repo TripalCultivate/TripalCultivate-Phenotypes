@@ -37,21 +37,31 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
   public static $id = "chado_methodunit_type_default";
 
   /**
-   * Flag to indicate a base column selector should be shown.
+   * The chado table which is the object of the relationship.
    *
-   * @var bool
-   *   When TRUE the ChadoFieldItemBase parent class will add a base column
-   *   select list on the field configuration form. When FALSE, no selector
-   *   will be available.
+   * Note: this should be in all fields linking a base table to another
+   * main chado table (i.e. object table).
+   *
+   * @var string
    */
-  protected static $select_base_column = TRUE;
+  protected static $object_table = 'cvterm';
+
+  /**
+   * The foreign key that links the linking table to the object table.
+   *
+   * Note: this should be in all fields linking a base table to another
+   * main chado table (i.e. object table).
+   *
+   * @var string
+   */
+  protected static $object_id = 'cvterm_id';
 
   /**
    * {@inheritdoc}
    */
   public static function mainPropertyName() {
     // The property that indicates if this field is empty.
-    return 'linker_id';
+    return self::$object_id;
   }
 
   /**
@@ -59,7 +69,7 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
    */
   public static function mainDisplayPropertyName() {
     // The property to use in the entity title/url.
-    return 'value';
+    return 'cvterm_name';
   }
 
   /**
@@ -71,7 +81,8 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
     // It indicates to the publishing step to include this field.
     // If not set, then the publishing step may not be able to find matches
     // for this field based on the fixed value.
-    $settings['fixed_value'] = FALSE;
+    $settings['termIdSpace'] = 'NCIT';
+    $settings['termAccession'] = 'C71460';
     return $settings;
   }
 
@@ -80,10 +91,10 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
    */
   public static function defaultStorageSettings() {
     $storage_settings = parent::defaultStorageSettings();
-    $storage_settings['storage_plugin_settings']['base_column'] = '';
+    $storage_settings['storage_plugin_settings']['linking_method'] = '';
     $storage_settings['storage_plugin_settings']['linker_table'] = '';
-    $storage_settings['storage_plugin_settings']['subject_column'] = '';
-    $storage_settings['storage_plugin_settings']['object_column'] = '';
+    $storage_settings['storage_plugin_settings']['linker_fkey_column'] = '';
+    $storage_settings['storage_plugin_settings']['object_table'] = self::$object_table;
 
     return $storage_settings;
   }
@@ -94,6 +105,27 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
   public function storageSettingsForm(array &$form, FormStateInterface $form_state, $has_data) {
     $elements = parent::storageSettingsForm($form, $form_state, $has_data);
     return $elements;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
+    $value = [];
+
+    // Generate a random value to use as a sample.
+    $value['record_id'] = 0;
+    $value['entity_id'] = 0;
+    $value['linker_id'] = 0;
+    $value['link'] = 0;
+    $value[self::$object_id] = 0;
+
+    $value['linker_type_id'] = mt_rand(1, 500);
+    $value['linker_rank'] = 0;
+    $value['cvterm_name'] = '';
+    $value['cvterm_definition'] = '';
+
+    return [$value];
   }
 
   /**
@@ -124,14 +156,14 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
     $terms['base_pkey'] = $terms['record_id'];
 
     // Cvterm object table.
-    $object_table = 'cvterm';
-    $object_id = 'cvterm_id';
+    $object_table = self::$object_table;
     $object_schema_def = $schemaObj->getTableDef($object_table, ['format' => 'Drupal']);
     $object_pkey_col = $object_schema_def['primary key'];
     $terms['object_pkey'] = $terms['record_id'];
 
     $terms['name'] = $mappingObj->getColumnTermId($object_table, 'name') ?: 'schema:name';
-    $terms['definition'] = $mappingObj->getColumnTermId($object_table, 'definition') ?: 'schema:description';
+    $max_lengths['name'] = $object_schema_def['fields']['name']['size'];
+    $terms['definition'] = $mappingObj->getColumnTermId($object_table, 'definition') ?: 'IAO:0000115';
 
     // Linking table.
     [$linker_table, $linker_fkey_column] = self::get_linker_table_and_column(
@@ -180,7 +212,7 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
       'namespace' => self::$chadostorage_namespace,
       'function' => self::$drupal_entity_callback,
       'ftable' => $object_table,
-      'fkey' => $object_id,
+      'fkey' => self::$object_id,
     ]);
 
     $properties[] = new ChadoIntStoragePropertyType($entity_type_id, self::$id, 'linker_id', $terms['linker_pkey'], [
@@ -215,9 +247,7 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
       'as' => 'linker_type_id',
     ]);
 
-    // cvterm_relationship.rank defaults to 0, so don't include it in the
-    // cvterm-backed method lookup query.
-    if ($base_table !== 'cvterm') {
+    if (array_key_exists('rank', $linker_schema_def['fields'])) {
       $properties[] = new ChadoIntStoragePropertyType($entity_type_id, self::$id, 'linker_rank', $terms['linker_rank'], [
         'action' => 'store',
         'drupal_store' => FALSE,
@@ -244,26 +274,6 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
     ]);
 
     return $properties;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function generateSampleValue(FieldDefinitionInterface $field_definition) {
-    $values = [];
-    $max_length = 100;
-
-    // Generate a random value to use as a sample.
-    $values['record_id'] = 0;
-    $values['entity_id'] = 0;
-    $values['linker_id'] = 0;
-    $values['link'] = 0;
-    $values['linker_type_id'] = mt_rand(1, $max_length);
-    $values['linker_rank'] = 0;
-    $values['cvterm_name'] = '';
-    $values['cvterm_definition'] = '';
-
-    return [$values];
   }
 
   /**
@@ -309,24 +319,24 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
     // Get the base table for the content type.
     $has_linker = FALSE;
     $base_table = $entity_type->getThirdPartySetting('tripal', 'chado_base_table');
+    // Get the list of tables linking the base table and our object table.
     $chado = \Drupal::service('tripal_chado.database');
     $schema = $chado->schema();
-    $relationship_table = $base_table . '_relationship';
-    $table_exists = $schema->tableExists($relationship_table);
+    $linker_table = $base_table . '_relationship';
+    $table_exists = $schema->tableExists($linker_table);
     if ($table_exists) {
       $has_linker = TRUE;
     }
 
-    // Ensure that the relationship table has a type_id.
+    // Ensure that the linker table has a type_id.
     $has_type_id = FALSE;
+    $schemaObj = \Drupal::service('tripal_chado.database')->schema();
 
-    // Only check for the type_id column if the relationship table exists,
-    // otherwise checking for the field would throw a database exception.
-    if ($has_linker) {
-      $has_type_id = $schema->fieldExists($relationship_table, 'type_id');
-      if (!$has_type_id) {
-        \Drupal::messenger()->addError('The Chado Method Unit Type field requires a type_id in the linking table. This is not present in Chado 1.31 but will likely be added in subsequent versions.');
-      }
+    // Check there is a type_id field.
+    $has_type_id = $schemaObj->fieldExists($linker_table, 'type_id');
+
+    if (!$has_type_id) {
+      \Drupal::messenger()->addError('The Method Unit Type field requires a type_id in the linking table. This is not present in Chado 1.31 but will likely be added in subsequent versions. For more information, see https://github.com/GMOD/Chado/pull/144.');
     }
 
     // Only compatible if there is a linker and it has a type_id.
