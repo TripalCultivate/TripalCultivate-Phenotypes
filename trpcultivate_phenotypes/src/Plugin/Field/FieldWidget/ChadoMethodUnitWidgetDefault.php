@@ -71,7 +71,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
       'base_table' => 'cvterm',
       'column_name' => 'name',
       'type_column' => 'x',
-      'property_table' => 'cvtermprop',
+      'property_table' => 'cvterm_relationship',
     ];
 
     $select_element = $this->genericSelectElement('cvterm_id', $cvterm_id, $options);
