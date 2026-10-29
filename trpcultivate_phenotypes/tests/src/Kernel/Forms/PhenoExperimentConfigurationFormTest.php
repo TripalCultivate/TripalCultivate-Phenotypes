@@ -307,6 +307,11 @@ class PhenoExperimentConfigurationFormTest extends ChadoTestKernelBase {
       );
 
     $this->container->set('tripal.logger', $mock_logger);
+
+    // Invoke the alter table service to append phenotypes table with additional
+    // require fields.
+    $this->container->get('trpcultivate_phenotypes.setup_module_service')
+      ->alterChadoTables();
   }
 
   /**
