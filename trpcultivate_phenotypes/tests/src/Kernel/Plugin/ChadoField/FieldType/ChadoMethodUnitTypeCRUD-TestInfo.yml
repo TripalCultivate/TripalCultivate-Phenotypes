@@ -54,20 +54,15 @@ system-under-test:
       type: 'chado_methodunit_type_default'
       type_class: 'Drupal\trpcultivate_phenotypes\Plugin\Field\FieldType\ChadoMethodUnitTypeDefault'
       cardinality: -1
-      widget: 'chado_methodunit_type_widget'
-      formatter: 'chado_methodunit_type_formatter'
-      termIdSpace: 'NCIT'
-      termAccession: 'C71460'
+      widget: 'chado_methodunit_widget_default'
+      formatter: 'chado_methodunit_formatter_default'
       settings:
         termIdSpace: 'NCIT'
         termAccession: 'C71460'
         debug: false
         storage_plugin_settings:
           base_table: 'cvterm'
-          base_column: 'name'
-          linker_table: 'cvterm_relationship'
-          subject_column: 'subject_id'
-          object_column: 'object_id'
+          base_column: 'cvterm_id'
         storage_plugin_id: 'chado_storage'
 scenarios:
   - label: 'Default Values Only'

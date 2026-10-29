@@ -4,10 +4,12 @@ namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Plugin\ChadoField\FieldTyp
 
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\tripal_chado\Traits\ChadoFieldTestTrait;
+use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
 use Drupal\tripal\Entity\TripalEntity;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Drupal\tripal_chado\Database\ChadoConnection;
 
 /**
  * Tests the Field Types in the associated Test Info YAML.
@@ -24,6 +26,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 class ChadoMethodUnitTypeCRUDTest extends ChadoTestKernelBase {
 
   use ChadoFieldTestTrait;
+  use PhenotypeImporterTestTrait;
 
   /**
    * The theme to use when rendering content in the test environment.
@@ -55,9 +58,9 @@ class ChadoMethodUnitTypeCRUDTest extends ChadoTestKernelBase {
   /**
    * The test chado connection. It is also set in the container.
    *
-   * @var ChadoConnection
+   * @var Drupal\tripal_chado\Database\ChadoConnection
    */
-  protected object $chado_connection;
+  protected ChadoConnection $chado_connection;
 
   /**
    * The test drupal connection. It is also set in the container.
@@ -65,6 +68,13 @@ class ChadoMethodUnitTypeCRUDTest extends ChadoTestKernelBase {
    * @var object
    */
   protected object $drupal_connection;
+
+  /**
+   * The genus configured for the test Chado database.
+   *
+   * @var string
+   */
+  protected string $genus;
 
   /**
    * The YAML file indicating the scenarios to test and how to setup the enviro.
@@ -90,6 +100,23 @@ class ChadoMethodUnitTypeCRUDTest extends ChadoTestKernelBase {
    * @var string
    */
   protected string $bundle_name;
+
+  /**
+   * Test genus with a set of test traits.
+   *
+   * The genus with empty trait is used to test multiple genus features of the
+   * trait selector form.
+   *
+   * @var array
+   */
+  private $trait_set = [
+    'Trait Name' => 'Plant Height',
+    'Trait Description' => 'A plant height trait is the vertical dimension of a plant service as a significant morphological characteristic',
+    'Method Short Name' => 'PLHT',
+    'Collection Method' => "Place a measuring tape, ruler, or meter stick at the soil surface or the base of the pot and extend it to the highest point of the plant's canopy or apical bud. Record the measurement, along with the date, to track growth over time.",
+    'Unit' => 'cm',
+    'Type' => 'Quantitative',
+  ];
 
   /**
    * Describes the scenarios to test.
@@ -138,6 +165,33 @@ class ChadoMethodUnitTypeCRUDTest extends ChadoTestKernelBase {
       ChadoTestKernelBase::PREPARE_TEST_CHADO,
       $this->system_under_test['chado_version']
     );
+
+    // Install module configuration/settings.
+    $this->installConfig(['trpcultivate_phenotypes']);
+    $this->installSchema('trpcultivate_phenotypes', ['trpcultivate_phenocombo']);
+
+    // Configure the module.
+    $genus = 'Lens';
+    $organism_id = $this->chado_connection->insert('1:organism')
+      ->fields([
+        'genus' => $genus,
+        'species' => 'culinaris',
+      ])
+      ->execute();
+
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
+    $this->setOntologyConfig($genus);
+    $this->setTermConfig();
+
+    // Set the traits service.
+    $trait_service = $this->container->get('trpcultivate_phenotypes.traits');
+    $trait_service->setTraitGenus($genus);
+
+    // Only Lens genus gets a set of traits.
+    $trait_assets = $trait_service->insertTrait($this->trait_set);
+    $method_id = $trait_assets['method'];
+    $this->scenarios[0]['edit']['user_input']['trait_method'][0]['cvterm_id'] = $method_id;
+    $this->scenarios[0]['edit']['expected']['trait_method'][0]['cvterm_id'] = $method_id;
 
     // Next setup the environment according to the system under test.
     $this->setupChadoEntityFieldTestEnvironment($this->system_under_test);
