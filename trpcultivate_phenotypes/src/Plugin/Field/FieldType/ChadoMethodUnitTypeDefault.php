@@ -2,8 +2,8 @@
 
 namespace Drupal\trpcultivate_phenotypes\Plugin\Field\FieldType;
 
-use Drupal\core\Field\FieldDefinitionInterface;
-use Drupal\core\Form\FormStateInterface;
+use Drupal\Core\Field\FieldDefinitionInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tripal\TripalField\Attribute\TripalFieldType;
 use Drupal\tripal\Entity\TripalEntityType;
@@ -320,23 +320,24 @@ class ChadoMethodUnitTypeDefault extends ChadoFieldItemBase {
     $has_linker = FALSE;
     $base_table = $entity_type->getThirdPartySetting('tripal', 'chado_base_table');
     // Get the list of tables linking the base table and our object table.
-    $chado = \Drupal::service('tripal_chado.database');
-    $schema = $chado->schema();
-    $linker_table = $base_table . '_relationship';
-    $table_exists = $schema->tableExists($linker_table);
-    if ($table_exists) {
+    $linker_tables = $this->getLinkerTables(self::$object_table, $base_table);
+    if (!empty($linker_tables)) {
       $has_linker = TRUE;
     }
 
     // Ensure that the linker table has a type_id.
     $has_type_id = FALSE;
     $schemaObj = \Drupal::service('tripal_chado.database')->schema();
+    foreach ($linker_tables as $item) {
 
-    // Check there is a type_id field.
-    $has_type_id = $schemaObj->fieldExists($linker_table, 'type_id');
+      $table_name = $item[0];
 
-    if (!$has_type_id) {
-      \Drupal::messenger()->addError('The Method Unit Type field requires a type_id in the linking table. This is not present in Chado 1.31 but will likely be added in subsequent versions. For more information, see https://github.com/GMOD/Chado/pull/144.');
+      // Check there is a type_id field.
+      $has_type_id = $schemaObj->fieldExists($table_name, 'type_id');
+
+      if (!$has_type_id) {
+        \Drupal::messenger()->addError('The Method Unit field requires a type_id in the linking table. This is not present in Chado 1.31 but will likely be added in subsequent versions. For more information, see https://github.com/GMOD/Chado/pull/144.');
+      }
     }
 
     // Only compatible if there is a linker and it has a type_id.
