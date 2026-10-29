@@ -10,6 +10,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\tripal\Services\TripalLogger;
 use Drupal\tripal_chado\Database\ChadoConnection;
+use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusOntologyService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesGenusProjectService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTraitsService;
@@ -65,6 +66,13 @@ class PhenoExperimentConfigurationForm extends FormBase {
   protected TripalCultivatePhenotypesTraitsService $service_PhenoTraits;
 
   /**
+   * PhenoCombo service.
+   *
+   * @var \Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService
+   */
+  protected ExperimentPhenoComboService $service_PhenoCombo;
+
+  /**
    * The table name.
    *
    * @var string
@@ -86,6 +94,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *   TripalCultivate Phenotypes Genus-Project service.
    * @param \Drupal\trpcultivate_phenotypes\Service\ripalCultivatePhenotypesTraitsService $service_PhenoTraits
    *   TripalCultivate Phenotypes Traits service.
+   * @param \Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService $service_PhenoCombo
+   *   TripalCultivate Phenotypes PhenoCombo service.
    */
   public function __construct(
     Connection $drupaldb_connection,
@@ -94,14 +104,17 @@ class PhenoExperimentConfigurationForm extends FormBase {
     TripalCultivatePhenotypesGenusOntologyService $service_PhenoGenusOntology,
     TripalCultivatePhenotypesGenusProjectService $service_PhenoGenusProject,
     TripalCultivatePhenotypesTraitsService $service_PhenoTraits,
+    ExperimentPhenoComboService $service_PhenoCombo,
   ) {
 
     $this->drupaldb_connection = $drupaldb_connection;
     $this->chado_connection = $chado_connection;
     $this->tripal_logger = $tripal_logger;
+
     $this->service_PhenoGenusOntology = $service_PhenoGenusOntology;
     $this->service_PhenoGenusProject = $service_PhenoGenusProject;
     $this->service_PhenoTraits = $service_PhenoTraits;
+    $this->service_PhenoCombo = $service_PhenoCombo;
   }
 
   /**
@@ -116,6 +129,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $container->get('trpcultivate_phenotypes.genus_ontology'),
       $container->get('trpcultivate_phenotypes.genus_project'),
       $container->get('trpcultivate_phenotypes.traits'),
+      $container->get('trpcultivate_phenotypes.pheno_combo'),
     );
   }
 
@@ -167,6 +181,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
       throw new NotFoundHttpException();
     }
+
+    // Set the PhenoCombo service experiment context to the current experiment.
+    $this->service_PhenoCombo->setExperiment($experiment_id);
 
     // Create a mapping array to map cv name to a genus and populate the genus
     // filter select field with phenotypes configured genus options.
@@ -300,7 +317,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       foreach (['remove', 'require', 'optional', 'active', 'archive'] as $action) {
         if ((int) $request->query->get($action) > 0) {
           $combo_id = $request->query->get($action);
-          $this->handleOperation($action, $experiment_id, $combo_id);
+          $this->handleOperation($action, $combo_id);
 
           break;
         }
@@ -507,25 +524,12 @@ class PhenoExperimentConfigurationForm extends FormBase {
    *
    * @param string $action
    *   One of - remove, require, optional, active, or archive.
-   * @param int $project_id
-   *   The project id the combo id is specific to.
    * @param int $combo_id
    *   The combo id to apply an action to.
    */
-  public function handleOperation(string $action, int $project_id, int $combo_id): void {
+  public function handleOperation(string $action, int $combo_id): void {
 
-    $combo = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc')
-      ->fields('tc', ['combo_id', 'is_archived', 'was_shared', 'was_collected'])
-      ->condition('tc.combo_id', $combo_id, '=')
-      ->condition('tc.project_id', $project_id, '=')
-      ->execute()
-      ->fetchObject();
-
-    if (!$combo) {
-      $this->messenger()
-        ->addError($message = 'Invalid request: Could not find trait combo.');
-      throw new AccessDeniedHttpException($message);
-    }
+    $combo = $this->service_PhenoCombo->getExperimentPhenoCombo($combo_id);
 
     $ok = 0;
 
@@ -539,23 +543,8 @@ class PhenoExperimentConfigurationForm extends FormBase {
           throw new AccessDeniedHttpException($message);
         }
 
-        $transaction = $this->drupaldb_connection->startTransaction();
-        try {
-          $ok = $this->chado_connection
-            ->delete(self::PHENO_COMBO_TABLE)
-            ->condition('combo_id', $combo->combo_id, '=')
-            ->execute();
-
-          if (method_exists($transaction, 'commitOrRelease')) {
-            $transaction->commitOrRelease();
-          }
-        }
-        catch (\Exception $e) {
-          $transaction->rollback();
-
-          $this->tripal_logger->error($msg = 'Invalid request: Failed to remove trait from experiment.');
-          $this->messenger()->addStatus($msg);
-        }
+        $this->service_PhenoCombo->removePhenoComboFromExperiment($combo_id);
+        $ok = 1;
 
         break;
 
@@ -571,29 +560,12 @@ class PhenoExperimentConfigurationForm extends FormBase {
           'archive' => 'is_archived',
         ];
 
-        $status = (in_array($action, ['require', 'archive'])) ? 1 : 0;
+        $this->service_PhenoCombo->setExperimentPhenoComboStatusFlags(
+          $combo_id,
+          [$field_map[$action] => (in_array($action, ['require', 'archive'])) ? 1 : 0],
+        );
 
-        $transaction = $this->drupaldb_connection->startTransaction();
-        try {
-          $ok = $this->drupaldb_connection
-            ->update(self::PHENO_COMBO_TABLE)
-            ->fields([
-              $field_map[$action] => $status,
-            ])
-            ->condition('combo_id', $combo->combo_id, '=')
-            ->condition($field_map[$action], $status, '<>')
-            ->execute();
-
-          if (method_exists($transaction, 'commitOrRelease')) {
-            $transaction->commitOrRelease();
-          }
-        }
-        catch (\Exception $e) {
-          $transaction->rollback();
-
-          $this->tripal_logger->error($msg = 'Invalid request: Failed to update trait status.');
-          $this->messenger()->addStatus($msg);
-        }
+        $ok = 1;
 
         break;
     }
