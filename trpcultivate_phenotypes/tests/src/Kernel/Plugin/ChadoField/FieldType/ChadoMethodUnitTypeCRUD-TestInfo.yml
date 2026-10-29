@@ -1,12 +1,12 @@
 system-under-test:
-  chado_version: 1.3.3.013
+  chado_version: '1.3.3.013'
   bundle:
-    label: Phenotypic Trait
-    termIdSpace: NCIT
+    label: 'Phenotypic Trait'
+    termIdSpace: 'NCIT'
     termAccession: 'C85496'
-    id: traits
+    id: 'traits'
     settings:
-      chado_base_table: cvterm
+      chado_base_table: 'cvterm'
   fields:
     - name: 'trait_name'
       type: 'chado_string_type_default'
@@ -29,14 +29,14 @@ system-under-test:
       widget: 'chado_text_type_widget'
       formatter: 'chado_text_type_formatter'
       settings:
-        termIdSpace: IAO
+        termIdSpace: 'IAO'
         termAccession: '0000115'
         debug: false
         storage_plugin_settings:
           base_column: 'definition'
           base_table: 'cvterm'
         storage_plugin_id: 'chado_storage'
-    - name: trait_cv
+    - name: 'trait_cv'
       type: 'chado_integer_type_default'
       type_class: 'Drupal\tripal_chado\Plugin\Field\FieldType\ChadoIntegerTypeDefault'
       cardinality: 1
@@ -50,7 +50,7 @@ system-under-test:
           base_column: 'cv_id'
           base_table: 'cvterm'
         storage_plugin_id: 'chado_storage'
-    - name: trait_method
+    - name: 'trait_method'
       type: 'chado_methodunit_type_default'
       type_class: 'Drupal\trpcultivate_phenotypes\Plugin\Field\FieldType\ChadoMethodUnitTypeDefault'
       cardinality: -1
