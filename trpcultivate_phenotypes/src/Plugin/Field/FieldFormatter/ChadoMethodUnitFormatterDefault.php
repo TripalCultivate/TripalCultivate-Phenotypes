@@ -38,24 +38,39 @@ class ChadoMethodUnitFormatterDefault extends ChadoFormatterBase {
       $unit_names = [];
       $relationship_type_id = \Drupal::service('trpcultivate_phenotypes.terms')
         ->getTermId('unit_to_method_relationship_type');
-      if ($method_id > 0 && $relationship_type_id) {
+      if ($method_id > 0) {
         $chado = \Drupal::service('tripal_chado.database');
-        $unit_ids = $chado->query(
-          "SELECT object_id FROM {1:cvterm_relationship} WHERE subject_id = :method_id AND type_id = :type_id",
-          [
-            ':method_id' => $method_id,
-            ':type_id' => $relationship_type_id,
-          ]
-        )
-          ->fetchCol();
+        if (!$method_name || !$definition) {
+          $method = $chado->query(
+            "SELECT name, definition FROM {1:cvterm} WHERE cvterm_id = :method_id",
+            [':method_id' => $method_id]
+          )
+            ->fetchObject();
 
-        if ($unit_ids) {
-          $units = $chado->query(
-            "SELECT name FROM {1:cvterm} WHERE cvterm_id IN (:unit_ids[])",
-            [':unit_ids[]' => array_values($unit_ids)]
+          if ($method) {
+            $method_name = $method_name ?: $method->name;
+            $definition = $definition ?: $method->definition;
+          }
+        }
+
+        if ($relationship_type_id) {
+          $unit_ids = $chado->query(
+            "SELECT object_id FROM {1:cvterm_relationship} WHERE subject_id = :method_id AND type_id = :type_id",
+            [
+              ':method_id' => $method_id,
+              ':type_id' => $relationship_type_id,
+            ]
           )
             ->fetchCol();
-          $unit_names = $units;
+
+          if ($unit_ids) {
+            $units = $chado->query(
+              "SELECT name FROM {1:cvterm} WHERE cvterm_id IN (:unit_ids[])",
+              [':unit_ids[]' => array_values($unit_ids)]
+            )
+              ->fetchCol();
+            $unit_names = $units;
+          }
         }
       }
 
