@@ -335,6 +335,52 @@ class ChadoMethodUnitWidgetCRUDTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Tests that selecting a method updates its definition.
+   */
+  public function testUpdateMethodDefinition() {
+    // setUp() creates this method in Chado as part of the test trait.
+    $method_id = $this->scenarios[0]['edit']['user_input']['trait_method'][0]['cvterm_id'];
+    $definition = $this->scenarios[0]['edit']['user_input']['trait_method'][0]['cvterm_definition'];
+
+    $parents = ['trait_method', 0, 'cvterm_id'];
+    $trigger = [
+      '#parents' => $parents,
+      '#array_parents' => $parents,
+    ];
+
+    $form_state = new FormState();
+    $form_state->setTriggeringElement($trigger);
+    $form_state->setValue('trait_method', [
+      0 => ['cvterm_id' => $method_id],
+    ]);
+
+    $form = [
+      'trait_method' => [
+        0 => [
+          'method_definition_wrapper' => [
+            'cvterm_definition' => [],
+          ],
+        ],
+      ],
+    ];
+
+    // The callback doesn't rely on the widget constructor, so skip it here.
+    $widget = $this->getMockBuilder(ChadoMethodUnitWidgetDefault::class)
+      ->disableOriginalConstructor()
+      ->onlyMethods([])
+      ->getMock();
+
+    $updated_wrapper = $widget->updateMethodDefinition($form, $form_state);
+
+    $this->assertSame($definition, $updated_wrapper['cvterm_definition']['#value'], "The method definition was not updated correctly when a method was selected.");
+    $this->assertSame(
+      $definition,
+      $form['trait_method'][0]['method_definition_wrapper']['cvterm_definition']['#value'],
+      "The method definition was not updated correctly in the form when a method was selected."
+    );
+  }
+
+  /**
    * Tests that duplicate method selections are rejected.
    */
   public function testDuplicateMethodsAreRejected() {
@@ -349,7 +395,7 @@ class ChadoMethodUnitWidgetCRUDTest extends ChadoTestKernelBase {
 
     ChadoMethodUnitWidgetDefault::validateUniqueMethods($element, $form_state);
 
-    $this->assertFalse($form_state->hasAnyErrors());
+    $this->assertFalse($form_state->hasAnyErrors(), "No errors were expected when selecting unique methods.");
 
     $form_state = new FormState();
     $form_state->setValue('trait_method', [
@@ -360,8 +406,8 @@ class ChadoMethodUnitWidgetCRUDTest extends ChadoTestKernelBase {
     ChadoMethodUnitWidgetDefault::validateUniqueMethods($element, $form_state);
 
     $errors = $form_state->getErrors();
-    $this->assertCount(1, $errors);
-    $this->assertSame('The method selected is not unique. Please select a different method.', (string) reset($errors));
+    $this->assertCount(1, $errors, "We expected one error when duplicate methods are selected, but found " . count($errors));
+    $this->assertSame('The method selected is not unique. Please select a different method.', (string) reset($errors), "The error message for duplicate methods did not match the expected message.");
   }
 
 }
