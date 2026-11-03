@@ -83,7 +83,7 @@ class ChadoMethodUnitFormatterCRUDTest extends ChadoTestKernelBase {
         'species' => 'culinaris',
       ])
       ->execute();
-    $this->assertIsNumeric($organism_id);
+    $this->assertIsNumeric($organism_id, 'We were not able to create an organism for testing.');
 
     $this->setTermConfig();
     $this->setupChadoEntityFieldTestEnvironment($this->system_under_test);
@@ -128,17 +128,19 @@ class ChadoMethodUnitFormatterCRUDTest extends ChadoTestKernelBase {
     $build = $entity->get('trait_method')->view();
     $children = Element::children($build);
 
-    $this->assertCount(1, $children);
+    $this->assertCount(1, $children, "Expected one method summary to be rendered, but found " . count($children));
     $method_build = $build[$children[0]];
-    $this->assertSame('details', $method_build['#type']);
-    $this->assertSame($scenario['expected']['method_name'], $method_build['#title']);
+    $this->assertSame('details', $method_build['#type'], "The method summary should be rendered as a details element.");
+    $this->assertSame($scenario['expected']['method_name'], $method_build['#title'], "The method name was not rendered correctly.");
     $this->assertSame(
       $scenario['expected']['method_definition'],
-      $method_build['definition']['#context']['definition']
+      $method_build['definition']['#context']['definition'],
+      "The method definition was not rendered correctly."
     );
     $this->assertSame(
       $scenario['expected']['unit_names'],
-      $method_build['units']['#context']['units']
+      $method_build['units']['#context']['units'],
+      "The unit names were not rendered correctly."
     );
   }
 
