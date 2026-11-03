@@ -2,10 +2,12 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Plugin\ChadoField\Widget;
 
+use Drupal\Core\Form\FormState;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\tripal_chado\Traits\ChadoFieldTestTrait;
 use Drupal\Tests\trpcultivate_phenotypes\Traits\PhenotypeImporterTestTrait;
+use Drupal\trpcultivate_phenotypes\Plugin\Field\FieldWidget\ChadoMethodUnitWidgetDefault;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -330,6 +332,36 @@ class ChadoMethodUnitWidgetCRUDTest extends ChadoTestKernelBase {
       $current_scenario['edit']['expected_field_values']['trait_method'][0]['linker_id'] = (int) $linker_id;
       $this->assertFieldValuesMatch($current_scenario['edit']['expected_field_values'], $entity, "Field values didn't match our expectations after saving the edit form");
     }
+  }
+
+  /**
+   * Tests that duplicate method selections are rejected.
+   */
+  public function testDuplicateMethodsAreRejected() {
+    $form_state = new FormState();
+    $form_state->setValue('trait_method', [
+      0 => ['cvterm_id' => '123'],
+      1 => ['cvterm_id' => '456'],
+    ]);
+    $element = [
+      '#parents' => ['trait_method', 1, 'cvterm_id'],
+    ];
+
+    ChadoMethodUnitWidgetDefault::validateUniqueMethods($element, $form_state);
+
+    $this->assertFalse($form_state->hasAnyErrors());
+
+    $form_state = new FormState();
+    $form_state->setValue('trait_method', [
+      0 => ['cvterm_id' => '123'],
+      1 => ['cvterm_id' => 'Method name (123)'],
+    ]);
+
+    ChadoMethodUnitWidgetDefault::validateUniqueMethods($element, $form_state);
+
+    $errors = $form_state->getErrors();
+    $this->assertCount(1, $errors);
+    $this->assertSame('The method selected is not unique. Please select a different method.', (string) reset($errors));
   }
 
 }

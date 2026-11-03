@@ -152,8 +152,10 @@ scenarios:
             '#type': 'value'
           cvterm_id:
             '#type': 'textfield'
-          cvterm_definition:
-            '#type': 'textarea'
+          method_definition_wrapper:
+            '#type': 'container'
+            cvterm_definition:
+              '#type': 'textarea'
       expected_field_values:
         trait_name:
           - value: 'Plant Height'
@@ -195,8 +197,10 @@ scenarios:
             '#type': 'value'
           cvterm_id:
             '#type': 'textfield'
-          cvterm_definition:
-            '#type': 'textarea'
+          method_definition_wrapper:
+            '#type': 'container'
+            cvterm_definition:
+              '#type': 'textarea'
       expected_field_values:
         trait_name:
           - record_id: 1
