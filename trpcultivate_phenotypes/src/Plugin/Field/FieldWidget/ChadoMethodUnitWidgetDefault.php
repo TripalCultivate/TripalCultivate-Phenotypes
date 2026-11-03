@@ -75,21 +75,31 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     ];
 
     $select_element = $this->genericSelectElement('cvterm_id', $cvterm_id, $options);
-    $elements[$linker_fkey_column] = $element + $select_element;
+    $wrapper_id = 'method-definition-' . $field_name . '-' . $delta;
 
     // Insert the select element, either a select or an autocomplete depending
     // on the number of options.
     $elements[$linker_fkey_column] = $element + $select_element;
+    $elements[$linker_fkey_column]['#weight'] = 10;
+    $elements[$linker_fkey_column]['#ajax'] = [
+      'callback' => [$this, 'updateMethodDefinition'],
+      'event' => 'change',
+      'wrapper' => $wrapper_id,
+    ];
+    $elements[$linker_fkey_column]['#element_validate'][] = [static::class, 'validateUniqueMethods'];
 
-    $elements['cvterm_definition'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Method definition'),
-      '#default_value' => $definition,
-      '#rows' => 4,
-      '#attributes' => [
-        'readonly' => 'readonly',
+    $elements['method_definition_wrapper'] = [
+      '#type' => 'container',
+      '#attributes' => ['id' => $wrapper_id],
+      'cvterm_definition' => [
+        '#type' => 'textarea',
+        '#title' => $this->t('Method definition'),
+        '#default_value' => $definition,
+        '#rows' => 4,
+        '#attributes' => ['readonly' => 'readonly'],
+        '#description' => $this->t('Definition from the selected method in Chado.'),
       ],
-      '#description' => $this->t('Definition from the selected method in Chado.'),
+      '#weight' => 20,
     ];
 
     // If there is a type_id and the value is not already set, then we want to
@@ -156,6 +166,109 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
    */
   public function settingsSummary() {
     return $this->selectSettingsSummary() + parent::settingsSummary();
+  }
+
+  /**
+   * Form element validation handler ensuring methods are unique.
+   *
+   * @param array $element
+   *   The method form element being validated.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state of the entire entity form.
+   */
+  public static function validateUniqueMethods(array $element, FormStateInterface $form_state) {
+    $parents = $element['#parents'];
+    if (count($parents) < 3) {
+      return;
+    }
+
+    // Get the parent elements of the field to access all values for this field.
+    $field_parents = array_slice($parents, 0, -2);
+    $current_delta = $parents[count($parents) - 2];
+    $field_values = $form_state->getValue($field_parents, []);
+    if (!is_array($field_values)) {
+      return;
+    }
+
+    // Count the occurrences of each method ID in the field values.
+    $method_counts = [];
+    foreach ($field_values as $item) {
+      if (!is_array($item)) {
+        continue;
+      }
+
+      $method_id = self::getMethodId($item['cvterm_id'] ?? '');
+      if ($method_id > 0) {
+        $method_counts[$method_id] = ($method_counts[$method_id] ?? 0) + 1;
+      }
+    }
+
+    // Get the current method value and check if it is unique.
+    $current_values = $field_values[$current_delta] ?? [];
+    if (!is_array($current_values)) {
+      return;
+    }
+    $current_method_id = self::getMethodId($current_values['cvterm_id'] ?? '');
+    if ($current_method_id > 0 && ($method_counts[$current_method_id] ?? 0) > 1) {
+      $form_state->setErrorByName(
+        implode('][', $parents),
+        t("The method selected is not unique. Please select a different method.")
+      );
+    }
+  }
+
+  /**
+   * AJAX callback to update method definition field when a method is selected.
+   */
+  public function updateMethodDefinition(array &$form, FormStateInterface $form_state) {
+    // Get the triggering element and its value (Method name).
+    $trigger = $form_state->getTriggeringElement();
+    $method_value = $form_state->getValue($trigger['#parents']);
+    $method_id = self::getMethodId($method_value);
+
+    // Get the definition of the selected method from the database.
+    $definition = '';
+    if ($method_id > 0) {
+      $definition = \Drupal::service('tripal_chado.database')->query(
+      'SELECT definition FROM {1:cvterm} WHERE cvterm_id = :id',
+      [':id' => $method_id],
+      )->fetchField() ?: '';
+    }
+
+    // Find the wrapper element in the form to update its value.
+    $wrapper_parents = $trigger['#array_parents'];
+    array_pop($wrapper_parents);
+
+    $widget = &$form;
+    foreach ($wrapper_parents as $parent) {
+      $widget = &$widget[$parent];
+    }
+
+    $widget['method_definition_wrapper']['cvterm_definition']['#value'] = $definition;
+
+    return $widget['method_definition_wrapper'];
+  }
+
+  /**
+   * Gets a method ID from a select value or autocomplete label.
+   *
+   * @param mixed $value
+   *   The submitted method value.
+   *
+   * @return int
+   *   The method ID, or zero when no ID is present.
+   */
+  private static function getMethodId(mixed $value): int {
+    // If the value is numeric, return it as an integer.
+    if (is_numeric($value)) {
+      return (int) $value;
+    }
+    // If the value is a string and matches the pattern "(ID)",
+    // extract and return the ID.
+    if (is_string($value) && preg_match('/\((\d+)\)$/', $value, $matches)) {
+      return (int) $matches[1];
+    }
+    return 0;
   }
 
 }
