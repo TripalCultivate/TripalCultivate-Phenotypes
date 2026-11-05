@@ -53,3 +53,18 @@ div.tcp-stage-title + div {
   font-weight: bold;
   padding-left: 50px;
 }
+
+/* Project autocomplete field reset icon */
+#tcp-project-field {
+  position: relative;
+}
+
+#tcp-project-field i {
+  background-color: var(--gin-bg-input);
+  cursor: pointer;
+  font-size: 1.3em;
+  position: absolute;
+  right: 25px;
+  top: 35px;
+  z-index: 1000;
+}
