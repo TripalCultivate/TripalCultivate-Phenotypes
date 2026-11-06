@@ -578,7 +578,7 @@ class ExperimentPhenoComboService {
       ->condition('tbl.project_id', $this->experiment_context, '=')
       ->condition('tbl.attr_id', $pheno_combo->attr_id, '=')
       ->condition('tbl.assay_id', $pheno_combo->assay_id, '=')
-      ->condition('tbl.assay_id', $pheno_combo->unit_id, '=')
+      ->condition('tbl.unit_id', $pheno_combo->unit_id, '=')
       ->countQuery()
       ->execute()
       ->fetchField();
