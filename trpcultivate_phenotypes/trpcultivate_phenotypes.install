@@ -86,7 +86,7 @@ function trpcultivate_phenotypes_schema() {
           'unsigned' => TRUE,
           'not null' => TRUE,
         ],
-        'observable_id' => [
+        'assay_id' => [
           'description' => 'The method used (i.e. used measuring stick from the ground to the highest greenery without touching the plant).',
           'type' => 'int',
           'unsigned' => TRUE,
@@ -152,10 +152,10 @@ function trpcultivate_phenotypes_schema() {
             'attr_id' => 'cvterm_id',
           ],
         ],
-        'observable_id' => [
+        'assay_id' => [
           'table' => 'cvterm',
           'columns' => [
-            'observable_id' => 'cvterm_id',
+            'assay_id' => 'cvterm_id',
           ],
         ],
         'unit_id' => [
@@ -175,7 +175,7 @@ function trpcultivate_phenotypes_schema() {
         'composite_key' => [
           'project_id',
           'attr_id',
-          'observable_id',
+          'assay_id',
           'unit_id',
         ],
       ],
@@ -195,7 +195,6 @@ function trpcultivate_phenotypes_update_10001() {
 
   $schema = trpcultivate_phenotypes_schema();
   $pheno_combo = array_keys($schema)[0];
-  $observable_id = array_values($schema)['fields'];
 
   if (!$db->tableExists($pheno_combo)) {
     $db->createTable($pheno_combo, $schema[$pheno_combo]);

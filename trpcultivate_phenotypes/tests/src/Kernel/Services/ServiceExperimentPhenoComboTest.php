@@ -735,7 +735,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
         'cvalue_id' => 0,
         'uniquename' => $this->randomString(),
         'name' => $this->randomString(),
-        'observable_id' => $combo->observable_id,
+        'assay_id' => $combo->assay_id,
         'attr_id' => $combo->attr_id,
         'assay_id' => $combo->unit_id,
         'cvalue_id' => 1,

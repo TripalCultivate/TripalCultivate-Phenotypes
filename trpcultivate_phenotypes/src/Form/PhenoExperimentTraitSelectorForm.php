@@ -435,12 +435,12 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
           ];
         }
         else {
-          [$attr_id, $observable_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
+          [$attr_id, $assay_id, $unit_id] = explode(':', $values[$item_key . '_combo']);
 
           $this->service_PhenoCombo->assignPhenoComboToExperiment(
             [
               'trait' => $attr_id,
-              'method' => $observable_id,
+              'method' => $assay_id,
               'unit' => $unit_id,
             ],
             [
@@ -501,7 +501,7 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
           // Exclude from list - trait-method-unit combo already in experiment.
           if (array_filter($exp_all_combos, function ($combo) use ($combo_ids) {
-            return $combo_ids == implode(':', [$combo->attr_id, $combo->observable_id, $combo->unit_id]);
+            return $combo_ids == implode(':', [$combo->attr_id, $combo->assay_id, $combo->unit_id]);
           })) {
 
             continue;
