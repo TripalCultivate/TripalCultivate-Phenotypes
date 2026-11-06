@@ -207,7 +207,7 @@ class HookAlterTest extends ChadoTestKernelBase {
       ->fields([
         'project_id',
         'attr_id',
-        'observable_id',
+        'assay_id',
         'unit_id',
         'label',
         'is_archived',

@@ -86,7 +86,7 @@ function trpcultivate_phenotypes_schema() {
           'unsigned' => TRUE,
           'not null' => TRUE,
         ],
-        'observable_id' => [
+        'assay_id' => [
           'description' => 'The method used (i.e. used measuring stick from the ground to the highest greenery without touching the plant).',
           'type' => 'int',
           'unsigned' => TRUE,
@@ -152,10 +152,10 @@ function trpcultivate_phenotypes_schema() {
             'attr_id' => 'cvterm_id',
           ],
         ],
-        'observable_id' => [
+        'assay_id' => [
           'table' => 'cvterm',
           'columns' => [
-            'observable_id' => 'cvterm_id',
+            'assay_id' => 'cvterm_id',
           ],
         ],
         'unit_id' => [
@@ -175,7 +175,7 @@ function trpcultivate_phenotypes_schema() {
         'composite_key' => [
           'project_id',
           'attr_id',
-          'observable_id',
+          'assay_id',
           'unit_id',
         ],
       ],
@@ -201,5 +201,51 @@ function trpcultivate_phenotypes_update_10001() {
 
     \Drupal::service('tripal.logger')
       ->notice('The relation ' . $pheno_combo . ' has been created.');
+  }
+}
+
+/**
+ * Replace field name to refer to method with appropriate name.
+ *
+ * trpcultivate_phenocombo.observable_id - assay_id.
+ */
+function trpcultivate_phenotypes_update_10002() {
+
+  $pheno_combo_table = 'trpcultivate_phenocombo';
+  $target_field_name = 'observable_id';
+  $replacement_field_name = 'assay_id';
+
+  $assay_id = [
+    'description' => 'The method used (i.e. used measuring stick from the ground to the highest greenery without touching the plant).',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+  ];
+
+  $unique_keys = [
+    'unique_keys' => [
+      'composite_key' => [
+        'project_id',
+        'attr_id',
+        $replacement_field_name,
+        'unit_id',
+      ],
+    ],
+  ];
+
+  $db = \Drupal::service('database')
+    ->schema();
+
+  if ($db->tableExists($pheno_combo_table) && $db->fieldExists($pheno_combo_table, $target_field_name)) {
+    $db->changeField(
+      $pheno_combo_table,
+      $target_field_name,
+      $replacement_field_name,
+      $assay_id,
+      $unique_keys
+    );
+
+    \Drupal::service('tripal.logger')
+      ->notice('The relation ' . $pheno_combo_table . ' has been updated.');
   }
 }
