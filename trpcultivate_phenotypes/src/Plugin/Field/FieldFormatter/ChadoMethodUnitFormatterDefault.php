@@ -24,6 +24,11 @@ class ChadoMethodUnitFormatterDefault extends ChadoFormatterBase {
    * {@inheritdoc}
    */
   public function viewElements(FieldItemListInterface $items, $langcode) {
+    parent::viewElements($items, $langcode);
+
+    if ($items->isEmpty()) {
+      return [];
+    }
     $elements = [];
 
     foreach ($items as $delta => $item) {
