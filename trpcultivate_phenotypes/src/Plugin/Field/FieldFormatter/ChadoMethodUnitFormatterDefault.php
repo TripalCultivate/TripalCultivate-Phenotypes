@@ -31,6 +31,9 @@ class ChadoMethodUnitFormatterDefault extends ChadoFormatterBase {
     }
     $elements = [];
 
+    $trait_service = \Drupal::service('trpcultivate_phenotypes.traits');
+    $genus_service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
+
     foreach ($items as $delta => $item) {
       $method_id = $item->get('cvterm_id')->getString();
       $method_name = $item->get('cvterm_name')->getString();
@@ -41,9 +44,6 @@ class ChadoMethodUnitFormatterDefault extends ChadoFormatterBase {
       if ($entity->hasField('trait_cv')) {
         $trait_cv_id = $entity->get('trait_cv')->value ?? 0;
       }
-
-      $trait_service = \Drupal::service('trpcultivate_phenotypes.traits');
-      $genus_service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
 
       $genus = NULL;
       $unit_names = [];
