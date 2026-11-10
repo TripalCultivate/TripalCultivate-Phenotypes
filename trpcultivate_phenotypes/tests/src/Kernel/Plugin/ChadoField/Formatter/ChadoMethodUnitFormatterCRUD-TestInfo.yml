@@ -81,6 +81,8 @@ scenarios:
         - record_id: 0
           linker_id: 0
           cvterm_id: 0
+          cvterm_name: 'PLHT'
+          cvterm_definition: "Place a measuring tape, ruler, or meter stick at the soil surface or the base of the pot and extend it to the highest point of the plant's canopy or apical bud. Record the measurement, along with the date, to track growth over time."
     expected:
       method_name: 'PLHT'
       method_definition: "Place a measuring tape, ruler, or meter stick at the soil surface or the base of the pot and extend it to the highest point of the plant's canopy or apical bud. Record the measurement, along with the date, to track growth over time."
