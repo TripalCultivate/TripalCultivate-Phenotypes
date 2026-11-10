@@ -163,6 +163,8 @@ class ChadoMethodUnitFormatterCRUDTest extends ChadoTestKernelBase {
    *   The key of the scenario in the YAML.
    * @param string $current_scenario_label
    *   The label of the scenario in the YAML.
+   *
+   * @dataProvider provideScenarios
    */
   #[DataProvider('provideScenarios')]
   public function testFormatterRendersMethodAndUnits(int $current_scenario_key, string $current_scenario_label): void {
