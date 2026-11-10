@@ -27,56 +27,39 @@ class ChadoMethodUnitFormatterDefault extends ChadoFormatterBase {
     $elements = [];
 
     foreach ($items as $delta => $item) {
-      $item_values = $item->getValue();
-      $storage_settings = $items->getFieldDefinition()->getSetting('storage_plugin_settings');
-      $method_id_column = ($storage_settings['base_table'] ?? '') === 'cvterm'
-        ? 'cvterm_id'
-        : (!empty($storage_settings['object_column']) ? $storage_settings['object_column'] : 'cvterm_id');
-      $method_id = (int) ($item_values[$method_id_column] ?? $item_values['cvterm_id'] ?? 0);
-      $method_name = $item_values['cvterm_name'] ?? '';
-      $definition = $item_values['cvterm_definition'] ?? '';
+      $method_id = $item->get('cvterm_id')->getString();
+      $method_name = $item->get('cvterm_name')->getString();
+      $definition = $item->get('cvterm_definition')->getString();
+
+      $entity = $item->getEntity();
+
+      if ($entity->hasField('trait_cv')) {
+        $trait_cv_id = $entity->get('trait_cv')->value ?? 0;
+      }
+
+      $trait_service = \Drupal::service('trpcultivate_phenotypes.traits');
+      $genus_service = \Drupal::service('trpcultivate_phenotypes.genus_ontology');
+
+      $genus = NULL;
       $unit_names = [];
-      $relationship_type_id = \Drupal::service('trpcultivate_phenotypes.terms')
-        ->getTermId('unit_to_method_relationship_type');
-      if ($method_id > 0) {
-        $chado = \Drupal::service('tripal_chado.database');
-        if (!$method_name || !$definition) {
-          $method = $chado->query(
-            "SELECT name, definition FROM {1:cvterm} WHERE cvterm_id = :method_id",
-            [':method_id' => $method_id]
-          )
-            ->fetchObject();
 
-          if ($method) {
-            $method_name = $method_name ?: $method->name;
-            $definition = $definition ?: $method->definition;
-          }
+      foreach ($genus_service->getConfiguredGenusList() as $candidate) {
+        $config = $genus_service->getGenusOntologyConfigValues($candidate);
+        if ((int) ($config['trait'] ?? 0) === (int) $trait_cv_id) {
+          $genus = $candidate;
+          break;
         }
+      }
 
-        if ($relationship_type_id) {
-          $unit_ids = $chado->query(
-            "SELECT object_id FROM {1:cvterm_relationship} WHERE subject_id = :method_id AND type_id = :type_id",
-            [
-              ':method_id' => $method_id,
-              ':type_id' => $relationship_type_id,
-            ]
-          )
-            ->fetchCol();
-
-          if ($unit_ids) {
-            $units = $chado->query(
-              "SELECT name FROM {1:cvterm} WHERE cvterm_id IN (:unit_ids[])",
-              [':unit_ids[]' => array_values($unit_ids)]
-            )
-              ->fetchCol();
-            $unit_names = $units;
-          }
-        }
+      if ($genus !== NULL) {
+        $trait_service->setTraitGenus($genus);
+        $units = $trait_service->getMethodUnit($method_id);
+        $unit_names = array_map(static fn($unit) => $unit->name, $units);
       }
 
       $elements[$delta] = [
         '#type' => 'details',
-        '#title' => $method_name ?: $this->t('Method'),
+        '#title' => $method_name,
         '#open' => FALSE,
         'definition' => [
           '#type' => 'inline_template',
