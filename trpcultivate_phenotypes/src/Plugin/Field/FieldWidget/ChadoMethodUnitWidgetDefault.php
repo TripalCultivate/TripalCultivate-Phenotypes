@@ -83,7 +83,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     $elements[$linker_fkey_column]['#weight'] = 10;
     $elements[$linker_fkey_column]['#ajax'] = [
       'callback' => [$this, 'updateMethodDefinition'],
-      'event' => 'change',
+      'event' => 'autocompleteclose',
       'wrapper' => $wrapper_id,
     ];
     $elements[$linker_fkey_column]['#element_validate'][] = [static::class, 'validateUniqueMethods'];
@@ -98,6 +98,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
         '#rows' => 4,
         '#attributes' => ['readonly' => 'readonly'],
         '#description' => $this->t('Definition from the selected method in Chado.'),
+        '#disabled' => TRUE,
       ],
       '#weight' => 20,
     ];
