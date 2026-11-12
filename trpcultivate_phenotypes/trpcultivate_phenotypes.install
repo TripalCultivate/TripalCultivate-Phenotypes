@@ -210,7 +210,7 @@ function trpcultivate_phenotypes_update_10001() {
  * Create phenotype table for unpublished (raw) phenotypes mirroring the table
  * structure of Chado.phenotype and Chado.phenotypeprop.
  */
-function trpcultivate_phenotypes_update_100016() {
+function trpcultivate_phenotypes_update_10004() {
 
   $base_table = 'phenotype';
   $prop_table = $base_table . 'prop';
@@ -233,6 +233,7 @@ function trpcultivate_phenotypes_update_100016() {
     $chado_schema_name = $chado_schema->getSchemaName();
     $tripal_logger = \Drupal::service('tripal.logger');
 
+    // Create phenotype and phenotypeprop tables.
     foreach ([$base_table, $prop_table] as $table) {
       $drupaldb_connection
         ->query("CREATE TABLE $table AS (SELECT * FROM $chado_schema_name.$table)");
