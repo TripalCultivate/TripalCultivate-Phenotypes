@@ -221,7 +221,6 @@ function trpcultivate_phenotypes_update_10004() {
   if ($chado_schema->tableExists($base_table) && $chado_schema->tableExists($prop_table)) {
     // At this stage, phenotype base and prop tables have already been created
     // add table alter (in install hook) has applied extra field requirements.
-
     $drupaldb_connection = \Drupal::service('database');
     $drupaldb_schema = $drupaldb_connection->schema();
 
