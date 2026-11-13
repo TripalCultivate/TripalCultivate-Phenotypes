@@ -205,7 +205,7 @@ function trpcultivate_phenotypes_update_10001() {
 }
 
 /**
- * Replace field name to refer to method with appropriate name.
+ * Replace the column name referring to method with appropriate name.
  *
  * trpcultivate_phenocombo.observable_id - assay_id.
  */
