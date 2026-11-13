@@ -227,7 +227,7 @@ function trpcultivate_phenotypes_update_10002() {
       'composite_key' => [
         'project_id',
         'attr_id',
-        $replacement_field_name,
+        $replacement_column_name,
         'unit_id',
       ],
     ],
