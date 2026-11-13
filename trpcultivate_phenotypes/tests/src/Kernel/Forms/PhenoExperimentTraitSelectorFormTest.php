@@ -613,13 +613,13 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
       PhenoExperimentTraitSelectorForm::create($this->container)
         ->buildForm($form, $form_state);
 
-      [$attr_id, $observable_id, $unit_id] = explode(':', $combo);
+      [$attr_id, $assay_id, $unit_id] = explode(':', $combo);
 
       $combo = $database->select('trpcultivate_phenocombo', 'tc')
         ->fields('tc', ['label', 'is_required'])
         ->condition('project_id', $experiment_id, '=')
         ->condition('attr_id', $attr_id, '=')
-        ->condition('observable_id', $observable_id, '=')
+        ->condition('assay_id', $assay_id, '=')
         ->condition('unit_id', $unit_id, '=')
         ->execute()
         ->fetchAssoc();

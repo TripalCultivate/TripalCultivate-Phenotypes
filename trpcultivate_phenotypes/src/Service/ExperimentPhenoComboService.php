@@ -81,7 +81,7 @@ class ExperimentPhenoComboService {
    */
   public const PHENOCOMBO_FIELD_MAP = [
     'trait' => 'attr_id',
-    'method' => 'observable_id',
+    'method' => 'assay_id',
     'unit' => 'unit_id',
   ];
 
@@ -192,7 +192,7 @@ class ExperimentPhenoComboService {
    *   - 'trait' (integer|string): a string value is the trait name, whereas an
    *     integer value is the trait id (a value to phenotype.attr_id).
    *   - 'method' (integer|string): a string value is the method name, whereas
-   *     an integer value is the method id (a value to phenotype.observable_id).
+   *     an integer value is the method id (a value to phenotype.assay_id).
    *   - 'unit' (integer|string): a string value is the trait unit, whereas an
    *     integer value is the unit id (a value to phenotype.unit_id).
    * @param array $phenocombo_details
@@ -308,10 +308,10 @@ class ExperimentPhenoComboService {
    *
    * @return \stdClass|null
    *   An associative array describing the experiment PhenoCombo including the
-   *   combo_id, project_id, attr_id, observable_id, unit_id, uid, label,
+   *   combo_id, project_id, attr_id, assay_id, unit_id, uid, label,
    *   is_archived, is_required, was_collected, was_shared, and timestamp
    *   from trpcultivate_phenocombo table. Furthermore, 'trait', 'method' and
-   *   'unit' are the cvterm names referenced by the 'attr_id', 'observable_id',
+   *   'unit' are the cvterm names referenced by the 'attr_id', 'assay_id',
    *   and 'unit_id' respectively.
    *   For example, a trait cvterm (id:123, name: 'plant height') and
    *   attr_id = 123 then trait = 'plant height'. An empty array if not found.
@@ -421,7 +421,7 @@ class ExperimentPhenoComboService {
     $query = $this->chado_connection->select(self::PHENOCOMBO_TABLE, 'combo')
       ->fields('combo');
 
-    // Resolve the attr_id, observable_id and unit_id to the cvterm record as
+    // Resolve the attr_id, assay_id and unit_id to the cvterm record as
     // as single JSON line.
     foreach (self::PHENOCOMBO_FIELD_MAP as $alias => $field) {
       $query->leftJoin('1:cvterm', $alias, "combo.$field = $alias.cvterm_id");
@@ -577,8 +577,8 @@ class ExperimentPhenoComboService {
     $combo_phenotypes_count = $this->chado_connection->select('1:phenotype', 'tbl')
       ->condition('tbl.project_id', $this->experiment_context, '=')
       ->condition('tbl.attr_id', $pheno_combo->attr_id, '=')
-      ->condition('tbl.observable_id', $pheno_combo->observable_id, '=')
-      ->condition('tbl.assay_id', $pheno_combo->unit_id, '=')
+      ->condition('tbl.assay_id', $pheno_combo->assay_id, '=')
+      ->condition('tbl.unit_id', $pheno_combo->unit_id, '=')
       ->countQuery()
       ->execute()
       ->fetchField();
