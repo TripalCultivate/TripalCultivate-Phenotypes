@@ -212,7 +212,7 @@ function trpcultivate_phenotypes_update_10001() {
 function trpcultivate_phenotypes_update_10002() {
 
   $pheno_combo_table = 'trpcultivate_phenocombo';
-  $target_field_name = 'observable_id';
+  $target_column_name = 'observable_id';
   $replacement_field_name = 'assay_id';
 
   $assay_id = [
