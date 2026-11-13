@@ -207,8 +207,8 @@ function trpcultivate_phenotypes_update_10001() {
 /**
  * Implements hook_update_N().
  *
- * Create phenotype table for unpublished (raw) phenotypes mirroring the table
- * structure of Chado.phenotype and Chado.phenotypeprop.
+ * Create storage for unpublished (raw) phenotypes by mirroring Chado tables
+ * phenotype and phenotypeprop into Drupal database schema (public).
  */
 function trpcultivate_phenotypes_update_10004() {
 
@@ -219,26 +219,30 @@ function trpcultivate_phenotypes_update_10004() {
     ->schema();
 
   if ($chado_schema->tableExists($base_table) && $chado_schema->tableExists($prop_table)) {
-    // At this stage, phenotype base and prop tables have already been created
-    // add table alter (in install hook) has applied extra field requirements.
+    // Source tables required for replication exist.
     $drupaldb_connection = \Drupal::service('database');
     $drupaldb_schema = $drupaldb_connection->schema();
 
+    // Ensure that tables are not already present in Drupal database schema.
     if ($drupaldb_schema->tableExists($base_table) && $drupaldb_schema->tableExists($prop_table)) {
-      // Ensure that phenotype base and prop tables are not in Drupal DB.
       return;
     }
+
+    // Mirror Chado phenotype and phenotypeprop tables into Drupal database.
+    $drupaldb_schema_name = $drupaldb_connection
+      ->query('SELECT current_schema()')
+      ->fetchField();
 
     $chado_schema_name = $chado_schema->getSchemaName();
     $tripal_logger = \Drupal::service('tripal.logger');
 
-    // Create phenotype and phenotypeprop tables.
     foreach ([$base_table, $prop_table] as $table) {
       $drupaldb_connection
-        ->query("CREATE TABLE $table AS (SELECT * FROM $chado_schema_name.$table)");
+        ->query("CREATE TABLE IF NOT EXISTS $drupaldb_schema_name.$table
+          AS (SELECT * FROM $chado_schema_name.$table)");
 
       $tripal_logger
-        ->notice('The relation ' . $table . ' has been created.');
+        ->notice('The relation ' . $table . ' has been created in schema ' . $drupaldb_schema_name);
     }
   }
 }
