@@ -213,7 +213,7 @@ function trpcultivate_phenotypes_update_10002() {
 
   $pheno_combo_table = 'trpcultivate_phenocombo';
   $target_column_name = 'observable_id';
-  $replacement_field_name = 'assay_id';
+  $replacement_column_name = 'assay_id';
 
   $assay_id = [
     'description' => 'The method used (i.e. used measuring stick from the ground to the highest greenery without touching the plant).',
