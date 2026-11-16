@@ -2,7 +2,6 @@
 
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Hooks;
 
-use Drupal\Core\Form\FormState;
 use Drupal\Core\Link;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
@@ -97,9 +96,9 @@ class HookAlterTest extends ChadoTestKernelBase {
    * Used to capture the validation failure message for either an invalid genus
    * value or removal of all genus.
    *
-   * @see Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypes
-   *
    * @var string
+   *
+   * @see Plugin/Validation/Constraint/LockExperimentGenusWithPhenotypes
    */
   private string $violation_message = '';
 
