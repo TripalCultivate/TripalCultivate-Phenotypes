@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Services;
+namespace Drupal\Tests\trpcultivate_phenocollect\Kernel\Services;
 
 use Drupal\Core\Database\Connection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
@@ -13,7 +13,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
  *
  * @group trpcultivate_phenotypes
  */
-#[Group('trpcultivate_phenotypes')]
+#[Group('trpcultivate_phenocollect')]
 #[RunTestsInSeparateProcesses]
 class ServiceModuleUpdatesTest extends ChadoTestKernelBase {
 
@@ -36,6 +36,7 @@ class ServiceModuleUpdatesTest extends ChadoTestKernelBase {
     'tripal_layout',
     'trpcultivate',
     'trpcultivate_phenotypes',
+    'trpcultivate_phenocollect',
   ];
 
   /**
@@ -66,20 +67,20 @@ class ServiceModuleUpdatesTest extends ChadoTestKernelBase {
     $this->drupaldb_connection = $this->container->get('database');
 
     // Load install file.
-    \Drupal::moduleHandler()->loadInclude('trpcultivate_phenotypes', 'install');
+    \Drupal::moduleHandler()->loadInclude('trpcultivate_phenocollect', 'install');
   }
 
   /**
    * Test replicate Chado tables.
    *
-   * Update: trpcultivate_phenotypes_update_10004()
+   * Update: trpcultivate_phenotypes_update_10001()
    *
    * @see trpcultivate_phenotypes.install
    */
   public function testRawPhenotypesStorageHookUpdate() {
 
     // Invoke the update hook.
-    trpcultivate_phenotypes_update_10004();
+    trpcultivate_phenotypes_update_10001();
 
     $chado_schema = $this->chado_connection->schema();
 
