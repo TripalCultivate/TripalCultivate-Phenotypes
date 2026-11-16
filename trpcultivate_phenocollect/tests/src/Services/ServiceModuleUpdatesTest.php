@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Tests module updates for trpcultivate_phenotypes.
+ * Tests module updates for trpcultivate_phenocollect.
  *
- * @group trpcultivate_phenotypes
+ * @group trpcultivate_phenocollect
  */
 #[Group('trpcultivate_phenocollect')]
 #[RunTestsInSeparateProcesses]
@@ -73,14 +73,14 @@ class ServiceModuleUpdatesTest extends ChadoTestKernelBase {
   /**
    * Test replicate Chado tables.
    *
-   * Update: trpcultivate_phenotypes_update_10001()
+   * Update: trpcultivate_phenocollect_update_10001()
    *
-   * @see trpcultivate_phenotypes.install
+   * @see trpcultivate_phenocollect.install
    */
   public function testRawPhenotypesStorageHookUpdate() {
 
     // Invoke the update hook.
-    trpcultivate_phenotypes_update_10001();
+    trpcultivate_phenocollect_update_10001();
 
     $chado_schema = $this->chado_connection->schema();
 
