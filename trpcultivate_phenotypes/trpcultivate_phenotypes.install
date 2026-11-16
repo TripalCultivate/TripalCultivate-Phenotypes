@@ -210,7 +210,7 @@ function trpcultivate_phenotypes_update_10001() {
  * Create storage for unpublished (raw) phenotypes by mirroring Chado tables
  * phenotype and phenotypeprop into Drupal database schema (public).
  */
-function trpcultivate_phenotypes_update_10004() {
+function trpcultivate_phenotypes_update_10005() {
 
   $base_table = 'phenotype';
   $prop_table = $base_table . 'prop';
@@ -239,7 +239,7 @@ function trpcultivate_phenotypes_update_10004() {
     foreach ([$base_table, $prop_table] as $table) {
       $drupaldb_connection
         ->query("CREATE TABLE IF NOT EXISTS $drupaldb_schema_name.$table
-          AS (SELECT * FROM $chado_schema_name.$table)");
+                 (LIKE $chado_schema_name.$table INCLUDING ALL)");
 
       $tripal_logger
         ->notice('The relation ' . $table . ' has been created in schema ' . $drupaldb_schema_name);
