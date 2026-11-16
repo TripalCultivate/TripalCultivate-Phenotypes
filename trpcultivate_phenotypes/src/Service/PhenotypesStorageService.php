@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\trpcultivate_phenotypes\Service;
 
+use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
@@ -64,14 +65,12 @@ class PhenotypesStorageService {
    *   Tripal logger service.
    */
   public function __construct(
+    protected UuidInterface $service_uuid,
     protected Connection $drupaldb_connection,
     protected ChadoConnection $chado_connection,
     protected TripalLogger $tripal_logger,
   ) {
 
-    $this->drupaldb_connection = $drupaldb_connection;
-    $this->chado_connection = $chado_connection;
-    $this->tripal_logger = $tripal_logger;
   }
 
   /**
@@ -95,7 +94,42 @@ class PhenotypesStorageService {
       );
     }
 
+    // @todo: check bofore setting the context that the module is enabled.
+
     $this->phenotype_context = $phenotype_context;
+  }
+
+  /**
+   * Insert phenotype measurement data.
+   */
+  public function insertPhenotypeMeasurementData(int $project_id, string $genus, int $stock_id, array $measurements): int {
+
+    // Validate context.
+    $genus = trim($genus);
+    if ($project_id <= 0 && empty($genus) && $stock_id <= 0) {
+      // Failed
+    }
+
+    $label = $measurements['label'] ?? '';
+    if (empty($label)) {
+      // Failed
+    }
+
+    $value = $measurements['value'];
+
+    $phenotype = [
+      'uniquename' => $this->service_uuid->generate(),
+      'project_id' => $project_id,
+      'stock_id' => $stock_id,
+      'attr_id' => $trait['attr_id'],
+      'assay_id' => $trait['assay_id'],
+      'unit_id' => $trait['unit_id'],
+      'value' => $value,
+    ];
+
+    $db_connection = $this->phenotype_context == 'raw' ? $this->drupaldb_connection : $this->chado_connection;
+
+
   }
 
 }
