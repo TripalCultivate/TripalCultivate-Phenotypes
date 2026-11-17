@@ -410,4 +410,71 @@ class ChadoMethodUnitWidgetCRUDTest extends ChadoTestKernelBase {
     $this->assertSame('The method selected is not unique. Please select a different method.', (string) reset($errors), "The error message for duplicate methods did not match the expected message.");
   }
 
+  /**
+   * Tests that existing methods cannot be changed or removed.
+   *
+   * @param array $storage
+   *   The initial widget values stored in the form state.
+   * @param mixed $submitted_value
+   *   The submitted method value.
+   * @param bool $expected_error
+   *   Whether validation is expected to set an error.
+   *
+   * @dataProvider provideExistingMethodValidationCases
+   */
+  #[DataProvider('provideExistingMethodValidationCases')]
+  public function testValidateExistingMethodUnchanged(array $storage, mixed $submitted_value, bool $expected_error): void {
+    $form_state = new FormState();
+    $form_state->setStorage($storage);
+    $form_state->setValue('trait_method', [
+      0 => ['cvterm_id' => $submitted_value],
+    ]);
+    $element = [
+      '#parents' => ['trait_method', 0, 'cvterm_id'],
+    ];
+
+    ChadoMethodUnitWidgetDefault::validateExistingMethodUnchanged($element, $form_state);
+
+    $this->assertSame($expected_error, $form_state->hasAnyErrors());
+    $expected_error_message = 'You cannot change/remove an existing method associated with a trait. Add a new unique method instead.';
+    if ($expected_error) {
+      $errors = $form_state->getErrors();
+      $expected_error =
+      $this->assertSame(
+        $expected_error_message,
+        (string) reset($errors),
+        "We expected the error message $expected_error_message when trying to remove an existing method associated to a trait.",
+      );
+    }
+  }
+
+  /**
+   * Provides existing-method validation cases.
+   *
+   * @return array
+   *   Validation cases keyed by their description.
+   */
+  public static function provideExistingMethodValidationCases(): array {
+    $existing_method_storage = [
+      'initial_values' => [
+        'trait_method' => [
+          0 => ['linker_id' => 999],
+        ],
+      ],
+      'initial_method_ids' => [
+        'trait_method' => [
+          0 => 123,
+        ],
+      ],
+    ];
+
+    return [
+      'same method ID' => [$existing_method_storage, '123', FALSE],
+      'same autocomplete value' => [$existing_method_storage, 'Method name (123)', FALSE],
+      'different method ID' => [$existing_method_storage, '456', TRUE],
+      'removed method' => [$existing_method_storage, '', TRUE],
+      'editable new item' => [[], '456', FALSE],
+    ];
+  }
+
 }
