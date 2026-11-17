@@ -86,6 +86,7 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
       'event' => 'autocompleteclose',
       'wrapper' => $wrapper_id,
     ];
+    $elements[$linker_fkey_column]['#element_validate'][] = [static::class, 'validateExistingMethodUnchanged'];
     $elements[$linker_fkey_column]['#element_validate'][] = [static::class, 'validateUniqueMethods'];
 
     $elements['method_definition_wrapper'] = [
@@ -132,6 +133,11 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
         '#type' => 'value',
         '#default_value' => $default_value,
       ];
+    }
+    $storage = $form_state->getStorage();
+    if (!isset($storage['initial_method_ids'][$field_name][$delta])) {
+      $storage['initial_method_ids'][$field_name][$delta] = self::getMethodId($cvterm_id);
+      $form_state->setStorage($storage);
     }
 
     // Save some initial values to allow later handling of the "Remove" button.
@@ -270,6 +276,35 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
       return (int) $matches[1];
     }
     return 0;
+  }
+
+  /**
+   * Prevents changing the selected method on an existing item.
+   */
+  public static function validateExistingMethodUnchanged(array $element, FormStateInterface $form_state): void {
+    $parents = $element['#parents'];
+    if (count($parents) < 3) {
+      return;
+    }
+
+    $field_name = $parents[count($parents) - 3];
+    $delta = $parents[count($parents) - 2];
+    $storage = $form_state->getStorage();
+
+    // New items have no original linker ID, so they remain editable.
+    if (empty($storage['initial_values'][$field_name][$delta]['linker_id'])) {
+      return;
+    }
+
+    $initial_id = $storage['initial_method_ids'][$field_name][$delta] ?? 0;
+    $current_id = self::getMethodId($form_state->getValue($parents));
+
+    if ($current_id !== $initial_id) {
+      $form_state->setError(
+      $element,
+      t('You cannot change/remove an existing method associated with a trait. Add a new unique method instead.')
+      );
+    }
   }
 
 }
