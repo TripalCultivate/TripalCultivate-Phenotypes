@@ -3,6 +3,8 @@
 namespace Drupal\Tests\trpcultivate_phenotypes\Kernel\Plugin\ChadoField\Widget;
 
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\Tests\tripal_chado\Kernel\ChadoTestKernelBase;
 use Drupal\Tests\tripal_chado\Traits\ChadoFieldTestTrait;
@@ -440,10 +442,15 @@ class ChadoMethodUnitWidgetCRUDTest extends ChadoTestKernelBase {
     if ($expected_error) {
       $errors = $form_state->getErrors();
       $expected_error =
-      $this->assertSame(
-        $expected_error_message,
+      $this->assertStringContainsString(
+        'You cannot change/remove an existing method associated with a trait',
         (string) reset($errors),
-        "We expected the error message $expected_error_message when trying to remove an existing method associated to a trait.",
+        'The validation error does not match expected error message text',
+      );
+      $this->assertStringContainsString(
+        Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+        (string) reset($errors),
+        'The validation does not contain the expected link to restore form values.',
       );
     }
   }

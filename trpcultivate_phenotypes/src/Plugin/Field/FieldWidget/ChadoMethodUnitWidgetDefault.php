@@ -4,7 +4,9 @@ namespace Drupal\trpcultivate_phenotypes\Plugin\Field\FieldWidget;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Url;
 use Drupal\tripal\TripalField\Attribute\TripalFieldWidget;
 use Drupal\tripal_chado\TripalField\ChadoWidgetBase;
 
@@ -300,9 +302,11 @@ class ChadoMethodUnitWidgetDefault extends ChadoWidgetBase {
     $current_id = self::getMethodId($form_state->getValue($parents));
 
     if ($current_id !== $initial_id) {
-      $form_state->setError(
-      $element,
-      t('You cannot change/remove an existing method associated with a trait. Add a new unique method instead.')
+      $form_state->setErrorByName(
+        implode('][', $parents),
+        t('You cannot change/remove an existing method associated with a trait. Click @reload to restore form values if you have removed or altered a method.', [
+          '@reload' => Link::fromTextAndUrl('Restore Values', Url::fromRoute('<current>'))->toString(),
+        ]),
       );
     }
   }
