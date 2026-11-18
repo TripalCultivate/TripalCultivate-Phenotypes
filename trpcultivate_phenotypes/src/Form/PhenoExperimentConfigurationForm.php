@@ -198,6 +198,11 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $genus = $exp_phenogenus[0];
     }
 
+    if ($genus) {
+      // Set the PhenoCombo service genus context to the current genus.
+      $this->service_PhenoCombo->setGenus($genus);
+    }
+
     // Contain page links and select field displayed inline - in a single row.
     $config_toolbar = 'config_toolbar';
     $form[$config_toolbar] = [
@@ -314,6 +319,11 @@ class PhenoExperimentConfigurationForm extends FormBase {
     $request = $this->getRequest();
 
     if ($request->getMethod() == 'GET') {
+
+      if (!$genus) {
+        $this->service_PhenoCombo->skipGenusContext();
+      }
+
       foreach (['remove', 'require', 'optional', 'active', 'archive'] as $action) {
         if ((int) $request->query->get($action) > 0) {
           $combo_id = $request->query->get($action);
@@ -321,6 +331,10 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
           break;
         }
+      }
+
+      if (!$genus) {
+        $this->service_PhenoCombo->enforceGenusContext();
       }
     }
 
