@@ -29,3 +29,10 @@ props:
       type: integer
       title: Trait id number.
       description: The trait id number (Trait) used to reference associated field element keyed with the trait id .
+libraryOverrides:
+  js:
+    trait_combo.js: {}
+  dependencies:
+    - core/drupal
+    - core/once
+    - core/jquery
