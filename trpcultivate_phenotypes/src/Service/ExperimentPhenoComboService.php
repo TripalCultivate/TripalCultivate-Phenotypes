@@ -55,13 +55,6 @@ class ExperimentPhenoComboService {
   protected string|null $genus_context = NULL;
 
   /**
-   * Genus context override - operate without genus context.
-   *
-   * @var bool
-   */
-  private bool $no_genus_context = FALSE;
-
-  /**
    * A list of configured genus.
    *
    * @var array
@@ -187,8 +180,7 @@ class ExperimentPhenoComboService {
 
     // Now that we have a project, let's ensure it has genus' assigned
     // as we expect for use with phenotypes.
-    $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
-    if (empty($project_genus)) {
+    if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
       $this->tripal_logger->error(
         $failed_error = sprintf(
           'Failed to set experiment context. The specified experiment entity/id/name: %s is not configured with a genus.',
@@ -199,26 +191,6 @@ class ExperimentPhenoComboService {
     }
 
     $this->experiment_context = $project_id;
-  }
-
-  /**
-   * Bypass genus context.
-   */
-  public function skipGenusContext(): void {
-
-    if ($this->no_genus_context === FALSE) {
-      $this->no_genus_context = TRUE;
-    }
-  }
-
-  /**
-   * Enforce genus context.
-   */
-  public function enforceGenusContext(): void {
-
-    if ($this->no_genus_context === TRUE) {
-      $this->no_genus_context = FALSE;
-    }
   }
 
   /**
@@ -394,7 +366,11 @@ class ExperimentPhenoComboService {
   public function getExperimentPhenoCombo(array|int|string $combo): \stdClass|null {
 
     $this->ensureExperimentIsSet();
-    $this->ensureGenusIsSet();
+
+    // A genus context is required to uniquely identify a label-based combo.
+    if (is_string($combo) && !is_numeric($combo)) {
+      $this->ensureGenusIsSet();
+    }
 
     $combo_id = $this->resolvePhenoCombo($combo);
 
@@ -408,7 +384,7 @@ class ExperimentPhenoComboService {
   }
 
   /**
-   * Get all experiment PhenoCombos of an experiment+genus context.
+   * Get all experiment PhenoCombos of an experiment context.
    *
    * @param string|null $genus
    *   The genus to further filter the experiment PhenoCombo results based on
@@ -454,7 +430,7 @@ class ExperimentPhenoComboService {
     $this->ensureExperimentIsSet();
     $this->ensureGenusIsSet();
 
-    // Genus provided acts an override.
+    // If provided, the genus provided takes precedence over the genus context.
     $genus = $genus ?? $this->genus_context;
 
     // Acceptable options key and values.
@@ -594,7 +570,11 @@ class ExperimentPhenoComboService {
   public function setExperimentPhenoComboStatusFlags(array|int|string $combo, array $status_flags): void {
 
     $this->ensureExperimentIsSet();
-    $this->ensureGenusIsSet();
+
+    // A genus context is required to uniquely identify a label-based combo.
+    if (is_string($combo) && !is_numeric($combo)) {
+      $this->ensureGenusIsSet();
+    }
 
     $combo_id = $this->resolvePhenoCombo($combo);
     $sanitized_status_flags = $this->sanitizePhenoComboDetails($status_flags);
@@ -639,7 +619,11 @@ class ExperimentPhenoComboService {
   public function removePhenoComboFromExperiment(array|int|string $combo): void {
 
     $this->ensureExperimentIsSet();
-    $this->ensureGenusIsSet();
+
+    // A genus context is required to uniquely identify a label-based combo.
+    if (is_string($combo) && !is_numeric($combo)) {
+      $this->ensureGenusIsSet();
+    }
 
     $combo_id = $this->resolvePhenoCombo($combo);
 
@@ -680,8 +664,6 @@ class ExperimentPhenoComboService {
     }
   }
 
-
-
   /**
    * Ensures that experiment context has been set.
    *
@@ -711,11 +693,11 @@ class ExperimentPhenoComboService {
    */
   protected function ensureGenusIsSet(): void {
 
-    if ($this->no_genus_context === FALSE && ($this->genus_context === NULL || $this->genus_context === '')) {
+    if ($this->genus_context === NULL || $this->genus_context === '') {
       throw new \Exception(
         sprintf(
           'Genus context not set error in %s: genus context must be set before performing operations.
-           Use setGenus(GENUS) to set an genus context or use skipGenusContext() to bypass genus context requirements.',
+           Use setGenus(GENUS) to set an genus context.',
           get_class($this)
         )
       );
@@ -801,10 +783,6 @@ class ExperimentPhenoComboService {
     // Trait importer) and immediately stops further checks of other genus by
     // existing the loop.
     foreach ($this->configured_genus as $genus) {
-      if ($genus != $this->genus_context) {
-        continue;
-      }
-
       $this->service_PhenoTraits->setTraitGenus($genus);
 
       try {
@@ -886,14 +864,14 @@ class ExperimentPhenoComboService {
     $sanitized_phenocombo_details = [];
 
     // If label is provided, ensure it is not an empty string and is a unique
-    // entry within the experiment context.
+    // entry within the experiment and genus context.
     $field_label = 'label';
 
     if (isset($phenocombo_details[$field_label])) {
       $label = trim($phenocombo_details[$field_label] ?? '');
 
       // Throw an exception if label is provided but is an empty string or
-      // not a unique label within the experiment+genus context.
+      // not a unique label within the experiment.
       if (empty($label) || !$this->labelIsUniqueInExperimentGenus($label)) {
         throw new \InvalidArgumentException(
           sprintf(
@@ -982,6 +960,8 @@ class ExperimentPhenoComboService {
         );
       }
 
+      // Apply genus context in addition to the experiment context to ascertain
+      // a PhenoCombo when label is the unique identifier.
       unset($query);
       $query = $this->chado_connection->select(self::PHENOCOMBO_TABLE, 'tbl')
         ->fields('tbl', ['combo_id']);
@@ -1104,20 +1084,16 @@ class ExperimentPhenoComboService {
     $genus_config = $this->service_PhenoGenusOntology
       ->getGenusOntologyConfigValues($this->genus_context);
 
-    $query = $this->chado_connection->select(self::PHENOCOMBO_TABLE, 'tbl');
+    $query = $this->chado_connection->select(self::PHENOCOMBO_TABLE, 'tbl')
+      ->where('LOWER(tbl.label) = :lowercase_label', [':lowercase_label' => strtolower($label)])
+      ->condition('tbl.project_id', $this->experiment_context, '=');
+
     foreach (self::PHENOCOMBO_FIELD_MAP as $alias => $field) {
       $query->leftJoin('1:cvterm', $alias, "tbl.$field = $alias.cvterm_id");
+      $query->condition("$alias.cv_id", $genus_config[$alias], '=');
     }
 
-    $match_label = $query
-      ->where('LOWER(tbl.label) = :lowercase_label', [':lowercase_label' => strtolower($label)])
-      ->condition('tbl.project_id', $this->experiment_context, '=')
-      ->condition('trait.cv_id', $genus_config['trait'], '=')
-      ->condition('method.cv_id', $genus_config['method'], '=')
-      ->condition('unit.cv_id', $genus_config['unit'], '=')
-      ->countQuery()
-      ->execute()
-      ->fetchField();
+    $match_label = $query->countQuery()->execute()->fetchField();
 
     return $match_label ? FALSE : TRUE;
   }

@@ -33,5 +33,3 @@ trpcultivate-phenotypes-style-stage-accordion:
   css:
     theme:
       css/trpcultivate-phenotypes-style-stage-accordion.css: {}
-
-# Trait combo component.
