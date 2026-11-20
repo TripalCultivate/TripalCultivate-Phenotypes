@@ -49,9 +49,9 @@ class PhenotypesStorageService {
    *
    * @var array
    */
-  public const CONTEXT_KEY_MAP = [
-    'raw' => 'unpublished',
-    'analyzed' => 'published',
+  public const DATA_TYPE_MODULE_MAP = [
+    'raw' => 'trpcultivate_phenocollect',
+    'analyzed' => 'trpculitvate_phenoshare',
   ];
 
   /**
@@ -67,6 +67,7 @@ class PhenotypesStorageService {
   public function __construct(
     protected UuidInterface $service_uuid,
     protected Connection $drupaldb_connection,
+    protected ModuleHandlerInterface $module_handler,
     protected ChadoConnection $chado_connection,
     protected TripalLogger $tripal_logger,
   ) {
@@ -81,55 +82,122 @@ class PhenotypesStorageService {
    * retrieved or modified.
    *
    * @throws \Exception
-   *   - If Phenotype context key is not 'raw' or 'analyzed'.
+   *   - If Phenotype context key is not 'raw' nor 'analyzed'.
+   *   - If corresponding module of a data type is not installed/enabled module.
    */
   public function setPhenotypeContext(string $phenotype_context): void {
 
-    if (!array_key_exists($phenotype_context, self::CONTEXT_KEY_MAP)) {
+    $data_types = array_keys(self::DATA_TYPE_MODULE_MAP);
+    if (!in_array($phenotype_context, $data_types)) {
       throw new \Exception(
         sprintf(
           'Unable to set phenotype context: %s is not a supported context key. Use [%s].',
-          $phenotype_context, implode(', ', self::CONTEXT_KEY_MAP)
+          $phenotype_context, implode(', ', $data_types)
         )
       );
     }
 
-    // @todo: check bofore setting the context that the module is enabled.
+    $module_name = self::DATA_TYPE_MODULE_MAP[$phenotype_context];
+    if (!$this->module_handler->moduleExists($module_name)) {
+      throw new \Exception(
+        sprintf(
+          'Unable to set phenotype context: %s is not installed/enabled module.
+           Please install this module and try again.',
+          $module_name
+        )
+      );
+    }
 
     $this->phenotype_context = $phenotype_context;
   }
 
   /**
-   * Insert phenotype measurement data.
+   * Insert phenotype.
+   *
+   * @param array $phenotypes
+   *   An array containing data to be inserted.
    */
-  public function insertPhenotypeMeasurementData(int $project_id, string $genus, int $stock_id, array $measurements): int {
+  public function insertPhenotype(array $phenotypes): void {
 
-    // Validate context.
-    $genus = trim($genus);
-    if ($project_id <= 0 && empty($genus) && $stock_id <= 0) {
-      // Failed
+    $this->ensureDataTypeContextIsSet();
+
+    if (empty($phenotypes)) {
+      throw new \Exception('Unable to insert phenotypes. The phenotypes data is empty.');
     }
 
-    $label = $measurements['label'] ?? '';
-    if (empty($label)) {
-      // Failed
+    // Perform basic validation check of columns not empty.
+    $sanitized_passport_data = $this->sanitizePassportData($phenotypes);
+    $sanitized_measurement_data = $this->sanitizeMeasurements($phenotypes);
+
+    // Insert phenotype.
+    $phenotype_id = $this->insertPassportData($sanitized_passport_data);
+    $this->insertMeasurements($phenotype_id, $sanitized_measurement_data);
+  }
+
+  /**
+   * Validate and sanitize phenotype passport data.
+   *
+   * Columns:
+   *  - Name
+   *  - Entry
+   *  - Block
+   *  - Sample Type
+   *  - Replicate
+   *  - Timepoint
+   *  - Treatment
+   *
+   * @return array
+   */
+  protected function sanitizePassportData(): array {
+
+  }
+
+  /**
+   * Validate and sanitize phenotype measurement data.
+   *
+   * Columns:
+   *  - PhenoCombo Label
+   *  - Value
+   *  - Project ID
+   *  - Stock ID
+   *
+   * @return array
+   */
+  protected function sanitizeMeasurement(): array {
+
+  }
+
+  /**
+   * Insert phenotype passport data.
+   *
+   * @return int
+   *   The phenotype_id assigned to the last inserted row in phenotype table.
+   */
+  protected function insertPassportData(): int {
+
+    return $phenotype_id;
+  }
+
+  /**
+   * Insert phenotype measurement data.
+   *
+   * @return void
+   */
+  protected function insertMeasurement(): void {
+
+  }
+
+  protected function ensureDataTypeContextIsSet(): void {
+
+    if ($this->phenotype_context === NULL || $this->phenotype_context === 0) {
+      throw new \Exception(
+        sprintf(
+          'Phenotype context not set error in %s: phenotype context must be set before performing operations.
+           Use setPhenotypeContext(raw|analyzed) to set a phenotype context.',
+          get_class($this)
+        )
+      );
     }
-
-    $value = $measurements['value'];
-
-    $phenotype = [
-      'uniquename' => $this->service_uuid->generate(),
-      'project_id' => $project_id,
-      'stock_id' => $stock_id,
-      'attr_id' => $trait['attr_id'],
-      'assay_id' => $trait['assay_id'],
-      'unit_id' => $trait['unit_id'],
-      'value' => $value,
-    ];
-
-    $db_connection = $this->phenotype_context == 'raw' ? $this->drupaldb_connection : $this->chado_connection;
-
-
   }
 
 }
