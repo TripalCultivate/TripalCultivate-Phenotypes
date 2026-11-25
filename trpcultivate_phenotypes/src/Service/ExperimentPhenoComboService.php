@@ -218,7 +218,7 @@ class ExperimentPhenoComboService {
     if (!in_array($genus, $project_genus)) {
       $this->tripal_logger->error(
         $failed_error = sprintf(
-          'Failed to set genis context. The specified genus: %s is not a valid genus of the experiment. Use [%s].',
+          'Failed to set genus context. The specified genus: %s is not a valid genus of the experiment. Use [%s].',
           $genus, implode(', ', $project_genus)
         )
       );

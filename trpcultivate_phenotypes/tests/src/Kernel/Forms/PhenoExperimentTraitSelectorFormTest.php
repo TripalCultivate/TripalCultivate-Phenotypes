@@ -658,7 +658,7 @@ class PhenoExperimentTraitSelectorFormTest extends ChadoTestKernelBase {
 
       $rendered_form = $this->container->get('renderer')->renderRoot($select_form);
       $this->assertStringContainsString(
-        'The label is already used in the experiment.',
+        'The label is already used in the experiment and genus context.',
         (string) $rendered_form,
         'The add trait functionality is expected to show warning message if a label is reused in the same experiment.',
       );
