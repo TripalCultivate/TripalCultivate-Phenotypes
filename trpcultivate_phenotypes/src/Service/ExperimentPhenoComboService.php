@@ -195,7 +195,7 @@ class ExperimentPhenoComboService {
 
     // Auto-set the genus if there is a single configured in the experiment.
     if (count($project_genus) == 1) {
-      $this->setGenus(array_first($project_genus));
+      $this->setGenus(reset($project_genus));
     }
   }
 

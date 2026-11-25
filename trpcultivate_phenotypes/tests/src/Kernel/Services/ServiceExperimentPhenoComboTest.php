@@ -305,6 +305,26 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test ensureGenusIsSet().
+   */
+  public function testEnsureGenusIsSet() {
+
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    $this->service_PhenoCombo->setExperiment($experiment);
+
+    try {
+      $this->service_PhenoCombo->removePhenoComboFromExperiment('Label to Remove');
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        'Genus context not set error',
+        $e->getMessage(),
+        'Genus context must be set before performing an operation.'
+      );
+    }
+  }
+
+  /**
    * Provides experiment context test cases.
    *
    * Each test experiment context in an array with the following values:
