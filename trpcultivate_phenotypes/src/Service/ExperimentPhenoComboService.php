@@ -180,7 +180,8 @@ class ExperimentPhenoComboService {
 
     // Now that we have a project, let's ensure it has genus' assigned
     // as we expect for use with phenotypes.
-    if (empty($this->service_PhenoGenusProject->getGenusOfProject($project_id))) {
+    $project_genus = $this->service_PhenoGenusProject->getGenusOfProject($project_id);
+    if (empty($project_genus)) {
       $this->tripal_logger->error(
         $failed_error = sprintf(
           'Failed to set experiment context. The specified experiment entity/id/name: %s is not configured with a genus.',
@@ -191,6 +192,11 @@ class ExperimentPhenoComboService {
     }
 
     $this->experiment_context = $project_id;
+
+    // Auto-set the genus if there is a single configured in the experiment.
+    if (count($project_genus) == 1) {
+      $this->setGenus(array_first($project_genus));
+    }
   }
 
   /**
