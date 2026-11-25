@@ -337,7 +337,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
       "JSON_AGG(JSON_BUILD_OBJECT(
         'combo_id', tc.combo_id,
         'attr_id', tc.attr_id,
-        'observable_id', tc.observable_id,
+        'assay_id', tc.assay_id,
         'unit_id', tc.unit_id,
         'label', tc.label,
         'is_archived', tc.is_archived,
@@ -421,7 +421,7 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
         ['trait' => $trait, 'method' => $method, 'unit' => $unit] = $this->service_PhenoTraits->getTraitMethodUnitCombo(
           $combo['attr_id'],
-          $combo['observable_id'],
+          $combo['assay_id'],
           $combo['unit_id'],
         );
 
