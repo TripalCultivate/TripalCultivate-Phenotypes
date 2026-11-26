@@ -8,6 +8,7 @@ use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 
 /**
  * Phenotypes Storage Service.
@@ -55,6 +56,46 @@ class PhenotypesStorageService {
   ];
 
   /**
+   * Passport data terms.
+   *
+   * This is a list of passport data configuration names that corresponds to the
+   * first 7 columns in a data file.
+   *
+   * In a data file row, the passport data columns are indexed (0-based) 0 for
+   * name, 1 for entry, 2 for block, 3 for Sample Type, 4 for replicate, 5 for
+   * Timepoint, and 6 for treatment.
+   *
+   * - name (config name: germplasm_name) aka: Germplasm Name
+   * - Entry (sample_entry) aka: Sample Name
+   * - block (experiment_group) aka: Group
+   * - Sample Type (experiment_container) aka: Experimental Unit
+   * - replicate (replicate) aka: Replicate
+   * - Timepoint (experiment_timepoint) aka: Timepoint
+   * - treatment (experiment_treatment) aka: Treatment
+   *
+   * Exactly seven items make up the passport data columns. The order of the
+   * items is critical and must be preserved exactly as specified.
+   *
+   * @var array
+   *
+  public const PASSPORT_DATA_CONFIG_NAMES = [
+    0 => 'germplasm_name',
+    1 => 'sample_entry',
+    2 => 'experiment_group',
+    3 => 'experiment_container',
+    4 => 'replicate',
+    5 => 'experiment_timepoint',
+    6 => 'experiment_treatment'
+  ];
+
+  /**
+   * Passport data configuration name to configuration value mapping.
+   *
+   * @var array
+   */
+  protected array $passport_data_config_values = [];
+
+  /**
    * Phenotypes Storage Service class constructor.
    *
    * @param \Drupal\Core\Database\Connection $drupaldb_connection
@@ -70,8 +111,10 @@ class PhenotypesStorageService {
     protected ModuleHandlerInterface $module_handler,
     protected ChadoConnection $chado_connection,
     protected TripalLogger $tripal_logger,
+    protected TripalCultivatePhenotypesTermsService $service_Terms,
   ) {
 
+    $this->passport_data_config_values = $this->resolvePassportDataConfigurationNames();
   }
 
   /**
@@ -116,8 +159,10 @@ class PhenotypesStorageService {
    *
    * @param array $phenotypes
    *   An array containing data to be inserted.
+   * @param array $column_header
+   *   The column header of a data file in an array.
    */
-  public function insertPhenotype(array $phenotypes): void {
+  public function insertPhenotype(array $phenotypes, array $column_header): void {
 
     $this->ensureDataTypeContextIsSet();
 
@@ -127,7 +172,7 @@ class PhenotypesStorageService {
 
     // Perform basic validation check of columns not empty.
     $sanitized_passport_data = $this->sanitizePassportData($phenotypes);
-    $sanitized_measurement_data = $this->sanitizeMeasurements($phenotypes);
+    $sanitized_measurement_data = $this->sanitizeMeasurements($phenotypes, $column_header);
 
     // Insert phenotype.
     $phenotype_id = $this->insertPassportData($sanitized_passport_data);
@@ -137,19 +182,25 @@ class PhenotypesStorageService {
   /**
    * Validate and sanitize phenotype passport data.
    *
-   * Columns:
-   *  - Name
-   *  - Entry
-   *  - Block
-   *  - Sample Type
-   *  - Replicate
-   *  - Timepoint
-   *  - Treatment
-   *
    * @return array
    */
-  protected function sanitizePassportData(): array {
+  protected function sanitizePassportData(array $phenotypes): array {
 
+    $sanitized_passport_data = [];
+    foreach (array_slice($phenotypes, 0, count(self::PASSPORT_DATA_CONFIG_NAMES)) as $i => $data) {
+      $data = trim($data);
+
+      // Ensure each column has a value.
+      if (empty($data)) {
+        throw new \InvalidArgumentException(
+          'Passport data column missing error. A required column in index #' . $i . ' is missing.'
+        );
+      }
+
+      $sanitized_passport_data[$this->passport_data_config_values[$i]] = $data;
+    }
+
+    return $sanitized_passport_data;
   }
 
   /**
@@ -185,6 +236,25 @@ class PhenotypesStorageService {
    */
   protected function insertMeasurement(): void {
 
+  }
+
+  /**
+   * Resolve passport data configuration names to configuration values.
+   *
+   * Retrieve the configuration value set to each configuration name set in the
+   * phenotypes ontology configuration form.
+   *
+   * @return array
+   */
+  public function resolvePassportDataConfigurationNames(): array {
+
+    $resolved_config_names = [];
+
+    foreach (self::PASSPORT_DATA_CONFIG_NAMES as $config_name) {
+      $resolved_config_names[$config_name] = $this->service_Terms->getTermId($config_name);
+    }
+
+    return $resolved_config_names;
   }
 
   protected function ensureDataTypeContextIsSet(): void {

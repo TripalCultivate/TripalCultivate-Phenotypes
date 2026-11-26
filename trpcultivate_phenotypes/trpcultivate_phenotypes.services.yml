@@ -31,7 +31,8 @@ services:
       '@database',
       '@module_handler',
       '@tripal_chado.database',
-      '@tripal.logger'
+      '@tripal.logger',
+      '@trpcultivate_phenotypes.terms',
     ]
 
   trpcultivate_phenotypes.pheno_combo:
