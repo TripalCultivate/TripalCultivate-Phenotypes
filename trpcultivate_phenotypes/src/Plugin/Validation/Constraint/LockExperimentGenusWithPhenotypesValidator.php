@@ -310,6 +310,15 @@ class LockExperimentGenusWithPhenotypesValidator extends ConstraintValidator imp
     $field_values = array_filter(array_column($field_values, $field['property_key']));
 
     foreach ($this->pheno_configgenus as $genus) {
+      try {
+        // Conditional setting of genus context as the list of genus may
+        // contain newly added genus.
+        $this->service_PhenoCombo->setGenus($genus);
+      }
+      catch (\Exception $e) {
+        continue;
+      }
+
       $has_pheno = $this->service_PhenoCombo->getAllExperimentPhenoCombos($genus, ['format' => 'header']);
 
       if ($has_pheno > 0 && !in_array($genus, $field_values)) {
