@@ -8,6 +8,7 @@ use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
+use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
 use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
 
 /**
@@ -30,6 +31,17 @@ class PhenotypesStorageService {
    * @var string|null
    */
   protected string|null $phenotype_context = NULL;
+
+  /**
+   * Database connection reference based on phenotype context.
+   *
+   * Phenotype Context - database connection:
+   * - raw: public (Drupal database connection).
+   * - analyzed: Chado database connection.
+   *
+   * @var object
+   */
+  private object $database_connection;
 
   /**
    * The table name that contains phenotypes.
@@ -96,6 +108,13 @@ class PhenotypesStorageService {
   protected array $passport_data_config_values = [];
 
   /**
+   * Phenotypic trait (label) to trait-method-unit id mapping.
+   *
+   * @var array
+   */
+  public array $phenotypic_trait_ids = [];
+
+  /**
    * Phenotypes Storage Service class constructor.
    *
    * @param \Drupal\Core\Database\Connection $drupaldb_connection
@@ -111,6 +130,7 @@ class PhenotypesStorageService {
     protected ModuleHandlerInterface $module_handler,
     protected ChadoConnection $chado_connection,
     protected TripalLogger $tripal_logger,
+    protected ExperimentPhenoComboService $service_PhenoCombo,
     protected TripalCultivatePhenotypesTermsService $service_Terms,
   ) {
 
@@ -118,11 +138,16 @@ class PhenotypesStorageService {
   }
 
   /**
-   * Set the phenotype context.
+   * Set the phenotype context and associated database connection.
    *
    * This context is used to restrict all operations so that only
    * records belonging to the specified phenotype context can be accessed,
-   * retrieved or modified.
+   * retrieved or modified. In addition, it determines which database housing
+   * relevant phenotype relations to use.
+   *
+   * Phenotype Context - database connection:
+   * - raw: public (Drupal database connection).
+   * - analyzed: Chado database connection.
    *
    * @throws \Exception
    *   - If Phenotype context key is not 'raw' nor 'analyzed'.
@@ -151,28 +176,46 @@ class PhenotypesStorageService {
       );
     }
 
+    switch ($phenotype_context) {
+
+      case 'raw':
+        $this->database_connection = $this->drupaldb_connection;
+        break;
+
+      case 'analyzed':
+        $this->database_connection = $this->chado_connection;
+        break;
+    }
+
     $this->phenotype_context = $phenotype_context;
   }
 
   /**
-   * Insert phenotype.
+   * Insert a single row of phenotypic data.
    *
-   * @param array $phenotypes
-   *   An array containing data to be inserted.
-   * @param array $column_header
-   *   The column header of a data file in an array.
+   * @param array $headers
+   *   An array containing phenotypic trait names (column headers) defined by
+   *   the phenotypes importer.
+   * @param array $pheno_values
+   *   An array containing phenotypic values corresponding to the supplied
+   *   traits. Values are organized so that it correspond to its respective
+   *   trait by column (index) position.
    */
-  public function insertPhenotype(array $phenotypes, array $column_header): void {
+  public function insertPhenotypeRow(array $headers, array $pheno_values): void {
 
     $this->ensureDataTypeContextIsSet();
+    $this->ensureResolvedPhenotypicTraits();
 
-    if (empty($phenotypes)) {
-      throw new \Exception('Unable to insert phenotypes. The phenotypes data is empty.');
+    if (empty($pheno_traits) || empty($pheno_values)) {
+      throw new \InvalidArgumentException(
+        'Unable to insert phenotypic data. Trait headers or phenotypic values are missing.'
+      );
     }
 
-    // Perform basic validation check of columns not empty.
-    $sanitized_passport_data = $this->sanitizePassportData($phenotypes);
-    $sanitized_measurement_data = $this->sanitizeMeasurements($phenotypes, $column_header);
+    // Perform basic validation check to ensure no empty entries on required
+    // traits are saved.
+    $sanitized_passport_data = $this->sanitizePassportData($pheno_values);
+    $sanitized_measurement_data = $this->sanitizeMeasurements($headers, $pheno_values);
 
     // Insert phenotype.
     $phenotype_id = $this->insertPassportData($sanitized_passport_data);
@@ -182,12 +225,20 @@ class PhenotypesStorageService {
   /**
    * Validate and sanitize phenotype passport data.
    *
+   * @param array $pheno_value
+   *   An array containing phenotypic values corresponding to the supplied
+   *   traits.
+   *   @see Drupal\trpcultivate_phenotypes\Service\PhenotypeStorageService::insertPhenotypeRow()
+   *
    * @return array
    */
-  protected function sanitizePassportData(array $phenotypes): array {
+  protected function sanitizePassportData(array $pheno_values): array {
 
     $sanitized_passport_data = [];
-    foreach (array_slice($phenotypes, 0, count(self::PASSPORT_DATA_CONFIG_NAMES)) as $i => $data) {
+
+    // The first seven values in the data row.
+    $passport_data = array_slice($phenotypes, 0, count(self::PASSPORT_DATA_CONFIG_NAMES));
+    foreach ($passport_data as $i => $data) {
       $data = trim($data);
 
       // Ensure each column has a value.
@@ -206,16 +257,21 @@ class PhenotypesStorageService {
   /**
    * Validate and sanitize phenotype measurement data.
    *
-   * Columns:
-   *  - PhenoCombo Label
-   *  - Value
-   *  - Project ID
-   *  - Stock ID
+   * @param array $headers
+   *   An array containing phenotypic trait names (column headers) defined by
+   *   the phenotypes importer.
+  *  @param array $pheno_value
+   *   An array containing phenotypic values corresponding to the supplied
+   *   traits.
+   *   @see Drupal\trpcultivate_phenotypes\Service\PhenotypeStorageService::insertPhenotypeRow()
    *
    * @return array
    */
-  protected function sanitizeMeasurement(): array {
+  protected function sanitizeMeasurements(array $headers, $pheno_values): array {
 
+    $sanitized_measurement_data = [];
+
+    return $sanitized_measurement_data;
   }
 
   /**
@@ -224,7 +280,13 @@ class PhenotypesStorageService {
    * @return int
    *   The phenotype_id assigned to the last inserted row in phenotype table.
    */
-  protected function insertPassportData(): int {
+  protected function insertPassportData(array $passport_data): int {
+
+    $this->database_connection->insert(self::PHENOTYPESPROP_TABLE)
+      ->fields(
+
+      )
+      ->execute();
 
     return $phenotype_id;
   }
@@ -257,6 +319,32 @@ class PhenotypesStorageService {
     return $resolved_config_names;
   }
 
+  /**
+   * Resolve phenotypic trait label into trait-method-unit ids.
+   *
+   * @param array $headers
+   *   An array containing phenotypic trait names (column headers) defined by
+   *   the phenotypes importer.
+   */
+  public function resolvePhenotypicTraitLabels(array $headers, string $genus): void {
+
+    $this->ensureDataTypeContextIsSet();
+
+    $this->service_PhenoCombo->setGenus($genus);
+
+    // Trait columns after the passport data columns.
+    $trait_labels = array_slice($headers, count(self::PASSPORT_DATA_CONFIG_NAMES) + 1);
+
+    foreach($trait_labels as $label) {
+      $this->phenotypic_trait_ids[$label] = $this->service_PhenoCombo->getExperimentPhenoCombo($label);
+    }
+  }
+
+  /**
+   * Ensures that phenotype context has been set.
+   *
+   * @return void
+   */
   protected function ensureDataTypeContextIsSet(): void {
 
     if ($this->phenotype_context === NULL || $this->phenotype_context === 0) {
@@ -264,6 +352,23 @@ class PhenotypesStorageService {
         sprintf(
           'Phenotype context not set error in %s: phenotype context must be set before performing operations.
            Use setPhenotypeContext(raw|analyzed) to set a phenotype context.',
+          get_class($this)
+        )
+      );
+    }
+  }
+
+  /**
+   * Ensures that phenotypic trais has been resolved.
+   *
+   * @return void
+   */
+  protected function ensureResolvedPhenotypicTraits(): void {
+
+    if (empty($phenotypic_trait_ids)) {
+      throw new \Exception(
+        sprintf(
+          'Unresolved phenotypic trait id error: Phenotypic traits.',
           get_class($this)
         )
       );
