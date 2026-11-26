@@ -133,4 +133,46 @@ class SetupModuleService {
     }
   }
 
+  /**
+   * Setup the following passport data terms:
+   *
+   * - name (config name: germplasm_name)
+   * - Entry (sample_entry)
+   * - block (experiment_group)
+   * - Sample Type (experiment_container)
+   * - replicate (replicate)
+   * - Timepoint (experiment_timepoint)
+   * - treatment (experiment_treatment)
+   *
+   * @see trpcultivate_phenotypes/config/trpcultivate_phenotypes.settings.yml
+   * @see trpcultivate_phenotypes.install
+   */
+  public static function setupPassportDataTerms(): void {
+
+    $term_service = \Drupal::service('trpcultivate_phenotypes.terms');
+
+    // The following are non-passport data terms used by the module to establish
+    // relationships between data. Set value for each term must be maintained to
+    // preserve existing data relationships after the re-install ruotine below.
+    // Save the current value set to each term.
+    $cache_config_value = [];
+
+    foreach ([
+      'genus',
+      'unit_type',
+      'data_collector',
+      'unit_to_method_relationship_type',
+      'method_to_trait_relationship_type',
+      'trait_to_synonym_relationship_type',
+    ] as $term) {
+
+      $cache_config_value[$term] = $term_service->getTermId($term);
+    }
+
+    // Re-install terms and restore set configuration values for each
+    // non-passport term.
+    $term_service->loadTerms();
+    $term_service->saveTermConfigValues($cache_config_value);
+  }
+
 }

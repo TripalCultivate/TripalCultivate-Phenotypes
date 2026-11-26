@@ -203,3 +203,30 @@ function trpcultivate_phenotypes_update_10001() {
       ->notice('The relation ' . $pheno_combo . ' has been created.');
   }
 }
+
+/**
+ * Implements hook_update_N().
+ *
+ * Setup passoort data terms.
+ */
+function trpcultivate_phenotypes_update_10005() {
+
+  $passport_data_terms_job = [
+    'job_name' => t('Tripal Cultivate Phenotypes: Setup Passport Data Terms'),
+    'modulename' => 'trpcultivate_phenotypes',
+    'callback' => [
+      'Drupal\trpcultivate_phenotypes\Service\SetupModuleService',
+      'setupPassportDataTerms'
+    ],
+    'arguments' => [],
+    'uid' => $user->id(),
+    'priority' => 10,
+  ];
+
+  try {
+    \Drupal::service('tripal.job')->create($passport_data_terms_job);
+  }
+  catch (\Exception $e) {
+    throw new \Exception('Cannot create a job to install passort data terms: ' . $e->getMessage());
+  }
+}
