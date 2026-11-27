@@ -61,17 +61,18 @@ trpcultivate:
     ontology:
       terms:
         data_collector: 0
-        entry: 0
+        sample_entry: 0
         genus: 0
-        location: 0
-        name: 0
+        experiment_group: 0
+        germplasm_name: 0
         experiment_container: 0
         unit_to_method_relationship_type: 0
         method_to_trait_relationship_type: 0
         trait_to_synonym_relationship_type: 0
         unit_type: 0
         experiment_replicate: 0
-        experiment_year: 0
+        experiment_timepoint: 0
+        experiment_treatment: 0
       cvdbon:
       allownew: true
 
@@ -116,16 +117,6 @@ trpcultivate:
             definition: 'Unit of measurement'
             help_text: 'This term describes the relationship between your method and the unit with which it was measured.'
       -
-        name: tripal_pub
-        definition: 'Tripal Publication Ontology. A temporary ontology until a more formal appropriate ontology to be identified.'
-        terms:
-          -
-            config_map: experiment_year
-            id: TPUB:0000059
-            name: Year
-            definition: 'The year the work was published. This should be a 4 digit year.'
-            help_text: 'Metadata tagged with this term indicates the year in which a phenotypic datapoint was collected.'
-      -
         name: ncit
         definition: 'NCI Thesaurus OBO Edition'
         terms:
@@ -142,17 +133,11 @@ trpcultivate:
             definition: 'A descriptive word or phrase selected as an authorized descriptor to represent a discrete concept.'
             help_text: 'This term describes the relationship between your trait and a related term in a published ontology such as the Trait Ontology or a crop-specific ontology.'
           -
-            config_map: location
-            id: NCIT:C25341
-            name: Location
-            definition: 'A position, site, or point in space where something can be found.'
-            help_text: 'Metadata tagged with this term indicates the physical location of the environment giving rise to the phenotype.'
-          -
             config_map: experiment_replicate
             id: NCIT:C28038
             name: replicate
-            definition: 'A role played by a biological sample in the context of an experiment where the intent is that biological or technical variation is measured.'
-            help_text: 'Metadata tagged with this term indicates the unique identifier for the replicate the current datapoint is part of.'
+            definition: 'To make a copy or duplicate of something.'
+            help_text: 'The number indicating the replicate of the sample.'
           -
             config_map: data_collector
             id: NCIT:C45262
@@ -160,27 +145,39 @@ trpcultivate:
             definition: 'Indicates the person, group, or institution who performed the collection act.'
             help_text: 'Metadata tagged with this term indicates the name of the person who collected the phenotypic measurement.'
           -
-            config_map: entry
+            config_map: sample_entry
             id: NCIT:C43381
             name: Entry
             definition: 'An item inserted in a written or electronic record.'
-            help_text: 'Metadata tagged with this term indicates the entry number.'
+            help_text: 'A unique identifier or label of the plant material being measured. For example, the germplasm entry number or the seed packet label.'
           -
-            config_map: name
+            config_map: germplasm_name
             id: NCIT:C42614
             name: name
-            definition: 'The words or language unit by which a thing is known.'
-            help_text: 'Metadata tagged with this term indicates the name of the germplasm or line.'
+            definition: 'The words or language units by which a thing is known.'
+            help_text: 'The official name of the accession phenotyped. This accession name should be an exact match of an accession previously imported using a Germplasm Importer.'
+          -
+            config_map: experiment_container
+            id: NCIT:C210102
+            name: Sample Type
+            definition: 'A characterization or classification of the sample.'
+            help_text: 'The identifier for the physical entity (e.g. plot, plant, protein extraction) that measurements are being taken on. For example, the plot identifier in a field experiment or the test tube label in a biochemical assay.'
+          -
+            config_map: experiment_timepoint
+            id: NCIT:C68568
+            name: Timepoint
+            definition: 'A specific point in the time continuum, including those established relative to an event.'
+            help_text: 'The most specific timepoint common to all measurements recorded on a single row in the file. For example, if the measurements are days to various growth stages then this might be the planting date. Alternatively, if the measurements are all relating to specific biochemical assay run or drone flyover then the assay date or drone flyover date would be used in order to keep the rows of the file unique.'
       -
         name: AGRO
         definition: 'Agronimic Ontology'
         terms:
           -
-            config_map: experiment_container
-            id: AGRO:00000301
-            name: plot
-            definition: 'A site within which an agricultural experimental process is conducted'
-            help_text: 'Metadata tagged with this term indicates the plot number.'
+            config_map: experiment_treatment
+            id: AGRO:00000322
+            name: treatment
+            definition: 'A process during which some material is applied to a subject'
+            help_text: 'Refers to specific condition or manipulation that is applied. For example, fertilizer, weeding pressure, nitrogen supplementation, or temperature.'
       -
         name: schema
         definition: 'Schema.org is sponsored by Google, Microsoft, Yahoo and Yandex. The vocabularies are developed by open community process.'
@@ -191,3 +188,13 @@ trpcultivate:
             name: additionalType
             definition: 'Supplemental data type attached to a unit (ie. quantitative or qualitative).'
             help_text: 'Metadata tagged with this term indicates the data type of a unit of measurement.'
+      -
+        name: EFO
+        definition: Experimental Factor Ontology (EFO).
+        terms:
+          -
+            config_map: experiment_group
+            id: EFO:0005067
+            name: block
+            definition: 'A block or batch is an experimental unit arrangement into a group which is similar to one another. Typically, a blocking factor is a source of variability that is not of primary interest to the experimenter. An example of a blocking factor might be the sex of a patient; by blocking on sex, this source of variability is controlled for, thus leading to greater accuracy.'
+            help_text: 'A simple descriptor of the environmental variables for this particular grouping of experimental subjects or germplasm. For example, site location, heated vs. room temperature, or assay.'

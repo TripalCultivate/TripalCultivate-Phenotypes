@@ -24,6 +24,19 @@ services:
       '@tripal_chado.chado_buddy'
     ]
 
+  trpcultivate_phenotypes.phenotypes_storage:
+    class: 'Drupal\trpcultivate_phenotypes\Service\PhenotypesStorageService'
+    arguments: [
+      '@uuid',
+      '@database',
+      '@module_handler',
+      '@tripal_chado.database',
+      '@tripal.logger',
+      '@trpcultivate_phenotypes.pheno_combo',
+      '@trpcultivate_phenotypes.genus_project',
+      '@trpcultivate_phenotypes.terms'
+    ]
+
   trpcultivate_phenotypes.pheno_combo:
     class: 'Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService'
     arguments: [
