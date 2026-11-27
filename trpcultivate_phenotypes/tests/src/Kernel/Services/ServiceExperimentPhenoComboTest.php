@@ -305,6 +305,26 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test ensureGenusIsSet().
+   */
+  public function testEnsureGenusIsSet() {
+
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    $this->service_PhenoCombo->setExperiment($experiment);
+
+    try {
+      $this->service_PhenoCombo->removePhenoComboFromExperiment('Label to Remove');
+    }
+    catch (\Exception $e) {
+      $this->assertStringContainsString(
+        'Genus context not set error',
+        $e->getMessage(),
+        'Genus context must be set before performing an operation.'
+      );
+    }
+  }
+
+  /**
    * Provides experiment context test cases.
    *
    * Each test experiment context in an array with the following values:
@@ -376,12 +396,71 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Provides genus context test cases.
+   *
+   * Each test genus context in an array with the following values:
+   * - The genus.
+   * - The exception message thrown (or empty string if none).
+   */
+  public static function provideGenusContext() {
+
+    return [
+      [
+        'Lens',
+        '',
+      ],
+      [
+        'Triticum',
+        '',
+      ],
+      [
+        'Spurious Genus',
+        'Failed to set genus context. The specified genus: Spurious Genus is not a valid genus of the experiment. Use [Lens, Triticum].',
+      ],
+      [
+        '',
+        'Failed to set genus context. The specified genus:  is not a valid genus of the experiment. Use [Lens, Triticum].',
+      ],
+    ];
+  }
+
+  /**
+   * Test setGenus() with various genus identifiers.
+   *
+   * @param int|string $genus
+   *   The genus.
+   * @param string $exception_message
+   *   The exception message thrown.
+   *
+   * @dataProvider provideGenusContext
+   */
+  #[DataProvider('provideGenusContext')]
+  public function testSetGenus(int|string $genus, string|null $exception_message) {
+
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    $this->service_PhenoCombo->setExperiment($experiment);
+
+    try {
+      $this->service_PhenoCombo->setGenus($genus);
+    }
+    catch (\Exception $e) {
+      $this->assertEquals(
+        $exception_message,
+        $e->getMessage(),
+        'Set genus failed to throw an exception for tests:' . $genus
+      );
+    }
+  }
+
+  /**
    * Test assignPhenoComboToExperiment().
    */
   public function testAssignPhenoComboToExperiment() {
 
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+
     $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     // No label.
     try {
@@ -423,6 +502,8 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
         continue;
       }
 
+      $this->service_PhenoCombo->setGenus('Triticum');
+
       foreach ($pheno_combos as $pheno_combo) {
         $combo_id = $this->service_PhenoCombo
           ->assignPhenoComboToExperiment($pheno_combo, $pheno_combo_details);
@@ -459,6 +540,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
 
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     $drupaldb_connection = $this->container->get('database');
 
@@ -520,6 +602,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
 
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     $drupaldb_connection = $this->container->get('database');
 
@@ -636,6 +719,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
 
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     $status_flags = array_values($this->service_PhenoCombo::PHENOCOMBO_STATUS_FLAG_FIELD_MAP);
 
@@ -700,6 +784,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
 
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     $drupaldb_connection = $this->container->get('database');
 
@@ -871,6 +956,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
 
     $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
     $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     $combo_details = [];
 
@@ -991,6 +1077,35 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   }
 
   /**
+   * Test labelIsUniqueInExperimentGenus().
+   */
+  public function testLabelIsUniqueInExperimentGenus() {
+
+    $experiment = ChadoProjectAutocompleteController::getProjectId(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    $this->service_PhenoCombo->setExperiment($experiment);
+    $this->service_PhenoCombo->setGenus('Lens');
+
+    $this->assertTrue(
+      $this->service_PhenoCombo->labelIsUniqueInExperimentGenus('A new label in a genus'),
+      'Label uniqueness check should return TRUE when the label is not used within the experiment context.',
+    );
+
+    $a_label = $this->container->get('database')
+      ->select($this->service_PhenoCombo::PHENOCOMBO_TABLE, 'tbl')
+      ->fields('tbl', ['label'])
+      ->condition('tbl.project_id', $experiment, '=')
+      ->orderRandom()
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+
+    $this->assertFalse(
+      $this->service_PhenoCombo->labelIsUniqueInExperimentGenus($a_label),
+      'Label uniqueness check should return FALSE when the label already exists in the experiment+genus context.',
+    );
+  }
+
+  /**
    * Provide invalid arguments to getAllExperimentPhenoCombos().
    *
    * Each test argument is an array with the following values:
@@ -1006,7 +1121,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
       [
         'Spurious Genus',
         ['format' => 'header'],
-        'The genus provided is not a configured genus of the experiment',
+        'Failed to set genus context. The specified genus: Spurious Genus is not a valid genus of the experiment. Use [Lens, Triticum]',
       ],
       [
         $genus_lens,
@@ -1039,6 +1154,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
     $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
 
     try {
+      $this->service_PhenoCombo->setGenus($genus);
       $this->service_PhenoCombo->getAllExperimentPhenoCombos($genus, $options);
     }
     catch (\Exception $e) {
@@ -1090,6 +1206,7 @@ class ServiceExperimentPhenoComboTest extends ChadoTestKernelBase {
   public function testResolveComboInvalidArgument(array|int|string $combo, string $expected_message) {
 
     $this->service_PhenoCombo->setExperiment(self::EXPERIMENT_NAME_CONTEXT_WITH_PHENOCOMBO);
+    $this->service_PhenoCombo->setGenus('Lens');
 
     try {
       $this->service_PhenoCombo->getExperimentPhenoCombo($combo);

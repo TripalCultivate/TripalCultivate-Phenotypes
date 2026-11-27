@@ -198,6 +198,11 @@ class PhenoExperimentConfigurationForm extends FormBase {
       $genus = $exp_phenogenus[0];
     }
 
+    if ($genus) {
+      // Set the PhenoCombo service genus context to the current genus.
+      $this->service_PhenoCombo->setGenus($genus);
+    }
+
     // Contain page links and select field displayed inline - in a single row.
     $config_toolbar = 'config_toolbar';
     $form[$config_toolbar] = [
@@ -309,6 +314,9 @@ class PhenoExperimentConfigurationForm extends FormBase {
     // AJAX library dependencies.
     $form['#attached']['library'][] = 'core/drupal.dialog';
     $form['#attached']['library'][] = 'core/drupal.dialog.ajax';
+    // SDC trait_combo JS component.
+     $form['#attached']['library'][] = 'core/components.trpcultivate_phenotypes--trait_combo';
+
 
     // Listen for operation request to remove, require, or archive.
     $request = $this->getRequest();

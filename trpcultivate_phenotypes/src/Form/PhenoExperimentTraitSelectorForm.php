@@ -192,6 +192,11 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
       }
     }
 
+    if ($genus) {
+      // Set the PhenoCombo service genus context to the current genus.
+      $this->service_PhenoCombo->setGenus($genus);
+    }
+
     // Exclude other messages in the session that AJAX tends to repost.
     $this->messenger()->deleteAll();
 
@@ -413,20 +418,13 @@ class PhenoExperimentTraitSelectorForm extends FormBase {
 
         $label = $values[$item_key . '_label'] ?: $values[$item_key . '_default_label'];
 
-        // No same labels in an experiment.
-        $label_exists = $this->drupaldb_connection->select(self::PHENO_COMBO_TABLE, 'tc')
-          ->fields('tc', ['combo_id'])
-          ->condition('tc.label', $label, '=')
-          ->condition('tc.project_id', $experiment_id, '=')
-          ->execute()
-          ->fetchField();
-
-        if ($label_exists) {
+        // No same labels in an experiment+genus context.
+        if (!$this->service_PhenoCombo->labelIsUniqueInExperimentGenus($label)) {
           $form[$form_dialog_wrapper]['duplicate_label'] = [
             '#theme' => 'status_messages',
             '#message_list' => [
               'error' => [
-                'The label is already used in the experiment.',
+                'The label is already used in the experiment and genus context.',
               ],
             ],
             '#status_headings' => [

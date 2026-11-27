@@ -3,16 +3,21 @@
  * Trait combo behaviours.
  */
 
-(function ($, Drupal) {
-  Drupal.behaviors.traitCombo = {
-    attach: function (context, settings) {
+(function (Drupal, once) {
 
-      // Reloads the parent window when a dialog containing combos is closed via
-      // the X button of the dialog window.
-      $(document).on('dialogclose', function() {
+  Drupal.behaviors.traitCombo = {
+    attach(context, settings) {
+
+      // Reloads the parent window when a dialog containing combos is closed
+      // via the X button of the dialog window.
+      once('dialog-close', 'body', context).forEach(() => {
+        document.addEventListener('dialog:afterclose', () => {
           var wl = window.location;
           wl.href = wl.pathname;
-        }
-      );
+        });
+      });
 
-}}}(jQuery, Drupal));
+    }
+
+  };
+}) (Drupal, once);
