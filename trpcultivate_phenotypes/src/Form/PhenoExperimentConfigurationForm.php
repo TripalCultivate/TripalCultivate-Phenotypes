@@ -200,9 +200,6 @@ class PhenoExperimentConfigurationForm extends FormBase {
 
     if ($genus) {
       // Set the PhenoCombo service genus context to the current genus.
-      // This is skipped when view is set to all genus context and subsequent
-      // PhenoCombo operations invoke function disabling of genus context
-      // requirement (ie. remove operation below).
       $this->service_PhenoCombo->setGenus($genus);
     }
 
