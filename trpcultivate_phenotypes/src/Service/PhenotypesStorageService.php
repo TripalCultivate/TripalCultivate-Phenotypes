@@ -6,10 +6,10 @@ namespace Drupal\trpcultivate_phenotypes\Service;
 
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\tripal_chado\Database\ChadoConnection;
 use Drupal\tripal\Services\TripalLogger;
-use Drupal\trpcultivate_phenotypes\Service\ExperimentPhenoComboService;
-use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService;
+use Drupal\tripal_chado\Controller\ChadoProjectAutocompleteController;
 
 /**
  * Phenotypes Storage Service.
@@ -24,15 +24,6 @@ use Drupal\trpcultivate_phenotypes\Service\TripalCultivatePhenotypesTermsService
 class PhenotypesStorageService {
 
   /**
-   * Phenotypes data type context.
-   *
-   * Operations on phenotypes will be restricted to data type context.
-   *
-   * @var string|null
-   */
-  protected string|null $phenotype_context = NULL;
-
-  /**
    * Database connection reference based on phenotype context.
    *
    * Phenotype Context - database connection:
@@ -42,6 +33,36 @@ class PhenotypesStorageService {
    * @var object
    */
   private object $database_connection;
+
+  /**
+   * Phenotypes data type context.
+   *
+   * Operations on phenotypes will be restricted to data type context.
+   *
+   * @var string|null
+   */
+  protected string|null $phenotype_context = NULL;
+
+  /**
+   * Phenotypes metadata context.
+   *
+   * An associative array containing metadata used to identify and associate
+   * the phenotypic data with its corresponding experiment. The following keys
+   * are expected:
+   * - project_id: the project_id of the project (experiment) associated with
+   *   the phenotypic data.
+   * - genus: the specific genus corresponding to the project_id.
+   *
+   * @var array
+   */
+  protected array $metadata_context = [];
+
+  /**
+   * Passport data configuration name to configuration value (id) mapping.
+   *
+   * @var array
+   */
+  public readonly array $resolved_labels;
 
   /**
    * The table name that contains phenotypes.
@@ -89,30 +110,16 @@ class PhenotypesStorageService {
    * items is critical and must be preserved exactly as specified.
    *
    * @var array
-   *
+   */
   public const PASSPORT_DATA_CONFIG_NAMES = [
     0 => 'germplasm_name',
     1 => 'sample_entry',
     2 => 'experiment_group',
     3 => 'experiment_container',
-    4 => 'replicate',
+    4 => 'experiment_replicate',
     5 => 'experiment_timepoint',
     6 => 'experiment_treatment'
   ];
-
-  /**
-   * Passport data configuration name to configuration value mapping.
-   *
-   * @var array
-   */
-  protected array $passport_data_config_values = [];
-
-  /**
-   * Phenotypic trait (label) to trait-method-unit id mapping.
-   *
-   * @var array
-   */
-  public array $phenotypic_trait_ids = [];
 
   /**
    * Phenotypes Storage Service class constructor.
@@ -131,35 +138,42 @@ class PhenotypesStorageService {
     protected ChadoConnection $chado_connection,
     protected TripalLogger $tripal_logger,
     protected ExperimentPhenoComboService $service_PhenoCombo,
+    protected TripalCultivatePhenotypesGenusProjectService $service_GenusProject,
     protected TripalCultivatePhenotypesTermsService $service_Terms,
   ) {
 
-    $this->passport_data_config_values = $this->resolvePassportDataConfigurationNames();
   }
 
   /**
    * Set the phenotype context and associated database connection.
    *
    * This context is used to restrict all operations so that only
-   * records belonging to the specified phenotype context can be accessed,
-   * retrieved or modified. In addition, it determines which database housing
-   * relevant phenotype relations to use.
+   * records belonging to the specified phenotype and metadata contexts can be
+   * accessed, retrieved or modified. In addition, it determines which database
+   * housing relevant phenotype relations to use.
    *
    * Phenotype Context - database connection:
    * - raw: public (Drupal database connection).
    * - analyzed: Chado database connection.
    *
+   * @param $phenotype_context
+   *   Either raw or analyzed, unpublished or published phenotype, respectively.
+   * @param int $project_id
+   *   The project_id of the project (experiment) source of phenotypic data.
+   * @param string $genus
+   *   The specific genus corresponding to the project_id.
+   *
    * @throws \Exception
    *   - If Phenotype context key is not 'raw' nor 'analyzed'.
    *   - If corresponding module of a data type is not installed/enabled module.
    */
-  public function setPhenotypeContext(string $phenotype_context): void {
+  public function setPhenotypeContext(string $phenotype_context, int|string $experiment, string $genus): void {
 
     $data_types = array_keys(self::DATA_TYPE_MODULE_MAP);
     if (!in_array($phenotype_context, $data_types)) {
-      throw new \Exception(
+      throw new \InvalidArgumentException(
         sprintf(
-          'Unable to set phenotype context: %s is not a supported context key. Use [%s].',
+          'Unsupported phenotype context: %s is not a supported context key. Use [%s].',
           $phenotype_context, implode(', ', $data_types)
         )
       );
@@ -169,14 +183,147 @@ class PhenotypesStorageService {
     if (!$this->module_handler->moduleExists($module_name)) {
       throw new \Exception(
         sprintf(
-          'Unable to set phenotype context: %s is not installed/enabled module.
+          'Unable to configure phenotype context: %s is not installed/enabled module.
            Please install this module and try again.',
           $module_name
         )
       );
     }
 
-    switch ($phenotype_context) {
+    $project_id = ExperimentPhenoComboService::resolveExperimentToProjectId($experiment);
+    $project_genus = $this->service_GenusProject->getGenusOfProject($project_id);
+
+    if (empty($project_genus) || !in_array($genus, $project_genus)) {
+      throw new \InvalidArgumentException(
+        'Invalid phenotype metadata context: Project and genus metadata are not configured for phenotypes.'
+      );
+    }
+
+    $this->phenotype_context = $phenotype_context;
+    $this->metadata_context = ['project_id' => $project_id, 'genus' => $genus];
+
+    // Resolve the database connection for the selected context.
+    $this->resolveDatabaseConnection();
+  }
+
+  /**
+   * Insert a single row of phenotypic data into the database.
+   *
+   * Data row contains values corresponding to the column headers (label)
+   * previously resolved through resolveHeaderRowLabels().
+   *
+   * This method MUST CALL resolveHeaderRowLabels() to resolve header/label into
+   * database id reference number.
+   *
+   * @param array $data_row
+   *   An indexed array of phenotypic/measurement values representing a single
+   *   row in the data file, excluding the first row (index 0, column headers).
+   */
+  public function insertPhenotypeRow(array $data_row): void {
+
+    if (empty($data_row)) {
+      return;
+    }
+
+    $this->ensurePhenotypeContextIsSet();
+    $this->ensureResolvedPhenoComboLabels();
+
+    $labels = array_keys($this->resolved_labels);
+
+    foreach ($data_row as $index => $value) {
+      // The first seven items in the data row pertain to passport data.
+      if ($index <= count(self::PASSPORT_DATA_CONFIG_NAMES)) {
+        $this->metadata_context[$labels[$index]] = $this->valueResolver($labels[$index], $value);
+
+        continue;
+      }
+
+      // Create Phenotype.
+      // The resolved trait-method-unit of the label.
+      $measurement = $this->resolved_labels[$index];
+      $phenotype_id = $this->insertMeasurementData($measurement, $value);
+
+      unset($this->metadata_context[$labels[$index]]);
+
+      // Create Phenotype Propperty.
+      $this->insertPassportData($phenotype_id, $data_row);
+    }
+  }
+
+  /**
+   * Insert measurement data.
+   *
+   * @param string $measurement
+   * @param int|string $value
+   *
+   * @return int
+   *   The phenotype_id generated from the the insert measurement query.
+   */
+  protected function insertMeasurementData(string $measurement, int|string $value): int {
+
+    $insert_measurement = $this->database_connection->insert(self::PHENOTYPES_TABLE)
+      ->fields([
+        'attr_id' => $measurement['attr_id'],
+        'assay_id' => $measurement['assay_id'],
+        'unit_id' => $measurement['unit_id'],
+        'value' => $value,
+        'stock_id' => $this->metadata_context['germplasm_name'],
+        'project_id' => $this->metadata_context['project_id'],
+        'uniquename' => $this->service_uuid->generate(),
+      ])
+      ->exeecute();
+
+    return $insert_measurement;
+  }
+
+  /**
+   * Insert passport data.
+   *
+   * @param int $phenotype_id
+   * @param array $data_row
+   */
+  protected function insertPassportData(int $phenotype_id, array $data_row): void {
+
+    // Ensure there is phenotype_id when calling this method.
+    if ($phenotype_id < 1) {
+      throw new \InvalidArgumentException(
+        'Phenotype id is required'
+      );
+    }
+
+    // The first seven items are the passport data.
+    $passport_data = array_slice($data_row, 0, count(self::PASSPORT_DATA_CONFIG_NAMES) - 1);
+
+    $insert_passportdata = $this->database_connection->insert(self::PHENOTYPESPROP_TABLE)
+      ->fields([
+        'phenotype_id',
+        'type_id',
+        'value'
+      ]);
+
+    $label_values = array_values($this->resolved_labels);
+
+    foreach ($passport_data as $i => $data) {
+      $insert_passportdata->values([
+        $phenotype_id,
+        $label_values[$i]['attr_id'],
+        $data,
+      ]);
+    }
+
+    $insert_passportdata->execute();
+  }
+
+  /**
+   * Resolve which database connection to reference for a phenotype context.
+   *
+   * Phenotype Context - database connection:
+   * - raw: public (Drupal database connection).
+   * - analyzed: Chado database connection.
+   */
+  private function resolveDatabaseConnection(): void {
+
+    switch ($this->phenotype_context) {
 
       case 'raw':
         $this->database_connection = $this->drupaldb_connection;
@@ -186,166 +333,56 @@ class PhenotypesStorageService {
         $this->database_connection = $this->chado_connection;
         break;
     }
-
-    $this->phenotype_context = $phenotype_context;
   }
 
   /**
-   * Insert a single row of phenotypic data.
-   *
-   * @param array $headers
-   *   An array containing phenotypic trait names (column headers) defined by
-   *   the phenotypes importer.
-   * @param array $pheno_values
-   *   An array containing phenotypic values corresponding to the supplied
-   *   traits. Values are organized so that it correspond to its respective
-   *   trait by column (index) position.
-   */
-  public function insertPhenotypeRow(array $headers, array $pheno_values): void {
-
-    $this->ensureDataTypeContextIsSet();
-    $this->ensureResolvedPhenotypicTraits();
-
-    if (empty($pheno_traits) || empty($pheno_values)) {
-      throw new \InvalidArgumentException(
-        'Unable to insert phenotypic data. Trait headers or phenotypic values are missing.'
-      );
-    }
-
-    // Perform basic validation check to ensure no empty entries on required
-    // traits are saved.
-    $sanitized_passport_data = $this->sanitizePassportData($pheno_values);
-    $sanitized_measurement_data = $this->sanitizeMeasurements($headers, $pheno_values);
-
-    // Insert phenotype.
-    $phenotype_id = $this->insertPassportData($sanitized_passport_data);
-    $this->insertMeasurements($phenotype_id, $sanitized_measurement_data);
-  }
-
-  /**
-   * Validate and sanitize phenotype passport data.
-   *
-   * @param array $pheno_value
-   *   An array containing phenotypic values corresponding to the supplied
-   *   traits.
-   *   @see Drupal\trpcultivate_phenotypes\Service\PhenotypeStorageService::insertPhenotypeRow()
+   * Resolve PhenoCombo labels.
    *
    * @return array
    */
-  protected function sanitizePassportData(array $pheno_values): array {
+  public function resolveHeaderRowLabels(array $header_row): void {
 
-    $sanitized_passport_data = [];
+    $this->ensurePhenotypeContextIsSet();
 
-    // The first seven values in the data row.
-    $passport_data = array_slice($phenotypes, 0, count(self::PASSPORT_DATA_CONFIG_NAMES));
-    foreach ($passport_data as $i => $data) {
-      $data = trim($data);
+    $this->service_PhenoCombo->setExperiment($this->metadata_context['project_id']);
+    // $this->service_PhenoCombo->setGenus($this->metadata_context['genus']);
 
-      // Ensure each column has a value.
-      if (empty($data)) {
-        throw new \InvalidArgumentException(
-          'Passport data column missing error. A required column in index #' . $i . ' is missing.'
+    $resolved_labels = [];
+    $passportdata_count = count(self::PASSPORT_DATA_CONFIG_NAMES);
+    $phenocombo_keys = array_values($this->service_PhenoCombo::PHENOCOMBO_FIELD_MAP);
+
+    foreach ($header_row as $index => $label) {
+      // Passport data column labels.
+      if ($index < $passportdata_count) {
+        $config_name = self::PASSPORT_DATA_CONFIG_NAMES[$index];
+
+        $resolved_labels[$config_name] = array_combine(
+          $phenocombo_keys,
+          [$this->service_Terms->getTermId($config_name), '', '']
         );
+
+        continue;
       }
 
-      $sanitized_passport_data[$this->passport_data_config_values[$i]] = $data;
+      // PhenoCombo labels.
+      $label = trim($label);
+      $pheno_combo = $this->service_PhenoCombo->getExperimentPhenoCombo($label);
+
+      if ($pheno_combo) {
+        $resolved_labels[$label] = array_combine(
+          $phenocombo_keys,
+          [$pheno_combo->attr_id, $pheno_combo->assay_id, $pheno_combo->unit_id]
+        );
+      }
     }
 
-    return $sanitized_passport_data;
-  }
-
-  /**
-   * Validate and sanitize phenotype measurement data.
-   *
-   * @param array $headers
-   *   An array containing phenotypic trait names (column headers) defined by
-   *   the phenotypes importer.
-  *  @param array $pheno_value
-   *   An array containing phenotypic values corresponding to the supplied
-   *   traits.
-   *   @see Drupal\trpcultivate_phenotypes\Service\PhenotypeStorageService::insertPhenotypeRow()
-   *
-   * @return array
-   */
-  protected function sanitizeMeasurements(array $headers, $pheno_values): array {
-
-    $sanitized_measurement_data = [];
-
-    return $sanitized_measurement_data;
-  }
-
-  /**
-   * Insert phenotype passport data.
-   *
-   * @return int
-   *   The phenotype_id assigned to the last inserted row in phenotype table.
-   */
-  protected function insertPassportData(array $passport_data): int {
-
-    $this->database_connection->insert(self::PHENOTYPESPROP_TABLE)
-      ->fields(
-
-      )
-      ->execute();
-
-    return $phenotype_id;
-  }
-
-  /**
-   * Insert phenotype measurement data.
-   *
-   * @return void
-   */
-  protected function insertMeasurement(): void {
-
-  }
-
-  /**
-   * Resolve passport data configuration names to configuration values.
-   *
-   * Retrieve the configuration value set to each configuration name set in the
-   * phenotypes ontology configuration form.
-   *
-   * @return array
-   */
-  public function resolvePassportDataConfigurationNames(): array {
-
-    $resolved_config_names = [];
-
-    foreach (self::PASSPORT_DATA_CONFIG_NAMES as $config_name) {
-      $resolved_config_names[$config_name] = $this->service_Terms->getTermId($config_name);
-    }
-
-    return $resolved_config_names;
-  }
-
-  /**
-   * Resolve phenotypic trait label into trait-method-unit ids.
-   *
-   * @param array $headers
-   *   An array containing phenotypic trait names (column headers) defined by
-   *   the phenotypes importer.
-   */
-  public function resolvePhenotypicTraitLabels(array $headers, string $genus): void {
-
-    $this->ensureDataTypeContextIsSet();
-
-    $this->service_PhenoCombo->setGenus($genus);
-
-    // Trait columns after the passport data columns.
-    $trait_labels = array_slice($headers, count(self::PASSPORT_DATA_CONFIG_NAMES) + 1);
-
-    foreach($trait_labels as $label) {
-      $this->phenotypic_trait_ids[$label] = $this->service_PhenoCombo->getExperimentPhenoCombo($label);
-    }
+    $this->resolved_labels = $resolved_labels;
   }
 
   /**
    * Ensures that phenotype context has been set.
-   *
-   * @return void
    */
-  protected function ensureDataTypeContextIsSet(): void {
+  protected function ensurePhenotypeContextIsSet(): void {
 
     if ($this->phenotype_context === NULL || $this->phenotype_context === 0) {
       throw new \Exception(
@@ -359,20 +396,44 @@ class PhenotypesStorageService {
   }
 
   /**
-   * Ensures that phenotypic trais has been resolved.
-   *
-   * @return void
+   * Ensures that PhenoCombo labels have been resolved to individual
+   * trait-method-unit cvterm id numbers.
    */
-  protected function ensureResolvedPhenotypicTraits(): void {
+  protected function ensureResolvedHeaderRowLabels(): void {
 
-    if (empty($phenotypic_trait_ids)) {
+    if (empty($this->pheno_combo_label_ids)) {
       throw new \Exception(
-        sprintf(
-          'Unresolved phenotypic trait id error: Phenotypic traits.',
-          get_class($this)
-        )
+        'Unresolved pheno combo labels. Run resolvePhenoComboLabels(Header Row)'
       );
     }
+  }
+
+  /**
+   * Resolve value in passport data columns.
+   *
+   * @param string $config_name
+   * @param int|string $value
+   *
+   * @return int|string
+   */
+  protected function valueResolver(string $config_name, int|string $value): int|string {
+
+    $resolved_value = $value;
+
+    switch ($config_name) {
+
+      case 'germplasm_name':
+
+        $resolved_value = $this->chado_connection->select('1:stock', 'tbl')
+          ->fields('tbl', ['stock_id'])
+          ->condition('tbl.name', $value, '=')
+          ->execute()
+          ->fetchField();
+
+        break;
+    }
+
+    return $resolved_value;
   }
 
 }

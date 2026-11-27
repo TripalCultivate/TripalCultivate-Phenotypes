@@ -33,6 +33,7 @@ services:
       '@tripal_chado.database',
       '@tripal.logger',
       '@trpcultivate_phenotypes.pheno_combo',
+      '@trpcultivate_phenotypes.genus_project',
       '@trpcultivate_phenotypes.terms'
     ]
 

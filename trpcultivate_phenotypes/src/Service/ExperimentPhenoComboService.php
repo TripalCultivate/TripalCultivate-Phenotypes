@@ -911,7 +911,7 @@ class ExperimentPhenoComboService {
    * @throws InvalidArgumentException
    *   - If experiment context could not resolve to an existing project_id.
    */
-  protected static function resolveExperimentToProjectId(TripalEntity|int|string $experiment): int {
+  public static function resolveExperimentToProjectId(TripalEntity|int|string $experiment): int {
 
     $project_id = 0;
 
